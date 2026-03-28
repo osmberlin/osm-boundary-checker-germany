@@ -1,0 +1,11 @@
+{
+  // National border: BKG ARS vs shared OSM extract (Germany RS or synthetic 000000000000).
+  "official": {
+    "path": "source/official.fgb",
+    "matchProperty": "ARS"
+  },
+  "idNormalization": {
+    "preset": "regional-12"
+  },
+  "metricsCrs": "EPSG:25832"
+}

@@ -1,0 +1,331 @@
+{
+  "area": "de-laender",
+  "generatedAt": "2026-03-29T21:15:40.414Z",
+  "metricsCrs": "EPSG:25832",
+  "hasPmtiles": false,
+  "tippecanoeLayer": "boundaries",
+  "rows": [
+    {
+      "canonicalMatchKey": "010000000000",
+      "nameLabel": "Schleswig-Holstein",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9989758083420209,
+        "areaDiffPct": 0.058897288533250075,
+        "symmetricDiffPct": 0.10250181760725785,
+        "hausdorffM": 2625.6692884648746,
+        "officialAreaM2": 25550726722.131115,
+        "osmAreaM2": 25565775407.37099
+      },
+      "mapBbox": [
+        7.521021879916143,
+        53.35981551211765,
+        11.672452156564802,
+        55.09917907809205
+      ]
+    },
+    {
+      "canonicalMatchKey": "020000000000",
+      "nameLabel": "Hamburg",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9986501064306279,
+        "areaDiffPct": 0.07654397739231478,
+        "symmetricDiffPct": 0.13513222711076414,
+        "hausdorffM": 121.52787011540427,
+        "officialAreaM2": 979476736.0035292,
+        "osmAreaM2": 980226466.4548987
+      },
+      "mapBbox": [
+        8.1044993,
+        53.39501072554896,
+        10.3252805,
+        54.02765
+      ]
+    },
+    {
+      "canonicalMatchKey": "030000000000",
+      "nameLabel": "Niedersachsen",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9996534822530644,
+        "areaDiffPct": 0.0068876169899734635,
+        "symmetricDiffPct": 0.03465897300841559,
+        "hausdorffM": 591.2414880578838,
+        "officialAreaM2": 53432217840.01643,
+        "osmAreaM2": 53435898046.5305
+      },
+      "mapBbox": [
+        6.345839151934215,
+        51.29506731771715,
+        11.598265159642033,
+        54.13791799778219
+      ]
+    },
+    {
+      "canonicalMatchKey": "040000000000",
+      "nameLabel": "Bremen",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9980940256745958,
+        "areaDiffPct": 0.03769492642729397,
+        "symmetricDiffPct": 0.19081519975741792,
+        "hausdorffM": 80.88657444141678,
+        "officialAreaM2": 411741562.6597313,
+        "osmAreaM2": 411896768.3388465
+      },
+      "mapBbox": [
+        8.4815929,
+        53.011152446993364,
+        8.9908287,
+        53.6101955
+      ]
+    },
+    {
+      "canonicalMatchKey": "050000000000",
+      "nameLabel": "Nordrhein-Westfalen",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": null,
+      "mapBbox": [
+        5.866314022538611,
+        50.3226897,
+        9.4617417,
+        52.5314935
+      ]
+    },
+    {
+      "canonicalMatchKey": "060000000000",
+      "nameLabel": "Hessen",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": null,
+      "mapBbox": [
+        7.7724673,
+        49.39526156358807,
+        10.2364142,
+        51.657801300649204
+      ]
+    },
+    {
+      "canonicalMatchKey": "070000000000",
+      "nameLabel": "Rheinland-Pfalz",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9998014580969194,
+        "areaDiffPct": 0.001857323067264716,
+        "symmetricDiffPct": 0.019855977051960974,
+        "hausdorffM": 145.24276235121002,
+        "officialAreaM2": 19849044245.911205,
+        "osmAreaM2": 19848675585.033794
+      },
+      "mapBbox": [
+        6.1122591,
+        48.96642134240903,
+        8.508313558222218,
+        50.9423049
+      ]
+    },
+    {
+      "canonicalMatchKey": "080000000000",
+      "nameLabel": "Baden-Württemberg",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9999162549501477,
+        "areaDiffPct": 0.0009618992969556187,
+        "symmetricDiffPct": 0.008374895940926953,
+        "hausdorffM": 84.11633751236572,
+        "officialAreaM2": 35983881249.87452,
+        "osmAreaM2": 35984227378.57528
+      },
+      "mapBbox": [
+        7.5117461,
+        47.532404286144555,
+        10.4956269,
+        49.79129628323175
+      ]
+    },
+    {
+      "canonicalMatchKey": "090000000000",
+      "nameLabel": "Bayern",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9999569565228965,
+        "areaDiffPct": 0.00023876770716473665,
+        "symmetricDiffPct": 0.0043044352089591535,
+        "hausdorffM": 84.11633751236572,
+        "officialAreaM2": 70588861427.78868,
+        "osmAreaM2": 70588692884.38274
+      },
+      "mapBbox": [
+        8.9763654,
+        47.2701114,
+        13.8396495,
+        50.5647142
+      ]
+    },
+    {
+      "canonicalMatchKey": "100000000000",
+      "nameLabel": "Saarland",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9992171537015078,
+        "areaDiffPct": 0.0018270493019685867,
+        "symmetricDiffPct": 0.07831599969391094,
+        "hausdorffM": 89.36692416075918,
+        "officialAreaM2": 2571382717.799163,
+        "osmAreaM2": 2571429698.2291594
+      },
+      "mapBbox": [
+        6.355790779844629,
+        49.1119512,
+        7.4048307,
+        49.639427
+      ]
+    },
+    {
+      "canonicalMatchKey": "110000000000",
+      "nameLabel": "Berlin",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.999959209207356,
+        "areaDiffPct": 0.002479947983488882,
+        "symmetricDiffPct": 0.004079213041232121,
+        "hausdorffM": 8.374766855711442,
+        "officialAreaM2": 892362534.3427856,
+        "osmAreaM2": 892384664.4694614
+      },
+      "mapBbox": [
+        13.088345,
+        52.3382448,
+        13.7611609,
+        52.6755087
+      ]
+    },
+    {
+      "canonicalMatchKey": "120000000000",
+      "nameLabel": "Brandenburg",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9996403631642143,
+        "areaDiffPct": 0.00391014706262592,
+        "symmetricDiffPct": 0.035970854918403405,
+        "hausdorffM": 151.3798132804053,
+        "officialAreaM2": 29696170076.60424,
+        "osmAreaM2": 29697331240.526203
+      },
+      "mapBbox": [
+        11.2657725,
+        51.359058473791606,
+        14.765826571500847,
+        53.55906170288686
+      ]
+    },
+    {
+      "canonicalMatchKey": "130000000000",
+      "nameLabel": "Mecklenburg-Vorpommern",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9992239711333958,
+        "areaDiffPct": 0.0567202513657046,
+        "symmetricDiffPct": 0.07765502620703539,
+        "hausdorffM": 493.93567321313384,
+        "officialAreaM2": 31011787427.936512,
+        "osmAreaM2": 31029377391.718636
+      },
+      "mapBbox": [
+        10.593613009872437,
+        53.11035249925725,
+        14.4122208,
+        54.8849662
+      ]
+    },
+    {
+      "canonicalMatchKey": "140000000000",
+      "nameLabel": "Sachsen",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9996911755813944,
+        "areaDiffPct": 0.0005592137338351804,
+        "symmetricDiffPct": 0.03088712486242573,
+        "hausdorffM": 236.7055594023016,
+        "officialAreaM2": 18478140434.745926,
+        "osmAreaM2": 18478037102.446857
+      },
+      "mapBbox": [
+        11.871435753637849,
+        50.17129625675872,
+        15.0419309,
+        51.6851316
+      ]
+    },
+    {
+      "canonicalMatchKey": "150000000000",
+      "nameLabel": "Sachsen-Anhalt",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.999617784565864,
+        "areaDiffPct": 0.006178580234464198,
+        "symmetricDiffPct": 0.038227668240565574,
+        "hausdorffM": 569.3025549622387,
+        "officialAreaM2": 20557655065.330822,
+        "osmAreaM2": 20556384894.118286
+      },
+      "mapBbox": [
+        10.56083903570222,
+        50.9378508,
+        13.186987454680457,
+        53.04178691053271
+      ]
+    },
+    {
+      "canonicalMatchKey": "160000000000",
+      "nameLabel": "Thüringen",
+      "category": "matched",
+      "osmRelationId": "",
+      "metrics": {
+        "iou": 0.9996142722508092,
+        "areaDiffPct": 0.0014650094732785199,
+        "symmetricDiffPct": 0.03858049825131845,
+        "hausdorffM": 569.3025549622387,
+        "officialAreaM2": 16198480143.73712,
+        "osmAreaM2": 16198717453.005753
+      },
+      "mapBbox": [
+        9.8769608,
+        50.20434665149274,
+        12.65393248413722,
+        51.6492842
+      ]
+    }
+  ],
+  "sourceMetadata": {
+    "official": {
+      "downloadedAt": "2026-03-29T07:20:46.984Z",
+      "provider": "BKG",
+      "dataset": "VG25",
+      "layer": "vg25_lan",
+      "sourceUrl": "https://daten.gdz.bkg.bund.de/produkte/vg/vg25_ebenen/aktuell/vg25.utm32s.gpkg.zip"
+    },
+    "osm": {
+      "downloadedAt": "2026-03-29T07:49:28.129Z",
+      "provider": "OpenStreetMap (Geofabrik Germany extract)",
+      "dataset": "germany-latest.osm.pbf",
+      "sourceUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf",
+      "note": "ogr2ogr multipolygons WHERE boundary = 'administrative' AND admin_level = '4' AND \"de:regionalschluessel\" IS NOT NULL AND \"de:regionalschluessel\" <> ''"
+    }
+  }
+}

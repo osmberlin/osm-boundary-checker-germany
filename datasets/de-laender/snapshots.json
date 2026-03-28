@@ -1,0 +1,27 @@
+{
+  "area": "de-laender",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-03-29",
+      "tablePath": "history/comparison_table_2026-03-29.json",
+      "pmtilesPath": null,
+      "summary": {
+        "totalRows": 16,
+        "meanIou": 0.9994294301339154,
+        "matched": 16
+      }
+    },
+    {
+      "id": "2026-03-30",
+      "tablePath": "history/comparison_table_2026-03-30.json",
+      "pmtilesPath": null,
+      "summary": {
+        "totalRows": 16,
+        "meanIou": 0.9994294301339154,
+        "matched": 16,
+        "unmatchedOsm": 12460
+      }
+    }
+  ]
+}

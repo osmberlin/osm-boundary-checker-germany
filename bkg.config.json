@@ -1,0 +1,11 @@
+{
+  "gpkgPath": null,
+  "areas": {
+    "de-staat": "vg25_sta",
+    "de-laender": "vg25_lan",
+    "de-regierungsbezirke": "vg25_rbz",
+    "de-landkreise": "vg25_krs",
+    "de-gemeinden": "vg25_gem",
+    "de-verwaltungsgemeinschaften": "vg25_vwg"
+  }
+}

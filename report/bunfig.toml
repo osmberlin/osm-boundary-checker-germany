@@ -1,0 +1,4 @@
+# Tailwind v4 for HTML bundler (dev + build)
+# @see https://bun.sh/docs/bundler/html
+[serve.static]
+plugins = ["bun-plugin-tailwind", "bun-plugin-react-compiler"]

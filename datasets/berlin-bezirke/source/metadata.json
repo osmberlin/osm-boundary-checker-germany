@@ -1,0 +1,16 @@
+{
+  "official": {
+    "downloadedAt": "2026-04-01T20:25:37.480Z",
+    "provider": "HTTP",
+    "note": "Declared CRS: EPSG:4326",
+    "dataset": "GeoJSON",
+    "sourceUrl": "https://gdi.berlin.de/services/wfs/alkis_bezirke?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_bezirke%3Abezirksgrenzen&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326"
+  },
+  "osm": {
+    "downloadedAt": "2026-03-29T07:49:25.360Z",
+    "note": "ogr2ogr multipolygons WHERE boundary = 'administrative' AND admin_level = '9' AND \"de:regionalschluessel\" LIKE '11%'",
+    "provider": "OpenStreetMap (Geofabrik Germany extract)",
+    "dataset": "germany-latest.osm.pbf",
+    "sourceUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf"
+  }
+}

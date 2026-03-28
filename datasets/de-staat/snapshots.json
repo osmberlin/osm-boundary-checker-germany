@@ -1,0 +1,27 @@
+{
+  "area": "de-staat",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-03-29",
+      "tablePath": "history/comparison_table_2026-03-29.json",
+      "pmtilesPath": null,
+      "summary": {
+        "totalRows": 2,
+        "meanIou": 0.9998394383702854,
+        "matched": 1
+      }
+    },
+    {
+      "id": "2026-03-30",
+      "tablePath": "history/comparison_table_2026-03-30.json",
+      "pmtilesPath": null,
+      "summary": {
+        "totalRows": 2,
+        "meanIou": 0.9998394383702854,
+        "matched": 1,
+        "unmatchedOsm": 12475
+      }
+    }
+  ]
+}

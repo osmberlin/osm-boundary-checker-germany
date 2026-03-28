@@ -1,0 +1,10 @@
+{
+  "official": {
+    "path": "source/official.fgb",
+    "matchProperty": "ARS"
+  },
+  "idNormalization": {
+    "preset": "regional-12"
+  },
+  "metricsCrs": "EPSG:25832"
+}

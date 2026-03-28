@@ -1,0 +1,22 @@
+{
+  "official": {
+    "path": "source/official.fgb",
+    "matchProperty": "ARS"
+  },
+  "idNormalization": {
+    "preset": "regional-12"
+  },
+  "metricsCrs": "EPSG:25832",
+
+  "ogcInspectSources": [
+    {
+      "id": "bkg-vg25-krs",
+      "label": "BKG VG25 Kreise",
+      "type": "wfs",
+      "baseUrl": "https://sgx.geodatenzentrum.de/wfs_vg25",
+      "typeName": "vg25_krs",
+      "wfsVersion": "1.1.0",
+      "maxFeatures": 80
+    }
+  ]
+}

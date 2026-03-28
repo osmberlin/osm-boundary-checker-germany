@@ -1,0 +1,14 @@
+node_modules/
+**/node_modules/
+
+.DS_Store
+dist/
+*.log
+.env
+.env.local
+
+# Transient tippecanoe input (removed after successful run; ignore if left behind)
+**/output/_build/
+
+# TEMP until we figure out how to store them
+*.pmtiles

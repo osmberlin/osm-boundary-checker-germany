@@ -1,0 +1,43 @@
+{
+  "name": "report",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "generate-areas": "bun ./generateAreasJson.ts",
+    "predev": "bun run generate-areas",
+    "prebuild": "bun run generate-areas",
+    "dev": "bun dev-server.ts",
+    "build": "bun build ./index.html --outdir=dist --minify",
+    "preview": "bun preview-server.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
+    "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^2.2.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "maplibre-gl": "^5.21.1",
+    "nuqs": "^2.8.9",
+    "pmtiles": "^4.4.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-map-gl": "^8.1.0",
+    "react-router-dom": "^7.13.2",
+    "recharts": "^3.8.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "bun-plugin-react-compiler": "^0.3.2",
+    "bun-plugin-tailwind": "^0.1.2",
+    "tailwindcss": "^4.2.2",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.2"
+  }
+}

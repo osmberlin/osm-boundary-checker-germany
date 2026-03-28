@@ -1,0 +1,40 @@
+{
+  "name": "osm-boundary-checker-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compare": "bun run compare/compare-boundaries.ts",
+    "pipeline:nightly": "bun run pipeline/nightly.ts",
+    "berlin:download": "bun run berlin/download-official.ts",
+    "download": "bun run download:bkg && bun run download:official && bun run download:osm",
+    "download:bkg": "bun run bkg:download && bun run bkg:extract",
+    "download:bkg:fetch": "bun run bkg:download",
+    "download:bkg:extract": "bun run bkg:extract",
+    "download:official": "bun run download/official.ts",
+    "download:osm": "bun run osm:download && bun run osm:extract",
+    "download:osm:fetch": "bun run osm:download",
+    "download:osm:extract": "bun run osm:extract",
+    "osm": "bun run osm:download && bun run osm:extract",
+    "osm:download": "bun run osm/download-germany-pbf.ts",
+    "osm:extract": "bun run osm/extract-osm.ts",
+    "bkg": "bun run bkg:download && bun run bkg:extract",
+    "bkg:download": "bun run bkg/download.ts",
+    "bkg:extract": "bun run bkg/extract.ts",
+    "download-osm-pbf": "bun run download:osm:fetch",
+    "extract-osm": "bun run download:osm:extract",
+    "download-bkg-vg25": "bun run download:bkg:fetch",
+    "extract-vg250": "bun run download:bkg:extract",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.0",
+    "@turf/turf": "^7.2.0",
+    "flatgeobuf": "^4.4.0",
+    "jsts": "^2.12.1",
+    "proj4": "^2.15.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/geojson": "^7946.0.16"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  // BKG VG25 Länder ↔ OSM (shared extract; match by de:regionalschluessel)
+  "official": {
+    "path": "source/official.fgb",
+    "matchProperty": "ARS"
+  },
+  "idNormalization": {
+    "preset": "regional-12"
+  },
+  "metricsCrs": "EPSG:25832"
+}

@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-950: oklch(0.22 0.05 165);
+  --color-brand-900: oklch(0.28 0.06 160);
+  --color-brand-800: oklch(0.34 0.07 158);
+  --color-brand-100: oklch(0.94 0.02 165);
+  --color-brand-50: oklch(0.97 0.01 165);
+}
+
+html {
+  @apply antialiased;
+}
+
+body {
+  @apply m-0 min-h-screen bg-zinc-950 text-zinc-100;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+select,
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+input[type='checkbox'],
+input[type='radio'],
+input[type='file'],
+input[type='image'],
+[role='button'] {
+  cursor: pointer;
+}
+
+button:disabled,
+button[aria-disabled='true'] {
+  cursor: not-allowed;
+}

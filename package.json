@@ -1,0 +1,60 @@
+{
+  "name": "osm-boundary-checker-germany",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "scripts",
+    "report"
+  ],
+  "scripts": {
+    "prepare": "husky",
+    "format": "biome format --write .",
+    "compare": "bun run run.ts",
+    "compare:boundaries": "bun run --filter ./scripts compare",
+    "pipeline:nightly": "bun run --filter ./scripts pipeline:nightly",
+    "berlin:download": "bun run --filter ./scripts berlin:download",
+    "download": "bun run download:bkg && bun run download:official && bun run download:osm",
+    "download:bkg": "bun run bkg:download && bun run bkg:extract",
+    "download:bkg:fetch": "bun run bkg:download",
+    "download:bkg:extract": "bun run bkg:extract",
+    "download:official": "bun run --filter ./scripts download:official",
+    "download:osm": "bun run osm:download && bun run osm:extract",
+    "download:osm:fetch": "bun run osm:download",
+    "download:osm:extract": "bun run osm:extract",
+    "osm": "bun run osm:download && bun run osm:extract",
+    "osm:download": "bun run --filter ./scripts osm:download",
+    "osm:extract": "bun run --filter ./scripts osm:extract",
+    "bkg": "bun run bkg:download && bun run bkg:extract",
+    "bkg:download": "bun run --filter ./scripts bkg:download",
+    "bkg:extract": "bun run --filter ./scripts bkg:extract",
+    "download-osm-pbf": "bun run download:osm:fetch",
+    "extract-osm": "bun run download:osm:extract",
+    "download-bkg-vg25": "bun run download:bkg:fetch",
+    "extract-vg250": "bun run download:bkg:extract",
+    "test": "bun test scripts/",
+    "test:scripts": "bun run --filter ./scripts test",
+    "report:dev": "bun run --filter report dev",
+    "report:build": "bun run --filter report build",
+    "report:preview": "bun run --filter report preview",
+    "report:test": "bun run --filter report test",
+    "report:generate-areas": "bun run --filter report generate-areas",
+    "docker:up": "sh ./scripts/docker-run.sh up web",
+    "docker:down": "sh ./scripts/docker-run.sh down",
+    "docker:web": "sh ./scripts/docker-run.sh run --rm web bun run report:preview",
+    "docker:compare": "sh ./scripts/docker-run.sh run --rm pipeline bun run compare",
+    "docker:pipeline": "sh ./scripts/docker-run.sh run --rm pipeline bun run pipeline:nightly",
+    "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p report/tsconfig.json",
+    "check": "biome check . && bun run typecheck",
+    "check:write": "biome check --write .",
+    "check:force": "biome check --write --unsafe ."
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.9",
+    "@types/bun": "latest",
+    "husky": "^9.1.7",
+    "typescript": "~5.9.3"
+  }
+}
