@@ -1,4 +1,7 @@
-/** Keep in sync with ComparisonVectorLayers paint */
+/**
+ * Single source for comparison map paint (ComparisonVectorLayers).
+ * Category pills / legend swatches: `reportCategoryStyles.tsx` (reuses these values).
+ */
 export const mapLayerColors = {
   official: {
     fill: '#2563eb',

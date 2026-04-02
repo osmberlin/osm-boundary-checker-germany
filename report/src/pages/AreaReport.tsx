@@ -21,6 +21,7 @@ import {
   YAxis,
 } from 'recharts'
 import { LayerToggleStatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
+import { ReportCategoryPill, ReportCategorySwatch } from '../components/reportCategoryStyles'
 import { InfoNotice } from '../components/InfoNotice'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import {
@@ -257,12 +258,7 @@ export function AreaReport() {
             onChange={(on) => setCategoryEnabled('matched', on)}
             label={categoryLabelDe('matched')}
             value={formatDeInteger(catCounts.matched)}
-            swatch={
-              <div
-                className="h-5 w-10 shrink-0 rounded-sm border-2 border-emerald-500/40 border-solid bg-emerald-500/35"
-                aria-hidden
-              />
-            }
+            swatch={<ReportCategorySwatch category="matched" />}
           />
           <LayerToggleStatBlock
             inputId={`${statsInputId}-official`}
@@ -271,12 +267,7 @@ export function AreaReport() {
             onChange={(on) => setCategoryEnabled('official_only', on)}
             label={categoryLabelDe('official_only')}
             value={formatDeInteger(catCounts.official_only)}
-            swatch={
-              <div
-                className="h-5 w-10 shrink-0 rounded-sm border-2 border-sky-500/40 border-solid bg-sky-500/35"
-                aria-hidden
-              />
-            }
+            swatch={<ReportCategorySwatch category="official_only" />}
           />
         </StatBlocksRow>
         <p className="mt-4 text-sm text-slate-300">
@@ -433,7 +424,11 @@ export function AreaReport() {
                 <td className="px-3 py-2 font-mono text-xs text-slate-100">
                   {row.canonicalMatchKey}
                 </td>
-                <td className="px-3 py-2 text-slate-100">{categoryLabelDe(row.category)}</td>
+                <td className="px-3 py-2">
+                  <ReportCategoryPill category={row.category}>
+                    {categoryLabelDe(row.category)}
+                  </ReportCategoryPill>
+                </td>
                 <td className="px-3 py-2 text-right tabular-nums text-slate-100">
                   {row.metrics ? formatDeIou(row.metrics.iou) : EM_DASH}
                 </td>

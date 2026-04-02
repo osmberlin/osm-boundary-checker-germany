@@ -4,7 +4,7 @@ import type { ReportRow } from '../types/report'
 
 /** UI copy (German). Metric modal copy lives in scripts/compare/lib/metrics/ (per-metric folder, de.ts). */
 export const de = {
-  appTitle: 'OSM-Grenzabgleich (Deutschland)',
+  appTitle: 'OSM-Grenzabgleich',
 
   breadcrumb: {
     navLabel: 'Brotkrumen-Navigation',

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { StatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
 import { areasIndexUrl, comparisonTableJson } from '../data/paths'
+import { ReportCategoryPill, UnmatchedOsmStatPill } from '../components/reportCategoryStyles'
 import { categoryLabelDe, de } from '../i18n/de'
 import { countMatchCategories } from '../lib/countMatchCategories'
 import { EM_DASH, formatDeInteger } from '../lib/formatDe'
@@ -127,9 +128,26 @@ export function Home() {
                   {a}
                 </Link>
                 <StatBlocksRow className="mt-4" aria-label={de.home.categoryStatsAria}>
-                  <StatBlock label={categoryLabelDe('matched')} value={v('matched')} />
-                  <StatBlock label={categoryLabelDe('official_only')} value={v('official_only')} />
-                  <StatBlock label={de.home.unmatchedStat} value={vu()} />
+                  <StatBlock
+                    label={
+                      <ReportCategoryPill category="matched">
+                        {categoryLabelDe('matched')}
+                      </ReportCategoryPill>
+                    }
+                    value={v('matched')}
+                  />
+                  <StatBlock
+                    label={
+                      <ReportCategoryPill category="official_only">
+                        {categoryLabelDe('official_only')}
+                      </ReportCategoryPill>
+                    }
+                    value={v('official_only')}
+                  />
+                  <StatBlock
+                    label={<UnmatchedOsmStatPill>{de.home.unmatchedStat}</UnmatchedOsmStatPill>}
+                    value={vu()}
+                  />
                 </StatBlocksRow>
                 {entry?.status === 'ok' && (entry.data?.unmatchedOsm?.length ?? 0) > 0 ? (
                   <p className="mt-3 text-sm">

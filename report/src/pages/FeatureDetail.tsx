@@ -16,6 +16,7 @@ import { InfoNotice } from '../components/InfoNotice'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
+import { ReportCategoryPill } from '../components/reportCategoryStyles'
 import { hexToRgba } from '../components/MapLegend'
 import { mapLayerColors } from '../components/mapLayerColors'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
@@ -177,7 +178,9 @@ function StatsStrip({ row, mapLayers }: { row: ReportRow; mapLayers: MapLayerCon
         <span className="text-slate-600" aria-hidden>
           ·
         </span>
-        <span className="text-sm text-slate-400">{categoryLabelDe(row.category)}</span>
+        <ReportCategoryPill category={row.category}>
+          {categoryLabelDe(row.category)}
+        </ReportCategoryPill>
         {row.osmRelationId && (
           <>
             <span className="text-slate-600" aria-hidden>
