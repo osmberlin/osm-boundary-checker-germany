@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { de } from '../i18n/de'
+import type { MetricInfoCopy } from '@compare-metrics/metricInfoCopy.ts'
+import {
+  areaDeltaModalDe,
+  hausdorffModalDe,
+  iouModalDe,
+  meanIouModalDe,
+  symDiffModalDe,
+} from '@compare-metrics/modalCopyDe.ts'
 import { cn } from '../lib/cn'
 import {
   AppDialogActions,
@@ -9,13 +16,7 @@ import {
   Dialog,
 } from './ui/Dialog'
 
-export type MetricInfoCopy = {
-  triggerAria: string
-  title: string
-  lead: string
-  paragraphs: readonly string[]
-  close: string
-}
+export type { MetricInfoCopy } from '@compare-metrics/metricInfoCopy.ts'
 
 function InfoCircleIcon({ className }: { className?: string }) {
   return (
@@ -82,17 +83,21 @@ export function MetricInfoButton({ copy, className, iconClassName }: MetricInfoB
 }
 
 export function HausdorffInfoButton(props: Omit<MetricInfoButtonProps, 'copy'>) {
-  return <MetricInfoButton copy={de.hausdorffInfo} {...props} />
+  return <MetricInfoButton copy={hausdorffModalDe} {...props} />
 }
 
 export function IouInfoButton(props: Omit<MetricInfoButtonProps, 'copy'>) {
-  return <MetricInfoButton copy={de.iouInfo} {...props} />
+  return <MetricInfoButton copy={iouModalDe} {...props} />
 }
 
 export function AreaDeltaInfoButton(props: Omit<MetricInfoButtonProps, 'copy'>) {
-  return <MetricInfoButton copy={de.areaDeltaInfo} {...props} />
+  return <MetricInfoButton copy={areaDeltaModalDe} {...props} />
 }
 
 export function SymDiffInfoButton(props: Omit<MetricInfoButtonProps, 'copy'>) {
-  return <MetricInfoButton copy={de.symDiffInfo} {...props} />
+  return <MetricInfoButton copy={symDiffModalDe} {...props} />
+}
+
+export function MeanIouInfoButton(props: Omit<MetricInfoButtonProps, 'copy'>) {
+  return <MetricInfoButton copy={meanIouModalDe} {...props} />
 }

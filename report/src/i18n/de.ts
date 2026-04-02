@@ -1,58 +1,10 @@
+import { hausdorffJstsDocDe, meanIouChartDe } from '@compare-metrics/modalCopyDe.ts'
 import { AREAS_GEN_BASENAME } from '../../generatedAssets.ts'
 import type { ReportRow } from '../types/report'
 
-/** UI copy (German) */
+/** UI copy (German). Metric modal copy lives in scripts/compare/lib/metrics/ (per-metric folder, de.ts). */
 export const de = {
   appTitle: 'OSM-Grenzabgleich (Deutschland)',
-
-  hausdorffInfo: {
-    triggerAria: 'Erklärung zum Hausdorff-Abstand anzeigen',
-    title: 'Was ist der Hausdorff-Abstand?',
-    lead: 'Kurz gesagt: ein Maß dafür, wie weit die beiden Grenzlinien maximal auseinanderliegen — in Metern, im projizierten Koordinatensystem des Vergleichs.',
-    paragraphs: [
-      'Der Hausdorff-Abstand vergleicht die amtliche Grenze mit der OSM-Grenze. Er sucht die größte „Lücke“ zwischen den beiden Umrissen: An welcher Stelle muss man am weitesten von einem Rand zum anderen gehen? Dieser maximale Abstand (in beide Richtungen betrachtet) ist der angezeigte Wert.',
-      'Kleine Werte bedeuten: Die Linien liegen überall nah beieinander. Größere Werte deuten auf eine Stelle hin, an der eine der beiden Quellen stärker abweicht — zum Beispiel durch Vereinfachung der Geometrie, unterschiedliche Toleranzen oder lokale Kartierungsunterschiede.',
-      'Andere Spalten wie IoU oder Flächenabweichung beschreiben vor allem die Überlappung der Flächen. Der Hausdorff-Abstand ergänzt das: Er betont den schlechtesten Punkt entlang der Grenze, nicht nur den Durchschnitt.',
-      'Technisch wird hier ein diskreter Hausdorff-Abstand (JSTS) auf den projizierten Polygonen berechnet — das entspricht der üblichen Praxis und ist für diesen Bericht ausreichend fein.',
-    ],
-    close: 'Schließen',
-  },
-
-  iouInfo: {
-    triggerAria: 'Erklärung zu IoU anzeigen',
-    title: 'Was ist IoU (Intersection over Union)?',
-    lead: 'IoU ist ein Maß dafür, wie stark sich die beiden Flächen — amtliche Grenze und OSM — überlappen. Der Wert liegt zwischen 0 und 1; höhere Werte bedeuten mehr Übereinstimmung der Flächen.',
-    paragraphs: [
-      'Technisch ist IoU der Quotient aus Schnittfläche und Vereinigungsfläche der beiden Polygone (Jaccard-Index für die Flächen). Steht viel Fläche in beiden Polygonen gemeinsam im Verhältnis zur gesamten von beiden bedeckten Fläche, liegt IoU nahe 1. Bei 1 wären die Flächen identisch (kein nur-amtlicher und kein nur-OSM-Bereich innerhalb der Vereinigung).',
-      'Niedrigere Werte bedeuten: Es gibt mehr Fläche, die nur bei einer der Quellen vorkommt — etwa durch versetzte Grenzen, fehlende oder zusätzliche Geometrie.',
-      'In diesem Projekt werden die Polygone im projizierten Metrik-Koordinatensystem des Vergleichs ausgewertet. IoU fasst die Übereinstimmung in einer Kennzahl zusammen; sie sagt wenig darüber aus, wo entlang der Linie die größte Abweichung liegt — dafür ist der Hausdorff-Abstand gedacht.',
-    ],
-    close: 'Schließen',
-  },
-
-  areaDeltaInfo: {
-    triggerAria: 'Erklärung zu Δ Fläche % anzeigen',
-    title: 'Was bedeutet „Δ Fläche %“?',
-    lead: 'Die Spalte zeigt, wie stark sich die eingeschlossene Fläche von OSM von der amtlichen Referenzfläche unterscheidet — als Prozent der amtlichen Fläche.',
-    paragraphs: [
-      'Berechnung: Betrag der Differenz aus OSM-Fläche minus amtlicher Fläche, geteilt durch die amtliche Fläche, mal 100. Angezeigt wird der absolute Wert (ohne Vorzeichen): Es geht nur um die Größe der Abweichung, nicht darum, ob OSM größer oder kleiner ist.',
-      'Eine kleine Prozentzahl heißt: Die Gesamtflächen sind annähernd gleich groß. Eine große Zahl kann auch dann auftreten, wenn die Grenzlinien lokal noch nah beieinander liegen — etwa bei unterschiedlicher Generalisierung oder wenn eine Quelle das Gebiet anders „füllt“.',
-      'Gemeinsam mit IoU hilft diese Kennzahl, Fälle zu erkennen, in denen die Flächenbilanz stark von der Referenz abweicht. Sie ergänzt IoU und Hausdorff: IoU betont Überlappung, Hausdorff den schlimmsten Punkt entlang der Linie, Δ Fläche % die reine Größenabweichung der Flächen.',
-    ],
-    close: 'Schließen',
-  },
-
-  symDiffInfo: {
-    triggerAria: 'Erklärung zur symmetrischen Differenz anzeigen',
-    title: 'Was ist die symmetrische Differenz?',
-    lead: 'Die Kennzahl ist der Anteil der symmetrischen Differenzfläche an der amtlichen Referenzfläche — also wie viel Fläche nur einer der beiden Quellen zugeordnet ist, bezogen auf die amtliche Fläche.',
-    paragraphs: [
-      'Geometrisch ist die symmetrische Differenz zweier Polygone die Fläche, die in genau einer der beiden Flächen liegt (ohne den gemeinsamen Schnitt). Rechnerisch: amtliche Fläche plus OSM-Fläche minus zweimal die Schnittfläche. Der angezeigte Prozentwert ist diese symmetrische Differenzfläche geteilt durch die amtliche Fläche, mal 100.',
-      'Unterschied zu „Flächenabweichung“ (Δ Fläche %): Dort geht es nur um den Betrag der Differenz der beiden Gesamtflächen. Die symmetrische Differenz misst dagegen die kombinierte „nur amtlich“- und „nur OSM“-Fläche — sie hängt eng mit den in der Karte dargestellten Abweichungsflächen zusammen.',
-      'Gemeinsam mit IoU und Hausdorff hilft der Wert, Fälle einzuordnen, in denen die Grenzen zwar ähnlich verlaufen, aber Flächen seitlich verschoben oder unterschiedlich gefüllt sind.',
-    ],
-    close: 'Schließen',
-  },
 
   breadcrumb: {
     navLabel: 'Brotkrumen-Navigation',
@@ -140,9 +92,9 @@ export const de = {
   areaReport: {
     backAreas: '← Gebiete',
     snapshot: 'Snapshot',
-    /** Select label for current `output/` when `generatedAt` is missing or not parseable. */
+    /** Select label for current output/ when generatedAt is missing or not parseable. */
     snapshotLatest: 'Aktuell (output/)',
-    chartTitle: 'Mittlere IoU über Snapshots',
+    chartTitle: meanIouChartDe.chartTitle,
     /** Freshness block heading (line 1). */
     freshnessHeadingReport: 'Auswertung',
     freshnessHeadingOfficial: 'Amtliche Daten',
@@ -161,7 +113,7 @@ export const de = {
       map: 'Karte',
       view: 'Detail',
     },
-    chartTooltipIou: 'IoU',
+    chartTooltipIou: meanIouChartDe.chartTooltipIou,
     unmatchedPageLink: 'OSM ohne Treffer in diesem amtlichen Layer →',
     unmatchedCountLabel: 'OSM ohne BKG-Treffer (gesamt)',
     stats: {
@@ -195,12 +147,7 @@ export const de = {
       footnote: {
         /** Shown below the feature map when metrics exist. */
         metricsCrsLine: (crs: string) => `Projiziertes Metrik-Koordinatensystem: ${crs}`,
-        hausdorffDoc: {
-          label: 'Hausdorff diskret (JSTS)',
-          href: 'https://locationtech.github.io/jts/javadoc/org/locationtech/jts/algorithm/distance/DiscreteHausdorffDistance.html',
-          title:
-            'Java Topology Suite (JTS): DiscreteHausdorffDistance — JSTS übernimmt diese Algorithmik in JavaScript.',
-        },
+        hausdorffDoc: hausdorffJstsDocDe,
       },
     },
     noMetrics: 'Keine Überlappungsmetriken (auf einer Seite fehlt die Geometrie).',

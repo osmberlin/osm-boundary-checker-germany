@@ -27,6 +27,7 @@ import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
   IouInfoButton,
+  MeanIouInfoButton,
 } from '../components/HausdorffInfoModal'
 import { loadComparison, loadSnapshots } from '../data/load'
 import { comparisonPmtilesMaplibreUrl } from '../data/paths'
@@ -37,6 +38,7 @@ import {
 import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
+import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
 import { categoryLabelDe, de } from '../i18n/de'
 import { countMatchCategories } from '../lib/countMatchCategories'
 import {
@@ -184,7 +186,7 @@ export function AreaReport() {
   const chartData = snapIndex?.runs?.map((r) => ({
     id: r.id,
     meanIou: r.summary.meanIou,
-  })) ?? [{ id: 'current', meanIou: meanIoU(data) }]
+  })) ?? [{ id: 'current', meanIou: computeMeanIou(data.rows) }]
 
   const chartTick = '#d4d4d8'
   const chartAxisLine = '#71717a'
@@ -336,7 +338,10 @@ export function AreaReport() {
       </div>
 
       <div className="mb-8 h-64 rounded border border-slate-700 bg-slate-900 p-2">
-        <h2 className="mb-2 font-medium text-sm text-slate-300">{de.areaReport.chartTitle}</h2>
+        <h2 className="mb-2 flex flex-wrap items-center gap-1 font-medium text-sm text-slate-300">
+          <span>{de.areaReport.chartTitle}</span>
+          <MeanIouInfoButton className="-ml-0.5" iconClassName="size-[0.95rem]" />
+        </h2>
         <ResponsiveContainer width="100%" height="90%">
           <LineChart data={chartData} margin={{ left: 8, right: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
@@ -476,12 +481,6 @@ function SummaryStatColumn({
       <dd className="m-0 text-sm text-slate-400">{absoluteLine}</dd>
     </div>
   )
-}
-
-function meanIoU(d: ComparisonForReport): number {
-  const m = d.rows.filter((r) => r.metrics)
-  if (!m.length) return 0
-  return m.reduce((s, r) => s + (r.metrics?.iou ?? 0), 0) / m.length
 }
 
 function SortableTh({

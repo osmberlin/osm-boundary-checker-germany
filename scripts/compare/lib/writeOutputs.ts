@@ -10,6 +10,7 @@ import {
 import type { OgcWfsInspectSource } from '../../shared/ogcInspectSources.ts'
 import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/sourceMetadata.ts'
 import type { CompareRow, UnmatchedOsmRow } from './compare.ts'
+import { computeMeanIou } from './metrics.ts'
 import { runTippecanoe, TIPPECANOE_LAYER } from './runTippecanoe.ts'
 
 const TABLE_JSON = 'comparison_table.json'
@@ -261,9 +262,7 @@ export function writeOutputs(
   const snapshotId = todayStamp()
 
   const matched = rows.filter((r) => r.category === 'matched')
-  const withIou = matched.filter((r) => r.metrics != null)
-  const meanIou =
-    withIou.length > 0 ? withIou.reduce((s, r) => s + (r.metrics?.iou ?? 0), 0) / withIou.length : 0
+  const meanIou = computeMeanIou(rows)
 
   const geometryFc = buildGeometryFeatureCollection(rows)
   const fgbPath = join(buildDir, BUILD_FGB)
