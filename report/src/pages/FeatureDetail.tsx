@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useId, useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
+import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import {
   LayerToggleStatBlock,
   StatBlock,
@@ -13,12 +14,11 @@ import {
   SymDiffInfoButton,
 } from '../components/HausdorffInfoModal'
 import { InfoNotice } from '../components/InfoNotice'
-import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
-import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
-import { ReportCategoryPill } from '../components/reportCategoryStyles'
 import { hexToRgba } from '../components/MapLegend'
 import { mapLayerColors } from '../components/mapLayerColors'
+import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
+import { ReportCategoryPill } from '../components/reportCategoryStyles'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
 import { loadComparison } from '../data/load'
 import { comparisonPmtilesMaplibreUrl } from '../data/paths'

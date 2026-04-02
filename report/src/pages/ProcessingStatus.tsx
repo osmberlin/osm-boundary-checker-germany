@@ -220,8 +220,8 @@ export function ProcessingStatus() {
                   {de.status.downloadAndSteps} ({formatDeInteger(run.stepSummaries.length)})
                 </p>
                 <ul className="space-y-1 text-sm text-slate-400">
-                  {run.stepSummaries.map((s, idx) => (
-                    <li key={`${run.runId}-step-${idx}`}>
+                  {run.stepSummaries.map((s) => (
+                    <li key={`${run.runId}-step-${s.id}`}>
                       {s.id} — {s.status} — {fmtMs(s.durationMs)}
                       {s.reason ? ` (${s.reason})` : ''}
                     </li>
@@ -234,8 +234,8 @@ export function ProcessingStatus() {
                   {de.status.datasets} ({formatDeInteger(run.datasetSummaries.length)})
                 </p>
                 <ul className="space-y-1 text-sm text-slate-400">
-                  {run.datasetSummaries.map((d, idx) => (
-                    <li key={`${run.runId}-dataset-${idx}`}>
+                  {run.datasetSummaries.map((d) => (
+                    <li key={`${run.runId}-dataset-${d.dataset}`}>
                       {d.dataset} — {d.status} — {fmtMs(d.durationMs)}
                     </li>
                   ))}

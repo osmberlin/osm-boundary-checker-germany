@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
+import type { ReportRow } from '../types/report'
 import { hexToRgba } from './MapLegend'
 import { mapLayerColors } from './mapLayerColors'
-import type { ReportRow } from '../types/report'
 
 const o = mapLayerColors.official
 const osm = mapLayerColors.osm

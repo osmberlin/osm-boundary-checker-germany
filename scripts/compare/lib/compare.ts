@@ -8,8 +8,8 @@ import { loadBoundaryConfig, OSM_MATCH_PROPERTY, sharedGermanyOsmFgbPath } from 
 import { unionFeaturesByKey } from './geoMerge.ts'
 import { loadFeatureCollection } from './loadFeatureCollection.ts'
 import { calculateMetrics, type MetricResult } from './metrics.ts'
-import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
 import { normalizeOsmValue } from './normalizeGermanKey.ts'
+import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
 import { projectGeometry } from './projectGeometry.ts'
 
 export type CompareRow = {
@@ -64,7 +64,7 @@ function unionOfficialBbox(features: Feature[]): BBox | null {
   let acc: BBox | null = null
   for (const f of features) {
     if (!f.geometry) continue
-    const bb = turf.bbox(f as turf.Feature)
+    const bb = turf.bbox(f as Feature)
     acc = acc ? mergeBboxes(acc, bb) : bb
   }
   return acc
@@ -78,7 +78,7 @@ function filterOsmByOfficialBbox(
   const pad = expandBbox(officialUnion, bufferDeg)
   return osmFeatures.filter((f) => {
     if (!f.geometry) return false
-    const bb = turf.bbox(f as turf.Feature)
+    const bb = turf.bbox(f as Feature)
     return bboxesOverlap(pad, bb)
   })
 }

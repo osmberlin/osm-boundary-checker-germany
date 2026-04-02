@@ -4,8 +4,8 @@
  * @see https://bun.sh/docs/bundler/fullstack
  */
 import { join, resolve } from 'node:path'
-import homepage from './index.html'
 import { AREAS_GEN_URL_PATH } from './generatedAssets.ts'
+import homepage from './index.html'
 import { listComparisonAreas } from './listComparisonAreas.ts'
 import { repoDataFileResponse } from './serveRepoDataResponse.ts'
 
@@ -24,7 +24,7 @@ async function serveDatasets(req: Request): Promise<Response> {
   return repoDataFileResponse(req, filePath)
 }
 
-async function serveAreasJson(req: Request): Promise<Response> {
+async function serveAreasJson(_req: Request): Promise<Response> {
   const areas = listComparisonAreas(dataRoot)
   return new Response(`${JSON.stringify({ areas }, null, 2)}\n`, {
     headers: {

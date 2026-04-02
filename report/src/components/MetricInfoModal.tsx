@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { MetricInfoCopy } from '@compare-metrics/metricInfoCopy.ts'
 import {
   areaDeltaModalDe,
@@ -7,6 +6,7 @@ import {
   meanIouModalDe,
   symDiffModalDe,
 } from '@compare-metrics/modalCopyDe.ts'
+import { useState } from 'react'
 import { cn } from '../lib/cn'
 import {
   AppDialogActions,

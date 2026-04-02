@@ -1,3 +1,4 @@
+import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
 import { format, isValid, parseISO } from 'date-fns'
 import { parseAsString, useQueryState } from 'nuqs'
 import {
@@ -21,15 +22,15 @@ import {
   YAxis,
 } from 'recharts'
 import { LayerToggleStatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
-import { ReportCategoryPill, ReportCategorySwatch } from '../components/reportCategoryStyles'
-import { InfoNotice } from '../components/InfoNotice'
-import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
   IouInfoButton,
   MeanIouInfoButton,
 } from '../components/HausdorffInfoModal'
+import { InfoNotice } from '../components/InfoNotice'
+import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
+import { ReportCategoryPill, ReportCategorySwatch } from '../components/reportCategoryStyles'
 import { loadComparison, loadSnapshots } from '../data/load'
 import { comparisonPmtilesMaplibreUrl } from '../data/paths'
 import {
@@ -39,7 +40,6 @@ import {
 import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
-import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
 import { categoryLabelDe, de } from '../i18n/de'
 import { countMatchCategories } from '../lib/countMatchCategories'
 import {
@@ -51,8 +51,8 @@ import {
   formatDeOrDash,
   formatDePercentPoints,
 } from '../lib/formatDe'
-import { sourceStatLines } from '../lib/reportFreshnessLines'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
+import { sourceStatLines } from '../lib/reportFreshnessLines'
 import type { ComparisonForReport, ReportRow, SnapshotsJson } from '../types/report'
 
 const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShell'))

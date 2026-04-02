@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
 import MapLibre, { type MapRef } from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
+import { ComparisonVectorLayers } from './map/ComparisonVectorLayers'
 import {
   COMPARISON_BASEMAP_STYLE,
   COMPARISON_INTERACTIVE_LAYER_IDS,
@@ -14,7 +15,6 @@ import {
   filterOsmDiff,
   filterOsmOverlay,
 } from './map/comparisonMapFilters'
-import { ComparisonVectorLayers } from './map/ComparisonVectorLayers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 export default function MapPane({
