@@ -8,7 +8,7 @@ import {
 import type { ReportRow } from '../types/report'
 
 const editorBtnClass =
-  'inline-flex w-full justify-center rounded-md border border-violet-800/50 bg-zinc-950 px-3 py-2 text-sm text-violet-100 shadow-sm hover:bg-violet-950/40 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex w-full justify-center rounded-md border border-sky-800/50 bg-slate-950 px-3 py-2 text-sm text-sky-100 shadow-sm hover:bg-sky-950/40 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50'
 
 function openInNewWindow(href: string) {
   window.open(href, '_blank', 'noopener,noreferrer')
@@ -43,13 +43,13 @@ export function UpdateMapInstructions({
   const canDownloadOfficial = officialHref != null
 
   return (
-    <section className="mt-8 rounded border border-zinc-700 bg-zinc-900/50 p-4">
-      <h2 className="font-semibold text-base tracking-tight text-zinc-100">{u.title}</h2>
-      <p className="mt-2 text-sm text-zinc-400">{u.lead}</p>
+    <section className="mt-8 rounded border border-slate-700 bg-slate-900/50 p-4">
+      <h2 className="font-semibold text-base tracking-tight text-slate-100">{u.title}</h2>
+      <p className="mt-2 text-sm text-slate-400">{u.lead}</p>
 
       <div className="mt-6 grid gap-8 md:grid-cols-2 md:gap-10">
         <div>
-          <h3 className="font-medium text-sm text-zinc-200">{u.idHeading}</h3>
+          <h3 className="font-medium text-sm text-slate-200">{u.idHeading}</h3>
           <div className="mt-3 flex flex-col gap-2">
             <button
               type="button"
@@ -61,10 +61,10 @@ export function UpdateMapInstructions({
               {u.downloadOfficial}
             </button>
             {!canDownloadOfficial && (
-              <p className="text-xs text-zinc-500">{u.downloadOfficialDisabledHint}</p>
+              <p className="text-xs text-slate-500">{u.downloadOfficialDisabledHint}</p>
             )}
             {canDownloadOfficial && (
-              <p className="text-xs text-zinc-500">{u.downloadOfficialHint}</p>
+              <p className="text-xs text-slate-500">{u.downloadOfficialHint}</p>
             )}
             <button
               type="button"
@@ -74,17 +74,17 @@ export function UpdateMapInstructions({
             >
               {u.openId}
             </button>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-slate-500">
               {officialAbsolute ? u.openIdWithOverlay : u.openIdRelationOnly}
             </p>
           </div>
-          <p className="mt-3 text-xs text-zinc-500">{u.idDisableFeaturesHint}</p>
+          <p className="mt-3 text-xs text-slate-500">{u.idDisableFeaturesHint}</p>
           <p className="mt-2 text-xs text-amber-300/90">{u.corsNote}</p>
         </div>
 
         <div>
-          <h3 className="font-medium text-sm text-zinc-200">{u.josmHeading}</h3>
-          <p className="mt-3 text-sm text-zinc-400">{u.josmRemoteLead}</p>
+          <h3 className="font-medium text-sm text-slate-200">{u.josmHeading}</h3>
+          <p className="mt-3 text-sm text-slate-400">{u.josmRemoteLead}</p>
           <div className="mt-3 flex flex-col gap-2">
             <button
               type="button"
@@ -113,7 +113,7 @@ export function UpdateMapInstructions({
               {u.josmImport}
             </button>
             {josm.importGeojson == null && (
-              <p className="text-xs text-zinc-500">{u.josmImportDisabledHint}</p>
+              <p className="text-xs text-slate-500">{u.josmImportDisabledHint}</p>
             )}
             <button
               type="button"
@@ -129,22 +129,24 @@ export function UpdateMapInstructions({
               {u.josmLoadAndZoom}
             </button>
             {josm.loadAndZoom == null && row.osmRelationId.trim() !== '' && row.mapBbox == null && (
-              <p className="text-xs text-zinc-500">{u.josmLoadAndZoomDisabledHint}</p>
+              <p className="text-xs text-slate-500">{u.josmLoadAndZoomDisabledHint}</p>
             )}
-            {josm.loadObject == null && <p className="text-xs text-zinc-500">{u.josmNoRelation}</p>}
+            {josm.loadObject == null && (
+              <p className="text-xs text-slate-500">{u.josmNoRelation}</p>
+            )}
           </div>
-          {officialHref && <p className="mt-3 text-xs text-zinc-500">{u.josmImportFallback}</p>}
-          <p className="mt-2 text-xs text-zinc-500">{u.josmMixedContent}</p>
+          {officialHref && <p className="mt-3 text-xs text-slate-500">{u.josmImportFallback}</p>}
+          <p className="mt-2 text-xs text-slate-500">{u.josmMixedContent}</p>
         </div>
       </div>
 
       {snapshotActive && officialHref == null && (
-        <p className="mt-6 border-zinc-700 border-t pt-4 text-xs text-zinc-500">
+        <p className="mt-6 border-slate-700 border-t pt-4 text-xs text-slate-500">
           {u.snapshotNoEditorFiles}
         </p>
       )}
       {!snapshotActive && row.officialForEditPath === undefined && (
-        <p className="mt-6 border-zinc-700 border-t pt-4 text-xs text-zinc-500">
+        <p className="mt-6 border-slate-700 border-t pt-4 text-xs text-slate-500">
           {u.legacyTableHint}
         </p>
       )}

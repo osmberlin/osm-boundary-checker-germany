@@ -44,7 +44,7 @@ export function MetricInfoButton({ copy, className, iconClassName }: MetricInfoB
       <button
         type="button"
         className={cn(
-          'inline-flex shrink-0 rounded-full text-zinc-400 outline-offset-2 transition hover:text-violet-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-500',
+          'inline-flex shrink-0 rounded-full text-slate-400 outline-offset-2 transition hover:text-sky-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500',
           className,
         )}
         aria-label={copy.triggerAria}
@@ -62,7 +62,7 @@ export function MetricInfoButton({ copy, className, iconClassName }: MetricInfoB
         <AppDialogDescription>{copy.lead}</AppDialogDescription>
         <AppDialogBody>
           {copy.paragraphs.map((p) => (
-            <p key={p} className="text-sm text-zinc-300 leading-6">
+            <p key={p} className="text-sm text-slate-300 leading-6">
               {p}
             </p>
           ))}
@@ -70,7 +70,7 @@ export function MetricInfoButton({ copy, className, iconClassName }: MetricInfoB
         <AppDialogActions>
           <button
             type="button"
-            className="rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2 font-medium text-sm text-zinc-100 shadow-sm hover:bg-zinc-700"
+            className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 font-medium text-sm text-slate-100 shadow-sm hover:bg-slate-700"
             onClick={() => setOpen(false)}
           >
             {copy.close}

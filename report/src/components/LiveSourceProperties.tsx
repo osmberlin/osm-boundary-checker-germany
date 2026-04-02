@@ -69,15 +69,15 @@ function PropertyCard({
 
   return (
     <article className={`rounded-lg border border-l-[3px] ${bar} ${shell} p-3 shadow-sm`}>
-      <h3 className="mb-2 font-medium text-sm text-zinc-100">{title}</h3>
+      <h3 className="mb-2 font-medium text-sm text-slate-100">{title}</h3>
       {entries.length === 0 ? (
-        <p className="text-sm text-zinc-400">{de.feature.liveOsmHitNoTags}</p>
+        <p className="text-sm text-slate-400">{de.feature.liveOsmHitNoTags}</p>
       ) : (
         <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           {entries.map(([k, v]) => (
             <div key={k} className="contents">
-              <dt className="break-words font-mono text-xs text-zinc-400">{k}</dt>
-              <dd className="break-words text-zinc-100">{formatPropertyValue(v)}</dd>
+              <dt className="break-words font-mono text-xs text-slate-400">{k}</dt>
+              <dd className="break-words text-slate-100">{formatPropertyValue(v)}</dd>
             </div>
           ))}
         </dl>
@@ -176,11 +176,11 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
 
   return (
     <section
-      className="mt-6 rounded-lg border border-zinc-700 bg-zinc-900/50 p-4"
+      className="mt-6 rounded-lg border border-slate-700 bg-slate-900/50 p-4"
       aria-label={de.feature.liveSourcesSectionAria}
     >
-      <h2 className="font-semibold text-sm text-zinc-100">{de.feature.liveSourcesSectionTitle}</h2>
-      <p className="mt-1 text-xs text-zinc-400">{de.feature.liveSourcesSectionLead}</p>
+      <h2 className="font-semibold text-sm text-slate-100">{de.feature.liveSourcesSectionTitle}</h2>
+      <p className="mt-1 text-xs text-slate-400">{de.feature.liveSourcesSectionLead}</p>
 
       {showOfficial && (
         <div className="mt-4 space-y-4">
@@ -196,7 +196,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                   type="button"
                   disabled={!bbox || slot.status === 'loading'}
                   onClick={() => void loadOfficial(src)}
-                  className="rounded-md border border-blue-800/60 bg-zinc-950 px-3 py-1.5 text-sm text-blue-100 shadow-sm hover:bg-blue-950/40 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-md border border-blue-800/60 bg-slate-950 px-3 py-1.5 text-sm text-blue-100 shadow-sm hover:bg-blue-950/40 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {slot.status === 'loading'
                     ? de.feature.liveOfficialLoading
@@ -204,7 +204,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                 </button>
                 {slot.status === 'error' && <p className="text-sm text-red-400">{slot.message}</p>}
                 {slot.status === 'done' && slot.features.length === 0 && (
-                  <p className="text-sm text-zinc-400">{de.feature.liveOfficialEmpty}</p>
+                  <p className="text-sm text-slate-400">{de.feature.liveOfficialEmpty}</p>
                 )}
                 {slot.status === 'done' && slot.features.length > 0 && (
                   <div className="space-y-3">
@@ -230,7 +230,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
 
       {showOsm && (
         <div
-          className={`space-y-3 ${showOfficial ? 'mt-6 border-zinc-700 border-t pt-4' : 'mt-4'}`}
+          className={`space-y-3 ${showOfficial ? 'mt-6 border-slate-700 border-t pt-4' : 'mt-4'}`}
         >
           <h3 className="font-medium text-xs uppercase tracking-wide text-red-300/85">
             {de.feature.liveOsmHeading}
@@ -245,7 +245,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                   interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
                 })
               }
-              className="rounded-md border border-red-900/50 bg-zinc-950 px-3 py-1.5 text-sm text-red-100 shadow-sm hover:bg-red-950/30"
+              className="rounded-md border border-red-900/50 bg-slate-950 px-3 py-1.5 text-sm text-red-100 shadow-sm hover:bg-red-950/30"
             >
               {de.feature.liveOsmLoad}
             </button>
@@ -276,7 +276,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
               )}
               <label
                 htmlFor="overpass-server"
-                className="mt-3 block font-medium text-xs uppercase tracking-wide text-zinc-400"
+                className="mt-3 block font-medium text-xs uppercase tracking-wide text-slate-400"
               >
                 {de.feature.liveOsmServerLabel}
               </label>
@@ -290,7 +290,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                     interpreterUrl: e.target.value,
                   })
                 }
-                className="mt-1 block w-full max-w-full rounded-md border border-zinc-600 bg-zinc-950 px-2 py-1.5 font-mono text-[11px] text-zinc-100 shadow-sm focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600/30"
+                className="mt-1 block w-full max-w-full rounded-md border border-slate-600 bg-slate-950 px-2 py-1.5 font-mono text-[11px] text-slate-100 shadow-sm focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600/30"
               >
                 {OVERPASS_INSTANCES.map((inst) => (
                   <option key={inst.interpreterUrl} value={inst.interpreterUrl}>
@@ -300,7 +300,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
               </select>
               <label
                 htmlFor="overpass-query-draft"
-                className="mt-3 block font-medium text-xs uppercase tracking-wide text-zinc-400"
+                className="mt-3 block font-medium text-xs uppercase tracking-wide text-slate-400"
               >
                 {de.feature.liveOsmOverpassWarnQuery}
               </label>
@@ -316,7 +316,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                 }
                 spellCheck={false}
                 rows={10}
-                className="mt-1 max-h-64 min-h-[8rem] w-full resize-y rounded border border-zinc-600 bg-zinc-950 p-2 font-mono text-[11px] text-zinc-200 leading-snug shadow-inner focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600/30"
+                className="mt-1 max-h-64 min-h-[8rem] w-full resize-y rounded border border-slate-600 bg-slate-950 p-2 font-mono text-[11px] text-slate-200 leading-snug shadow-inner focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600/30"
               />
               {bbox && (
                 <button
@@ -337,7 +337,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                 <button
                   type="button"
                   onClick={() => setOsm({ status: 'idle' })}
-                  className="rounded-md border border-zinc-600 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 shadow-sm hover:bg-zinc-800"
+                  className="rounded-md border border-slate-600 bg-slate-900 px-3 py-1.5 text-sm text-slate-100 shadow-sm hover:bg-slate-800"
                 >
                   {de.feature.liveOsmConfirmNo}
                 </button>
@@ -354,11 +354,11 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
           )}
 
           {osm.status === 'loading' && (
-            <p className="text-sm text-zinc-400">{de.feature.liveOsmLoading}</p>
+            <p className="text-sm text-slate-400">{de.feature.liveOsmLoading}</p>
           )}
 
           {osm.status === 'done' && osm.hits.length === 0 && (
-            <p className="text-sm text-zinc-400">{de.feature.liveOsmEmpty}</p>
+            <p className="text-sm text-slate-400">{de.feature.liveOsmEmpty}</p>
           )}
 
           {osm.status === 'done' && osm.hits.length > 0 && (

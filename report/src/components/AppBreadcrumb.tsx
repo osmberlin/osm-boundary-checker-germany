@@ -11,7 +11,7 @@ function BreadcrumbChevron() {
       viewBox="0 0 24 44"
       preserveAspectRatio="none"
       aria-hidden="true"
-      className="h-full w-6 shrink-0 text-zinc-700"
+      className="h-full w-6 shrink-0 text-slate-700"
     >
       <path d="M.293 0l22 22-22 22h1.414l22-22-22-22H.293z" />
     </svg>
@@ -29,14 +29,14 @@ type Props = {
 
 export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
   const homeSegmentClass =
-    'flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-zinc-200'
-  const homeIconClass = 'size-5 shrink-0 text-zinc-400 md:-ml-1'
+    'flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-slate-200'
+  const homeIconClass = 'size-5 shrink-0 text-slate-400 md:-ml-1'
   const rowClass = 'h-14'
 
   return (
     <nav
       aria-label={de.breadcrumb.navLabel}
-      className="flex border-b border-zinc-800 bg-brand-950/60"
+      className="flex border-b border-slate-700 bg-brand-950/60"
     >
       <ol
         className={`mx-auto flex w-full max-w-5xl flex-nowrap items-stretch overflow-x-auto px-4 sm:px-6 lg:px-8 ${rowClass}`}
@@ -52,7 +52,7 @@ export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
             ) : (
               <Link
                 to="/"
-                className={`${homeSegmentClass} hover:[&_svg]:text-zinc-300`}
+                className={`${homeSegmentClass} hover:[&_svg]:text-slate-300`}
                 aria-label={`${de.breadcrumb.home} — ${appTitle}`}
               >
                 <HomeIcon aria-hidden className={homeIconClass} />
@@ -70,7 +70,7 @@ export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
                   <BreadcrumbChevron />
                   <span
                     aria-current="page"
-                    className="ml-4 flex min-w-0 items-center truncate text-sm font-medium text-zinc-400"
+                    className="ml-4 flex min-w-0 items-center truncate text-sm font-medium text-slate-400"
                   >
                     {page.name}
                   </span>
@@ -85,7 +85,7 @@ export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
                 <BreadcrumbChevron />
                 <Link
                   to={link.to}
-                  className="ml-4 flex min-w-0 items-center truncate text-sm font-medium text-zinc-400 hover:text-zinc-200"
+                  className="ml-4 flex min-w-0 items-center truncate text-sm font-medium text-slate-400 hover:text-slate-200"
                 >
                   {link.name}
                 </Link>

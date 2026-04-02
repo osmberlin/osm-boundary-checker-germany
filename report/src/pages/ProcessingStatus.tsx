@@ -174,23 +174,23 @@ export function ProcessingStatus() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-100">{de.status.title}</h1>
-        <Link className="text-violet-400 underline hover:text-violet-300" to="/">
+        <h1 className="text-xl font-semibold text-slate-100">{de.status.title}</h1>
+        <Link className="text-sky-400 underline hover:text-sky-300" to="/">
           {de.status.backHome}
         </Link>
       </div>
 
-      <div className="mb-6 rounded border border-zinc-700 bg-zinc-900 p-4">
-        <p className="text-sm text-zinc-300">
+      <div className="mb-6 rounded border border-slate-700 bg-slate-900 p-4">
+        <p className="text-sm text-slate-300">
           {de.status.inProgressLabel}:{' '}
-          <span className={state?.inProgress ? 'text-emerald-400' : 'text-zinc-200'}>
+          <span className={state?.inProgress ? 'text-emerald-400' : 'text-slate-200'}>
             {state?.inProgress ? de.status.inProgressYes : de.status.inProgressNo}
           </span>
         </p>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-slate-400">
           {de.status.currentPhase}: {state?.phase ?? '—'}
         </p>
-        <p className="mt-1 text-sm text-zinc-400">
+        <p className="mt-1 text-sm text-slate-400">
           {de.status.currentRun}: {state?.runId ?? '—'}
         </p>
       </div>
@@ -198,15 +198,15 @@ export function ProcessingStatus() {
       {error ? <p className="mb-4 text-amber-200">{error}</p> : null}
 
       {runs.length === 0 ? (
-        <p className="text-zinc-400">{de.status.noRuns}</p>
+        <p className="text-slate-400">{de.status.noRuns}</p>
       ) : (
         <ul className="space-y-4">
           {runs.map((run) => (
-            <li key={run.runId} className="rounded border border-zinc-700 bg-zinc-900 p-4">
-              <p className="text-sm text-zinc-400">
-                {de.status.runId}: <code className="rounded bg-zinc-800 px-1">{run.runId}</code>
+            <li key={run.runId} className="rounded border border-slate-700 bg-slate-900 p-4">
+              <p className="text-sm text-slate-400">
+                {de.status.runId}: <code className="rounded bg-slate-800 px-1">{run.runId}</code>
               </p>
-              <p className="mt-1 text-sm text-zinc-300">
+              <p className="mt-1 text-sm text-slate-300">
                 {de.status.started}: {fmtDate(run.startedAt)} | {de.status.ended}:{' '}
                 {fmtDate(run.endedAt)} | {de.status.duration}: {fmtMs(run.durationMs)} |{' '}
                 {de.status.result}:{' '}
@@ -216,10 +216,10 @@ export function ProcessingStatus() {
               </p>
 
               <div className="mt-3">
-                <p className="mb-2 text-sm font-medium text-zinc-200">
+                <p className="mb-2 text-sm font-medium text-slate-200">
                   {de.status.downloadAndSteps} ({formatDeInteger(run.stepSummaries.length)})
                 </p>
-                <ul className="space-y-1 text-sm text-zinc-400">
+                <ul className="space-y-1 text-sm text-slate-400">
                   {run.stepSummaries.map((s, idx) => (
                     <li key={`${run.runId}-step-${idx}`}>
                       {s.id} — {s.status} — {fmtMs(s.durationMs)}
@@ -230,10 +230,10 @@ export function ProcessingStatus() {
               </div>
 
               <div className="mt-3">
-                <p className="mb-2 text-sm font-medium text-zinc-200">
+                <p className="mb-2 text-sm font-medium text-slate-200">
                   {de.status.datasets} ({formatDeInteger(run.datasetSummaries.length)})
                 </p>
-                <ul className="space-y-1 text-sm text-zinc-400">
+                <ul className="space-y-1 text-sm text-slate-400">
                   {run.datasetSummaries.map((d, idx) => (
                     <li key={`${run.runId}-dataset-${idx}`}>
                       {d.dataset} — {d.status} — {fmtMs(d.durationMs)}

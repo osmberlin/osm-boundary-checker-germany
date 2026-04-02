@@ -102,6 +102,10 @@ export const de = {
 
   home: {
     processingStatusLink: 'Verarbeitungsstatus öffnen',
+    introP1:
+      'Diese Anwendung vergleicht amtliche Grenzdaten mit OpenStreetMap (OSM). Ein nächtlicher Lauf (einmal pro Tag) bezieht die OSM-Daten des Vortags und stellt sie den jeweiligen amtlichen Geometrien gegenüber.',
+    introP2:
+      'Die Auswertung zeigt, wo OSM-Objekte den amtlichen Referenzen zugeordnet werden können oder nicht — etwa wegen Tagging — und wo sich Grenzverläufe zwischen beiden Datensätzen unterscheiden, mit mehreren Kennzahlen dargestellt. So finden Sie Tagging- und geometrische Abweichungen. Schaltflächen zur Bearbeitung öffnen die Referenzgrenze, damit Sie die OSM-Daten manuell anpassen können.',
     leadBefore: 'Gebiet wählen. Die Auswertung wird aus dem Ordner',
     leadAfter: 'des jeweiligen Gebiets gelesen (zuerst den Vergleich ausführen).',
     loadingAreas: 'Gebiete werden geladen …',
@@ -136,6 +140,7 @@ export const de = {
   areaReport: {
     backAreas: '← Gebiete',
     snapshot: 'Snapshot',
+    /** Select label for current `output/` when `generatedAt` is missing or not parseable. */
     snapshotLatest: 'Aktuell (output/)',
     chartTitle: 'Mittlere IoU über Snapshots',
     /** Freshness block heading (line 1). */

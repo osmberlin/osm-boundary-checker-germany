@@ -84,7 +84,7 @@ export function FeatureDetail() {
   if (!data || !row) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
-        <p className="text-zinc-400">{!data ? de.feature.loading : de.feature.notFound}</p>
+        <p className="text-slate-400">{!data ? de.feature.loading : de.feature.notFound}</p>
       </div>
     )
   }
@@ -93,12 +93,12 @@ export function FeatureDetail() {
     <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
       <StatsStrip row={row} mapLayers={mapLayers} />
 
-      <div className="mt-4 w-full overflow-hidden rounded border border-zinc-700">
+      <div className="mt-4 w-full overflow-hidden rounded border border-slate-700">
         <div className="h-[480px] w-full">
           {data.hasPmtiles ? (
             <Suspense
               fallback={
-                <div className="flex h-full items-center justify-center text-zinc-500">
+                <div className="flex h-full items-center justify-center text-slate-500">
                   {de.feature.loadingMap}
                 </div>
               }
@@ -116,7 +116,7 @@ export function FeatureDetail() {
               />
             </Suspense>
           ) : (
-            <div className="flex h-full items-center justify-center px-4 text-center text-sm text-zinc-400">
+            <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
               {de.feature.noPmtiles}
             </div>
           )}
@@ -128,13 +128,13 @@ export function FeatureDetail() {
       <UpdateMapInstructions areaId={areaId} row={row} snapshot={snapshot} />
 
       {row.metrics && (
-        <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-xs text-zinc-400">
+        <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-xs text-slate-400">
           <span>{de.feature.stats.footnote.metricsCrsLine(data.metricsCrs)}</span>
-          <span className="text-zinc-600" aria-hidden>
+          <span className="text-slate-600" aria-hidden>
             ·
           </span>
           <a
-            className="text-violet-400 underline decoration-violet-400/40 underline-offset-2 hover:text-violet-300"
+            className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
             href={de.feature.stats.footnote.hausdorffDoc.href}
             target="_blank"
             rel="noreferrer"
@@ -163,24 +163,24 @@ function StatsStrip({ row, mapLayers }: { row: ReportRow; mapLayers: MapLayerCon
   const d = mapLayerColors.diff
 
   return (
-    <section className="rounded border border-zinc-700 bg-zinc-900 p-4">
+    <section className="rounded border border-slate-700 bg-slate-900 p-4">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <h1 className="font-semibold text-lg tracking-tight text-zinc-100">{row.nameLabel}</h1>
-        <span className="text-zinc-600" aria-hidden>
+        <h1 className="font-semibold text-lg tracking-tight text-slate-100">{row.nameLabel}</h1>
+        <span className="text-slate-600" aria-hidden>
           ·
         </span>
-        <span className="font-mono text-sm text-zinc-400">{row.canonicalMatchKey}</span>
-        <span className="text-zinc-600" aria-hidden>
+        <span className="font-mono text-sm text-slate-400">{row.canonicalMatchKey}</span>
+        <span className="text-slate-600" aria-hidden>
           ·
         </span>
-        <span className="text-sm text-zinc-400">{categoryLabelDe(row.category)}</span>
+        <span className="text-sm text-slate-400">{categoryLabelDe(row.category)}</span>
         {row.osmRelationId && (
           <>
-            <span className="text-zinc-600" aria-hidden>
+            <span className="text-slate-600" aria-hidden>
               ·
             </span>
             <a
-              className="text-sm text-violet-400 underline"
+              className="text-sm text-sky-400 underline"
               href={`https://www.openstreetmap.org/relation/${row.osmRelationId}`}
               target="_blank"
               rel="noreferrer"
@@ -275,7 +275,7 @@ function StatsStrip({ row, mapLayers }: { row: ReportRow; mapLayers: MapLayerCon
               value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
               swatch={
                 <div
-                  className="h-5 w-10 shrink-0 rounded-sm border-2 border-zinc-500 border-solid"
+                  className="h-5 w-10 shrink-0 rounded-sm border-2 border-slate-500 border-solid"
                   style={{
                     background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
                   }}

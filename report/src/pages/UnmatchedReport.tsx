@@ -82,7 +82,7 @@ export function UnmatchedReport() {
   if (!data) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
-        <p className="text-zinc-400">…</p>
+        <p className="text-slate-400">…</p>
       </div>
     )
   }
@@ -91,30 +91,30 @@ export function UnmatchedReport() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
-      <h1 className="mb-4 font-semibold text-xl text-zinc-100">{de.unmatched.title}</h1>
-      <p className="mb-4 text-zinc-400">{de.unmatched.lead}</p>
-      <p className="mb-6 text-sm text-zinc-400">
+      <h1 className="mb-4 font-semibold text-xl text-slate-100">{de.unmatched.title}</h1>
+      <p className="mb-4 text-slate-400">{de.unmatched.lead}</p>
+      <p className="mb-6 text-sm text-slate-400">
         {de.areaReport.unmatchedCountLabel}: {formatDeInteger(unmatched.length)}
       </p>
       {snapParam ? (
         <p className="mb-6 text-amber-200 text-sm">{de.unmatched.mapOnlyLatest}</p>
       ) : null}
       <p className="mb-6">
-        <Link className="text-violet-400 underline" to={areaHref}>
+        <Link className="text-sky-400 underline" to={areaHref}>
           {de.unmatched.backToArea}
         </Link>
       </p>
 
       {unmatched.length === 0 ? (
-        <p className="text-zinc-400">{de.unmatched.noData}</p>
+        <p className="text-slate-400">{de.unmatched.noData}</p>
       ) : (
         <>
           {showMap ? (
-            <div className="mb-8 w-full overflow-hidden rounded border border-zinc-700">
+            <div className="mb-8 w-full overflow-hidden rounded border border-slate-700">
               <div className="h-[420px] w-full">
                 <Suspense
                   fallback={
-                    <div className="flex h-full items-center justify-center text-zinc-500">…</div>
+                    <div className="flex h-full items-center justify-center text-slate-500">…</div>
                   }
                 >
                   <MapPane
@@ -133,35 +133,35 @@ export function UnmatchedReport() {
               </div>
             </div>
           ) : unmatched.length > 0 ? (
-            <p className="mb-6 text-sm text-zinc-400">{de.unmatched.noPmtiles}</p>
+            <p className="mb-6 text-sm text-slate-400">{de.unmatched.noPmtiles}</p>
           ) : null}
 
-          <div className="overflow-x-auto rounded border border-zinc-700">
+          <div className="overflow-x-auto rounded border border-slate-700">
             <table className="min-w-full text-sm">
-              <thead className="bg-zinc-900">
+              <thead className="bg-slate-900">
                 <tr>
-                  <th className="px-3 py-2 text-left text-zinc-100">{de.unmatched.tableKey}</th>
-                  <th className="px-3 py-2 text-left text-zinc-100">{de.unmatched.tableName}</th>
-                  <th className="px-3 py-2 text-left text-zinc-100">
+                  <th className="px-3 py-2 text-left text-slate-100">{de.unmatched.tableKey}</th>
+                  <th className="px-3 py-2 text-left text-slate-100">{de.unmatched.tableName}</th>
+                  <th className="px-3 py-2 text-left text-slate-100">
                     {de.unmatched.tableAdminLevel}
                   </th>
-                  <th className="px-3 py-2 text-left text-zinc-100">
+                  <th className="px-3 py-2 text-left text-slate-100">
                     {de.unmatched.tableRelation}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {unmatched.map((row) => (
-                  <tr key={row.canonicalMatchKey} className="border-zinc-800 border-t">
-                    <td className="px-3 py-2 font-mono text-xs text-zinc-100">
+                  <tr key={row.canonicalMatchKey} className="border-slate-800 border-t">
+                    <td className="px-3 py-2 font-mono text-xs text-slate-100">
                       {row.canonicalMatchKey}
                     </td>
-                    <td className="px-3 py-2 text-zinc-100">{row.nameLabel}</td>
-                    <td className="px-3 py-2 text-zinc-100">{row.adminLevel ?? EM_DASH}</td>
-                    <td className="px-3 py-2 font-mono text-xs text-zinc-100">
+                    <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
+                    <td className="px-3 py-2 text-slate-100">{row.adminLevel ?? EM_DASH}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-slate-100">
                       {row.osmRelationId ? (
                         <a
-                          className="text-violet-400 underline"
+                          className="text-sky-400 underline"
                           href={`https://www.openstreetmap.org/relation/${row.osmRelationId}`}
                           target="_blank"
                           rel="noreferrer"

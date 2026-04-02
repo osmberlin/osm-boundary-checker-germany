@@ -36,8 +36,8 @@ export function StatBlocksRow({
 export function StatBlock({ label, value }: { label: ReactNode; value: ReactNode }) {
   return (
     <div className="flex flex-col-reverse gap-y-2">
-      <dt className="text-base/7 text-zinc-400">{label}</dt>
-      <dd className="text-pretty font-semibold text-2xl text-zinc-100 tabular-nums tracking-tight sm:text-3xl">
+      <dt className="text-base/7 text-slate-400">{label}</dt>
+      <dd className="text-pretty font-semibold text-2xl text-slate-100 tabular-nums tracking-tight sm:text-3xl">
         {value}
       </dd>
     </div>
@@ -65,15 +65,15 @@ export function LayerToggleStatBlock({
   disabled?: boolean
 }) {
   const interactive =
-    'group flex flex-col-reverse gap-y-2 transition-colors hover:bg-zinc-800/60 focus-within:bg-zinc-800/60'
+    'group flex flex-col-reverse gap-y-2 transition-colors hover:bg-slate-800/60 focus-within:bg-slate-800/60'
   const inert = `flex flex-col-reverse gap-y-2 opacity-55`
 
   return (
     <div className={disabled ? inert : interactive} aria-disabled={disabled || undefined}>
       <dt
         className={
-          `min-w-0 text-base/7 text-zinc-400 transition-colors ` +
-          (disabled ? `` : `group-hover:text-zinc-200`)
+          `min-w-0 text-base/7 text-slate-400 transition-colors ` +
+          (disabled ? `` : `group-hover:text-slate-200`)
         }
       >
         <label
@@ -88,7 +88,7 @@ export function LayerToggleStatBlock({
             type="checkbox"
             disabled={disabled}
             className={
-              `size-4 shrink-0 rounded border-zinc-500 bg-zinc-800 text-violet-600 focus:ring-violet-500 ` +
+              `size-4 shrink-0 rounded border-slate-500 bg-slate-800 text-sky-600 focus:ring-sky-500 ` +
               (disabled ? `cursor-not-allowed opacity-60` : ``)
             }
             checked={checked}
@@ -103,7 +103,7 @@ export function LayerToggleStatBlock({
       </dt>
       <dd
         className={
-          `text-pretty font-semibold text-2xl text-zinc-100 tabular-nums tracking-tight sm:text-3xl ` +
+          `text-pretty font-semibold text-2xl text-slate-100 tabular-nums tracking-tight sm:text-3xl ` +
           (disabled ? `` : `transition-colors group-hover:text-white`)
         }
       >

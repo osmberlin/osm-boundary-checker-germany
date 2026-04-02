@@ -86,20 +86,23 @@ export function Home() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
       <p className="mb-3">
-        <Link className="text-violet-400 underline hover:text-violet-300" to="/status">
+        <Link className="text-sky-400 underline hover:text-sky-300" to="/status">
           {de.home.processingStatusLink}
         </Link>
       </p>
-      <p className="mb-6 text-zinc-400">
-        {de.home.leadBefore} <code className="rounded bg-zinc-800 px-1 text-zinc-200">output/</code>{' '}
+      <p className="mb-4 max-w-prose text-pretty text-slate-400">{de.home.introP1}</p>
+      <p className="mb-6 max-w-prose text-pretty text-slate-400">{de.home.introP2}</p>
+      <p className="mb-6 text-slate-400">
+        {de.home.leadBefore}{' '}
+        <code className="rounded bg-slate-800 px-1 text-slate-200">output/</code>{' '}
         {de.home.leadAfter}
       </p>
       {areas === null ? (
-        <p className="text-zinc-400">{de.home.loadingAreas}</p>
+        <p className="text-slate-400">{de.home.loadingAreas}</p>
       ) : loadError ? (
         <p className="text-amber-200">{de.home.areasError}</p>
       ) : areas.length === 0 ? (
-        <p className="text-zinc-400">{de.home.noAreas}</p>
+        <p className="text-slate-400">{de.home.noAreas}</p>
       ) : (
         <ul className="space-y-4">
           {areas.map((a) => {
@@ -116,9 +119,9 @@ export function Home() {
               return formatDeInteger(n)
             }
             return (
-              <li key={a} className="rounded border border-zinc-700 bg-zinc-900 p-4">
+              <li key={a} className="rounded border border-slate-700 bg-slate-900 p-4">
                 <Link
-                  className="font-medium text-violet-400 underline hover:text-violet-300"
+                  className="font-medium text-sky-400 underline hover:text-sky-300"
                   to={`/${a}`}
                 >
                   {a}
@@ -130,7 +133,7 @@ export function Home() {
                 </StatBlocksRow>
                 {entry?.status === 'ok' && (entry.data?.unmatchedOsm?.length ?? 0) > 0 ? (
                   <p className="mt-3 text-sm">
-                    <Link className="text-violet-400 underline" to={`/${a}/unmatched`}>
+                    <Link className="text-sky-400 underline" to={`/${a}/unmatched`}>
                       {de.home.unmatchedLink}
                     </Link>
                   </p>

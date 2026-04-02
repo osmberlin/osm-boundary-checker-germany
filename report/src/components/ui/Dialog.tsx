@@ -30,7 +30,7 @@ export function Dialog({
     <HeadlessDialog {...props}>
       <DialogBackdrop
         transition
-        className="fixed inset-0 z-40 flex w-screen justify-center overflow-y-auto bg-zinc-950/50 px-2 py-2 transition duration-100 focus:outline-none data-closed:opacity-0 data-enter:ease-out data-leave:ease-in sm:px-6 sm:py-8"
+        className="fixed inset-0 z-40 flex w-screen justify-center overflow-y-auto bg-slate-950/50 px-2 py-2 transition duration-100 focus:outline-none data-closed:opacity-0 data-enter:ease-out data-leave:ease-in sm:px-6 sm:py-8"
       />
 
       <div className="fixed inset-0 z-40 w-screen overflow-y-auto pt-6 sm:pt-0">
@@ -40,7 +40,7 @@ export function Dialog({
             className={cn(
               className,
               sizes[size],
-              'row-start-2 w-full min-w-0 rounded-t-2xl bg-zinc-900 p-6 shadow-lg ring-1 ring-white/10 sm:mb-auto sm:rounded-2xl',
+              'row-start-2 w-full min-w-0 rounded-t-2xl bg-slate-900 p-6 shadow-lg ring-1 ring-white/10 sm:mb-auto sm:rounded-2xl',
               'transition duration-100 will-change-transform data-closed:translate-y-3 data-closed:opacity-0 data-enter:ease-out data-leave:ease-in sm:data-closed:translate-y-0 sm:data-closed:scale-95',
             )}
           >
@@ -59,7 +59,7 @@ export function AppDialogTitle({
   return (
     <DialogTitle
       {...props}
-      className={cn(className, 'text-balance font-semibold text-lg text-zinc-100 sm:text-base')}
+      className={cn(className, 'text-balance font-semibold text-lg text-slate-100 sm:text-base')}
     />
   )
 }
@@ -71,7 +71,7 @@ export function AppDialogDescription({
   return (
     <Description
       {...props}
-      className={cn(className, 'mt-2 text-pretty text-sm text-zinc-400 leading-6')}
+      className={cn(className, 'mt-2 text-pretty text-sm text-slate-400 leading-6')}
     />
   )
 }

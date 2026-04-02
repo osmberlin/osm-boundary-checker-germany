@@ -17,14 +17,14 @@ export type ReportDataProvenanceFooterProps = {
 function DateLine({ label, abs, rel }: { label: string; abs: string; rel: string }) {
   const bothDash = abs === EM_DASH && rel === EM_DASH
   return (
-    <p className="text-zinc-300">
-      <span className="font-medium text-zinc-200">{label}:</span>{' '}
+    <p className="text-slate-300">
+      <span className="font-medium text-slate-200">{label}:</span>{' '}
       {bothDash ? (
         EM_DASH
       ) : (
         <>
           <span className="tabular-nums">{abs}</span>
-          {rel !== EM_DASH ? <span className="text-zinc-500"> ({rel})</span> : null}
+          {rel !== EM_DASH ? <span className="text-slate-500"> ({rel})</span> : null}
         </>
       )}
     </p>
@@ -64,12 +64,12 @@ export function ReportDataProvenanceFooter({
 
   return (
     <section
-      className={`mt-10 rounded border border-zinc-700 bg-zinc-900/50 p-4 text-sm text-zinc-400 ${wrap}`.trim()}
+      className={`mt-10 rounded border border-slate-700 bg-slate-900/50 p-4 text-sm text-slate-400 ${wrap}`.trim()}
       aria-label={p.sectionAria}
     >
-      <h2 className="mb-4 font-semibold text-base text-zinc-100">{p.title}</h2>
+      <h2 className="mb-4 font-semibold text-base text-slate-100">{p.title}</h2>
 
-      <div className="mb-6 space-y-1 border-zinc-800 border-b pb-4">
+      <div className="mb-6 space-y-1 border-slate-700 border-b pb-4">
         <DateLine
           label={p.reportCreatedLabel}
           abs={reportFresh.absoluteLine || EM_DASH}
@@ -87,17 +87,17 @@ export function ReportDataProvenanceFooter({
         />
       </div>
 
-      <h3 className="mb-2 font-medium text-zinc-200">{p.officialHeading}</h3>
+      <h3 className="mb-2 font-medium text-slate-200">{p.officialHeading}</h3>
       <p className="mb-2 text-pretty">{p.officialLead}</p>
       {officialMeta ? (
-        <p className="mb-2 text-zinc-500">
+        <p className="mb-2 text-slate-500">
           {p.officialMetaPrefix}: {officialMeta}
         </p>
       ) : null}
       {off?.sourceUrl?.trim() ? (
         <p className="mb-2">
           <a
-            className="text-violet-400 underline decoration-violet-400/40 underline-offset-2 hover:text-violet-300"
+            className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
             href={off.sourceUrl.trim()}
             target="_blank"
             rel="noreferrer"
@@ -107,20 +107,20 @@ export function ReportDataProvenanceFooter({
         </p>
       ) : null}
       {off?.license?.trim() ? (
-        <p className="mb-4 text-xs text-zinc-500">
+        <p className="mb-4 text-xs text-slate-500">
           {p.licenseLabel}: {off.license.trim()}
         </p>
       ) : (
         <div className="mb-4" />
       )}
 
-      <h3 className="mb-2 font-medium text-zinc-200">{p.osmHeading}</h3>
+      <h3 className="mb-2 font-medium text-slate-200">{p.osmHeading}</h3>
       <p className="mb-2 text-pretty">{p.osmLead}</p>
-      {osmMeta ? <p className="mb-2 text-zinc-500">{osmMeta}</p> : null}
+      {osmMeta ? <p className="mb-2 text-slate-500">{osmMeta}</p> : null}
       {osm?.sourceUrl?.trim() ? (
         <p className="mb-2">
           <a
-            className="text-violet-400 underline decoration-violet-400/40 underline-offset-2 hover:text-violet-300"
+            className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
             href={osm.sourceUrl.trim()}
             target="_blank"
             rel="noreferrer"
@@ -130,27 +130,27 @@ export function ReportDataProvenanceFooter({
         </p>
       ) : null}
       {osm?.license?.trim() ? (
-        <p className="mb-2 text-xs text-zinc-500">
+        <p className="mb-2 text-xs text-slate-500">
           {p.licenseLabel}: {osm.license.trim()}
         </p>
       ) : null}
 
-      <p className="mb-2 font-medium text-zinc-300">{p.osmFilterTitle}</p>
+      <p className="mb-2 font-medium text-slate-300">{p.osmFilterTitle}</p>
       <p className="mb-4 text-pretty">{p.osmFilterBody}</p>
 
       {osm?.note?.trim() ? (
         <>
-          <p className="mb-1 font-medium text-zinc-300">{p.osmFilterNoteTitle}</p>
-          <pre className="mb-4 overflow-x-auto whitespace-pre-wrap break-words rounded border border-zinc-800 bg-zinc-950 p-3 font-mono text-xs text-zinc-300">
+          <p className="mb-1 font-medium text-slate-300">{p.osmFilterNoteTitle}</p>
+          <pre className="mb-4 overflow-x-auto whitespace-pre-wrap break-words rounded border border-slate-800 bg-slate-950 p-3 font-mono text-xs text-slate-300">
             {osm.note.trim()}
           </pre>
         </>
       ) : null}
 
       {!hideUnmatchedCrossLink && unmatchedN > 0 ? (
-        <p className="mt-4 text-pretty text-zinc-400">
+        <p className="mt-4 text-pretty text-slate-400">
           {p.unmatchedCrossLinkIntro}{' '}
-          <Link className="text-violet-400 underline" to={unmatchedHref}>
+          <Link className="text-sky-400 underline" to={unmatchedHref}>
             {de.areaReport.unmatchedPageLink}
           </Link>
         </p>

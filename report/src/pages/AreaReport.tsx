@@ -1,3 +1,4 @@
+import { format, isValid, parseISO } from 'date-fns'
 import { parseAsString, useQueryState } from 'nuqs'
 import {
   lazy,
@@ -104,6 +105,12 @@ export function AreaReport() {
 
   const catCounts = useMemo(() => countMatchCategories(mainRows), [mainRows])
 
+  const currentSnapshotSelectLabel = useMemo(() => {
+    if (!data) return de.areaReport.snapshotLatest
+    const d = parseISO(data.generatedAt.trim())
+    return isValid(d) ? format(d, 'yyyy-MM-dd') : de.areaReport.snapshotLatest
+  }, [data])
+
   const unmatchedCount = (data?.unmatchedOsm ?? []).length
 
   const mapAllowlist = useMemo(() => {
@@ -154,9 +161,9 @@ export function AreaReport() {
       <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
         <div className="text-red-400">
           {err}
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-slate-400">
             {de.areaReport.errorRunCompare}{' '}
-            <code className="rounded bg-zinc-800 px-1 text-zinc-200">
+            <code className="rounded bg-slate-800 px-1 text-slate-200">
               output/comparison_table.json
             </code>{' '}
             {de.areaReport.errorRunCompareExists}
@@ -168,7 +175,7 @@ export function AreaReport() {
   if (!data) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
-        <p className="text-zinc-400">{de.areaReport.loading}</p>
+        <p className="text-slate-400">{de.areaReport.loading}</p>
       </div>
     )
   }
@@ -200,13 +207,13 @@ export function AreaReport() {
       {snapIndex && snapIndex.runs.length > 0 ? (
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           <label className="flex shrink-0 flex-wrap items-center gap-2 text-sm">
-            <span className="text-zinc-400">{de.areaReport.snapshot}</span>
+            <span className="text-slate-400">{de.areaReport.snapshot}</span>
             <select
-              className="rounded border border-zinc-600 bg-zinc-800 px-2 py-1 text-zinc-100"
+              className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100"
               value={snapshot}
               onChange={(e) => void setSnapshot(e.target.value || '')}
             >
-              <option value="">{de.areaReport.snapshotLatest}</option>
+              <option value="">{currentSnapshotSelectLabel}</option>
               {snapIndex.runs.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.id}
@@ -218,7 +225,7 @@ export function AreaReport() {
       ) : null}
 
       <section
-        className="mb-6 rounded border border-zinc-700 bg-zinc-900 p-4"
+        className="mb-6 rounded border border-slate-700 bg-slate-900 p-4"
         aria-label={st.summaryRowAria}
       >
         <StatBlocksRow className="mt-0" aria-label={st.summaryStatRowAria}>
@@ -269,13 +276,13 @@ export function AreaReport() {
             }
           />
         </StatBlocksRow>
-        <p className="mt-4 text-sm text-zinc-300">
+        <p className="mt-4 text-sm text-slate-300">
           {de.areaReport.unmatchedCountLabel}: {formatDeInteger(unmatchedCount)}
           {unmatchedCount > 0 ? (
             <>
               {' '}
               <Link
-                className="text-violet-400 underline"
+                className="text-sky-400 underline"
                 to={`/${areaId}/unmatched${snapParam ? `?snapshot=${encodeURIComponent(snapParam)}` : ''}`}
               >
                 {de.areaReport.unmatchedPageLink}
@@ -286,16 +293,16 @@ export function AreaReport() {
       </section>
 
       <div className="mb-8">
-        <div className="w-full overflow-hidden rounded border border-zinc-700">
+        <div className="w-full overflow-hidden rounded border border-slate-700">
           <div className="h-[420px] w-full">
             {visibleRows.length === 0 ? (
-              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-zinc-400">
+              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
                 {st.mapNoVisibleCategories}
               </div>
             ) : data.hasPmtiles ? (
               <Suspense
                 fallback={
-                  <div className="flex h-full items-center justify-center text-zinc-500">
+                  <div className="flex h-full items-center justify-center text-slate-500">
                     {st.mapLoading}
                   </div>
                 }
@@ -315,7 +322,7 @@ export function AreaReport() {
                 />
               </Suspense>
             ) : (
-              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-zinc-400">
+              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
                 {de.feature.noPmtiles}
               </div>
             )}
@@ -323,8 +330,8 @@ export function AreaReport() {
         </div>
       </div>
 
-      <div className="mb-8 h-64 rounded border border-zinc-700 bg-zinc-900 p-2">
-        <h2 className="mb-2 font-medium text-sm text-zinc-300">{de.areaReport.chartTitle}</h2>
+      <div className="mb-8 h-64 rounded border border-slate-700 bg-slate-900 p-2">
+        <h2 className="mb-2 font-medium text-sm text-slate-300">{de.areaReport.chartTitle}</h2>
         <ResponsiveContainer width="100%" height="90%">
           <LineChart data={chartData} margin={{ left: 8, right: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
@@ -347,9 +354,9 @@ export function AreaReport() {
         </ResponsiveContainer>
       </div>
 
-      <div className="overflow-x-auto rounded border border-zinc-700">
+      <div className="overflow-x-auto rounded border border-slate-700">
         <table className="min-w-full text-sm">
-          <thead className="bg-zinc-900">
+          <thead className="bg-slate-900">
             <tr>
               <SortableTh
                 column="name"
@@ -406,29 +413,29 @@ export function AreaReport() {
                   <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
                 }
               />
-              <th className="px-3 py-2 text-left text-zinc-100">{de.areaReport.table.map}</th>
+              <th className="px-3 py-2 text-left text-slate-100">{de.areaReport.table.map}</th>
             </tr>
           </thead>
           <tbody>
             {sortedRows.map((row) => (
-              <tr key={row.canonicalMatchKey} className="border-zinc-800 border-t">
-                <td className="px-3 py-2 text-zinc-100">{row.nameLabel}</td>
-                <td className="px-3 py-2 font-mono text-xs text-zinc-100">
+              <tr key={row.canonicalMatchKey} className="border-slate-800 border-t">
+                <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
+                <td className="px-3 py-2 font-mono text-xs text-slate-100">
                   {row.canonicalMatchKey}
                 </td>
-                <td className="px-3 py-2 text-zinc-100">{categoryLabelDe(row.category)}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-zinc-100">
+                <td className="px-3 py-2 text-slate-100">{categoryLabelDe(row.category)}</td>
+                <td className="px-3 py-2 text-right tabular-nums text-slate-100">
                   {row.metrics ? formatDeIou(row.metrics.iou) : EM_DASH}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-zinc-100">
+                <td className="px-3 py-2 text-right tabular-nums text-slate-100">
                   {row.metrics ? formatDePercentPoints(row.metrics.areaDiffPct) : EM_DASH}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-zinc-100">
+                <td className="px-3 py-2 text-right tabular-nums text-slate-100">
                   {row.metrics ? formatDeOrDash(row.metrics.hausdorffM, formatDeMeters) : EM_DASH}
                 </td>
                 <td className="px-3 py-2">
                   <Link
-                    className="text-violet-400 underline"
+                    className="text-sky-400 underline"
                     to={`/${areaId}/feature/${encodeURIComponent(row.canonicalMatchKey)}${snapParam ? `?snapshot=${encodeURIComponent(snapParam)}` : ''}`}
                   >
                     {de.areaReport.table.view}
@@ -457,11 +464,11 @@ function SummaryStatColumn({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
-      <dt className="font-medium text-sm text-zinc-300">{heading}</dt>
-      <dd className="m-0 text-pretty font-semibold text-2xl text-zinc-100 tabular-nums tracking-tight sm:text-3xl">
+      <dt className="font-medium text-sm text-slate-300">{heading}</dt>
+      <dd className="m-0 text-pretty font-semibold text-2xl text-slate-100 tabular-nums tracking-tight sm:text-3xl">
         {relativeLine}
       </dd>
-      <dd className="m-0 text-sm text-zinc-400">{absoluteLine}</dd>
+      <dd className="m-0 text-sm text-slate-400">{absoluteLine}</dd>
     </div>
   )
 }
@@ -495,8 +502,8 @@ function SortableTh({
       scope="col"
       className={
         align === 'right'
-          ? 'px-3 py-2 text-right text-zinc-100'
-          : 'px-3 py-2 text-left text-zinc-100'
+          ? 'px-3 py-2 text-right text-slate-100'
+          : 'px-3 py-2 text-left text-slate-100'
       }
       aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
     >
@@ -512,12 +519,12 @@ function SortableTh({
           onClick={() => onSort(column)}
           className={
             align === 'right'
-              ? 'inline-flex items-center gap-1 font-medium text-zinc-100 hover:text-violet-400'
-              : 'inline-flex items-center gap-1 font-medium text-zinc-100 hover:text-violet-400'
+              ? 'inline-flex items-center gap-1 font-medium text-slate-100 hover:text-sky-400'
+              : 'inline-flex items-center gap-1 font-medium text-slate-100 hover:text-sky-400'
           }
         >
           <span>{label}</span>
-          <span className="font-mono text-xs text-zinc-400" aria-hidden>
+          <span className="font-mono text-xs text-slate-400" aria-hidden>
             {active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
           </span>
         </button>
