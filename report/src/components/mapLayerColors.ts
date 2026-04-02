@@ -1,4 +1,4 @@
-/** Keep in sync with MapPane layer paint */
+/** Keep in sync with ComparisonVectorLayers paint */
 export const mapLayerColors = {
   official: {
     fill: '#2563eb',

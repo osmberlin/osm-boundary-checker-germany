@@ -10,7 +10,7 @@ import { de } from '../i18n/de'
 import { EM_DASH, formatDeInteger } from '../lib/formatDe'
 import type { ComparisonForReport, UnmatchedOsmReportRow } from '../types/report'
 
-const MapPane = lazy(() => import('../components/MapPane'))
+const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShell'))
 
 function unionMapBboxes(rows: UnmatchedOsmReportRow[]): [number, number, number, number] | null {
   const boxes = rows
@@ -116,7 +116,7 @@ export function UnmatchedReport() {
                     <div className="flex h-full items-center justify-center text-slate-500">…</div>
                   }
                 >
-                  <MapPane
+                  <ComparisonMapShell
                     pmtilesUrl={comparisonUnmatchedPmtilesMaplibreUrl(areaId)}
                     sourceLayer={data.tippecanoeLayer}
                     featureId={null}

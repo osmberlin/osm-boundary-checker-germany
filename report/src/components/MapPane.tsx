@@ -1,50 +1,21 @@
-import type { ExpressionSpecification } from 'maplibre-gl'
 import maplibregl from 'maplibre-gl'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
-import MapLibre, { Layer, type MapRef, Source } from 'react-map-gl/maplibre'
+import MapLibre, { type MapRef } from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
-import { mapLayerColors } from './mapLayerColors'
+import {
+  COMPARISON_BASEMAP_STYLE,
+  COMPARISON_INTERACTIVE_LAYER_IDS,
+} from './map/comparisonMapConstants'
+import {
+  featureIdFilterExpr,
+  filterOfficialDiff,
+  filterOfficialOverlay,
+  filterOsmDiff,
+  filterOsmOverlay,
+} from './map/comparisonMapFilters'
+import { ComparisonVectorLayers } from './map/ComparisonVectorLayers'
 import 'maplibre-gl/dist/maplibre-gl.css'
-
-/** OpenFreeMap — Positron (light), no API key. https://openfreemap.org/quick_start */
-const BASEMAP_STYLE = 'https://tiles.openfreemap.org/styles/positron'
-
-const SOURCE_ID = 'comparison-pmtiles'
-
-const COMPARISON_INTERACTIVE_LAYER_IDS = [
-  `${SOURCE_ID}-overlay-official-fill`,
-  `${SOURCE_ID}-overlay-official-line`,
-  `${SOURCE_ID}-overlay-osm-fill`,
-  `${SOURCE_ID}-overlay-osm-line`,
-  `${SOURCE_ID}-diff-official-fill`,
-  `${SOURCE_ID}-diff-official-line`,
-  `${SOURCE_ID}-diff-osm-fill`,
-  `${SOURCE_ID}-diff-osm-line`,
-] as const
-
-/** Tiles without `mapRole` are treated as overlay (older PMTiles). */
-const OVERLAY_ROLE_FILTER = [
-  'any',
-  ['==', ['get', 'mapRole'], 'overlay'],
-  ['!', ['has', 'mapRole']],
-] as ExpressionSpecification
-
-function featureIdFilterExpr(
-  featureIdFocus: string | null,
-  allowedFeatureIds: string[] | null,
-): ExpressionSpecification | null {
-  if (featureIdFocus !== null) {
-    return ['==', ['get', 'featureId'], featureIdFocus]
-  }
-  if (allowedFeatureIds !== null) {
-    if (allowedFeatureIds.length === 0) {
-      return ['==', 1, 0] as ExpressionSpecification
-    }
-    return ['in', ['get', 'featureId'], ['literal', allowedFeatureIds]] as ExpressionSpecification
-  }
-  return null
-}
 
 export default function MapPane({
   pmtilesUrl,
@@ -58,6 +29,7 @@ export default function MapPane({
   showOsm,
   showDiff,
   onFeatureClick,
+  mapId,
 }: {
   pmtilesUrl: string
   sourceLayer: string
@@ -76,6 +48,11 @@ export default function MapPane({
   showDiff: boolean
   /** Overview: navigate to feature detail when clicking a polygon. */
   onFeatureClick?: (featureKey: string) => void
+  /**
+   * When set (e.g. via ComparisonMapShell), registers this map with MapProvider for `useMap()[mapId]`.
+   * @see https://visgl.github.io/react-map-gl/docs/api-reference/mapbox/map#mapprovider
+   */
+  mapId?: string
 }) {
   const mapRef = useRef<MapRef>(null)
   const skipNextMoveEndCommitRef = useRef(false)
@@ -89,41 +66,13 @@ export default function MapPane({
     [featureId, allowedFeatureIds],
   )
 
-  const filterOfficialOverlay = useMemo((): ExpressionSpecification => {
-    const parts: ExpressionSpecification[] = [
-      OVERLAY_ROLE_FILTER,
-      ['==', ['get', 'boundarySource'], 'external'],
-    ]
-    if (featureIdExpr) parts.unshift(featureIdExpr)
-    return ['all', ...parts]
-  }, [featureIdExpr])
-
-  const filterOsmOverlay = useMemo((): ExpressionSpecification => {
-    const parts: ExpressionSpecification[] = [
-      OVERLAY_ROLE_FILTER,
-      ['==', ['get', 'boundarySource'], 'osm'],
-    ]
-    if (featureIdExpr) parts.unshift(featureIdExpr)
-    return ['all', ...parts]
-  }, [featureIdExpr])
-
-  const filterOfficialDiff = useMemo((): ExpressionSpecification => {
-    const parts: ExpressionSpecification[] = [
-      ['==', ['get', 'mapRole'], 'diff'],
-      ['==', ['get', 'boundarySource'], 'external'],
-    ]
-    if (featureIdExpr) parts.unshift(featureIdExpr)
-    return ['all', ...parts]
-  }, [featureIdExpr])
-
-  const filterOsmDiff = useMemo((): ExpressionSpecification => {
-    const parts: ExpressionSpecification[] = [
-      ['==', ['get', 'mapRole'], 'diff'],
-      ['==', ['get', 'boundarySource'], 'osm'],
-    ]
-    if (featureIdExpr) parts.unshift(featureIdExpr)
-    return ['all', ...parts]
-  }, [featureIdExpr])
+  const filterOfficialOverlayExpr = useMemo(
+    () => filterOfficialOverlay(featureIdExpr),
+    [featureIdExpr],
+  )
+  const filterOsmOverlayExpr = useMemo(() => filterOsmOverlay(featureIdExpr), [featureIdExpr])
+  const filterOfficialDiffExpr = useMemo(() => filterOfficialDiff(featureIdExpr), [featureIdExpr])
+  const filterOsmDiffExpr = useMemo(() => filterOsmDiff(featureIdExpr), [featureIdExpr])
 
   const mid = useMemo(() => {
     if (mapBbox) {
@@ -220,13 +169,10 @@ export default function MapPane({
     lastCommittedMapSerializationRef.current = serialized
   }, [urlMapView, mapReady])
 
-  const o = mapLayerColors.official
-  const s = mapLayerColors.osm
-  const d = mapLayerColors.diff
-
   return (
     <MapLibre
       ref={mapRef}
+      id={mapId}
       mapLib={maplibregl}
       initialViewState={initialViewState}
       style={{
@@ -234,123 +180,23 @@ export default function MapPane({
         height: '100%',
         cursor: onFeatureClick ? 'pointer' : undefined,
       }}
-      mapStyle={BASEMAP_STYLE}
+      mapStyle={COMPARISON_BASEMAP_STYLE}
       onLoad={onLoad}
       onMoveEnd={onMoveEnd}
       onClick={onFeatureClick ? onMapClick : undefined}
       interactiveLayerIds={onFeatureClick ? [...COMPARISON_INTERACTIVE_LAYER_IDS] : undefined}
     >
-      <Source id={SOURCE_ID} type="vector" url={pmtilesUrl}>
-        <Layer
-          id={`${SOURCE_ID}-overlay-official-fill`}
-          type="fill"
-          source={SOURCE_ID}
-          source-layer={sourceLayer}
-          filter={filterOfficialOverlay}
-          layout={{ visibility: showOfficial ? 'visible' : 'none' }}
-          paint={{
-            'fill-color': o.fill,
-            'fill-opacity': o.fillOpacity,
-          }}
-        />
-        <Layer
-          id={`${SOURCE_ID}-overlay-official-line`}
-          type="line"
-          source={SOURCE_ID}
-          source-layer={sourceLayer}
-          filter={filterOfficialOverlay}
-          layout={{ visibility: showOfficial ? 'visible' : 'none' }}
-          paint={{
-            'line-color': o.line,
-            'line-width': 2,
-          }}
-        />
-        <Layer
-          id={`${SOURCE_ID}-overlay-osm-fill`}
-          type="fill"
-          source={SOURCE_ID}
-          source-layer={sourceLayer}
-          filter={filterOsmOverlay}
-          layout={{ visibility: showOsm ? 'visible' : 'none' }}
-          paint={{
-            'fill-color': s.fill,
-            'fill-opacity': s.fillOpacity,
-          }}
-        />
-        <Layer
-          id={`${SOURCE_ID}-overlay-osm-line`}
-          type="line"
-          source={SOURCE_ID}
-          source-layer={sourceLayer}
-          filter={filterOsmOverlay}
-          layout={{ visibility: showOsm ? 'visible' : 'none' }}
-          paint={{
-            'line-color': s.line,
-            'line-width': 2,
-          }}
-        />
-        <Layer
-          id={`${SOURCE_ID}-diff-official-fill`}
-          type="fill"
-          source={SOURCE_ID}
-          source-layer={sourceLayer}
-          filter={filterOfficialDiff}
-          layout={{ visibility: showDiff ? 'visible' : 'none' }}
-          paint={{
-            'fill-color': d.official.fill,
-            'fill-opacity': d.official.fillOpacity,
-          }}
-        />
-        <Layer
-          id={`${SOURCE_ID}-diff-official-line`}
-          type="line"
-          source={SOURCE_ID}
-          source-layer={sourceLayer}
-          filter={filterOfficialDiff}
-          layout={{
-            visibility: showDiff ? 'visible' : 'none',
-            'line-cap': 'round',
-            'line-join': 'round',
-          }}
-          paint={{
-            'line-color': d.official.line,
-            'line-width': d.lineWidth,
-            'line-opacity': d.official.lineOpacity,
-            // Positive offset = exterior for polygon rings — centers the thick stroke outside the fill.
-            'line-offset': d.lineWidth / 2,
-          }}
-        />
-        <Layer
-          id={`${SOURCE_ID}-diff-osm-fill`}
-          type="fill"
-          source={SOURCE_ID}
-          source-layer={sourceLayer}
-          filter={filterOsmDiff}
-          layout={{ visibility: showDiff ? 'visible' : 'none' }}
-          paint={{
-            'fill-color': d.osm.fill,
-            'fill-opacity': d.osm.fillOpacity,
-          }}
-        />
-        <Layer
-          id={`${SOURCE_ID}-diff-osm-line`}
-          type="line"
-          source={SOURCE_ID}
-          source-layer={sourceLayer}
-          filter={filterOsmDiff}
-          layout={{
-            visibility: showDiff ? 'visible' : 'none',
-            'line-cap': 'round',
-            'line-join': 'round',
-          }}
-          paint={{
-            'line-color': d.osm.line,
-            'line-width': d.lineWidth,
-            'line-opacity': d.osm.lineOpacity,
-            'line-offset': d.lineWidth / 2,
-          }}
-        />
-      </Source>
+      <ComparisonVectorLayers
+        pmtilesUrl={pmtilesUrl}
+        sourceLayer={sourceLayer}
+        filterOfficialOverlay={filterOfficialOverlayExpr}
+        filterOsmOverlay={filterOsmOverlayExpr}
+        filterOfficialDiff={filterOfficialDiffExpr}
+        filterOsmDiff={filterOsmDiffExpr}
+        showOfficial={showOfficial}
+        showOsm={showOsm}
+        showDiff={showDiff}
+      />
     </MapLibre>
   )
 }

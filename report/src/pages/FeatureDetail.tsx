@@ -32,7 +32,7 @@ import {
 } from '../lib/formatDe'
 import type { ComparisonForReport, ReportRow } from '../types/report'
 
-const MapPane = lazy(() => import('../components/MapPane'))
+const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShell'))
 
 type MapLayerControls = ReturnType<typeof useComparisonMapLayers>
 
@@ -108,7 +108,7 @@ export function FeatureDetail() {
                 </div>
               }
             >
-              <MapPane
+              <ComparisonMapShell
                 pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId, snapshot)}
                 sourceLayer={data.tippecanoeLayer}
                 featureId={row.canonicalMatchKey}

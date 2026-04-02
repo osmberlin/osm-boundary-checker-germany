@@ -54,7 +54,7 @@ import { sourceStatLines } from '../lib/reportFreshnessLines'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
 import type { ComparisonForReport, ReportRow, SnapshotsJson } from '../types/report'
 
-const MapPane = lazy(() => import('../components/MapPane'))
+const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShell'))
 
 function unionMapBboxes(rows: ReportRow[]): [number, number, number, number] | null {
   const boxes = rows
@@ -313,7 +313,7 @@ export function AreaReport() {
                     </div>
                   }
                 >
-                  <MapPane
+                  <ComparisonMapShell
                     pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId, snapParam)}
                     sourceLayer={data.tippecanoeLayer}
                     featureId={null}
