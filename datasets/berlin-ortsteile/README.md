@@ -1,0 +1,12 @@
+# Berlin Ortsteile (ALKIS)
+
+Official boundaries from Berlin **ALKIS Ortsteile** WFS, compared to OSM administrative polygons via `de:regionalschluessel` (12-digit keys on feature `sch`).
+
+## References
+
+- WFS Explorer: [ALKIS Ortsteile](https://wfsexplorer.odis-berlin.de/?wfs=https%3A%2F%2Fgdi.berlin.de%2Fservices%2Fwfs%2Falkis_ortsteile)
+- `download.official` GeoJSON URL is in [`config.jsonc`](./config.jsonc). Run `docker compose run --rm pipeline bun run download:official -- --area berlin-ortsteile` to build `source/official.fgb`.
+
+## Notes
+
+- `compare.applyBboxFilter` limits OSM features to a buffered bbox around official data (faster compare; same Schlüssel matching as elsewhere).

@@ -86,9 +86,9 @@ Each run also writes **`history/comparison_table_<YYYY-MM-DD>.json`** (table dat
 
 ### Source data (FlatGeobuf)
 
-Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. OSM input for **all** compares is a **single shared** FlatGeobuf under **`.cache/osm/germany-admin-boundaries-rs.fgb`** produced by **`bun run osm:extract`**. Optional **`source/metadata.json`** records when data was fetched; the compare run embeds that into **`output/comparison_table.json`** for the report (“Quelldaten”). Legacy **`source/source-metadata.json`** is still read if present.
+Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Downloaded **`*.fgb`** and compare-generated GeoJSON under **`output/official_for_edit/`** are not committed — see **[`datasets/.gitignore`](datasets/.gitignore)** (covers all `datasets/<slug>/` trees so new areas do not need a local ignore file). OSM input for **all** compares is a **single shared** FlatGeobuf under **`.cache/osm/germany-admin-boundaries-rs.fgb`** produced by **`bun run osm:extract`**. Optional **`source/metadata.json`** records when data was fetched; the compare run embeds that into **`output/comparison_table.json`** for the report (“Quelldaten”). Legacy **`source/source-metadata.json`** is still read if present.
 
-**`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, **`idNormalization`**, **`metricsCrs`**, optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). There is no per-area OSM path or `osmExtract` block anymore.
+**`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, optional **`official.keyTransposition`** (map official IDs → `de:regionalschluessel` when the source has no Schlüssel), **`idNormalization`**, **`metricsCrs`**, optional **`compare.applyBboxFilter`** / **`compare.bboxBufferDegrees`** (prefilter shared OSM features by a buffered bbox around official data), optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). There is no per-area OSM path or `osmExtract` block anymore.
 
 Convert from GeoJSON (or GPKG, etc.) with GDAL:
 

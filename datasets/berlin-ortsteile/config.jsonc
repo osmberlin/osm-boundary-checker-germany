@@ -1,0 +1,44 @@
+{
+  // Compare: ALKIS Ortsteile `sch` ↔ OSM `de:regionalschluessel` (12-digit regional)
+  "official": {
+    "path": "source/official.fgb",
+    "matchProperty": "sch"
+  },
+  "idNormalization": {
+    "preset": "regional-12"
+  },
+  "metricsCrs": "EPSG:32633",
+
+  "compare": {
+    "applyBboxFilter": true,
+    "bboxBufferDegrees": 0.05
+  },
+
+  "download": {
+    "official": {
+      "kind": "http",
+      "url": "https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
+      "format": "geojson",
+      "crs": "EPSG:4326"
+    }
+  },
+
+  "sources": {
+    "official": {
+      "sourceUrl": "https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326"
+    }
+  },
+
+  "ogcInspectSources": [
+    {
+      "id": "berlin-alkis-ortsteile",
+      "label": "Berlin ALKIS Ortsteile",
+      "type": "wfs",
+      "baseUrl": "https://gdi.berlin.de/services/wfs/alkis_ortsteile",
+      "typeName": "alkis_ortsteile:ortsteile",
+      "wfsVersion": "2.0.0",
+      "bboxAxisOrder": "latlon",
+      "maxFeatures": 40
+    }
+  ]
+}

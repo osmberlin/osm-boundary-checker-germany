@@ -263,9 +263,9 @@ async function main() {
           logPath,
           statePath,
           state,
-          'berlin:download',
+          'download:official',
           'bun',
-          ['run', 'berlin:download'],
+          ['run', 'download:official'],
           workspaceRoot,
         )) !== 0
       )

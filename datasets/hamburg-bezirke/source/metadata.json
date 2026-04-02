@@ -1,0 +1,9 @@
+{
+  "official": {
+    "downloadedAt": "2026-04-02T06:21:54.454Z",
+    "provider": "HTTP",
+    "dataset": "GeoJSON",
+    "sourceUrl": "https://api.hamburg.de/datasets/v1/regionalstatistische_daten_bezirke/collections/regionalstatistische_daten_bezirke/items?f=json&filter=jahr%20%3D%20%272024%27&limit=20",
+    "note": "Declared CRS: EPSG:4326"
+  }
+}

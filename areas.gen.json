@@ -1,11 +1,13 @@
 {
   "areas": [
     "berlin-bezirke",
+    "berlin-ortsteile",
     "de-gemeinden",
     "de-laender",
     "de-landkreise",
     "de-regierungsbezirke",
     "de-staat",
-    "de-verwaltungsgemeinschaften"
+    "de-verwaltungsgemeinschaften",
+    "hamburg-bezirke"
   ]
 }

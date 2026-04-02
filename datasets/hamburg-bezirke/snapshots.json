@@ -1,0 +1,17 @@
+{
+  "area": "hamburg-bezirke",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-04-02",
+      "tablePath": "history/comparison_table_2026-04-02.json",
+      "pmtilesPath": null,
+      "summary": {
+        "totalRows": 7,
+        "meanIou": 0,
+        "matched": 0,
+        "unmatchedOsm": 486
+      }
+    }
+  ]
+}

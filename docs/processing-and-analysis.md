@@ -45,7 +45,7 @@ flowchart LR
   JSON --> SNAP
 ```
 
-Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `download` (BKG + optional HTTP official + OSM PBF/extract) then `compare` per `datasets/<area>/config.jsonc`.
+Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `download` (BKG + optional HTTP official + OSM PBF/extract) then `compare` per `datasets/<area>/config.jsonc`. The scheduled **`pipeline:nightly`** refreshes BKG and **all** `download.official` areas on **Fridays** only (same cadence as BKG); other days reuse cached `source/official.fgb`.
 
 ---
 
@@ -57,8 +57,12 @@ Nightlies and one-shot runs are orchestrated from the workspace root (see [READM
 
 2. **Matching key**  
    - OSM side always uses the tag **`de:regionalschluessel`** (see `OSM_MATCH_PROPERTY` in [`scripts/compare/lib/config.ts`](../scripts/compare/lib/config.ts)).  
-   - Official side uses the property named in **`official.matchProperty`** in that area’s `config.jsonc` (e.g. BKG ARS column, Berlin `name` mapped via preset).  
+   - Official side uses the property named in **`official.matchProperty`** in that area’s `config.jsonc` (e.g. BKG ARS column, Berlin Bezirke `name`, Berlin Ortsteile `sch`).  
+   - Optional **`official.keyTransposition`**: when the official dataset has no compatible Schlüssel, map values from **`official.matchProperty`** to raw OSM Schlüssel strings, then normalize ([`scripts/compare/lib/officialKeyTransposition.ts`](../scripts/compare/lib/officialKeyTransposition.ts)).  
    - Values are normalized with a **preset** (`berlin-bezirk-ags`, `amtlicher-8`, `regional-12`) in [`scripts/compare/lib/normalizeGermanKey.ts`](../scripts/compare/lib/normalizeGermanKey.ts) so shortened official keys and 12-digit OSM keys align where intended.
+
+2b. **Optional bbox prefilter**  
+   If **`compare.applyBboxFilter`** is true, compare derives a union bbox from official geometries, expands it by **`compare.bboxBufferDegrees`** (default `0.05`° when omitted), and drops OSM features whose bbox does not overlap before merge/metrics ([`scripts/compare/lib/compare.ts`](../scripts/compare/lib/compare.ts)).
 
 3. **Geometry merge**  
    Multiple official or OSM features sharing the same normalized key are **unioned** before metrics ([`scripts/compare/lib/geoMerge.ts`](../scripts/compare/lib/geoMerge.ts)).

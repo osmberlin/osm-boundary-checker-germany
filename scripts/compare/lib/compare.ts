@@ -1,13 +1,15 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Geometry } from 'geojson'
+import * as turf from '@turf/turf'
+import type { BBox, Feature, Geometry } from 'geojson'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
 import type { BoundaryConfig } from './config.ts'
 import { loadBoundaryConfig, OSM_MATCH_PROPERTY, sharedGermanyOsmFgbPath } from './config.ts'
 import { unionFeaturesByKey } from './geoMerge.ts'
 import { loadFeatureCollection } from './loadFeatureCollection.ts'
 import { calculateMetrics, type MetricResult } from './metrics.ts'
-import { normalizeOfficialValue, normalizeOsmValue } from './normalizeGermanKey.ts'
+import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
+import { normalizeOsmValue } from './normalizeGermanKey.ts'
 import { projectGeometry } from './projectGeometry.ts'
 
 export type CompareRow = {
@@ -42,6 +44,43 @@ function readAdminLevel(props: Record<string, unknown> | null): string | null {
   return s.length > 0 ? s : null
 }
 
+function mergeBboxes(a: BBox, b: BBox): BBox {
+  return [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])]
+}
+
+function expandBbox(b: BBox, bufferDeg: number): BBox {
+  return [b[0] - bufferDeg, b[1] - bufferDeg, b[2] + bufferDeg, b[3] + bufferDeg]
+}
+
+function bboxesOverlap(a: BBox, b: BBox): boolean {
+  return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3])
+}
+
+function unionOfficialBbox(features: Feature[]): BBox | null {
+  let acc: BBox | null = null
+  for (const f of features) {
+    if (!f.geometry) continue
+    const bb = turf.bbox(f as turf.Feature)
+    acc = acc ? mergeBboxes(acc, bb) : bb
+  }
+  return acc
+}
+
+function filterOsmByOfficialBbox(
+  osmFeatures: Feature[],
+  officialUnion: BBox,
+  bufferDeg: number,
+): Feature[] {
+  const pad = expandBbox(officialUnion, bufferDeg)
+  return osmFeatures.filter((f) => {
+    if (!f.geometry) return false
+    const bb = turf.bbox(f as turf.Feature)
+    return bboxesOverlap(pad, bb)
+  })
+}
+
+const DEFAULT_BBOX_BUFFER_DEG = 0.05
+
 export async function runCompare(
   repoRoot: string,
   areaFolder: string,
@@ -52,7 +91,7 @@ export async function runCompare(
   unmatchedOsm: UnmatchedOsmRow[]
   metricsCrs: string
 }> {
-  const config = loadBoundaryConfig(configRaw)
+  const config = loadBoundaryConfig(configRaw, `${areaFolder}`)
   const areaPath = datasetFolderPath(repoRoot, areaFolder)
   const officialPath = join(areaPath, config.official.path)
   const osmPath = sharedGermanyOsmFgbPath(repoRoot)
@@ -62,16 +101,32 @@ export async function runCompare(
   const preset = config.idNormalization.preset
   const metricsCrs = config.metricsCrs
 
-  const [officialFc, osmFc] = await Promise.all([
-    loadFeatureCollection(officialPath),
-    loadFeatureCollection(osmPath),
-  ])
+  const officialFc = await loadFeatureCollection(officialPath)
+  let osmFc = await loadFeatureCollection(osmPath)
 
-  const officialMap = unionFeaturesByKey(officialFc, (props) => {
-    const v = (props as Record<string, unknown>)?.[config.official.matchProperty]
-    if (v == null) return null
-    return normalizeOfficialValue(String(v), preset)
-  })
+  if (config.compare?.applyBboxFilter) {
+    const ob = unionOfficialBbox(officialFc.features)
+    if (!ob) {
+      throw new Error(
+        `${areaFolder}: compare.applyBboxFilter is true but official features have no geometries to derive a bbox`,
+      )
+    }
+    const buf =
+      config.compare.bboxBufferDegrees !== undefined
+        ? config.compare.bboxBufferDegrees
+        : DEFAULT_BBOX_BUFFER_DEG
+    const filtered = filterOsmByOfficialBbox(osmFc.features, ob, buf)
+    osmFc = { type: 'FeatureCollection', features: filtered }
+  }
+
+  const officialMap = unionFeaturesByKey(officialFc, (props) =>
+    officialPropertyToMatchKey(
+      props as Record<string, unknown> | null,
+      config.official.matchProperty,
+      config.official.keyTransposition,
+      preset,
+    ),
+  )
 
   const osmMap = unionFeaturesByKey(osmFc, (props) => {
     const v = (props as Record<string, unknown>)?.[OSM_MATCH_PROPERTY]
