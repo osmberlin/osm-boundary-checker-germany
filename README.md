@@ -146,13 +146,13 @@ docker compose run --rm pipeline bun run test
 
 ## Report UI
 
-Development (Bun bundles `./index.html`, HMR; `/datasets/*` and `/__areas.json` from repo root):
+Development (Bun bundles `./index.html`, HMR; `/datasets/*` and `/areas.gen.json` from repo root):
 
 ```bash
 docker compose up web
 ```
 
-Open the printed URL (default port 3000). The home page loads **`__areas.json`** (committed at the repo root; regenerated before dev/build via `report/generateAreasJson.ts`). The UI loads **`comparison_table.json`** from `/datasets/<area>/output/…` and the map loads **`comparison.pmtiles`** via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
+Open the printed URL (default port 3000). The home page loads **`areas.gen.json`** (committed at the repo root; regenerated before dev/build via `report/generateAreasJson.ts`). The UI loads **`comparison_table.json`** from `/datasets/<area>/output/…` and the map loads **`comparison.pmtiles`** via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
 
 Production build:
 
@@ -160,7 +160,7 @@ Production build:
 docker compose run --rm pipeline bun run report:build
 ```
 
-Preview the static `dist/` output plus `datasets/` and `__areas.json` (same as dev):
+Preview the static `dist/` output plus `datasets/` and `areas.gen.json` (same as dev):
 
 ```bash
 docker compose run --rm web bun run report:preview
@@ -170,9 +170,9 @@ Workspace scripts use Bun’s [`--filter`](https://bun.sh/docs/pm/filter) so you
 
 The basemap uses **[OpenFreeMap](https://openfreemap.org/)** Positron (vector tiles, no API key). Attribution is handled by MapLibre per [OpenFreeMap](https://openfreemap.org/).
 
-**Static deploy (GitHub Pages, Netlify, etc.):** Put the built app and the data on the **same origin**. Copy `report/dist/*` to the site root, and copy the repo’s **`datasets/`** folder and **`__areas.json`** next to it (same layout as this repository: `index.html`, `assets…`, `datasets/<area>/output/*.json`, `*.pmtiles`, `__areas.json`). The UI requests `/datasets/…` and `/__areas.json` — no extra `public/` folder. See [`report/src/data/paths.ts`](report/src/data/paths.ts).
+**Static deploy (GitHub Pages, Netlify, etc.):** Put the built app and the data on the **same origin**. Copy `report/dist/*` to the site root, and copy the repo’s **`datasets/`** folder and **`areas.gen.json`** next to it (same layout as this repository: `index.html`, `assets…`, `datasets/<area>/output/*.json`, `*.pmtiles`, `areas.gen.json`). The UI requests `/datasets/…` and `/areas.gen.json` — no extra `public/` folder. See [`report/src/data/paths.ts`](report/src/data/paths.ts).
 
-**PMTiles:** The library uses HTTP **`Range`** requests against the `.pmtiles` URL ([`FetchSource`](https://github.com/protomaps/PMTiles/blob/main/js/src/v2.ts)); the response must expose **`Content-Length`** and, for range requests, **`206`** + **`Content-Range`**. **Local dev/preview** uses [`report/serveRepoDataResponse.ts`](report/serveRepoDataResponse.ts) (Node `fs` + `Range` handling; static file semantics, not an application API). **GitHub Pages, Netlify, S3 static website hosting, etc.** normally serve uploaded files with byte-range support automatically — you deploy `dist/` + `datasets/` + `__areas.json` only; no serverless functions or custom routes required for PMTiles.
+**PMTiles:** The library uses HTTP **`Range`** requests against the `.pmtiles` URL ([`FetchSource`](https://github.com/protomaps/PMTiles/blob/main/js/src/v2.ts)); the response must expose **`Content-Length`** and, for range requests, **`206`** + **`Content-Range`**. **Local dev/preview** uses [`report/serveRepoDataResponse.ts`](report/serveRepoDataResponse.ts) (Node `fs` + `Range` handling; static file semantics, not an application API). **GitHub Pages, Netlify, S3 static website hosting, etc.** normally serve uploaded files with byte-range support automatically — you deploy `dist/` + `datasets/` + `areas.gen.json` only; no serverless functions or custom routes required for PMTiles.
 
 The report registers the MapLibre `pmtiles://` protocol once at startup via [`report/src/main.tsx`](report/src/main.tsx) → [`report/src/lib/pmtilesMaplibreRegister.ts`](report/src/lib/pmtilesMaplibreRegister.ts) (see [PMTiles + MapLibre](https://github.com/protomaps/PMTiles#maplibre-gl-js)).
 

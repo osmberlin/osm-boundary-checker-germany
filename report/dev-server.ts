@@ -1,10 +1,11 @@
 /**
  * Dev: Bun bundles React via HTML import + HMR.
- * Serves `/datasets/*`, `/data/*`, and generated `/__areas.json` from DATA_ROOT.
+ * Serves `/datasets/*`, `/data/*`, and generated areas index JSON from DATA_ROOT.
  * @see https://bun.sh/docs/bundler/fullstack
  */
 import { join, resolve } from 'node:path'
 import homepage from './index.html'
+import { AREAS_GEN_URL_PATH } from './generatedAssets.ts'
 import { listComparisonAreas } from './listComparisonAreas.ts'
 import { repoDataFileResponse } from './serveRepoDataResponse.ts'
 
@@ -47,7 +48,7 @@ const server = Bun.serve({
   port: Number(process.env.PORT) || 3000,
   routes: {
     '/': homepage,
-    '/__areas.json': serveAreasJson,
+    [AREAS_GEN_URL_PATH]: serveAreasJson,
     '/datasets/*': serveDatasets,
     '/data/*': serveProcessingData,
     '/*': homepage,

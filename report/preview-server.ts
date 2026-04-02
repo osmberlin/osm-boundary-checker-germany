@@ -1,5 +1,6 @@
-/** Serves `dist/` + `/datasets/*` + `/data/*` + generated `/__areas.json` from DATA_ROOT. */
+/** Serves `dist/` + `/datasets/*` + `/data/*` + generated areas index JSON from DATA_ROOT. */
 import { join, resolve } from 'node:path'
+import { AREAS_GEN_URL_PATH } from './generatedAssets.ts'
 import { listComparisonAreas } from './listComparisonAreas.ts'
 import { repoDataFileResponse } from './serveRepoDataResponse.ts'
 
@@ -13,7 +14,7 @@ const preview = Bun.serve({
   port: Number(process.env.PORT) || 4173,
   async fetch(req) {
     const url = new URL(req.url)
-    if (url.pathname === '/__areas.json') {
+    if (url.pathname === AREAS_GEN_URL_PATH) {
       const areas = listComparisonAreas(dataRoot)
       return new Response(`${JSON.stringify({ areas }, null, 2)}\n`, {
         headers: {

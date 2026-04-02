@@ -1,3 +1,4 @@
+import { AREAS_GEN_BASENAME } from '../../generatedAssets.ts'
 import type { ReportRow } from '../types/report'
 
 /** UI copy (German) */
@@ -106,7 +107,7 @@ export const de = {
     loadingAreas: 'Gebiete werden geladen …',
     noAreas:
       'Keine Gebiete mit output/comparison_table.json unter datasets/ gefunden. Vergleich ausführen (bun run compare).',
-    areasError: 'Gebiete konnten nicht geladen werden (__areas.json fehlt oder ist ungültig).',
+    areasError: `Gebiete konnten nicht geladen werden (${AREAS_GEN_BASENAME} fehlt oder ist ungültig).`,
     /** Home list: per-area row of category counts. */
     categoryStatsAria: 'Zugeordnet, nur amtlich, OSM ohne BKG-Treffer — Anzahl',
     unmatchedStat: 'OSM ohne BKG-Treffer',
