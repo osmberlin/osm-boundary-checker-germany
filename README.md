@@ -4,12 +4,12 @@ Compare official administrative boundaries (**FlatGeobuf**) with OpenStreetMap p
 
 ## Quick start
 
-Run everything from **this directory** (the Bun workspace root).
+Run everything from **this directory** with Docker Compose.
 
-1. **Install** — [Bun](https://bun.sh/), then `bun install`. Put **tippecanoe**, **GDAL** (`ogr2ogr`), and **osmium-tool** on your `PATH` (see **Setup** below).
-2. **Source data** — If you do not already have per-area `datasets/<slug>/source/official.fgb` and the shared OSM extract `.cache/osm/germany-admin-boundaries-rs.fgb`, run `bun run download` (large downloads; details under **Download**).
-3. **Processing** — `bun run compare` (interactive area list). Non-interactive: `CI=1 bun run compare -- --area berlin-bezirke` or `bun run compare:boundaries -- --area berlin-bezirke`.
-4. **Web app** — `bun run report:dev`, then open the printed URL (often [http://localhost:3000](http://localhost:3000)).
+1. **Install** — Docker + Docker Compose.
+2. **Build** — `docker compose build`.
+3. **Source data + processing** — `docker compose run --rm pipeline bun run pipeline:nightly`.
+4. **Web app** — `docker compose up web`, then open [http://localhost:4173](http://localhost:4173).
 
 ## Stack
 
@@ -18,48 +18,37 @@ Run everything from **this directory** (the Bun workspace root).
 ## Setup
 
 ```bash
-bun install
+docker compose build
 ```
 
-Install **[tippecanoe](https://github.com/felt/tippecanoe)**, **[GDAL](https://gdal.org/)** (`ogr2ogr`), and **[osmium-tool](https://osmcode.org/osmium-tool/)** on your PATH:
-
-- **Tippecanoe** builds `comparison.pmtiles` from FlatGeobuf.
-- **GDAL** converts GeoJSON, GPKG, etc. to `.fgb`, and reads **OSM `.pbf`** (via the OSM driver) into FlatGeobuf.
-- **osmium-tool** filters large PBF extracts (e.g. Geofabrik Germany) before `ogr2ogr`, so you do not need Overpass, PostgreSQL, or **osm2pgsql** for that path.
-
-**macOS (Homebrew):**
-
-```bash
-brew install tippecanoe gdal osmium-tool
-```
-
-On Linux, use your distro packages for `gdal-bin` and `osmium-tool`, and install tippecanoe from [its releases](https://github.com/felt/tippecanoe) or a community package.
+The Docker image contains **Bun**, **tippecanoe**, **GDAL** (`ogr2ogr`), **osmium-tool**, and **unzip**.
+Host installs for these tools are intentionally not required for normal repo work.
 
 ## Compare (CLI)
 
 Interactive (lists `datasets/*` folders that contain `config.jsonc`, or legacy `boundary-config.json`):
 
 ```bash
-bun run compare
+docker compose run --rm pipeline bun run compare
 ```
 
 Non-interactive (CI, Docker): set `CI=1` and pass `--area <folder>` or omit `--area` to process **all** configured areas:
 
 ```bash
-CI=1 bun run compare -- --area berlin-bezirke
-CI=1 bun run compare -- --all
+docker compose run --rm pipeline env CI=1 bun run compare -- --area berlin-bezirke
+docker compose run --rm pipeline env CI=1 bun run compare -- --all
 ```
 
 Single area without the root wrapper (no Clack), same as `bun run --filter ./scripts compare`:
 
 ```bash
-bun run compare:boundaries -- --area berlin-bezirke
+docker compose run --rm pipeline bun run compare:boundaries -- --area berlin-bezirke
 ```
 
 Or invoke the compare script directly:
 
 ```bash
-bun scripts/compare/compare-boundaries.ts --area berlin-bezirke
+docker compose run --rm pipeline bun scripts/compare/compare-boundaries.ts --area berlin-bezirke
 ```
 
 ## Download (prepare source data)
@@ -67,7 +56,7 @@ bun scripts/compare/compare-boundaries.ts --area berlin-bezirke
 One command runs BKG VG25 cache + extract, config-driven HTTP official sources (where defined), then OSM PBF + shared extract:
 
 ```bash
-bun run download
+docker compose run --rm pipeline bun run download
 ```
 
 This is a **`package.json` chain** (not a monolithic script): `download:bkg && download:official && download:osm`.
@@ -112,9 +101,9 @@ ogr2ogr -f FlatGeobuf output.fgb input.geojson
 Download the official **ZIP**, cache it under **`.cache/bkg/`** (ignored via [`.cache/.gitignore`](.cache/.gitignore)), and extract layers to `source/official.fgb` per area:
 
 ```bash
-bun run bkg:download
+docker compose run --rm pipeline bun run bkg:download
 # or: bun run bkg:download -- --zip ~/Downloads/vg25.utm32s.gpkg.zip
-bun run bkg:extract
+docker compose run --rm pipeline bun run bkg:extract
 # both: bun run bkg
 # single area: bun run bkg:extract -- --area de-gemeinden
 ```
@@ -124,9 +113,9 @@ See [docs/vg25-bkg.md](docs/vg25-bkg.md) for URLs, `ogrinfo`, and layer notes.
 **OSM PBF → shared OSM FlatGeobuf:** one **`ogr2ogr`** pass writes **`.cache/osm/germany-admin-boundaries-rs.fgb`**. It includes **every** administrative boundary with a non-empty **`de:regionalschluessel`**, and **Germany** (`admin_level=2`, `name=Deutschland`) with a **synthetic** `000000000000` when the tag is missing (Staat compare). Per-area `admin_level` filtering was removed so mismatched keys stay visible in **`unmatchedOsm`**.
 
 ```bash
-bun run osm:download              # → .cache/osm/germany-latest.osm.pbf
-bun run osm:extract               # → .cache/osm/germany-admin-boundaries-rs.fgb
-bun run osm                       # download then extract
+docker compose run --rm pipeline bun run osm:download              # → .cache/osm/germany-latest.osm.pbf
+docker compose run --rm pipeline bun run osm:extract               # → .cache/osm/germany-admin-boundaries-rs.fgb
+docker compose run --rm pipeline bun run osm                       # download then extract
 # Optional: OSM_GERMANY_PBF=...  or  --pbf /path/to/file.osm.pbf
 # bun run osm:extract -- --dry-run
 ```
@@ -151,7 +140,7 @@ Adjust there if you need a different detail zoom or trade-off vs. file size.
 ## Tests
 
 ```bash
-bun run test
+docker compose run --rm pipeline bun run test
 # or: bun run test:scripts
 ```
 
@@ -160,7 +149,7 @@ bun run test
 Development (Bun bundles `./index.html`, HMR; `/datasets/*` and `/__areas.json` from repo root):
 
 ```bash
-bun run report:dev
+docker compose up web
 ```
 
 Open the printed URL (default port 3000). The home page loads **`__areas.json`** (committed at the repo root; regenerated before dev/build via `report/generateAreasJson.ts`). The UI loads **`comparison_table.json`** from `/datasets/<area>/output/…` and the map loads **`comparison.pmtiles`** via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
@@ -168,13 +157,13 @@ Open the printed URL (default port 3000). The home page loads **`__areas.json`**
 Production build:
 
 ```bash
-bun run report:build
+docker compose run --rm pipeline bun run report:build
 ```
 
 Preview the static `dist/` output plus `datasets/` and `__areas.json` (same as dev):
 
 ```bash
-bun run report:preview
+docker compose run --rm web bun run report:preview
 ```
 
 Workspace scripts use Bun’s [`--filter`](https://bun.sh/docs/pm/filter) so you do not need to `cd` into `report/`.

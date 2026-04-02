@@ -125,7 +125,9 @@ function buildRuns(events: LogEvent[]): RunView[] {
       })
     }
   }
-  return [...byRun.values()].sort((a, b) => String(b.startedAt ?? '').localeCompare(String(a.startedAt ?? '')))
+  return [...byRun.values()].sort((a, b) =>
+    String(b.startedAt ?? '').localeCompare(String(a.startedAt ?? '')),
+  )
 }
 
 export function ProcessingStatus() {
@@ -205,8 +207,9 @@ export function ProcessingStatus() {
                 {de.status.runId}: <code className="rounded bg-zinc-800 px-1">{run.runId}</code>
               </p>
               <p className="mt-1 text-sm text-zinc-300">
-                {de.status.started}: {fmtDate(run.startedAt)} | {de.status.ended}: {fmtDate(run.endedAt)} |{' '}
-                {de.status.duration}: {fmtMs(run.durationMs)} | {de.status.result}:{' '}
+                {de.status.started}: {fmtDate(run.startedAt)} | {de.status.ended}:{' '}
+                {fmtDate(run.endedAt)} | {de.status.duration}: {fmtMs(run.durationMs)} |{' '}
+                {de.status.result}:{' '}
                 <span className={run.status === 'fail' ? 'text-red-300' : 'text-emerald-400'}>
                   {run.status ?? '—'}
                 </span>

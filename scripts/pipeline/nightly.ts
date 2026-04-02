@@ -1,7 +1,15 @@
 #!/usr/bin/env bun
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { existsSync, mkdirSync, openSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import { areaHasCompareConfig } from '../shared/areaConfig.ts'
 import { DATASETS_DIRECTORY } from '../shared/datasetPaths.ts'
@@ -71,9 +79,7 @@ function nowIso(): string {
 }
 
 function appendJsonl(path: string, event: LogEvent): void {
-  Bun.write(path, `${JSON.stringify(event)}\n`, { createPath: true, append: true }).catch(() => {
-    // Keep the pipeline running even if logging cannot append once.
-  })
+  appendFileSync(path, `${JSON.stringify(event)}\n`, 'utf-8')
 }
 
 function writeState(path: string, state: ProcessingState): void {
@@ -189,144 +195,149 @@ async function main() {
   const fail = () => {
     failed = true
   }
-
-  // Download + extract OSM every run.
-  if (
-    (await runStep(
-      runId,
-      logPath,
-      statePath,
-      state,
-      'osm:download',
-      'bun',
-      ['run', 'osm:download'],
-      workspaceRoot,
-    )) !== 0
-  )
-    fail()
-  if (
-    !failed &&
-    (await runStep(
-      runId,
-      logPath,
-      statePath,
-      state,
-      'osm:extract',
-      'bun',
-      ['run', 'osm:extract'],
-      workspaceRoot,
-    )) !== 0
-  )
-    fail()
-
-  // Refresh official reference data only on Fridays.
-  if (!failed && isFriday(timezone)) {
-    if (
-      (await runStep(
-        runId,
-        logPath,
-        statePath,
-        state,
-        'bkg:download',
-        'bun',
-        ['run', 'bkg:download'],
-        workspaceRoot,
-      )) !== 0
-    )
-      fail()
-    if (
-      !failed &&
-      (await runStep(
-        runId,
-        logPath,
-        statePath,
-        state,
-        'bkg:extract',
-        'bun',
-        ['run', 'bkg:extract'],
-        workspaceRoot,
-      )) !== 0
-    )
-      fail()
-    if (
-      !failed &&
-      (await runStep(
-        runId,
-        logPath,
-        statePath,
-        state,
-        'berlin:download',
-        'bun',
-        ['run', 'berlin:download'],
-        workspaceRoot,
-      )) !== 0
-    )
-      fail()
-  } else {
-    appendJsonl(logPath, {
-      kind: 'step_end',
-      runId,
-      at: nowIso(),
-      step: 'reference:refresh',
-      status: 'skipped',
-      reason: 'friday_only',
-    })
-  }
-
-  const areas = discoverAreas(workspaceRoot)
-  if (areas.length === 0) {
-    console.error(`No configured datasets found under ${DATASETS_DIRECTORY}/`)
-    fail()
-  }
-
-  for (const area of areas) {
-    if (failed) break
-    const t0 = Date.now()
-    appendJsonl(logPath, { kind: 'dataset_start', runId, at: nowIso(), dataset: area })
-    writeState(statePath, { ...state, phase: `compare:${area}`, updatedAt: nowIso() })
-    const exitCode = await runCommand(
-      'bun',
-      ['run', 'compare:boundaries', '--', '--area', area],
-      workspaceRoot,
-      { CI: '1' },
-    )
-    appendJsonl(logPath, {
-      kind: 'dataset_end',
-      runId,
-      at: nowIso(),
-      dataset: area,
-      status: exitCode === 0 ? 'ok' : 'fail',
-      durationMs: Date.now() - t0,
-      exitCode,
-    })
-    if (exitCode !== 0) fail()
-  }
-
-  const finalStatus = failed ? 'fail' : 'ok'
-  const finishedAt = nowIso()
-  appendJsonl(logPath, {
-    kind: 'run_end',
-    runId,
-    at: finishedAt,
-    status: finalStatus,
-    durationMs: Date.now() - runT0,
-  })
-  writeState(statePath, {
-    ...state,
-    inProgress: false,
-    phase: 'finished',
-    updatedAt: finishedAt,
-    completedAt: finishedAt,
-    status: finalStatus,
-  })
+  let exitCode = 0
 
   try {
-    if (lockFd >= 0) rmSync(lockPath, { force: true })
-  } catch {
-    // ignore cleanup errors
+    // Download + extract OSM every run.
+    if (
+      (await runStep(
+        runId,
+        logPath,
+        statePath,
+        state,
+        'osm:download',
+        'bun',
+        ['run', 'osm:download'],
+        workspaceRoot,
+      )) !== 0
+    )
+      fail()
+    if (
+      !failed &&
+      (await runStep(
+        runId,
+        logPath,
+        statePath,
+        state,
+        'osm:extract',
+        'bun',
+        ['run', 'osm:extract'],
+        workspaceRoot,
+      )) !== 0
+    )
+      fail()
+
+    // Refresh official reference data only on Fridays.
+    if (!failed && isFriday(timezone)) {
+      if (
+        (await runStep(
+          runId,
+          logPath,
+          statePath,
+          state,
+          'bkg:download',
+          'bun',
+          ['run', 'bkg:download'],
+          workspaceRoot,
+        )) !== 0
+      )
+        fail()
+      if (
+        !failed &&
+        (await runStep(
+          runId,
+          logPath,
+          statePath,
+          state,
+          'bkg:extract',
+          'bun',
+          ['run', 'bkg:extract'],
+          workspaceRoot,
+        )) !== 0
+      )
+        fail()
+      if (
+        !failed &&
+        (await runStep(
+          runId,
+          logPath,
+          statePath,
+          state,
+          'berlin:download',
+          'bun',
+          ['run', 'berlin:download'],
+          workspaceRoot,
+        )) !== 0
+      )
+        fail()
+    } else {
+      appendJsonl(logPath, {
+        kind: 'step_end',
+        runId,
+        at: nowIso(),
+        step: 'reference:refresh',
+        status: 'skipped',
+        reason: 'friday_only',
+      })
+    }
+
+    const areas = discoverAreas(workspaceRoot)
+    if (areas.length === 0) {
+      console.error(`No configured datasets found under ${DATASETS_DIRECTORY}/`)
+      fail()
+    }
+
+    for (const area of areas) {
+      if (failed) break
+      const t0 = Date.now()
+      appendJsonl(logPath, { kind: 'dataset_start', runId, at: nowIso(), dataset: area })
+      writeState(statePath, { ...state, phase: `compare:${area}`, updatedAt: nowIso() })
+      const exitCode = await runCommand(
+        'bun',
+        ['run', 'compare:boundaries', '--', '--area', area],
+        workspaceRoot,
+        { CI: '1' },
+      )
+      appendJsonl(logPath, {
+        kind: 'dataset_end',
+        runId,
+        at: nowIso(),
+        dataset: area,
+        status: exitCode === 0 ? 'ok' : 'fail',
+        durationMs: Date.now() - t0,
+        exitCode,
+      })
+      if (exitCode !== 0) fail()
+    }
+
+    const finalStatus = failed ? 'fail' : 'ok'
+    const finishedAt = nowIso()
+    appendJsonl(logPath, {
+      kind: 'run_end',
+      runId,
+      at: finishedAt,
+      status: finalStatus,
+      durationMs: Date.now() - runT0,
+    })
+    writeState(statePath, {
+      ...state,
+      inProgress: false,
+      phase: 'finished',
+      updatedAt: finishedAt,
+      completedAt: finishedAt,
+      status: finalStatus,
+    })
+
+    exitCode = failed ? 1 : 0
+  } finally {
+    try {
+      if (lockFd >= 0) rmSync(lockPath, { force: true })
+    } catch {
+      // ignore cleanup errors
+    }
   }
 
-  process.exit(failed ? 1 : 0)
+  process.exit(exitCode)
 }
 
 main().catch((err) => {

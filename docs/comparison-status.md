@@ -54,13 +54,13 @@ Source: `ogrinfo … -so` on `datasets/<area>/source/official.fgb` (BKG layer) a
 
 ## Commands used at repo root
 
-- Compare one area: `CI=1 bun run run.ts --area <folder>`
-- Compare all discoverable areas: `CI=1 bun run run.ts --all`
-- Same compare entrypoint via workspace: `bun run compare:boundaries -- --area <folder>` or `bun run --filter ./scripts compare -- --area <folder>`
-- Regenerate OSM FlatGeobuf only (after PBF is present): `bun run extract-osm` or `bun run --filter ./scripts osm:extract -- --area <folder>`
+- Compare one area: `docker compose run --rm pipeline env CI=1 bun run run.ts --area <folder>`
+- Compare all discoverable areas: `docker compose run --rm pipeline env CI=1 bun run run.ts --all`
+- Same compare entrypoint via workspace: `docker compose run --rm pipeline bun run compare:boundaries -- --area <folder>`
+- Regenerate OSM FlatGeobuf only (after PBF is present): `docker compose run --rm pipeline bun run extract-osm`
 
 ## Report app
 
-- Typecheck: `cd report && bunx tsc --noEmit`
-- Build: `bun run report:build`
-- Dev: `bun run report:dev`
+- Typecheck: `docker compose run --rm pipeline bunx tsc --noEmit -p report/tsconfig.json`
+- Build: `docker compose run --rm pipeline bun run report:build`
+- Dev/preview server: `docker compose up web`

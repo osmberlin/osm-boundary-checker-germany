@@ -16,6 +16,7 @@ COPY package.json bun.lock tsconfig.json run.ts ./
 COPY scripts ./scripts
 COPY report ./report
 COPY datasets ./datasets
+RUN mkdir -p /opt/seed && cp -R ./datasets /opt/seed/datasets
 COPY bkg.config.json biome.jsonc .gitignore __areas.json ./
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
