@@ -304,6 +304,8 @@ export const de = {
     official: 'Amtliche Grenze',
     osm: 'OpenStreetMap-Grenze',
     diff: 'Abweichungsflächen',
+    historicSnapshotNoTiles:
+      'Bei einem historischen Tabellen-Snapshot ist keine Kartenansicht verfügbar: die Geometrien werden nicht als Kachel-Archiv (PMTiles) mitgespeichert. Tabellen, Kennzahlen und übrige Angaben auf dieser Seite beziehen sich weiterhin auf den gewählten Snapshot.',
   },
 } as const
 

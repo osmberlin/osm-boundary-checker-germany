@@ -1,6 +1,7 @@
 import { parseAsString, useQueryState } from 'nuqs'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { InfoNotice } from '../components/InfoNotice'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { loadComparison } from '../data/load'
 import { comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
@@ -96,9 +97,7 @@ export function UnmatchedReport() {
       <p className="mb-6 text-sm text-slate-400">
         {de.areaReport.unmatchedCountLabel}: {formatDeInteger(unmatched.length)}
       </p>
-      {snapParam ? (
-        <p className="mb-6 text-amber-200 text-sm">{de.unmatched.mapOnlyLatest}</p>
-      ) : null}
+      {snapParam ? <InfoNotice className="mb-6">{de.unmatched.mapOnlyLatest}</InfoNotice> : null}
       <p className="mb-6">
         <Link className="text-sky-400 underline" to={areaHref}>
           {de.unmatched.backToArea}
@@ -133,7 +132,7 @@ export function UnmatchedReport() {
               </div>
             </div>
           ) : unmatched.length > 0 ? (
-            <p className="mb-6 text-sm text-slate-400">{de.unmatched.noPmtiles}</p>
+            <InfoNotice className="mb-6">{de.unmatched.noPmtiles}</InfoNotice>
           ) : null}
 
           <div className="overflow-x-auto rounded border border-slate-700">

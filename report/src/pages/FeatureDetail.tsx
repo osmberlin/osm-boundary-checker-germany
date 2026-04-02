@@ -12,6 +12,7 @@ import {
   IouInfoButton,
   SymDiffInfoButton,
 } from '../components/HausdorffInfoModal'
+import { InfoNotice } from '../components/InfoNotice'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { hexToRgba } from '../components/MapLegend'
@@ -93,9 +94,13 @@ export function FeatureDetail() {
     <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
       <StatsStrip row={row} mapLayers={mapLayers} />
 
-      <div className="mt-4 w-full overflow-hidden rounded border border-slate-700">
-        <div className="h-[480px] w-full">
-          {data.hasPmtiles ? (
+      {!data.hasPmtiles ? (
+        <InfoNotice className="mt-4">
+          {snapshot ? de.map.historicSnapshotNoTiles : de.feature.noPmtiles}
+        </InfoNotice>
+      ) : (
+        <div className="mt-4 w-full overflow-hidden rounded border border-slate-700">
+          <div className="h-[480px] w-full">
             <Suspense
               fallback={
                 <div className="flex h-full items-center justify-center text-slate-500">
@@ -115,13 +120,9 @@ export function FeatureDetail() {
                 showDiff={mapLayers.showDiff}
               />
             </Suspense>
-          ) : (
-            <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
-              {de.feature.noPmtiles}
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       <LiveSourceProperties data={data} row={row} />
 

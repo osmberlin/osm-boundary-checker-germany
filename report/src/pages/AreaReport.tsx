@@ -21,6 +21,7 @@ import {
   YAxis,
 } from 'recharts'
 import { LayerToggleStatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
+import { InfoNotice } from '../components/InfoNotice'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import {
   AreaDeltaInfoButton,
@@ -293,41 +294,45 @@ export function AreaReport() {
       </section>
 
       <div className="mb-8">
-        <div className="w-full overflow-hidden rounded border border-slate-700">
-          <div className="h-[420px] w-full">
-            {visibleRows.length === 0 ? (
-              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
-                {st.mapNoVisibleCategories}
-              </div>
-            ) : data.hasPmtiles ? (
-              <Suspense
-                fallback={
-                  <div className="flex h-full items-center justify-center text-slate-500">
-                    {st.mapLoading}
-                  </div>
-                }
-              >
-                <MapPane
-                  pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId, snapParam)}
-                  sourceLayer={data.tippecanoeLayer}
-                  featureId={null}
-                  allowedFeatureIds={mapAllowlist}
-                  mapBbox={overviewMapBbox}
-                  urlMapView={mapViewParam.mapView}
-                  onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
-                  showOfficial={mapLayers.showOfficial}
-                  showOsm={mapLayers.showOsm}
-                  showDiff={mapLayers.showDiff}
-                  onFeatureClick={goToFeature}
-                />
-              </Suspense>
-            ) : (
-              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
-                {de.feature.noPmtiles}
-              </div>
-            )}
+        {snapParam && !data.hasPmtiles ? (
+          <InfoNotice>{de.map.historicSnapshotNoTiles}</InfoNotice>
+        ) : (
+          <div className="w-full overflow-hidden rounded border border-slate-700">
+            <div className="h-[420px] w-full">
+              {visibleRows.length === 0 ? (
+                <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
+                  {st.mapNoVisibleCategories}
+                </div>
+              ) : data.hasPmtiles ? (
+                <Suspense
+                  fallback={
+                    <div className="flex h-full items-center justify-center text-slate-500">
+                      {st.mapLoading}
+                    </div>
+                  }
+                >
+                  <MapPane
+                    pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId, snapParam)}
+                    sourceLayer={data.tippecanoeLayer}
+                    featureId={null}
+                    allowedFeatureIds={mapAllowlist}
+                    mapBbox={overviewMapBbox}
+                    urlMapView={mapViewParam.mapView}
+                    onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
+                    showOfficial={mapLayers.showOfficial}
+                    showOsm={mapLayers.showOsm}
+                    showDiff={mapLayers.showDiff}
+                    onFeatureClick={goToFeature}
+                  />
+                </Suspense>
+              ) : (
+                <div className="flex h-full items-center justify-center p-4">
+                  <InfoNotice className="max-w-xl">{de.feature.noPmtiles}</InfoNotice>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="mb-8 h-64 rounded border border-slate-700 bg-slate-900 p-2">
