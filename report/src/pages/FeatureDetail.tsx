@@ -13,6 +13,7 @@ import {
   SymDiffInfoButton,
 } from '../components/HausdorffInfoModal'
 import { InfoNotice } from '../components/InfoNotice'
+import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { hexToRgba } from '../components/MapLegend'
@@ -123,6 +124,8 @@ export function FeatureDetail() {
           </div>
         </div>
       )}
+
+      <FeatureDatasetProperties row={row} />
 
       <LiveSourceProperties data={data} row={row} />
 

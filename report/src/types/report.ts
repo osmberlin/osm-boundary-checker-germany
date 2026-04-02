@@ -45,6 +45,10 @@ export type ReportRow = {
    * Omitted or null when there is no official geometry for this row, or in historic table-only snapshots.
    */
   officialForEditPath?: string | null
+  /** GeoJSON properties from the compare merge (amtlich). Omitted in older `comparison_table.json`. */
+  officialProperties?: Record<string, unknown> | null
+  /** GeoJSON properties from the compare merge (OSM). Omitted in older `comparison_table.json`. */
+  osmProperties?: Record<string, unknown> | null
 }
 
 /** OSM polygon whose normalized `de:regionalschluessel` has no row in this area’s official export. */

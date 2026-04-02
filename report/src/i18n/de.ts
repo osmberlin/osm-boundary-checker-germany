@@ -189,6 +189,16 @@ export const de = {
     liveOsmHttp: 'Overpass-Anfrage fehlgeschlagen:',
     liveOsmHitTitle: (osmType: string, id: number) => `${osmType} ${id}`,
 
+    datasetPropertiesSectionAria: 'Attribute aus dem Vergleich (amtlich und OSM)',
+    datasetPropertiesSectionTitle: 'Attribute aus dem Vergleich',
+    datasetPropertiesSectionLead:
+      'Eigenschaften der zusammengeführten GeoJSON-Objekte zum Zeitpunkt des letzten Vergleichs — ohne Live-Abfrage.',
+    datasetOfficialCardTitle: 'Amtliche Daten',
+    datasetOsmCardTitle: 'OSM-Daten',
+    datasetPropertiesEmpty: '—',
+    datasetPropertiesLegacySnapshot:
+      'Für diesen Snapshot sind keine gespeicherten Attribute verfügbar — Vergleich erneut ausführen.',
+
     updateMap: {
       title: 'Daten in OSM bearbeiten',
       lead: 'Amtliche Referenzgeometrie als GeoJSON sowie Direktlinks zu iD und JOSM — für Abgleich und Korrektur der OSM-Grenze.',

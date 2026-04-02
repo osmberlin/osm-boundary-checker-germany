@@ -366,6 +366,8 @@ export function writeOutputs(
             }
           : null,
         mapBbox: mapBboxForRow(r),
+        officialProperties: r.officialProperties,
+        osmProperties: r.osmProperties,
         officialForEditPath:
           r.officialGeometryWgs84 && editStem != null
             ? `output/${OFFICIAL_FOR_EDIT_DIR}/${officialForEditGeojsonBasename(editStem)}`

@@ -20,6 +20,10 @@ export type CompareRow = {
   metrics: MetricResult | null
   officialGeometryWgs84: Geometry | null
   osmGeometryWgs84: Geometry | null
+  /** GeoJSON properties from the merged official feature(s) for this key. */
+  officialProperties: Record<string, unknown> | null
+  /** GeoJSON properties from the merged OSM feature(s) for this key. */
+  osmProperties: Record<string, unknown> | null
 }
 
 export type UnmatchedOsmRow = {
@@ -175,6 +179,8 @@ export async function runCompare(
       metrics,
       officialGeometryWgs84: officialGeom,
       osmGeometryWgs84: osmGeom,
+      officialProperties: o?.properties ?? null,
+      osmProperties: s?.properties ?? null,
     })
   }
 
