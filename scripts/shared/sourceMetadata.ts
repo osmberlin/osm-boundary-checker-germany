@@ -78,10 +78,10 @@ export function mergeAreaSourceMetadata(
 ): AreaSourceMetadataFile {
   const out: AreaSourceMetadataFile = { ...base }
   if (patch.official !== undefined) {
-    out.official = { ...(base.official ?? {}), ...patch.official }
+    out.official = { ...base.official, ...patch.official }
   }
   if (patch.osm !== undefined) {
-    out.osm = { ...(base.osm ?? {}), ...patch.osm }
+    out.osm = { ...base.osm, ...patch.osm }
   }
   return out
 }

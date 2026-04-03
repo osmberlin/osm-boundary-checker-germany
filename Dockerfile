@@ -17,7 +17,7 @@ COPY scripts ./scripts
 COPY report ./report
 COPY datasets ./datasets
 RUN mkdir -p /opt/seed && cp -R ./datasets /opt/seed/datasets
-COPY bkg.config.json biome.jsonc .gitignore areas.gen.json ./
+COPY bkg.config.json oxfmt.config.ts oxlint.config.ts .gitignore areas.gen.json ./
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/entrypoint.sh

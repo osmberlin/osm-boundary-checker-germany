@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "prepare": "husky",
-    "format": "biome format --write .",
+    "format": "oxfmt --write .",
     "compare": "bun run run.ts",
     "compare:boundaries": "bun run --filter ./scripts compare",
     "pipeline:nightly": "bun run --filter ./scripts pipeline:nightly",
@@ -44,17 +44,19 @@
     "docker:compare": "sh ./scripts/docker-run.sh run --rm pipeline bun run compare",
     "docker:pipeline": "sh ./scripts/docker-run.sh run --rm pipeline bun run pipeline:nightly",
     "typecheck": "tsc -p tsconfig.json && tsc -p scripts/tsconfig.json && tsc -p report/tsconfig.json",
-    "check": "biome check . && bun run typecheck",
-    "check:write": "biome check --write .",
-    "check:force": "biome check --write --unsafe ."
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix .",
+    "check": "oxlint . && oxfmt --check . && bun run typecheck",
+    "check:write": "oxfmt --write . && oxlint --fix ."
   },
   "dependencies": {
     "@clack/prompts": "^0.10.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.9",
     "@types/bun": "latest",
     "husky": "^9.1.7",
+    "oxfmt": "^0.43.0",
+    "oxlint": "^1.58.0",
     "typescript": "~5.9.3"
   }
 }

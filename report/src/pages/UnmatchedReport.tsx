@@ -63,7 +63,10 @@ export function UnmatchedReport() {
   }, [areaId, snapParam])
 
   const unmatched = data?.unmatchedOsm ?? []
-  const overviewMapBbox = useMemo(() => unionMapBboxes(unmatched), [unmatched])
+  const overviewMapBbox = useMemo(
+    () => unionMapBboxes(data?.unmatchedOsm ?? []),
+    [data?.unmatchedOsm],
+  )
 
   if (!areaId) return null
 
