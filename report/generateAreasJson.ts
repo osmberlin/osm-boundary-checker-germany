@@ -5,10 +5,11 @@
 import { writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { AREAS_GEN_BASENAME } from './generatedAssets.ts'
-import { listComparisonAreas } from './listComparisonAreas.ts'
+import { listComparisonAreaSummaries } from './listComparisonAreas.ts'
 
 const repoRoot = resolve(import.meta.dir, '..')
-const areas = listComparisonAreas(repoRoot)
+const summaries = listComparisonAreaSummaries(repoRoot)
+const areas = summaries.map((s) => s.area)
 const outPath = join(repoRoot, AREAS_GEN_BASENAME)
-writeFileSync(outPath, `${JSON.stringify({ areas }, null, 2)}\n`, 'utf8')
+writeFileSync(outPath, `${JSON.stringify({ areas, summaries }, null, 2)}\n`, 'utf8')
 console.log(`Wrote ${outPath} (${areas.length} areas)`)

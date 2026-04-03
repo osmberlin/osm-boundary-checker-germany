@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import { area, bbox, difference, featureCollection } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
@@ -229,6 +237,19 @@ function removeLegacyOutputFiles(outDir: string) {
   }
 }
 
+function removeStaleHistoricPmtiles(historyDir: string) {
+  if (!existsSync(historyDir)) return
+  for (const ent of readdirSync(historyDir, { withFileTypes: true })) {
+    if (!ent.isFile()) continue
+    if (!ent.name.startsWith('comparison_') || !ent.name.endsWith('.pmtiles')) continue
+    try {
+      unlinkSync(join(historyDir, ent.name))
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 function unmatchedRowsForTableDoc(unmatchedOsm: UnmatchedOsmRow[]): Record<string, unknown>[] {
   return unmatchedOsm.map((u) => ({
     canonicalMatchKey: u.canonicalMatchKey,
@@ -382,18 +403,7 @@ export function writeOutputs(
   const tablePathOut = join(outDir, TABLE_JSON)
   writeFileSync(tablePathOut, JSON.stringify(tableDoc, null, 2), 'utf-8')
 
-  const histTablePath = join(histDir, `comparison_table_${snapshotId}.json`)
-  const histRows = (tableDoc.rows as Record<string, unknown>[]).map((row) => ({
-    ...row,
-    officialForEditPath: null,
-  }))
-  const histTableDoc = {
-    ...tableDoc,
-    hasPmtiles: false,
-    hasUnmatchedPmtiles: false,
-    rows: histRows,
-  }
-  writeFileSync(histTablePath, JSON.stringify(histTableDoc, null, 2), 'utf-8')
+  removeStaleHistoricPmtiles(histDir)
 
   updateSnapshotsJson(
     areaPath,
@@ -411,9 +421,6 @@ export function writeOutputs(
 
 type SnapshotEntry = {
   id: string
-  tablePath: string
-  /** Always null: historic runs keep stats only; tiles live under output/ for the latest run. */
-  pmtilesPath: string | null
   summary: { totalRows: number; meanIou: number; matched: number; unmatchedOsm: number }
 }
 
@@ -446,8 +453,6 @@ function updateSnapshotsJson(
   }
   const entry: SnapshotEntry = {
     id: snapshotId,
-    tablePath: `history/comparison_table_${snapshotId}.json`,
-    pmtilesPath: null,
     summary: {
       totalRows: rowCount,
       meanIou,

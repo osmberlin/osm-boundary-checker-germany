@@ -13,6 +13,7 @@ import {
   BKG_ZIP_NAME,
   BKG_ZIP_URL,
 } from '../shared/bkg.ts'
+import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 type DownloadMetadata = {
@@ -61,9 +62,10 @@ function pickGpkg(paths: string[]): string {
 
 async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
+  const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { zipPath: localZip, force } = parseArgs(process.argv.slice(2))
 
-  const cacheDir = join(workspaceRoot, BKG_CACHE_DIR)
+  const cacheDir = join(runtimeRoot, BKG_CACHE_DIR)
   const zipDest = join(cacheDir, BKG_ZIP_NAME)
   const extractDir = join(cacheDir, BKG_EXTRACT_SUBDIR)
 
@@ -110,8 +112,8 @@ async function main() {
   const meta: DownloadMetadata = {
     downloadedAt: new Date().toISOString(),
     sourceUrl: BKG_ZIP_URL,
-    zipRelativePath: relative(workspaceRoot, zipDest),
-    gpkgRelativePath,
+    zipRelativePath: relative(runtimeRoot, zipDest),
+    gpkgRelativePath: relative(runtimeRoot, gpkgAbs),
   }
   writeFileSync(join(cacheDir, BKG_DOWNLOAD_METADATA), JSON.stringify(meta, null, 2), 'utf-8')
 

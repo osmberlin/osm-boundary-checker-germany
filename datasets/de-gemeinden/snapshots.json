@@ -4,8 +4,6 @@
   "runs": [
     {
       "id": "2026-03-29",
-      "tablePath": "history/comparison_table_2026-03-29.json",
-      "pmtilesPath": null,
       "summary": {
         "totalRows": 11419,
         "meanIou": 0.9825024981418924,
@@ -14,8 +12,6 @@
     },
     {
       "id": "2026-03-30",
-      "tablePath": "history/comparison_table_2026-03-30.json",
-      "pmtilesPath": null,
       "summary": {
         "totalRows": 10981,
         "meanIou": 0.9826271685838702,
@@ -25,7 +21,16 @@
     },
     {
       "id": "2026-04-02",
-      "tablePath": "history/comparison_table_2026-04-02.json",
+      "summary": {
+        "totalRows": 10981,
+        "meanIou": 0.9826271685838702,
+        "matched": 10500,
+        "unmatchedOsm": 1976
+      }
+    },
+    {
+      "id": "2026-04-03",
+      "tablePath": "history/comparison_table_2026-04-03.json",
       "pmtilesPath": null,
       "summary": {
         "totalRows": 10981,

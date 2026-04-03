@@ -86,7 +86,7 @@ function filterOsmByOfficialBbox(
 const DEFAULT_BBOX_BUFFER_DEG = 0.05
 
 export async function runCompare(
-  repoRoot: string,
+  runtimeRoot: string,
   areaFolder: string,
   configRaw: unknown,
 ): Promise<{
@@ -96,9 +96,9 @@ export async function runCompare(
   metricsCrs: string
 }> {
   const config = loadBoundaryConfig(configRaw, `${areaFolder}`)
-  const areaPath = datasetFolderPath(repoRoot, areaFolder)
+  const areaPath = datasetFolderPath(runtimeRoot, areaFolder)
   const officialPath = join(areaPath, config.official.path)
-  const osmPath = sharedGermanyOsmFgbPath(repoRoot)
+  const osmPath = sharedGermanyOsmFgbPath(runtimeRoot)
   if (!existsSync(osmPath)) {
     throw new Error(`Shared OSM FlatGeobuf not found:\n  ${osmPath}\n\nRun: bun run osm:extract`)
   }

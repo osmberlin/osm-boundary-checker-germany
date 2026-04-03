@@ -2,6 +2,7 @@
 import { areaConfigPathForDisplay, loadAreaConfig } from '../shared/areaConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
+import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { readAreaSourceMetadataFile, toComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 import { runCompare } from './lib/compare.ts'
@@ -32,23 +33,24 @@ async function main() {
     process.exit(1)
   }
 
-  const repoRoot = getWorkspaceRoot()
+  const workspaceRoot = getWorkspaceRoot()
+  const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   let configRaw: unknown
   try {
-    configRaw = loadAreaConfig(repoRoot, area)
+    configRaw = loadAreaConfig(workspaceRoot, area)
   } catch (e) {
     console.error(String(e))
-    console.error(`Expected ${areaConfigPathForDisplay(repoRoot, area)}`)
+    console.error(`Expected ${areaConfigPathForDisplay(workspaceRoot, area)}`)
     process.exit(1)
   }
 
   console.log(`Comparing area: ${area}`)
-  const areaPath = datasetFolderPath(repoRoot, area)
-  const { rows, unmatchedOsm, metricsCrs } = await runCompare(repoRoot, area, configRaw)
+  const areaPath = datasetFolderPath(runtimeRoot, area)
+  const { rows, unmatchedOsm, metricsCrs } = await runCompare(runtimeRoot, area, configRaw)
   const meta = toComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
   const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
   writeOutputs(areaPath, area, rows, unmatchedOsm, metricsCrs, meta, ogcInspectSources)
-  console.log(`Wrote output/ and history/ under ${DATASETS_DIRECTORY}/${area}`)
+  console.log(`Wrote output/ and snapshots.json under ${DATASETS_DIRECTORY}/${area}`)
 }
 
 main().catch((e) => {

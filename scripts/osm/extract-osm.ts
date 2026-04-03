@@ -20,6 +20,7 @@ import {
   GERMANY_OSM_PBF_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
 } from '../shared/germanyOsmPbf.ts'
+import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 /** GDAL OSM driver config: promotes `de:regionalschluessel` etc. out of `other_tags`. */
@@ -140,9 +141,10 @@ function runOgr2ogr(inputPbf: string, outFgb: string, dryRun: boolean): void {
 
 function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
+  const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { pbf: pbfArg, skipTagsFilter, forceTagsFilter, dryRun } = parseArgs(process.argv.slice(2))
 
-  const defaultPbf = join(workspaceRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_PBF_BASENAME)
+  const defaultPbf = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_PBF_BASENAME)
   const inputPbf = pbfArg?.trim() || process.env.OSM_GERMANY_PBF?.trim() || defaultPbf
 
   if (!existsSync(inputPbf)) {
@@ -158,7 +160,7 @@ function main() {
     }
   }
 
-  const filteredPbf = join(workspaceRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_FILTERED_BASENAME)
+  const filteredPbf = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_FILTERED_BASENAME)
   const expressions = [...DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS]
 
   let pbfForOgr = inputPbf
@@ -178,7 +180,7 @@ function main() {
     console.log('Using full input PBF for ogr2ogr (--skip-tags-filter). This can be very slow.')
   }
 
-  const outFgb = join(workspaceRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_SHARED_FGB_BASENAME)
+  const outFgb = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_SHARED_FGB_BASENAME)
   console.log(
     `\nShared OSM extract → ${join(GERMANY_OSM_CACHE_DIR, GERMANY_OSM_SHARED_FGB_BASENAME)}`,
   )

@@ -1,4 +1,3 @@
-import { parseAsString, useQueryState } from 'nuqs'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { InfoNotice } from '../components/InfoNotice'
@@ -37,18 +36,16 @@ function unionMapBboxes(rows: UnmatchedOsmReportRow[]): [number, number, number,
 
 export function UnmatchedReport() {
   const { areaId } = useParams<{ areaId: string }>()
-  const [snapshot] = useQueryState('snapshot', parseAsString.withDefault(''))
   const [data, setData] = useState<ComparisonForReport | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const mapViewParam = useMapViewParam()
-  const snapParam = snapshot || null
 
   useEffect(() => {
     if (!areaId) return
     let cancelled = false
     ;(async () => {
       try {
-        const json = await loadComparison(areaId, snapParam || undefined)
+        const json = await loadComparison(areaId)
         if (!cancelled) {
           setData(json)
           setErr(null)
@@ -60,7 +57,7 @@ export function UnmatchedReport() {
     return () => {
       cancelled = true
     }
-  }, [areaId, snapParam])
+  }, [areaId])
 
   const unmatched = data?.unmatchedOsm ?? []
   const overviewMapBbox = useMemo(
@@ -69,11 +66,6 @@ export function UnmatchedReport() {
   )
 
   if (!areaId) return null
-
-  const areaHref =
-    snapParam != null && snapParam !== ''
-      ? `/${areaId}?snapshot=${encodeURIComponent(snapParam)}`
-      : `/${areaId}`
 
   if (err) {
     return (
@@ -91,7 +83,7 @@ export function UnmatchedReport() {
     )
   }
 
-  const showMap = data.hasUnmatchedPmtiles === true && unmatched.length > 0 && !snapParam
+  const showMap = data.hasUnmatchedPmtiles === true && unmatched.length > 0
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
@@ -100,9 +92,8 @@ export function UnmatchedReport() {
       <p className="mb-6 text-sm text-slate-400">
         {de.areaReport.unmatchedCountLabel}: {formatDeInteger(unmatched.length)}
       </p>
-      {snapParam ? <InfoNotice className="mb-6">{de.unmatched.mapOnlyLatest}</InfoNotice> : null}
       <p className="mb-6">
-        <Link className="text-sky-400 underline" to={areaHref}>
+        <Link className="text-sky-400 underline" to={`/${areaId}`}>
           {de.unmatched.backToArea}
         </Link>
       </p>
@@ -182,12 +173,7 @@ export function UnmatchedReport() {
         </>
       )}
 
-      <ReportDataProvenanceFooter
-        data={data}
-        areaId={areaId}
-        snapshot={snapParam}
-        hideUnmatchedCrossLink
-      />
+      <ReportDataProvenanceFooter data={data} areaId={areaId} hideUnmatchedCrossLink />
     </div>
   )
 }

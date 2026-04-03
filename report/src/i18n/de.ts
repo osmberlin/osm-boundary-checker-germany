@@ -91,9 +91,6 @@ export const de = {
 
   areaReport: {
     backAreas: '← Gebiete',
-    snapshot: 'Snapshot',
-    /** Select label for current output/ when generatedAt is missing or not parseable. */
-    snapshotLatest: 'Aktuell (output/)',
     chartTitle: meanIouChartDe.chartTitle,
     /** Freshness block heading (line 1). */
     freshnessHeadingReport: 'Auswertung',
@@ -233,8 +230,6 @@ export const de = {
         'Falls Import per URL fehlschlägt: GeoJSON herunterladen und in JOSM über Datei öffnen.',
       josmMixedContent:
         'Von HTTPS-Seiten aus kann der Browser lokale http://127.0.0.1-Links blockieren — ggf. Link kopieren oder Lesezeichen nutzen.',
-      snapshotNoEditorFiles:
-        'Historische Tabellen-Snapshots enthalten keine mitgelieferten GeoJSON-Dateien; für die Bearbeitungs-Exports die aktuelle Auswertung (ohne Snapshot) oder den Vergleich erneut ausführen.',
       legacyTableHint:
         'Diese comparison_table.json enthält noch kein Feld officialForEditPath — bitte den Vergleich erneut ausführen, um die GeoJSON-Exports zu erzeugen.',
     },
@@ -250,8 +245,6 @@ export const de = {
     tableName: 'Name',
     tableAdminLevel: 'admin_level',
     tableRelation: 'Relation',
-    mapOnlyLatest:
-      'Karte nur für die aktuelle Auswertung (output/unmatched.pmtiles); historische Snapshots enthalten keine Kachel-Datei.',
     noData: 'Keine Einträge — alle extrahierten OSM-Schlüssel passen zum amtlichen Export.',
     noPmtiles: 'Keine Karte (unmatched.pmtiles fehlt oder leer).',
   },
@@ -261,8 +254,9 @@ export const de = {
     official: 'Amtliche Grenze',
     osm: 'OpenStreetMap-Grenze',
     diff: 'Abweichungsflächen',
-    historicSnapshotNoTiles:
-      'Bei einem historischen Tabellen-Snapshot ist keine Kartenansicht verfügbar: die Geometrien werden nicht als Kachel-Archiv (PMTiles) mitgespeichert. Tabellen, Kennzahlen und übrige Angaben auf dieser Seite beziehen sich weiterhin auf den gewählten Snapshot.',
+    simplificationLikelyBelowZoom15:
+      '(i) Geometiren werden bis Zoom 15 wahrscheinlich vereinfacht dargestellt.',
+    fullDetailFromZoom15: '(i) Geometrien sollten volle Details haben.',
   },
 } as const
 

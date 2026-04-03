@@ -1,13 +1,17 @@
 {
-  "areas": [
-    "berlin-bezirke",
-    "berlin-ortsteile",
-    "de-gemeinden",
-    "de-laender",
-    "de-landkreise",
-    "de-regierungsbezirke",
-    "de-staat",
-    "de-verwaltungsgemeinschaften",
-    "hamburg-bezirke"
+  "areas": ["berlin-bezirke", "berlin-ortsteile"],
+  "summaries": [
+    {
+      "area": "berlin-bezirke",
+      "matched": 12,
+      "officialOnly": 0,
+      "unmatchedOsm": 12464
+    },
+    {
+      "area": "berlin-ortsteile",
+      "matched": 0,
+      "officialOnly": 97,
+      "unmatchedOsm": 84
+    }
   ]
 }

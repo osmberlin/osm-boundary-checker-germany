@@ -12,6 +12,7 @@ import { join, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA, BKG_ZIP_URL } from '../shared/bkg.ts'
 import { datasetFolderPath } from '../shared/datasetPaths.ts'
+import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
   type AreaSourceMetadataFile,
   mergeAreaSourceMetadata,
@@ -62,14 +63,10 @@ function loadConfig(workspaceRoot: string): ExtractConfig {
   return JSON.parse(readFileSync(path, 'utf-8')) as ExtractConfig
 }
 
-function resolveGpkgPath(
-  workspaceRoot: string,
-  cfg: ExtractConfig,
-  cliGpkg: string | null,
-): string {
+function resolveGpkgPath(runtimeRoot: string, cfg: ExtractConfig, cliGpkg: string | null): string {
   if (cliGpkg) return resolve(process.cwd(), cliGpkg)
-  if (cfg.gpkgPath) return resolve(workspaceRoot, cfg.gpkgPath)
-  const metaPath = join(workspaceRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
+  if (cfg.gpkgPath) return resolve(runtimeRoot, cfg.gpkgPath)
+  const metaPath = join(runtimeRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
   if (!existsSync(metaPath)) {
     throw new Error(
       `No gpkgPath in config and missing ${metaPath}. Run bun run bkg:download first.`,
@@ -78,7 +75,7 @@ function resolveGpkgPath(
   const meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as {
     gpkgRelativePath: string
   }
-  return resolve(workspaceRoot, meta.gpkgRelativePath)
+  return resolve(runtimeRoot, meta.gpkgRelativePath)
 }
 
 function downloadScript(workspaceRoot: string): string {
@@ -88,6 +85,7 @@ function downloadScript(workspaceRoot: string): string {
 /** Resolve GPKG path; in non-CI, offer Clack when cache/config is missing or file absent. */
 async function ensureGpkgPath(
   workspaceRoot: string,
+  runtimeRoot: string,
   cfg: ExtractConfig,
   initialCliGpkg: string | null,
 ): Promise<string> {
@@ -96,7 +94,7 @@ async function ensureGpkgPath(
   for (;;) {
     let candidate: string
     try {
-      candidate = resolveGpkgPath(workspaceRoot, cfg, cliGpkg)
+      candidate = resolveGpkgPath(runtimeRoot, cfg, cliGpkg)
     } catch (err) {
       if (isCi()) {
         console.error(String(err))
@@ -207,15 +205,16 @@ function runOgr2ogr(gpkg: string, layer: string, outFgb: string): void {
 
 async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
+  const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { area, gpkg: cliGpkg } = parseArgs(process.argv.slice(2))
   const cfg = loadConfig(workspaceRoot)
   if (!isCi()) {
     p.intro('VG25 → FlatGeobuf')
   }
-  const gpkgAbs = await ensureGpkgPath(workspaceRoot, cfg, cliGpkg)
+  const gpkgAbs = await ensureGpkgPath(workspaceRoot, runtimeRoot, cfg, cliGpkg)
 
   let downloadedAt: string | undefined
-  const metaPath = join(workspaceRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
+  const metaPath = join(runtimeRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
   if (existsSync(metaPath)) {
     try {
       downloadedAt = (JSON.parse(readFileSync(metaPath, 'utf-8')) as { downloadedAt: string })
@@ -241,7 +240,7 @@ async function main() {
   }
 
   for (const [areaFolder, layer] of selected) {
-    const areaPath = datasetFolderPath(workspaceRoot, areaFolder)
+    const areaPath = datasetFolderPath(runtimeRoot, areaFolder)
     const outDir = join(areaPath, 'source')
     const outFgb = join(outDir, 'official.fgb')
     mkdirSync(outDir, { recursive: true })

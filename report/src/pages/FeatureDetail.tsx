@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useId, useMemo, useState } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import {
   LayerToggleStatBlock,
@@ -43,8 +43,6 @@ export function FeatureDetail() {
     areaId: string
     featureKey: string
   }>()
-  const [search] = useSearchParams()
-  const snapshot = search.get('snapshot')
   const [data, setData] = useState<ComparisonForReport | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const mapLayers = useComparisonMapLayers()
@@ -55,7 +53,7 @@ export function FeatureDetail() {
     let c = false
     ;(async () => {
       try {
-        const json = await loadComparison(areaId, snapshot)
+        const json = await loadComparison(areaId)
         if (!c) {
           setData(json)
           setErr(null)
@@ -67,7 +65,7 @@ export function FeatureDetail() {
     return () => {
       c = true
     }
-  }, [areaId, snapshot])
+  }, [areaId])
 
   const row = useMemo(() => {
     if (!data || !featureKey) return null
@@ -97,9 +95,7 @@ export function FeatureDetail() {
       <StatsStrip row={row} mapLayers={mapLayers} />
 
       {!data.hasPmtiles ? (
-        <InfoNotice className="mt-4">
-          {snapshot ? de.map.historicSnapshotNoTiles : de.feature.noPmtiles}
-        </InfoNotice>
+        <InfoNotice className="mt-4">{de.feature.noPmtiles}</InfoNotice>
       ) : (
         <div className="mt-4 w-full overflow-hidden rounded border border-slate-700">
           <div className="h-[480px] w-full">
@@ -111,7 +107,7 @@ export function FeatureDetail() {
               }
             >
               <ComparisonMapShell
-                pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId, snapshot)}
+                pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId)}
                 sourceLayer={data.tippecanoeLayer}
                 featureId={row.canonicalMatchKey}
                 mapBbox={row.mapBbox}
@@ -130,7 +126,7 @@ export function FeatureDetail() {
 
       <LiveSourceProperties data={data} row={row} />
 
-      <UpdateMapInstructions areaId={areaId} row={row} snapshot={snapshot} />
+      <UpdateMapInstructions areaId={areaId} row={row} />
 
       {row.metrics && (
         <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-xs text-slate-400">
@@ -150,7 +146,7 @@ export function FeatureDetail() {
         </p>
       )}
 
-      <ReportDataProvenanceFooter data={data} areaId={areaId} snapshot={snapshot} />
+      <ReportDataProvenanceFooter data={data} areaId={areaId} />
     </div>
   )
 }

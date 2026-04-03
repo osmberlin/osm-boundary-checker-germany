@@ -91,7 +91,7 @@ export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryC
   }
 }
 
-/** Repo-root path to the shared OSM FlatGeobuf (`bun run osm:extract`). */
-export function sharedGermanyOsmFgbPath(repoRoot: string): string {
-  return join(repoRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_SHARED_FGB_BASENAME)
+/** Runtime-root path to the shared OSM FlatGeobuf (`bun run osm:extract`). */
+export function sharedGermanyOsmFgbPath(runtimeRoot: string): string {
+  return join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_SHARED_FGB_BASENAME)
 }

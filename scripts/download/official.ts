@@ -8,6 +8,7 @@ import { join } from 'node:path'
 import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseDownloadOfficial } from '../shared/downloadOfficialConfig.ts'
+import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
   mergeAreaSourceMetadata,
   readAreaSourceMetadataFile,
@@ -62,14 +63,15 @@ function runOgr2ogrGeojsonToFgb(geojsonPath: string, outFgb: string): void {
 }
 
 async function processArea(
-  workspaceRoot: string,
+  configRoot: string,
+  runtimeRoot: string,
   area: string,
   force: boolean,
 ): Promise<'ok' | 'skip' | 'fail'> {
-  const areaPath = datasetFolderPath(workspaceRoot, area)
+  const areaPath = datasetFolderPath(runtimeRoot, area)
   let raw: unknown
   try {
-    raw = loadAreaConfig(workspaceRoot, area)
+    raw = loadAreaConfig(configRoot, area)
   } catch (e) {
     logLine({
       area,
@@ -175,6 +177,7 @@ async function processArea(
 
 async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
+  const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { area: onlyArea, force } = parseArgs(process.argv.slice(2))
   const areas = discoverAreas(workspaceRoot)
   if (areas.length === 0) {
@@ -190,7 +193,7 @@ async function main() {
 
   let code = 0
   for (const a of selected) {
-    const r = await processArea(workspaceRoot, a, force)
+    const r = await processArea(workspaceRoot, runtimeRoot, a, force)
     if (r === 'fail') code = 1
   }
   process.exit(code)

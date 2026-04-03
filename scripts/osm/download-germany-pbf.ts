@@ -11,6 +11,7 @@ import {
   GERMANY_OSM_PBF_BASENAME,
   GERMANY_OSM_PBF_URL,
 } from '../shared/germanyOsmPbf.ts'
+import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 function parseArgs(argv: string[]) {
@@ -31,11 +32,12 @@ function parseArgs(argv: string[]) {
 
 function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
+  const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { force, url: urlArg } = parseArgs(process.argv.slice(2))
   const downloadUrl =
     urlArg?.trim() || process.env.GERMANY_OSM_PBF_URL?.trim() || GERMANY_OSM_PBF_URL
 
-  const dir = join(workspaceRoot, GERMANY_OSM_CACHE_DIR)
+  const dir = join(runtimeRoot, GERMANY_OSM_CACHE_DIR)
   const dest = join(dir, GERMANY_OSM_PBF_BASENAME)
 
   mkdirSync(dir, { recursive: true })

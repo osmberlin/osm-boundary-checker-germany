@@ -11,6 +11,8 @@ Run everything from **this directory** with Docker Compose.
 3. **Source data + processing** — `docker compose run --rm pipeline bun run pipeline:nightly`.
 4. **Web app** — `docker compose up web`, then open [http://localhost:4173](http://localhost:4173).
 
+Docker Compose uses a shared volume mounted at `/data` with `DATA_ROOT=/data`, so generated datasets, caches, and processing logs survive redeploys.
+
 ## Stack
 
 **Bun** + **TypeScript**; compare uses **flatgeobuf**, **Turf**, **JSTS** (discrete Hausdorff), **proj4**; interactive picker **Clack** via `run.ts`. **Report**: **React** bundled/served by **Bun** (`index.html` + `Bun.serve`), **MapLibre**, **PMTiles**, **Tailwind**, **nuqs**. Workspaces: `scripts/`, `report/`.
@@ -81,12 +83,11 @@ Legacy names still work: `download-osm-pbf` → `download:osm:fetch`, `extract-o
 - **`output/comparison_table.json`** — Metrics and row metadata for the main table (one row per **official** key: matched vs official-only). Includes `unmatchedOsm` (OSM polygons whose normalized `de:regionalschluessel` has no row in that area’s official FGB), `mapBbox` per row, `hasPmtiles`, and `hasUnmatchedPmtiles` when **`output/unmatched.pmtiles`** was built.
 - **`output/comparison.pmtiles`** — Vector tiles for main compare (official + OSM overlays and diff patches for matched/official-only rows).
 - **`output/unmatched.pmtiles`** — Optional tiles for **`unmatchedOsm`** geometries (same `source-layer` name as the main archive: `boundaries`).
-
-Each run also writes **`history/comparison_table_<YYYY-MM-DD>.json`** (table data; tile flags cleared for history) and updates **`snapshots.json`** (`summary` includes `unmatchedOsm` count when present). Historic snapshot rows do not ship PMTiles files.
+- **`snapshots.json`** — Lightweight run index for chart stats (`summary.meanIou`, counts). No historic table/tiles are written.
 
 ### Source data (FlatGeobuf)
 
-Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. **Committed on purpose:** **`snapshots.json`** only (run index + chart summaries; `tablePath` points at per-day history files). **Gitignored (local / CI / deploy bundle):** **`history/comparison_table_<YYYY-MM-DD>.json`** (full table per run, often large), downloaded **`*.fgb`**, latest **`output/comparison_table.json`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. The report loads a historic date from `history/…` when present; if that file is missing but **`output/comparison_table.json`** exists with the same UTC calendar day as the snapshot id, the UI uses the latest file as a stand-in ([`report/src/data/load.ts`](report/src/data/load.ts)). OSM input for **all** compares is a **single shared** FlatGeobuf under **`.cache/osm/germany-admin-boundaries-rs.fgb`** produced by **`bun run osm:extract`**. Optional **`source/metadata.json`** records when data was fetched; the compare run embeds that into **`output/comparison_table.json`** for the report (“Quelldaten”). Legacy **`source/source-metadata.json`** is still read if present.
+Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. **Committed on purpose:** **`snapshots.json`** only (run index + chart summaries). **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, latest **`output/comparison_table.json`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input for **all** compares is a **single shared** FlatGeobuf under **`.cache/osm/germany-admin-boundaries-rs.fgb`** produced by **`bun run osm:extract`**. Optional **`source/metadata.json`** records when data was fetched; the compare run embeds that into **`output/comparison_table.json`** for the report (“Quelldaten”). Legacy **`source/source-metadata.json`** is still read if present.
 
 **`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, optional **`official.keyTransposition`** (map official IDs → `de:regionalschluessel` when the source has no Schlüssel), **`idNormalization`**, **`metricsCrs`**, optional **`compare.applyBboxFilter`** / **`compare.bboxBufferDegrees`** (prefilter shared OSM features by a buffered bbox around official data), optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). There is no per-area OSM path or `osmExtract` block anymore.
 
@@ -128,12 +129,13 @@ Intermediate **`geometries.fgb`** for tippecanoe is written under **`output/_bui
 
 ### tippecanoe invocation
 
-Implemented in [`scripts/compare/lib/runTippecanoe.ts`](scripts/compare/lib/runTippecanoe.ts): input **FlatGeobuf** (`.fgb`), layer name `boundaries`, **`--force`** (overwrite existing `comparison.pmtiles`), and topology-friendly options:
+Implemented in [`scripts/compare/lib/runTippecanoe.ts`](scripts/compare/lib/runTippecanoe.ts): input **FlatGeobuf** (`.fgb`), layer name `boundaries`, **`--force`** (overwrite existing `comparison.pmtiles`), and a zoom policy optimized for payload:
 
-- `--no-simplification-of-shared-nodes`
-- `--no-line-simplification`
-- `--no-tiny-polygon-reduction`
-- `--full-detail=14`
+- `--maximum-zoom=15`
+- `--full-detail=15` (full detail at z15)
+- `--low-detail=9`
+- `--simplification=10`
+- `--drop-densest-as-needed`
 
 Adjust there if you need a different detail zoom or trade-off vs. file size.
 
@@ -152,7 +154,7 @@ Development (Bun bundles `./index.html`, HMR; `/datasets/*` and `/areas.gen.json
 docker compose up web
 ```
 
-Open the printed URL (default port 3000). The home page loads **`areas.gen.json`** (committed at the repo root; regenerated before dev/build via `report/generateAreasJson.ts`). The UI loads **`comparison_table.json`** from `/datasets/<area>/output/…` and the map loads **`comparison.pmtiles`** via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
+Open the printed URL (default port 3000). The home page loads **`areas.gen.json`** (committed at the repo root; regenerated before dev/build via `report/generateAreasJson.ts`) with lightweight per-area counts. The UI loads **`comparison_table.json`** only for the selected area and the map loads **`comparison.pmtiles`** via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
 
 Production build:
 
@@ -179,3 +181,4 @@ The report registers the MapLibre `pmtiles://` protocol once at startup via [`re
 ## Map / metrics notes
 
 - Hausdorff distance uses **JSTS discrete** distance on **projected** geometries; it is not identical to Shapely’s continuous Hausdorff used in the Swiss reference.
+- Runtime data-store recommendation (SQLite/Turso track): [`docs/runtime-storage.md`](docs/runtime-storage.md).

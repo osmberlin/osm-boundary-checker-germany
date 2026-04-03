@@ -3,8 +3,14 @@ import { spawnSync } from 'node:child_process'
 /** Vector layer name inside the PMTiles archive (MapLibre `source-layer`). */
 export const TIPPECANOE_LAYER = 'boundaries'
 
-/** Max zoom kept at full detail — align with typical report map zoom. */
-const FULL_DETAIL_ZOOM = '14'
+/**
+ * User-facing map policy:
+ * - geometry may be simplified below z15
+ * - z15 should preserve full geometry detail
+ */
+const MAX_ZOOM = '15'
+const FULL_DETAIL_ZOOM = '15'
+const LOW_DETAIL_ZOOM = '9'
 
 /**
  * argv passed to `tippecanoe` (after the executable name).
@@ -18,10 +24,11 @@ export function tippecanoeArgs(inputVectorPath: string, outputPmtilesPath: strin
     '--force',
     '--layer',
     TIPPECANOE_LAYER,
-    '--no-simplification-of-shared-nodes',
-    '--no-line-simplification',
-    '--no-tiny-polygon-reduction',
+    `--maximum-zoom=${MAX_ZOOM}`,
     `--full-detail=${FULL_DETAIL_ZOOM}`,
+    `--low-detail=${LOW_DETAIL_ZOOM}`,
+    '--simplification=10',
+    '--drop-densest-as-needed',
     inputVectorPath,
   ]
 }

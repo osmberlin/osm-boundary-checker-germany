@@ -42,7 +42,7 @@ export type ReportRow = {
   mapBbox: [number, number, number, number] | null
   /**
    * Relative to the dataset folder: `output/official_for_edit/<basename>.geojson`.
-   * Omitted or null when there is no official geometry for this row, or in historic table-only snapshots.
+   * Omitted or null when there is no official geometry for this row.
    */
   officialForEditPath?: string | null
   /** GeoJSON properties from the compare merge (amtlich). Omitted in older `comparison_table.json`. */
@@ -87,8 +87,6 @@ export type SnapshotsJson = {
   metricsCrs: string
   runs: {
     id: string
-    tablePath: string
-    pmtilesPath: string | null
     summary: {
       totalRows: number
       meanIou: number

@@ -15,24 +15,18 @@ function datasetDataPath(area: string, rel: string): string {
   return `/${DATASETS_DIRECTORY}/${area}/${rel}`
 }
 
-export function comparisonTableJson(area: string, snapshot?: string | null) {
-  if (snapshot) {
-    return datasetDataPath(area, `history/comparison_table_${snapshot}.json`)
-  }
+export function comparisonTableJson(area: string) {
   return datasetDataPath(area, 'output/comparison_table.json')
 }
 
 /** Path to PMTiles under the dev server (same origin). */
-export function comparisonPmtilesPath(area: string, snapshot?: string | null) {
-  if (snapshot) {
-    return datasetDataPath(area, `history/comparison_${snapshot}.pmtiles`)
-  }
+export function comparisonPmtilesPath(area: string) {
   return datasetDataPath(area, 'output/comparison.pmtiles')
 }
 
 /** MapLibre vector source URL using the registered `pmtiles://` protocol. */
-export function comparisonPmtilesMaplibreUrl(area: string, snapshot?: string | null): string {
-  const path = comparisonPmtilesPath(area, snapshot)
+export function comparisonPmtilesMaplibreUrl(area: string): string {
+  const path = comparisonPmtilesPath(area)
   return `pmtiles://${window.location.origin}${path}`
 }
 

@@ -30,6 +30,7 @@ export default function MapPane({
   showDiff,
   onFeatureClick,
   mapId,
+  onZoomChange,
 }: {
   pmtilesUrl: string
   sourceLayer: string
@@ -53,6 +54,8 @@ export default function MapPane({
    * @see https://visgl.github.io/react-map-gl/docs/api-reference/mapbox/map#mapprovider
    */
   mapId?: string
+  /** Optional callback for zoom-aware UI hints outside the map component. */
+  onZoomChange?: (zoom: number) => void
 }) {
   const mapRef = useRef<MapRef>(null)
   const skipNextMoveEndCommitRef = useRef(false)
@@ -101,6 +104,7 @@ export default function MapPane({
   const onLoad = useCallback(
     (e: { target: maplibregl.Map }) => {
       setMapReady(true)
+      onZoomChange?.(e.target.getZoom())
       if (urlMapView) return
       if (!mapBbox) return
       const [w, s, east, n] = mapBbox
@@ -115,7 +119,7 @@ export default function MapPane({
         )
       }
     },
-    [urlMapView, mapBbox],
+    [urlMapView, mapBbox, onZoomChange],
   )
 
   const onMoveEnd = useCallback(
@@ -126,9 +130,10 @@ export default function MapPane({
       }
       const s = serializeMapViewQueryString(e.viewState)
       lastCommittedMapSerializationRef.current = s
+      onZoomChange?.(e.viewState.zoom)
       onMoveEndCommitUrl(e.viewState)
     },
-    [onMoveEndCommitUrl],
+    [onMoveEndCommitUrl, onZoomChange],
   )
 
   const onMapClick = useCallback(

@@ -1,6 +1,4 @@
 import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
-import { format, isValid, parseISO } from 'date-fns'
-import { parseAsString, useQueryState } from 'nuqs'
 import {
   lazy,
   type ReactNode,
@@ -28,7 +26,6 @@ import {
   IouInfoButton,
   MeanIouInfoButton,
 } from '../components/HausdorffInfoModal'
-import { InfoNotice } from '../components/InfoNotice'
 import { ReportCategoryPill, ReportCategorySwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { loadComparison, loadSnapshots } from '../data/load'
@@ -84,7 +81,6 @@ export function AreaReport() {
   const { areaId } = useParams<{ areaId: string }>()
   const navigate = useNavigate()
   const statsInputId = useId()
-  const [snapshot, setSnapshot] = useQueryState('snapshot', parseAsString.withDefault(''))
   const [data, setData] = useState<ComparisonForReport | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [snapIndex, setSnapIndex] = useState<SnapshotsJson | null>(null)
@@ -92,8 +88,6 @@ export function AreaReport() {
     useAreaReportCategoryFilter()
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
-
-  const snapParam = snapshot || null
 
   /** Main table: BKG-export rows only (excludes legacy `osm_only` if present in old JSON). */
   const mainRows = useMemo(() => {
@@ -108,12 +102,6 @@ export function AreaReport() {
   const { sortedRows, sortBy, sortDir, setColumn } = useAreaReportTableSort(visibleRows)
 
   const catCounts = useMemo(() => countMatchCategories(mainRows), [mainRows])
-
-  const currentSnapshotSelectLabel = useMemo(() => {
-    if (!data) return de.areaReport.snapshotLatest
-    const d = parseISO(data.generatedAt.trim())
-    return isValid(d) ? format(d, 'yyyy-MM-dd') : de.areaReport.snapshotLatest
-  }, [data])
 
   const unmatchedCount = (data?.unmatchedOsm ?? []).length
 
@@ -130,10 +118,9 @@ export function AreaReport() {
 
   const goToFeature = useCallback(
     (featureKey: string) => {
-      const q = snapParam ? `?snapshot=${encodeURIComponent(snapParam)}` : ''
-      void navigate(`/${areaId}/feature/${encodeURIComponent(featureKey)}${q}`)
+      void navigate(`/${areaId}/feature/${encodeURIComponent(featureKey)}`)
     },
-    [navigate, areaId, snapParam],
+    [navigate, areaId],
   )
 
   useEffect(() => {
@@ -141,10 +128,7 @@ export function AreaReport() {
     let cancelled = false
     ;(async () => {
       try {
-        const [json, snap] = await Promise.all([
-          loadComparison(areaId, snapParam || undefined),
-          loadSnapshots(areaId),
-        ])
+        const [json, snap] = await Promise.all([loadComparison(areaId), loadSnapshots(areaId)])
         if (cancelled) return
         setData(json)
         setErr(null)
@@ -156,7 +140,7 @@ export function AreaReport() {
     return () => {
       cancelled = true
     }
-  }, [areaId, snapParam])
+  }, [areaId])
 
   if (!areaId) return null
 
@@ -208,26 +192,6 @@ export function AreaReport() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
-      {snapIndex && snapIndex.runs.length > 0 ? (
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-          <label className="flex shrink-0 flex-wrap items-center gap-2 text-sm">
-            <span className="text-slate-400">{de.areaReport.snapshot}</span>
-            <select
-              className="rounded border border-slate-600 bg-slate-800 px-2 py-1 text-slate-100"
-              value={snapshot}
-              onChange={(e) => void setSnapshot(e.target.value || '')}
-            >
-              <option value="">{currentSnapshotSelectLabel}</option>
-              {snapIndex.runs.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.id}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      ) : null}
-
       <section
         className="mb-6 rounded border border-slate-700 bg-slate-900 p-4"
         aria-label={st.summaryRowAria}
@@ -275,10 +239,7 @@ export function AreaReport() {
           {unmatchedCount > 0 ? (
             <>
               {' '}
-              <Link
-                className="text-sky-400 underline"
-                to={`/${areaId}/unmatched${snapParam ? `?snapshot=${encodeURIComponent(snapParam)}` : ''}`}
-              >
+              <Link className="text-sky-400 underline" to={`/${areaId}/unmatched`}>
                 {de.areaReport.unmatchedPageLink}
               </Link>
             </>
@@ -287,45 +248,43 @@ export function AreaReport() {
       </section>
 
       <div className="mb-8">
-        {snapParam && !data.hasPmtiles ? (
-          <InfoNotice>{de.map.historicSnapshotNoTiles}</InfoNotice>
-        ) : (
-          <div className="w-full overflow-hidden rounded border border-slate-700">
-            <div className="h-[420px] w-full">
-              {visibleRows.length === 0 ? (
-                <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
-                  {st.mapNoVisibleCategories}
+        <div className="w-full overflow-hidden rounded border border-slate-700">
+          <div className="h-[420px] w-full">
+            {visibleRows.length === 0 ? (
+              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
+                {st.mapNoVisibleCategories}
+              </div>
+            ) : data.hasPmtiles ? (
+              <Suspense
+                fallback={
+                  <div className="flex h-full items-center justify-center text-slate-500">
+                    {st.mapLoading}
+                  </div>
+                }
+              >
+                <ComparisonMapShell
+                  pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId)}
+                  sourceLayer={data.tippecanoeLayer}
+                  featureId={null}
+                  allowedFeatureIds={mapAllowlist}
+                  mapBbox={overviewMapBbox}
+                  urlMapView={mapViewParam.mapView}
+                  onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
+                  showOfficial={mapLayers.showOfficial}
+                  showOsm={mapLayers.showOsm}
+                  showDiff={mapLayers.showDiff}
+                  onFeatureClick={goToFeature}
+                />
+              </Suspense>
+            ) : (
+              <div className="flex h-full items-center justify-center p-4">
+                <div className="max-w-xl rounded border border-slate-700 bg-slate-900/50 p-4 text-sm text-slate-300">
+                  {de.feature.noPmtiles}
                 </div>
-              ) : data.hasPmtiles ? (
-                <Suspense
-                  fallback={
-                    <div className="flex h-full items-center justify-center text-slate-500">
-                      {st.mapLoading}
-                    </div>
-                  }
-                >
-                  <ComparisonMapShell
-                    pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId, snapParam)}
-                    sourceLayer={data.tippecanoeLayer}
-                    featureId={null}
-                    allowedFeatureIds={mapAllowlist}
-                    mapBbox={overviewMapBbox}
-                    urlMapView={mapViewParam.mapView}
-                    onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
-                    showOfficial={mapLayers.showOfficial}
-                    showOsm={mapLayers.showOsm}
-                    showDiff={mapLayers.showDiff}
-                    onFeatureClick={goToFeature}
-                  />
-                </Suspense>
-              ) : (
-                <div className="flex h-full items-center justify-center p-4">
-                  <InfoNotice className="max-w-xl">{de.feature.noPmtiles}</InfoNotice>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <div className="mb-8 h-64 rounded border border-slate-700 bg-slate-900 p-2">
@@ -441,7 +400,7 @@ export function AreaReport() {
                 <td className="px-3 py-2">
                   <Link
                     className="text-sky-400 underline"
-                    to={`/${areaId}/feature/${encodeURIComponent(row.canonicalMatchKey)}${snapParam ? `?snapshot=${encodeURIComponent(snapParam)}` : ''}`}
+                    to={`/${areaId}/feature/${encodeURIComponent(row.canonicalMatchKey)}`}
                   >
                     {de.areaReport.table.view}
                   </Link>
@@ -452,7 +411,7 @@ export function AreaReport() {
         </table>
       </div>
 
-      <ReportDataProvenanceFooter data={data} areaId={areaId} snapshot={snapParam} />
+      <ReportDataProvenanceFooter data={data} areaId={areaId} />
     </div>
   )
 }

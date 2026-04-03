@@ -25,21 +25,12 @@ function triggerGeojsonDownload(href: string) {
   a.remove()
 }
 
-export function UpdateMapInstructions({
-  areaId,
-  row,
-  snapshot,
-}: {
-  areaId: string
-  row: ReportRow
-  snapshot: string | null
-}) {
+export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: ReportRow }) {
   const u = de.feature.updateMap
   const officialHref = officialForEditGeojsonHref(areaId, row)
   const officialAbsolute = officialHref != null ? absoluteUrlFromPath(officialHref) : null
   const idUrl = buildOpenStreetMapIdEditUrl(row, officialAbsolute)
   const josm = buildJosmEditorLinks(row, officialAbsolute)
-  const snapshotActive = snapshot != null && snapshot !== ''
   const canDownloadOfficial = officialHref != null
 
   return (
@@ -140,12 +131,7 @@ export function UpdateMapInstructions({
         </div>
       </div>
 
-      {snapshotActive && officialHref == null && (
-        <p className="mt-6 border-t border-slate-700 pt-4 text-xs text-slate-500">
-          {u.snapshotNoEditorFiles}
-        </p>
-      )}
-      {!snapshotActive && row.officialForEditPath === undefined && (
+      {row.officialForEditPath === undefined && (
         <p className="mt-6 border-t border-slate-700 pt-4 text-xs text-slate-500">
           {u.legacyTableHint}
         </p>

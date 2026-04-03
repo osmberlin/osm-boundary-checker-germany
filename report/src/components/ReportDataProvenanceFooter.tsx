@@ -8,7 +8,6 @@ import type { ComparisonForReport } from '../types/report'
 export type ReportDataProvenanceFooterProps = {
   data: ComparisonForReport
   areaId: string
-  snapshot?: string | null
   /** Omit cross-link to /:areaId/unmatched (e.g. on that page). */
   hideUnmatchedCrossLink?: boolean
   className?: string
@@ -34,7 +33,6 @@ function DateLine({ label, abs, rel }: { label: string; abs: string; rel: string
 export function ReportDataProvenanceFooter({
   data,
   areaId,
-  snapshot = null,
   hideUnmatchedCrossLink = false,
   className = '',
 }: ReportDataProvenanceFooterProps) {
@@ -55,10 +53,7 @@ export function ReportDataProvenanceFooter({
   const osmMeta = [osm?.provider, osm?.dataset].filter(Boolean).join(' · ')
 
   const unmatchedN = data.unmatchedOsm?.length ?? 0
-  const snap = snapshot && String(snapshot).length > 0 ? String(snapshot) : null
-  const unmatchedHref = snap
-    ? `/${areaId}/unmatched?snapshot=${encodeURIComponent(snap)}`
-    : `/${areaId}/unmatched`
+  const unmatchedHref = `/${areaId}/unmatched`
 
   const wrap = className ? className : ''
 

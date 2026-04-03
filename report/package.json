@@ -8,7 +8,7 @@
     "predev": "bun run generate-areas",
     "prebuild": "bun run generate-areas",
     "dev": "bun dev-server.ts",
-    "build": "bun build ./index.html --outdir=dist --minify",
+    "build": "rm -rf dist && bun build ./index.html --outdir=dist --minify",
     "preview": "bun preview-server.ts",
     "test": "vitest run"
   },

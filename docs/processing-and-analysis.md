@@ -36,7 +36,7 @@ flowchart LR
     JSON[output/comparison_table.json]
     PM[output/comparison.pmtiles]
     UM[output/unmatched.pmtiles]
-    SNAP[snapshots.json + history/]
+    SNAP[snapshots.json]
   end
 
   MET --> JSON
@@ -96,13 +96,12 @@ Nightlies and one-shot runs are orchestrated from the workspace root (see [READM
 
 ## Results: artifacts and what they tell us
 
-| Artifact                                   | Role                                                                                                                                                                       |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`output/comparison_table.json`**         | Machine-readable report: rows (official-first), per-row metrics when matched, bboxes, optional `officialForEditPath`, `sourceMetadata`, `unmatchedOsm`, flags for PMTiles. |
-| **`output/comparison.pmtiles`**            | Map tiles: official / OSM / diff layers for exploration and per-feature drill-down.                                                                                        |
-| **`output/unmatched.pmtiles`**             | Tiles for OSM polygons with no official counterpart in **this** area’s export (tagging or coverage gaps).                                                                  |
-| **`history/comparison_table_<date>.json`** | Historical table snapshots.                                                                                                                                                |
-| **`snapshots.json`**                       | Index of runs with **summary** fields for charts (see below).                                                                                                              |
+| Artifact                           | Role                                                                                                                                                                       |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`output/comparison_table.json`** | Machine-readable report: rows (official-first), per-row metrics when matched, bboxes, optional `officialForEditPath`, `sourceMetadata`, `unmatchedOsm`, flags for PMTiles. |
+| **`output/comparison.pmtiles`**    | Map tiles: official / OSM / diff layers for exploration and per-feature drill-down.                                                                                        |
+| **`output/unmatched.pmtiles`**     | Tiles for OSM polygons with no official counterpart in **this** area’s export (tagging or coverage gaps).                                                                  |
+| **`snapshots.json`**               | Index of runs with **summary** fields for charts (see below).                                                                                                              |
 
 **Interpretation:**
 

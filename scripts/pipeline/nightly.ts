@@ -13,6 +13,7 @@ import {
 import { join } from 'node:path'
 import { areaHasCompareConfig } from '../shared/areaConfig.ts'
 import { DATASETS_DIRECTORY } from '../shared/datasetPaths.ts'
+import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 type StepStatus = 'ok' | 'fail' | 'skipped'
@@ -160,7 +161,8 @@ async function runStep(
 
 async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
-  const processingDir = join(workspaceRoot, 'data')
+  const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
+  const processingDir = join(runtimeRoot, 'data')
   const logPath = join(processingDir, 'processing-log.jsonl')
   const statePath = join(processingDir, 'processing-state.json')
   const lockPath = join(processingDir, 'processing.lock')

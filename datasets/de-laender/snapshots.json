@@ -4,8 +4,6 @@
   "runs": [
     {
       "id": "2026-03-29",
-      "tablePath": "history/comparison_table_2026-03-29.json",
-      "pmtilesPath": null,
       "summary": {
         "totalRows": 16,
         "meanIou": 0.9994294301339154,
@@ -14,8 +12,6 @@
     },
     {
       "id": "2026-03-30",
-      "tablePath": "history/comparison_table_2026-03-30.json",
-      "pmtilesPath": null,
       "summary": {
         "totalRows": 16,
         "meanIou": 0.9994294301339154,
@@ -25,8 +21,6 @@
     },
     {
       "id": "2026-04-02",
-      "tablePath": "history/comparison_table_2026-04-02.json",
-      "pmtilesPath": null,
       "summary": {
         "totalRows": 16,
         "meanIou": 0.9994294301339154,

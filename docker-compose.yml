@@ -8,6 +8,7 @@ services:
       PORT: 4173
       TZ: Europe/Berlin
       PIPELINE_TIMEZONE: Europe/Berlin
+      DATA_ROOT: /data
     ports:
       - '4173:4173'
     volumes:
@@ -23,6 +24,7 @@ services:
       TZ: Europe/Berlin
       PIPELINE_TIMEZONE: Europe/Berlin
       CI: '1'
+      DATA_ROOT: /data
     volumes:
       - boundary_checker_data:/data
     command: ['bun', 'run', 'pipeline:nightly']
