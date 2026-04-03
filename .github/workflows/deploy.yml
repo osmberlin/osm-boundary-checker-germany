@@ -1,8 +1,10 @@
 name: Deploy Docker Stack
 
+# Re-enable push → main when the deploy server and GitHub secrets are set up. Until then,
+# deploy manually via Actions → this workflow → Run workflow.
 on:
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 jobs:

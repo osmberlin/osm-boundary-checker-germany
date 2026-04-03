@@ -1,8 +1,10 @@
 name: Nightly Processing
 
+# Re-enable the schedule block when the processing server is configured (SSH_HOST, SSH_USER,
+# SSH_KEY, SERVER_APP_DIR, etc.). Until then, run manually via Actions → this workflow → Run workflow.
 on:
-  schedule:
-    - cron: "0 1 * * *"
+  # schedule:
+  #   - cron: "0 1 * * *" # 01:00 UTC daily
   workflow_dispatch:
 
 jobs:
