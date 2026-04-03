@@ -71,14 +71,14 @@ Match keys for OSM often use **ARS** (12-digit) or **AGS** (8-digit); confirm co
 
 ## Layer → preset cheat sheet (verify with `ogrinfo`)
 
-| Layer (VG25 aktuell) | Typical use     | OSM tag (often)         | Preset (starting point) | OSM `admin_level` (Germany, rough) |
-| -------------------- | --------------- | ----------------------- | ------------------------ | ---------------------------------- |
-| `vg25_gem`           | Gemeinden       | `de:regionalschluessel` | `regional-12`            | `8`                                |
-| `vg25_krs`           | Kreise          | `de:regionalschluessel` | `regional-12`            | `6`                                |
-| `vg25_lan`           | Bundesländer    | `de:regionalschluessel` | `regional-12`            | `4`                                |
-| `vg25_rbz`           | Reg.-Bezirke    | `de:regionalschluessel` | `regional-12`            | `5`                                |
-| `vg25_sta`           | Staatsgebiet    | (Landesgrenze)          | `regional-12`            | `2` (see `datasets/de-staat/config.jsonc` → `ogrSql`: synthetic RS `000000000000`) |
-| `vg25_vwg`           | VWG             | (variiert)              | `regional-12`            | often `7`; OSM coverage can be much lower than BKG — tune `osmExtract` in `config.jsonc` if needed |
+| Layer (VG25 aktuell) | Typical use  | OSM tag (often)         | Preset (starting point) | OSM `admin_level` (Germany, rough)                                                                 |
+| -------------------- | ------------ | ----------------------- | ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `vg25_gem`           | Gemeinden    | `de:regionalschluessel` | `regional-12`           | `8`                                                                                                |
+| `vg25_krs`           | Kreise       | `de:regionalschluessel` | `regional-12`           | `6`                                                                                                |
+| `vg25_lan`           | Bundesländer | `de:regionalschluessel` | `regional-12`           | `4`                                                                                                |
+| `vg25_rbz`           | Reg.-Bezirke | `de:regionalschluessel` | `regional-12`           | `5`                                                                                                |
+| `vg25_sta`           | Staatsgebiet | (Landesgrenze)          | `regional-12`           | `2` (see `datasets/de-staat/config.jsonc` → `ogrSql`: synthetic RS `000000000000`)                 |
+| `vg25_vwg`           | VWG          | (variiert)              | `regional-12`           | often `7`; OSM coverage can be much lower than BKG — tune `osmExtract` in `config.jsonc` if needed |
 
 Workspace **`config.jsonc`** → **`osmExtract`** encodes these filters for `bun run osm:extract`.
 

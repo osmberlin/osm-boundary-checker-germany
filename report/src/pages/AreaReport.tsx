@@ -29,8 +29,8 @@ import {
   MeanIouInfoButton,
 } from '../components/HausdorffInfoModal'
 import { InfoNotice } from '../components/InfoNotice'
-import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportCategoryPill, ReportCategorySwatch } from '../components/reportCategoryStyles'
+import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { loadComparison, loadSnapshots } from '../data/load'
 import { comparisonPmtilesMaplibreUrl } from '../data/paths'
 import {
@@ -329,7 +329,7 @@ export function AreaReport() {
       </div>
 
       <div className="mb-8 h-64 rounded border border-slate-700 bg-slate-900 p-2">
-        <h2 className="mb-2 flex flex-wrap items-center gap-1 font-medium text-sm text-slate-300">
+        <h2 className="mb-2 flex flex-wrap items-center gap-1 text-sm font-medium text-slate-300">
           <span>{de.areaReport.chartTitle}</span>
           <MeanIouInfoButton className="-ml-0.5" iconClassName="size-[0.95rem]" />
         </h2>
@@ -419,7 +419,7 @@ export function AreaReport() {
           </thead>
           <tbody>
             {sortedRows.map((row) => (
-              <tr key={row.canonicalMatchKey} className="border-slate-800 border-t">
+              <tr key={row.canonicalMatchKey} className="border-t border-slate-800">
                 <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
                 <td className="px-3 py-2 font-mono text-xs text-slate-100">
                   {row.canonicalMatchKey}
@@ -429,13 +429,13 @@ export function AreaReport() {
                     {categoryLabelDe(row.category)}
                   </ReportCategoryPill>
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slate-100">
+                <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
                   {row.metrics ? formatDeIou(row.metrics.iou) : EM_DASH}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slate-100">
+                <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
                   {row.metrics ? formatDePercentPoints(row.metrics.areaDiffPct) : EM_DASH}
                 </td>
-                <td className="px-3 py-2 text-right tabular-nums text-slate-100">
+                <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
                   {row.metrics ? formatDeOrDash(row.metrics.hausdorffM, formatDeMeters) : EM_DASH}
                 </td>
                 <td className="px-3 py-2">
@@ -469,8 +469,8 @@ function SummaryStatColumn({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
-      <dt className="font-medium text-sm text-slate-300">{heading}</dt>
-      <dd className="m-0 text-pretty font-semibold text-2xl text-slate-100 tabular-nums tracking-tight sm:text-3xl">
+      <dt className="text-sm font-medium text-slate-300">{heading}</dt>
+      <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-slate-100 tabular-nums sm:text-3xl">
         {relativeLine}
       </dd>
       <dd className="m-0 text-sm text-slate-400">{absoluteLine}</dd>

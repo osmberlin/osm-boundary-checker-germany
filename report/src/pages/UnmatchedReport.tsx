@@ -95,7 +95,7 @@ export function UnmatchedReport() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
-      <h1 className="mb-4 font-semibold text-xl text-slate-100">{de.unmatched.title}</h1>
+      <h1 className="mb-4 text-xl font-semibold text-slate-100">{de.unmatched.title}</h1>
       <p className="mb-4 text-slate-400">{de.unmatched.lead}</p>
       <p className="mb-6 text-sm text-slate-400">
         {de.areaReport.unmatchedCountLabel}: {formatDeInteger(unmatched.length)}
@@ -154,7 +154,7 @@ export function UnmatchedReport() {
               </thead>
               <tbody>
                 {unmatched.map((row) => (
-                  <tr key={row.canonicalMatchKey} className="border-slate-800 border-t">
+                  <tr key={row.canonicalMatchKey} className="border-t border-slate-800">
                     <td className="px-3 py-2 font-mono text-xs text-slate-100">
                       {row.canonicalMatchKey}
                     </td>

@@ -40,14 +40,14 @@ function DatasetPropertyCard({
 
   return (
     <article className={`rounded-lg border border-l-[3px] ${bar} ${shell} p-3 shadow-sm`}>
-      <h3 className="mb-2 font-medium text-sm text-slate-100">{title}</h3>
+      <h3 className="mb-2 text-sm font-medium text-slate-100">{title}</h3>
       {entries.length === 0 ? (
         <p className="text-sm text-slate-400">{de.feature.datasetPropertiesEmpty}</p>
       ) : (
         <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           {entries.map(([k, v]) => (
             <div key={k} className="contents">
-              <dt className="break-words font-mono text-xs text-slate-400">{k}</dt>
+              <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
               <dd className="break-words text-slate-100">{formatPropertyValue(v)}</dd>
             </div>
           ))}
@@ -66,7 +66,7 @@ export function FeatureDatasetProperties({ row }: { row: ReportRow }) {
         className="mt-6 rounded-lg border border-slate-700 bg-slate-900/50 p-4"
         aria-label={de.feature.datasetPropertiesSectionAria}
       >
-        <h2 className="font-semibold text-sm text-slate-100">
+        <h2 className="text-sm font-semibold text-slate-100">
           {de.feature.datasetPropertiesSectionTitle}
         </h2>
         <p className="mt-2 text-sm text-slate-400">{de.feature.datasetPropertiesLegacySnapshot}</p>
@@ -82,7 +82,7 @@ export function FeatureDatasetProperties({ row }: { row: ReportRow }) {
       className="mt-6 rounded-lg border border-slate-700 bg-slate-900/50 p-4"
       aria-label={de.feature.datasetPropertiesSectionAria}
     >
-      <h2 className="font-semibold text-sm text-slate-100">
+      <h2 className="text-sm font-semibold text-slate-100">
         {de.feature.datasetPropertiesSectionTitle}
       </h2>
       <p className="mt-1 text-xs text-slate-400">{de.feature.datasetPropertiesSectionLead}</p>

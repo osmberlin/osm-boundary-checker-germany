@@ -1,11 +1,11 @@
 {
   "name": "osm-boundary-checker-germany",
   "private": true,
-  "type": "module",
   "workspaces": [
     "scripts",
     "report"
   ],
+  "type": "module",
   "scripts": {
     "prepare": "husky",
     "format": "oxfmt --write .",

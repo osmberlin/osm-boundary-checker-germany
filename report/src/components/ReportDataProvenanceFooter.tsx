@@ -67,9 +67,9 @@ export function ReportDataProvenanceFooter({
       className={`mt-10 rounded border border-slate-700 bg-slate-900/50 p-4 text-sm text-slate-400 ${wrap}`.trim()}
       aria-label={p.sectionAria}
     >
-      <h2 className="mb-4 font-semibold text-base text-slate-100">{p.title}</h2>
+      <h2 className="mb-4 text-base font-semibold text-slate-100">{p.title}</h2>
 
-      <div className="mb-6 space-y-1 border-slate-700 border-b pb-4">
+      <div className="mb-6 space-y-1 border-b border-slate-700 pb-4">
         <DateLine
           label={p.reportCreatedLabel}
           abs={reportFresh.absoluteLine || EM_DASH}
@@ -141,7 +141,7 @@ export function ReportDataProvenanceFooter({
       {osm?.note?.trim() ? (
         <>
           <p className="mb-1 font-medium text-slate-300">{p.osmFilterNoteTitle}</p>
-          <pre className="mb-4 overflow-x-auto whitespace-pre-wrap break-words rounded border border-slate-800 bg-slate-950 p-3 font-mono text-xs text-slate-300">
+          <pre className="mb-4 overflow-x-auto rounded border border-slate-800 bg-slate-950 p-3 font-mono text-xs break-words whitespace-pre-wrap text-slate-300">
             {osm.note.trim()}
           </pre>
         </>

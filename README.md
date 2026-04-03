@@ -61,14 +61,14 @@ docker compose run --rm pipeline bun run download
 
 This is a **`package.json` chain** (not a monolithic script): `download:bkg && download:official && download:osm`.
 
-| Script | What it runs |
-|--------|----------------|
-| `download` | Full chain above |
-| `download:bkg` | `bkg:download` then `bkg:extract` (ZIP → `.cache`, per-area `source/official.fgb` from VG25) |
-| `download:bkg:fetch` / `download:bkg:extract` | BKG download or extract only |
-| `download:official` | Areas with `config.jsonc` → `download.official` (HTTP GeoJSON) → `official.path` as FlatGeobuf; others log `skip` |
-| `download:osm` | `osm:download` then `osm:extract` |
-| `download:osm:fetch` / `download:osm:extract` | OSM steps only |
+| Script                                        | What it runs                                                                                                      |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `download`                                    | Full chain above                                                                                                  |
+| `download:bkg`                                | `bkg:download` then `bkg:extract` (ZIP → `.cache`, per-area `source/official.fgb` from VG25)                      |
+| `download:bkg:fetch` / `download:bkg:extract` | BKG download or extract only                                                                                      |
+| `download:official`                           | Areas with `config.jsonc` → `download.official` (HTTP GeoJSON) → `official.path` as FlatGeobuf; others log `skip` |
+| `download:osm`                                | `osm:download` then `osm:extract`                                                                                 |
+| `download:osm:fetch` / `download:osm:extract` | OSM steps only                                                                                                    |
 
 Legacy names still work: `download-osm-pbf` → `download:osm:fetch`, `extract-osm` → `download:osm:extract`, `download-bkg-vg25` → `download:bkg:fetch`, `extract-vg250` → `download:bkg:extract`.
 

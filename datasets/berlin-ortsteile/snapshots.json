@@ -12,6 +12,17 @@
         "matched": 0,
         "unmatchedOsm": 84
       }
+    },
+    {
+      "id": "2026-04-03",
+      "tablePath": "history/comparison_table_2026-04-03.json",
+      "pmtilesPath": null,
+      "summary": {
+        "totalRows": 97,
+        "meanIou": 0,
+        "matched": 0,
+        "unmatchedOsm": 84
+      }
     }
   ]
 }

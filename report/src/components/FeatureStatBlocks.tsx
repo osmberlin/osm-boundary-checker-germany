@@ -37,7 +37,7 @@ export function StatBlock({ label, value }: { label: ReactNode; value: ReactNode
   return (
     <div className="flex flex-col-reverse gap-y-2">
       <dt className="text-base/7 text-slate-400">{label}</dt>
-      <dd className="text-pretty font-semibold text-2xl text-slate-100 tabular-nums tracking-tight sm:text-3xl">
+      <dd className="text-2xl font-semibold tracking-tight text-pretty text-slate-100 tabular-nums sm:text-3xl">
         {value}
       </dd>
     </div>
@@ -103,7 +103,7 @@ export function LayerToggleStatBlock({
       </dt>
       <dd
         className={
-          `text-pretty font-semibold text-2xl text-slate-100 tabular-nums tracking-tight sm:text-3xl ` +
+          `text-2xl font-semibold tracking-tight text-pretty text-slate-100 tabular-nums sm:text-3xl ` +
           (disabled ? `` : `transition-colors group-hover:text-white`)
         }
       >

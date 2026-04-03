@@ -44,12 +44,12 @@ export function UpdateMapInstructions({
 
   return (
     <section className="mt-8 rounded border border-slate-700 bg-slate-900/50 p-4">
-      <h2 className="font-semibold text-base tracking-tight text-slate-100">{u.title}</h2>
+      <h2 className="text-base font-semibold tracking-tight text-slate-100">{u.title}</h2>
       <p className="mt-2 text-sm text-slate-400">{u.lead}</p>
 
       <div className="mt-6 grid gap-8 md:grid-cols-2 md:gap-10">
         <div>
-          <h3 className="font-medium text-sm text-slate-200">{u.idHeading}</h3>
+          <h3 className="text-sm font-medium text-slate-200">{u.idHeading}</h3>
           <div className="mt-3 flex flex-col gap-2">
             <button
               type="button"
@@ -83,7 +83,7 @@ export function UpdateMapInstructions({
         </div>
 
         <div>
-          <h3 className="font-medium text-sm text-slate-200">{u.josmHeading}</h3>
+          <h3 className="text-sm font-medium text-slate-200">{u.josmHeading}</h3>
           <p className="mt-3 text-sm text-slate-400">{u.josmRemoteLead}</p>
           <div className="mt-3 flex flex-col gap-2">
             <button
@@ -141,12 +141,12 @@ export function UpdateMapInstructions({
       </div>
 
       {snapshotActive && officialHref == null && (
-        <p className="mt-6 border-slate-700 border-t pt-4 text-xs text-slate-500">
+        <p className="mt-6 border-t border-slate-700 pt-4 text-xs text-slate-500">
           {u.snapshotNoEditorFiles}
         </p>
       )}
       {!snapshotActive && row.officialForEditPath === undefined && (
-        <p className="mt-6 border-slate-700 border-t pt-4 text-xs text-slate-500">
+        <p className="mt-6 border-t border-slate-700 pt-4 text-xs text-slate-500">
           {u.legacyTableHint}
         </p>
       )}

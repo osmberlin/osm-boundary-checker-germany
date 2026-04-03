@@ -16,29 +16,29 @@ This note captures the outcome of a full compare pass over all `berlin-*` and `d
 
 Approximate row counts from `output/comparison_table.json`:
 
-| Area | Rows | Matched | Official only | OSM only |
-|------|------|---------|---------------|----------|
-| berlin-bezirke | 12 | 12 | 0 | 0 |
-| de-staat | 2 | 1 | 1 | 0 |
-| de-laender | 16 | 16 | 0 | 0 |
-| de-landkreise | 404 | 400 | 3 | 1 |
-| de-regierungsbezirke | 19 | 19 | 0 | 0 |
-| de-verwaltungsgemeinschaften | 4611 | 1185 | 3414 | 12 |
-| de-gemeinden | 11419 | 10393 | 588 | 438 |
+| Area                         | Rows  | Matched | Official only | OSM only |
+| ---------------------------- | ----- | ------- | ------------- | -------- |
+| berlin-bezirke               | 12    | 12      | 0             | 0        |
+| de-staat                     | 2     | 1       | 1             | 0        |
+| de-laender                   | 16    | 16      | 0             | 0        |
+| de-landkreise                | 404   | 400     | 3             | 1        |
+| de-regierungsbezirke         | 19    | 19      | 0             | 0        |
+| de-verwaltungsgemeinschaften | 4611  | 1185    | 3414          | 12       |
+| de-gemeinden                 | 11419 | 10393   | 588           | 438      |
 
 ## OSM `ogrWhere` vs BKG (feature counts)
 
 Source: `ogrinfo … -so` on `datasets/<area>/source/official.fgb` (BKG layer) and `source/osm.fgb` layer `boundaries` after `osm:extract`. Postpass (same SQL predicates + Germany bbox) matches these OSM counts for the **Germany** extract; a raw bbox query on the planet DB can include foreign `admin_level=4` polygons — use Geofabrik-derived extracts as ground truth.
 
-| Area | BKG features | OSM `boundaries` | Notes |
-|------|--------------|------------------|--------|
-| de-staat | `vg25_sta`: 8 | 1 | National border compare uses `ogrSql` on OSM Deutschland only, not full `vg25_sta`. |
-| de-laender | `vg25_lan`: 26 | 16 | 26 polygons in GPKG; **16** unique match rows after `regional-12` join (full Länder set in OSM). |
-| de-regierungsbezirke | `vg25_rbz`: 19 | 19 | Aligned. |
-| **de-landkreise** | `vg25_krs`: **403** | **401** | **Stadtstaaten:** `ogrWhere` ORs `admin_level=4` where RS matches Kreis-form **LL0000000000** with `SUBSTR` and **Land code** `LL` ∈ {`02`,`11`} (HH/BE; excludes e.g. `09…` Land polygons). 399 `@ al6` + 2. **Remaining gap:** **3** `official_only` keys (see below), **1** `osm_only` → 404 union rows. |
-| de-verwaltungsgemeinschaften | `vg25_vwg`: 4599 | 1197 | Most BKG VWG have no `admin_level=7` + RS polygon in OSM. |
-| de-gemeinden | `vg25_gem`: 10981 | 10832 | ~149 fewer tagged Gemeinden in extract vs BKG rows. |
-| berlin-bezirke | ALKIS: 12 | 12 | Aligned. |
+| Area                         | BKG features        | OSM `boundaries` | Notes                                                                                                                                                                                                                                                                                                       |
+| ---------------------------- | ------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| de-staat                     | `vg25_sta`: 8       | 1                | National border compare uses `ogrSql` on OSM Deutschland only, not full `vg25_sta`.                                                                                                                                                                                                                         |
+| de-laender                   | `vg25_lan`: 26      | 16               | 26 polygons in GPKG; **16** unique match rows after `regional-12` join (full Länder set in OSM).                                                                                                                                                                                                            |
+| de-regierungsbezirke         | `vg25_rbz`: 19      | 19               | Aligned.                                                                                                                                                                                                                                                                                                    |
+| **de-landkreise**            | `vg25_krs`: **403** | **401**          | **Stadtstaaten:** `ogrWhere` ORs `admin_level=4` where RS matches Kreis-form **LL0000000000** with `SUBSTR` and **Land code** `LL` ∈ {`02`,`11`} (HH/BE; excludes e.g. `09…` Land polygons). 399 `@ al6` + 2. **Remaining gap:** **3** `official_only` keys (see below), **1** `osm_only` → 404 union rows. |
+| de-verwaltungsgemeinschaften | `vg25_vwg`: 4599    | 1197             | Most BKG VWG have no `admin_level=7` + RS polygon in OSM.                                                                                                                                                                                                                                                   |
+| de-gemeinden                 | `vg25_gem`: 10981   | 10832            | ~149 fewer tagged Gemeinden in extract vs BKG rows.                                                                                                                                                                                                                                                         |
+| berlin-bezirke               | ALKIS: 12           | 12               | Aligned.                                                                                                                                                                                                                                                                                                    |
 
 **de-landkreise — remaining `official_only` ARS (no OSM polygon in extract):** `079320000000`, `079350000000`, `109420000000` (mapping / mergers / dissolved units — not Stadtstaaten).
 

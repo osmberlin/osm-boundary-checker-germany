@@ -69,14 +69,14 @@ function PropertyCard({
 
   return (
     <article className={`rounded-lg border border-l-[3px] ${bar} ${shell} p-3 shadow-sm`}>
-      <h3 className="mb-2 font-medium text-sm text-slate-100">{title}</h3>
+      <h3 className="mb-2 text-sm font-medium text-slate-100">{title}</h3>
       {entries.length === 0 ? (
         <p className="text-sm text-slate-400">{de.feature.liveOsmHitNoTags}</p>
       ) : (
         <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           {entries.map(([k, v]) => (
             <div key={k} className="contents">
-              <dt className="break-words font-mono text-xs text-slate-400">{k}</dt>
+              <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
               <dd className="break-words text-slate-100">{formatPropertyValue(v)}</dd>
             </div>
           ))}
@@ -179,12 +179,12 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
       className="mt-6 rounded-lg border border-slate-700 bg-slate-900/50 p-4"
       aria-label={de.feature.liveSourcesSectionAria}
     >
-      <h2 className="font-semibold text-sm text-slate-100">{de.feature.liveSourcesSectionTitle}</h2>
+      <h2 className="text-sm font-semibold text-slate-100">{de.feature.liveSourcesSectionTitle}</h2>
       <p className="mt-1 text-xs text-slate-400">{de.feature.liveSourcesSectionLead}</p>
 
       {showOfficial && (
         <div className="mt-4 space-y-4">
-          <h3 className="font-medium text-xs uppercase tracking-wide text-blue-300/90">
+          <h3 className="text-xs font-medium tracking-wide text-blue-300/90 uppercase">
             {de.feature.liveOfficialHeading}
           </h3>
           {!bbox && <p className="text-sm text-amber-300/90">{de.feature.liveOfficialNoBbox}</p>}
@@ -230,9 +230,9 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
 
       {showOsm && (
         <div
-          className={`space-y-3 ${showOfficial ? 'mt-6 border-slate-700 border-t pt-4' : 'mt-4'}`}
+          className={`space-y-3 ${showOfficial ? 'mt-6 border-t border-slate-700 pt-4' : 'mt-4'}`}
         >
-          <h3 className="font-medium text-xs uppercase tracking-wide text-red-300/85">
+          <h3 className="text-xs font-medium tracking-wide text-red-300/85 uppercase">
             {de.feature.liveOsmHeading}
           </h3>
           {osm.status === 'idle' && bbox && (
@@ -257,11 +257,11 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
               role="dialog"
               aria-labelledby="overpass-confirm-title"
             >
-              <p id="overpass-confirm-title" className="font-medium text-sm text-amber-100">
+              <p id="overpass-confirm-title" className="text-sm font-medium text-amber-100">
                 {de.feature.liveOsmOverpassWarnTitle}
               </p>
               <p className="mt-2 text-sm text-amber-200/90">{de.feature.liveOsmOverpassWarnLead}</p>
-              <p className="mt-1 font-medium text-sm text-amber-100">
+              <p className="mt-1 text-sm font-medium text-amber-100">
                 {de.feature.liveOsmOverpassWarnScope}
               </p>
               {osm.lastError != null && osm.lastError !== '' && (
@@ -270,13 +270,13 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                   role="alert"
                 >
                   <p className="font-medium">{de.feature.liveOsmLastErrorTitle}</p>
-                  <p className="mt-1 whitespace-pre-wrap break-words">{osm.lastError}</p>
+                  <p className="mt-1 break-words whitespace-pre-wrap">{osm.lastError}</p>
                   <p className="mt-2 text-xs text-red-200/85">{de.feature.liveOsmLastErrorHint}</p>
                 </div>
               )}
               <label
                 htmlFor="overpass-server"
-                className="mt-3 block font-medium text-xs uppercase tracking-wide text-slate-400"
+                className="mt-3 block text-xs font-medium tracking-wide text-slate-400 uppercase"
               >
                 {de.feature.liveOsmServerLabel}
               </label>
@@ -290,7 +290,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                     interpreterUrl: e.target.value,
                   })
                 }
-                className="mt-1 block w-full max-w-full rounded-md border border-slate-600 bg-slate-950 px-2 py-1.5 font-mono text-[11px] text-slate-100 shadow-sm focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600/30"
+                className="mt-1 block w-full max-w-full rounded-md border border-slate-600 bg-slate-950 px-2 py-1.5 font-mono text-[11px] text-slate-100 shadow-sm focus:border-amber-600 focus:ring-1 focus:ring-amber-600/30 focus:outline-none"
               >
                 {OVERPASS_INSTANCES.map((inst) => (
                   <option key={inst.interpreterUrl} value={inst.interpreterUrl}>
@@ -300,7 +300,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
               </select>
               <label
                 htmlFor="overpass-query-draft"
-                className="mt-3 block font-medium text-xs uppercase tracking-wide text-slate-400"
+                className="mt-3 block text-xs font-medium tracking-wide text-slate-400 uppercase"
               >
                 {de.feature.liveOsmOverpassWarnQuery}
               </label>
@@ -316,7 +316,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                 }
                 spellCheck={false}
                 rows={10}
-                className="mt-1 max-h-64 min-h-[8rem] w-full resize-y rounded border border-slate-600 bg-slate-950 p-2 font-mono text-[11px] text-slate-200 leading-snug shadow-inner focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600/30"
+                className="mt-1 max-h-64 min-h-[8rem] w-full resize-y rounded border border-slate-600 bg-slate-950 p-2 font-mono text-[11px] leading-snug text-slate-200 shadow-inner focus:border-amber-600 focus:ring-1 focus:ring-amber-600/30 focus:outline-none"
               />
               {bbox && (
                 <button

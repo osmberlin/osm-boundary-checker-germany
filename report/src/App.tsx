@@ -13,7 +13,7 @@ function ReportLayout() {
     <div className="min-h-screen">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-slate-800 focus:p-2 focus:text-slate-100"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-slate-800 focus:p-2 focus:text-slate-100"
       >
         Zum Inhalt
       </a>

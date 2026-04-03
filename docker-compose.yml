@@ -9,7 +9,7 @@ services:
       TZ: Europe/Berlin
       PIPELINE_TIMEZONE: Europe/Berlin
     ports:
-      - "4173:4173"
+      - '4173:4173'
     volumes:
       - boundary_checker_data:/data
     restart: unless-stopped
@@ -22,11 +22,11 @@ services:
     environment:
       TZ: Europe/Berlin
       PIPELINE_TIMEZONE: Europe/Berlin
-      CI: "1"
+      CI: '1'
     volumes:
       - boundary_checker_data:/data
-    command: ["bun", "run", "pipeline:nightly"]
-    profiles: ["pipeline"]
+    command: ['bun', 'run', 'pipeline:nightly']
+    profiles: ['pipeline']
 
 volumes:
   boundary_checker_data:

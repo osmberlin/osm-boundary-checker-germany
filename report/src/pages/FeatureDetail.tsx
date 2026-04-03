@@ -15,10 +15,10 @@ import {
 } from '../components/HausdorffInfoModal'
 import { InfoNotice } from '../components/InfoNotice'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
-import { hexToRgba } from '../components/MapLegend'
 import { mapLayerColors } from '../components/mapLayerColors'
-import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
+import { hexToRgba } from '../components/MapLegend'
 import { ReportCategoryPill } from '../components/reportCategoryStyles'
+import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
 import { loadComparison } from '../data/load'
 import { comparisonPmtilesMaplibreUrl } from '../data/paths'
@@ -170,7 +170,7 @@ function StatsStrip({ row, mapLayers }: { row: ReportRow; mapLayers: MapLayerCon
   return (
     <section className="rounded border border-slate-700 bg-slate-900 p-4">
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <h1 className="font-semibold text-lg tracking-tight text-slate-100">{row.nameLabel}</h1>
+        <h1 className="text-lg font-semibold tracking-tight text-slate-100">{row.nameLabel}</h1>
         <span className="text-slate-600" aria-hidden>
           ·
         </span>
@@ -282,7 +282,7 @@ function StatsStrip({ row, mapLayers }: { row: ReportRow; mapLayers: MapLayerCon
               value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
               swatch={
                 <div
-                  className="h-5 w-10 shrink-0 rounded-sm border-2 border-slate-500 border-solid"
+                  className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid border-slate-500"
                   style={{
                     background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
                   }}
@@ -294,7 +294,7 @@ function StatsStrip({ row, mapLayers }: { row: ReportRow; mapLayers: MapLayerCon
           </StatBlocksRow>
         </>
       )}
-      {!m && <p className="mt-4 text-amber-400 text-sm">{de.feature.noMetrics}</p>}
+      {!m && <p className="mt-4 text-sm text-amber-400">{de.feature.noMetrics}</p>}
     </section>
   )
 }

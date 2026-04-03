@@ -2,10 +2,10 @@
   // Compare: FlatGeobuf inputs and id matching (see scripts/compare/lib/normalizeGermanKey.ts)
   "official": {
     "path": "source/official.fgb",
-    "matchProperty": "name"
+    "matchProperty": "name",
   },
   "idNormalization": {
-    "preset": "berlin-bezirk-ags"
+    "preset": "berlin-bezirk-ags",
   },
   "metricsCrs": "EPSG:32633",
 
@@ -15,15 +15,15 @@
       "kind": "http",
       "url": "https://gdi.berlin.de/services/wfs/alkis_bezirke?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_bezirke%3Abezirksgrenzen&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
       "format": "geojson",
-      "crs": "EPSG:4326"
-    }
+      "crs": "EPSG:4326",
+    },
   },
 
   // Optional: official dataset reference (human documentation)
   "sources": {
     "official": {
-      "sourceUrl": "https://gdi.berlin.de/services/wfs/alkis_bezirke?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_bezirke%3Abezirksgrenzen&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326"
-    }
+      "sourceUrl": "https://gdi.berlin.de/services/wfs/alkis_bezirke?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_bezirke%3Abezirksgrenzen&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
+    },
   },
 
   "ogcInspectSources": [
@@ -35,7 +35,7 @@
       "typeName": "alkis_bezirke:bezirksgrenzen",
       "wfsVersion": "2.0.0",
       "bboxAxisOrder": "latlon",
-      "maxFeatures": 40
-    }
-  ]
+      "maxFeatures": 40,
+    },
+  ],
 }

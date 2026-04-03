@@ -13,18 +13,18 @@
         "4": "020000000004",
         "5": "020000000005",
         "6": "020000000006",
-        "7": "020000000007"
-      }
-    }
+        "7": "020000000007",
+      },
+    },
   },
   "idNormalization": {
-    "preset": "regional-12"
+    "preset": "regional-12",
   },
   "metricsCrs": "EPSG:25832",
 
   "compare": {
     "applyBboxFilter": true,
-    "bboxBufferDegrees": 0.05
+    "bboxBufferDegrees": 0.05,
   },
 
   "download": {
@@ -32,13 +32,13 @@
       "kind": "http",
       "url": "https://api.hamburg.de/datasets/v1/regionalstatistische_daten_bezirke/collections/regionalstatistische_daten_bezirke/items?f=json&filter=jahr%20%3D%20%272024%27&limit=20",
       "format": "geojson",
-      "crs": "EPSG:4326"
-    }
+      "crs": "EPSG:4326",
+    },
   },
 
   "sources": {
     "official": {
-      "sourceUrl": "https://suche.transparenz.hamburg.de/dataset/regionalstatistische-daten-der-bezirke-hamburgs-und-hamburg-insgesamt20"
-    }
-  }
+      "sourceUrl": "https://suche.transparenz.hamburg.de/dataset/regionalstatistische-daten-der-bezirke-hamburgs-und-hamburg-insgesamt20",
+    },
+  },
 }

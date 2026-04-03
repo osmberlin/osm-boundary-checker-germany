@@ -63,7 +63,7 @@ export function MetricInfoButton({ copy, className, iconClassName }: MetricInfoB
         <AppDialogDescription>{copy.lead}</AppDialogDescription>
         <AppDialogBody>
           {copy.paragraphs.map((p) => (
-            <p key={p} className="text-sm text-slate-300 leading-6">
+            <p key={p} className="text-sm leading-6 text-slate-300">
               {p}
             </p>
           ))}
@@ -71,7 +71,7 @@ export function MetricInfoButton({ copy, className, iconClassName }: MetricInfoB
         <AppDialogActions>
           <button
             type="button"
-            className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 font-medium text-sm text-slate-100 shadow-sm hover:bg-slate-700"
+            className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 shadow-sm hover:bg-slate-700"
             onClick={() => setOpen(false)}
           >
             {copy.close}
