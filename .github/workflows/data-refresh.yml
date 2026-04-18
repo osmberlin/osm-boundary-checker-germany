@@ -37,6 +37,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y osmium-tool gdal-bin tippecanoe unzip
 
+      - name: Bootstrap official reference data for fresh runner
+        run: |
+          bun run bkg:download
+          bun run bkg:extract
+          bun run download:official
+        env:
+          CI: '1'
+
       - name: Run nightly pipeline
         run: bun run pipeline:nightly
         env:
