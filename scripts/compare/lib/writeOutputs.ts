@@ -1,12 +1,4 @@
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  unlinkSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, mkdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { area, bbox, difference, featureCollection } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
@@ -16,6 +8,7 @@ import {
   officialForEditGeojsonBasename,
 } from '../../shared/officialForEditGeojson.ts'
 import type { OgcWfsInspectSource } from '../../shared/ogcInspectSources.ts'
+import { ensureRuntimeDatabase } from '../../shared/runtimeDb.ts'
 import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/sourceMetadata.ts'
 import type { CompareRow, UnmatchedOsmRow } from './compare.ts'
 import { computeMeanIou } from './metrics.ts'
@@ -237,13 +230,11 @@ function removeLegacyOutputFiles(outDir: string) {
   }
 }
 
-function removeStaleHistoricPmtiles(historyDir: string) {
-  if (!existsSync(historyDir)) return
-  for (const ent of readdirSync(historyDir, { withFileTypes: true })) {
-    if (!ent.isFile()) continue
-    if (!ent.name.startsWith('comparison_') || !ent.name.endsWith('.pmtiles')) continue
+function removeLegacyJsonOutputs(outDir: string, areaPath: string) {
+  for (const p of [join(outDir, TABLE_JSON), join(areaPath, 'snapshots.json')]) {
+    if (!existsSync(p)) continue
     try {
-      unlinkSync(join(historyDir, ent.name))
+      unlinkSync(p)
     } catch {
       /* ignore */
     }
@@ -261,6 +252,8 @@ function unmatchedRowsForTableDoc(unmatchedOsm: UnmatchedOsmRow[]): Record<strin
 }
 
 export function writeOutputs(
+  workspaceRoot: string,
+  runtimeRoot: string,
   areaPath: string,
   areaFolder: string,
   rows: CompareRow[],
@@ -270,14 +263,14 @@ export function writeOutputs(
   ogcInspectSources: OgcWfsInspectSource[] = [],
 ): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
-  const histDir = join(areaPath, 'history')
   const buildDir = join(outDir, BUILD_DIR)
   mkdirSync(outDir, { recursive: true })
-  mkdirSync(histDir, { recursive: true })
 
   const snapshotId = todayStamp()
+  const generatedAt = new Date().toISOString()
 
   const matched = rows.filter((r) => r.category === 'matched')
+  const officialOnly = rows.filter((r) => r.category === 'official_only')
   const meanIou = computeMeanIou(rows)
 
   const geometryFc = buildGeometryFeatureCollection(rows)
@@ -355,112 +348,200 @@ export function writeOutputs(
   }
 
   const unmatchedTable = unmatchedRowsForTableDoc(unmatchedOsm)
-
-  const tableDoc: Record<string, unknown> = {
-    area: areaFolder,
-    generatedAt: new Date().toISOString(),
+  persistRunDataToDb(
+    workspaceRoot,
+    runtimeRoot,
+    areaFolder,
+    snapshotId,
+    generatedAt,
     metricsCrs,
     hasPmtiles,
     hasUnmatchedPmtiles,
-    tippecanoeLayer: TIPPECANOE_LAYER,
-    unmatchedOsm: unmatchedTable,
-    rows: rows.map((r) => {
-      const editStem = stemByKeyForOfficial?.get(r.canonicalMatchKey)
-      const row: Record<string, unknown> = {
-        canonicalMatchKey: r.canonicalMatchKey,
-        nameLabel: r.nameLabel,
-        category: r.category,
-        osmRelationId: r.osmRelationId,
-        metrics: r.metrics
-          ? {
-              iou: r.metrics.iou,
-              areaDiffPct: r.metrics.areaDiffPct,
-              symmetricDiffPct: r.metrics.symmetricDiffPct,
-              hausdorffM: r.metrics.hausdorffM,
-              officialAreaM2: r.metrics.officialAreaM2,
-              osmAreaM2: r.metrics.osmAreaM2,
-            }
-          : null,
-        mapBbox: mapBboxForRow(r),
-        officialProperties: r.officialProperties,
-        osmProperties: r.osmProperties,
-        officialForEditPath:
-          r.officialGeometryWgs84 && editStem != null
-            ? `output/${OFFICIAL_FOR_EDIT_DIR}/${officialForEditGeojsonBasename(editStem)}`
-            : null,
-      }
-      return row
-    }),
-  }
-
-  if (sourceMetadata) {
-    tableDoc.sourceMetadata = sourceMetadata
-  }
-  if (ogcInspectSources.length > 0) {
-    tableDoc.ogcInspectSources = ogcInspectSources
-  }
-
-  const tablePathOut = join(outDir, TABLE_JSON)
-  writeFileSync(tablePathOut, JSON.stringify(tableDoc, null, 2), 'utf-8')
-
-  removeStaleHistoricPmtiles(histDir)
-
-  updateSnapshotsJson(
-    areaPath,
-    areaFolder,
-    snapshotId,
-    metricsCrs,
     meanIou,
-    rows.length,
     matched.length,
+    officialOnly.length,
     unmatchedOsm.length,
+    rows,
+    unmatchedTable,
+    stemByKeyForOfficial,
+    sourceMetadata,
+    ogcInspectSources,
   )
+  removeLegacyJsonOutputs(outDir, areaPath)
 
   return { snapshotId }
 }
 
-type SnapshotEntry = {
-  id: string
-  summary: { totalRows: number; meanIou: number; matched: number; unmatchedOsm: number }
-}
-
-function updateSnapshotsJson(
-  areaPath: string,
+function persistRunDataToDb(
+  workspaceRoot: string,
+  runtimeRoot: string,
   areaFolder: string,
   snapshotId: string,
+  generatedAt: string,
   metricsCrs: string,
+  hasPmtiles: boolean,
+  hasUnmatchedPmtiles: boolean,
   meanIou: number,
-  rowCount: number,
   matchedCount: number,
+  officialOnlyCount: number,
   unmatchedOsmCount: number,
+  rows: CompareRow[],
+  unmatchedTable: Record<string, unknown>[],
+  stemByKeyForOfficial: Map<string, string> | null,
+  sourceMetadata: ComparisonSourceMetadata | null,
+  ogcInspectSources: OgcWfsInspectSource[],
 ) {
-  const path = join(areaPath, 'snapshots.json')
-  let data: {
-    area: string
-    metricsCrs: string
-    runs: SnapshotEntry[]
-  } = {
-    area: areaFolder,
-    metricsCrs,
-    runs: [],
-  }
-  if (existsSync(path)) {
-    try {
-      data = JSON.parse(readFileSync(path, 'utf-8')) as typeof data
-    } catch {
-      /* reset */
-    }
-  }
-  const entry: SnapshotEntry = {
-    id: snapshotId,
-    summary: {
-      totalRows: rowCount,
+  const db = ensureRuntimeDatabase(runtimeRoot, workspaceRoot)
+  const writeTx = db.transaction(() => {
+    db.prepare(
+      `
+          INSERT INTO areas (area_id, display_name, metrics_crs, updated_at)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(area_id) DO UPDATE SET
+            display_name = excluded.display_name,
+            metrics_crs = excluded.metrics_crs,
+            updated_at = excluded.updated_at
+        `,
+    ).run(areaFolder, areaFolder, metricsCrs, generatedAt)
+    db.prepare(
+      `
+          INSERT INTO area_runs (
+            area_id, run_id, generated_at, metrics_crs,
+            has_pmtiles, has_unmatched_pmtiles, tippecanoe_layer,
+            mean_iou, matched_count, official_only_count, unmatched_count
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(area_id, run_id) DO UPDATE SET
+            generated_at = excluded.generated_at,
+            metrics_crs = excluded.metrics_crs,
+            has_pmtiles = excluded.has_pmtiles,
+            has_unmatched_pmtiles = excluded.has_unmatched_pmtiles,
+            tippecanoe_layer = excluded.tippecanoe_layer,
+            mean_iou = excluded.mean_iou,
+            matched_count = excluded.matched_count,
+            official_only_count = excluded.official_only_count,
+            unmatched_count = excluded.unmatched_count
+        `,
+    ).run(
+      areaFolder,
+      snapshotId,
+      generatedAt,
+      metricsCrs,
+      hasPmtiles ? 1 : 0,
+      hasUnmatchedPmtiles ? 1 : 0,
+      TIPPECANOE_LAYER,
       meanIou,
-      matched: matchedCount,
-      unmatchedOsm: unmatchedOsmCount,
-    },
+      matchedCount,
+      officialOnlyCount,
+      unmatchedOsmCount,
+    )
+
+    db.prepare(`DELETE FROM area_rows WHERE area_id = ? AND run_id = ?`).run(areaFolder, snapshotId)
+    db.prepare(`DELETE FROM area_row_props WHERE area_id = ? AND run_id = ?`).run(
+      areaFolder,
+      snapshotId,
+    )
+    db.prepare(`DELETE FROM unmatched_rows WHERE area_id = ? AND run_id = ?`).run(
+      areaFolder,
+      snapshotId,
+    )
+    db.prepare(`DELETE FROM source_metadata WHERE area_id = ? AND run_id = ?`).run(
+      areaFolder,
+      snapshotId,
+    )
+
+    const insertRow = db.prepare(`
+      INSERT INTO area_rows (
+        area_id, run_id, canonical_match_key, name_label, category, osm_relation_id, map_bbox_json,
+        iou, area_diff_pct, symmetric_diff_pct, hausdorff_m, official_area_m2, osm_area_m2
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    const insertProps = db.prepare(`
+      INSERT INTO area_row_props (
+        area_id, run_id, canonical_match_key, official_props_json, osm_props_json, official_for_edit_path
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+    `)
+    for (const r of rows) {
+      const editStem = stemByKeyForOfficial?.get(r.canonicalMatchKey)
+      const officialForEditPath =
+        r.officialGeometryWgs84 && editStem != null
+          ? `output/${OFFICIAL_FOR_EDIT_DIR}/${officialForEditGeojsonBasename(editStem)}`
+          : null
+      insertRow.run(
+        areaFolder,
+        snapshotId,
+        r.canonicalMatchKey,
+        r.nameLabel,
+        r.category,
+        r.osmRelationId,
+        toDbJson(mapBboxForRow(r)),
+        r.metrics?.iou ?? null,
+        r.metrics?.areaDiffPct ?? null,
+        r.metrics?.symmetricDiffPct ?? null,
+        r.metrics?.hausdorffM ?? null,
+        r.metrics?.officialAreaM2 ?? null,
+        r.metrics?.osmAreaM2 ?? null,
+      )
+      insertProps.run(
+        areaFolder,
+        snapshotId,
+        r.canonicalMatchKey,
+        toDbJson(r.officialProperties),
+        toDbJson(r.osmProperties),
+        officialForEditPath,
+      )
+    }
+
+    const insertUnmatched = db.prepare(`
+      INSERT INTO unmatched_rows (
+        area_id, run_id, canonical_match_key, name_label, osm_relation_id, admin_level, map_bbox_json
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `)
+    for (const row of unmatchedTable) {
+      const data = row as {
+        canonicalMatchKey: string
+        nameLabel: string
+        osmRelationId: string
+        adminLevel: string | null
+        mapBbox: [number, number, number, number] | null
+      }
+      insertUnmatched.run(
+        areaFolder,
+        snapshotId,
+        data.canonicalMatchKey,
+        data.nameLabel,
+        data.osmRelationId,
+        data.adminLevel,
+        toDbJson(data.mapBbox),
+      )
+    }
+
+    if (sourceMetadata != null || ogcInspectSources.length > 0) {
+      db.prepare(
+        `
+          INSERT INTO source_metadata (area_id, run_id, official_json, osm_json, ogc_sources_json)
+          VALUES (?, ?, ?, ?, ?)
+        `,
+      ).run(
+        areaFolder,
+        snapshotId,
+        toDbJson(sourceMetadata?.official ?? null),
+        toDbJson(sourceMetadata?.osm ?? null),
+        toDbJson(ogcInspectSources),
+      )
+    }
+  })
+  try {
+    writeTx()
+  } finally {
+    db.close()
   }
-  const rest = data.runs.filter((r) => r.id !== snapshotId)
-  data.runs = [...rest, entry].sort((a, b) => a.id.localeCompare(b.id))
-  writeFileSync(path, JSON.stringify(data, null, 2), 'utf-8')
+}
+
+function toDbJson(value: unknown): string | null {
+  if (value == null) return null
+  return JSON.stringify(value)
 }

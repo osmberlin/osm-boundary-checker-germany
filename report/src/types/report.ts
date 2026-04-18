@@ -40,15 +40,12 @@ export type ReportRow = {
   metrics: ReportMetrics | null
   /** WGS84 bbox [west, south, east, north] for fitting the map; null if no geometry. */
   mapBbox: [number, number, number, number] | null
-  /**
-   * Relative to the dataset folder: `output/official_for_edit/<basename>.geojson`.
-   * Omitted or null when there is no official geometry for this row.
-   */
-  officialForEditPath?: string | null
-  /** GeoJSON properties from the compare merge (amtlich). Omitted in older `comparison_table.json`. */
-  officialProperties?: Record<string, unknown> | null
-  /** GeoJSON properties from the compare merge (OSM). Omitted in older `comparison_table.json`. */
-  osmProperties?: Record<string, unknown> | null
+  /** Relative to the dataset folder: `output/official_for_edit/<basename>.geojson` or null. */
+  officialForEditPath: string | null
+  /** GeoJSON properties from the compare merge (amtlich). */
+  officialProperties: Record<string, unknown> | null
+  /** GeoJSON properties from the compare merge (OSM). */
+  osmProperties: Record<string, unknown> | null
 }
 
 /** OSM polygon whose normalized `de:regionalschluessel` has no row in this area’s official export. */
@@ -70,7 +67,7 @@ export type ComparisonForReport = {
   hasUnmatchedPmtiles?: boolean
   /** MapLibre `source-layer` name (matches tippecanoe `-l`). */
   tippecanoeLayer: string
-  /** Present when `<area>/source/metadata.json` (or legacy `source-metadata.json`) was read at compare time. */
+  /** Present when `<area>/source/metadata.json` was read at compare time. */
   sourceMetadata?: {
     official: SourceMetadataSide | null
     osm: SourceMetadataSide | null
@@ -78,8 +75,7 @@ export type ComparisonForReport = {
   /** From optional `ogcInspectSources` in area config (compare embeds a copy). */
   ogcInspectSources?: OgcWfsInspectSource[]
   rows: ReportRow[]
-  /** Default `[]` when missing (older JSON). */
-  unmatchedOsm?: UnmatchedOsmReportRow[]
+  unmatchedOsm: UnmatchedOsmReportRow[]
 }
 
 export type SnapshotsJson = {
@@ -91,8 +87,7 @@ export type SnapshotsJson = {
       totalRows: number
       meanIou: number
       matched: number
-      /** Present from compare runs that emit `unmatchedOsm`; omit on older snapshots. */
-      unmatchedOsm?: number
+      unmatchedOsm: number
     }
   }[]
 }

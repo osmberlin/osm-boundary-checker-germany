@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { InfoNotice } from '../components/InfoNotice'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
-import { loadComparison } from '../data/load'
+import { loadUnmatched } from '../data/load'
 import { comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { de } from '../i18n/de'
@@ -45,7 +45,7 @@ export function UnmatchedReport() {
     let cancelled = false
     ;(async () => {
       try {
-        const json = await loadComparison(areaId)
+        const json = await loadUnmatched(areaId)
         if (!cancelled) {
           setData(json)
           setErr(null)

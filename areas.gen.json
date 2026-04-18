@@ -1,5 +1,12 @@
 {
-  "areas": ["berlin-bezirke", "berlin-ortsteile"],
+  "areas": [
+    "berlin-bezirke",
+    "berlin-ortsteile",
+    "de-regierungsbezirke",
+    "de-staat",
+    "de-verwaltungsgemeinschaften",
+    "hamburg-bezirke"
+  ],
   "summaries": [
     {
       "area": "berlin-bezirke",
@@ -12,6 +19,30 @@
       "matched": 0,
       "officialOnly": 97,
       "unmatchedOsm": 84
+    },
+    {
+      "area": "de-regierungsbezirke",
+      "matched": 19,
+      "officialOnly": 0,
+      "unmatchedOsm": 12457
+    },
+    {
+      "area": "de-staat",
+      "matched": 1,
+      "officialOnly": 1,
+      "unmatchedOsm": 12475
+    },
+    {
+      "area": "de-verwaltungsgemeinschaften",
+      "matched": 1291,
+      "officialOnly": 3308,
+      "unmatchedOsm": 11185
+    },
+    {
+      "area": "hamburg-bezirke",
+      "matched": 0,
+      "officialOnly": 7,
+      "unmatchedOsm": 486
     }
   ]
 }

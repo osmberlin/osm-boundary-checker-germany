@@ -151,9 +151,7 @@ export function AreaReport() {
           {err}
           <p className="mt-2 text-sm text-slate-400">
             {de.areaReport.errorRunCompare}{' '}
-            <code className="rounded bg-slate-800 px-1 text-slate-200">
-              output/comparison_table.json
-            </code>{' '}
+            <code className="rounded bg-slate-800 px-1 text-slate-200">bun run compare</code>{' '}
             {de.areaReport.errorRunCompareExists}
           </p>
         </div>

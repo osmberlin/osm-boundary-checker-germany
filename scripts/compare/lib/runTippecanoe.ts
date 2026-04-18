@@ -11,6 +11,7 @@ export const TIPPECANOE_LAYER = 'boundaries'
 const MAX_ZOOM = '15'
 const FULL_DETAIL_ZOOM = '15'
 const LOW_DETAIL_ZOOM = '9'
+const TIPPECANOE_MAX_BUFFER_BYTES = 256 * 1024 * 1024
 
 /**
  * argv passed to `tippecanoe` (after the executable name).
@@ -40,7 +41,7 @@ export function runTippecanoe(
   const args = tippecanoeArgs(inputVectorPath, outputPmtilesPath)
   const r = spawnSync('tippecanoe', args, {
     encoding: 'utf-8',
-    maxBuffer: 20 * 1024 * 1024,
+    maxBuffer: TIPPECANOE_MAX_BUFFER_BYTES,
   })
   if (r.error) {
     throw new Error(

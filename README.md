@@ -80,14 +80,14 @@ Legacy names still work: `download-osm-pbf` → `download:osm:fetch`, `extract-o
 
 ### Outputs per area (web UI)
 
-- **`output/comparison_table.json`** — Metrics and row metadata for the main table (one row per **official** key: matched vs official-only). Includes `unmatchedOsm` (OSM polygons whose normalized `de:regionalschluessel` has no row in that area’s official FGB), `mapBbox` per row, `hasPmtiles`, and `hasUnmatchedPmtiles` when **`output/unmatched.pmtiles`** was built.
+- **Runtime DB (`data/runtime.sqlite`)** — Comparison rows, row properties, unmatched rows, per-run summaries, and source metadata (queried via `/api/areas/*`).
 - **`output/comparison.pmtiles`** — Vector tiles for main compare (official + OSM overlays and diff patches for matched/official-only rows).
 - **`output/unmatched.pmtiles`** — Optional tiles for **`unmatchedOsm`** geometries (same `source-layer` name as the main archive: `boundaries`).
-- **`snapshots.json`** — Lightweight run index for chart stats (`summary.meanIou`, counts). No historic table/tiles are written.
+- **`output/official_for_edit/*.geojson`** — Per-feature edit helpers for updating OSM boundaries.
 
 ### Source data (FlatGeobuf)
 
-Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. **Committed on purpose:** **`snapshots.json`** only (run index + chart summaries). **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, latest **`output/comparison_table.json`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input for **all** compares is a **single shared** FlatGeobuf under **`.cache/osm/germany-admin-boundaries-rs.fgb`** produced by **`bun run osm:extract`**. Optional **`source/metadata.json`** records when data was fetched; the compare run embeds that into **`output/comparison_table.json`** for the report (“Quelldaten”). Legacy **`source/source-metadata.json`** is still read if present.
+Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Runtime compare payloads are persisted in **`data/runtime.sqlite`** (under `DATA_ROOT`), while map artifacts stay file-based in `datasets/<slug>/output/*.pmtiles`. **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input for **all** compares is a **single shared** FlatGeobuf under **`.cache/osm/germany-admin-boundaries-rs.fgb`** produced by **`bun run osm:extract`**. Optional **`source/metadata.json`** records when data was fetched and is embedded into runtime DB entries for report provenance. Legacy **`source/source-metadata.json`** is still read if present.
 
 **`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, optional **`official.keyTransposition`** (map official IDs → `de:regionalschluessel` when the source has no Schlüssel), **`idNormalization`**, **`metricsCrs`**, optional **`compare.applyBboxFilter`** / **`compare.bboxBufferDegrees`** (prefilter shared OSM features by a buffered bbox around official data), optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). There is no per-area OSM path or `osmExtract` block anymore.
 
@@ -148,13 +148,13 @@ docker compose run --rm pipeline bun run test
 
 ## Report UI
 
-Development (Bun bundles `./index.html`, HMR; `/datasets/*` and `/areas.gen.json` from repo root):
+Development (Bun bundles `./index.html`, HMR; `/api/areas*` from SQLite + `/datasets/*` PMTiles/static artifacts):
 
 ```bash
 docker compose up web
 ```
 
-Open the printed URL (default port 3000). The home page loads **`areas.gen.json`** (committed at the repo root; regenerated before dev/build via `report/generateAreasJson.ts`) with lightweight per-area counts. The UI loads **`comparison_table.json`** only for the selected area and the map loads **`comparison.pmtiles`** via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
+Open the printed URL (default port 3000). The home page and detail pages load comparison payloads from `/api/areas/*` (runtime SQLite), and the map loads `comparison.pmtiles` via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
 
 Production build:
 
@@ -162,7 +162,7 @@ Production build:
 docker compose run --rm pipeline bun run report:build
 ```
 
-Preview the static `dist/` output plus `datasets/` and `areas.gen.json` (same as dev):
+Preview the static `dist/` output plus runtime API/static data serving (same as dev):
 
 ```bash
 docker compose run --rm web bun run report:preview
@@ -172,9 +172,9 @@ Workspace scripts use Bun’s [`--filter`](https://bun.sh/docs/pm/filter) so you
 
 The basemap uses **[OpenFreeMap](https://openfreemap.org/)** Positron (vector tiles, no API key). Attribution is handled by MapLibre per [OpenFreeMap](https://openfreemap.org/).
 
-**Static deploy (GitHub Pages, Netlify, etc.):** Put the built app and the data on the **same origin**. Copy `report/dist/*` to the site root, and copy the repo’s **`datasets/`** folder and **`areas.gen.json`** next to it (same layout as this repository: `index.html`, `assets…`, `datasets/<area>/output/*.json`, `*.pmtiles`, `areas.gen.json`). The UI requests `/datasets/…` and `/areas.gen.json` — no extra `public/` folder. See [`report/src/data/paths.ts`](report/src/data/paths.ts).
+**Deploy:** Put the built app and data on the same host. Serve `report/dist/*`, static `datasets/` PMTiles files, and provide `/api/areas*` endpoints backed by the runtime SQLite DB (`data/runtime.sqlite`). See [`report/src/data/paths.ts`](report/src/data/paths.ts).
 
-**PMTiles:** The library uses HTTP **`Range`** requests against the `.pmtiles` URL ([`FetchSource`](https://github.com/protomaps/PMTiles/blob/main/js/src/v2.ts)); the response must expose **`Content-Length`** and, for range requests, **`206`** + **`Content-Range`**. **Local dev/preview** uses [`report/serveRepoDataResponse.ts`](report/serveRepoDataResponse.ts) (Node `fs` + `Range` handling; static file semantics, not an application API). **GitHub Pages, Netlify, S3 static website hosting, etc.** normally serve uploaded files with byte-range support automatically — you deploy `dist/` + `datasets/` + `areas.gen.json` only; no serverless functions or custom routes required for PMTiles.
+**PMTiles:** The library uses HTTP **`Range`** requests against the `.pmtiles` URL ([`FetchSource`](https://github.com/protomaps/PMTiles/blob/main/js/src/v2.ts)); the response must expose **`Content-Length`** and, for range requests, **`206`** + **`Content-Range`**. **Local dev/preview** uses [`report/serveRepoDataResponse.ts`](report/serveRepoDataResponse.ts) (Node `fs` + `Range` handling; static file semantics). Production hosting should preserve byte-range support for PMTiles files.
 
 The report registers the MapLibre `pmtiles://` protocol once at startup via [`report/src/main.tsx`](report/src/main.tsx) → [`report/src/lib/pmtilesMaplibreRegister.ts`](report/src/lib/pmtilesMaplibreRegister.ts) (see [PMTiles + MapLibre](https://github.com/protomaps/PMTiles#maplibre-gl-js)).
 

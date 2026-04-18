@@ -58,24 +58,8 @@ function DatasetPropertyCard({
 }
 
 export function FeatureDatasetProperties({ row }: { row: ReportRow }) {
-  const legacy = row.officialProperties === undefined && row.osmProperties === undefined
-
-  if (legacy) {
-    return (
-      <section
-        className="mt-6 rounded-lg border border-slate-700 bg-slate-900/50 p-4"
-        aria-label={de.feature.datasetPropertiesSectionAria}
-      >
-        <h2 className="text-sm font-semibold text-slate-100">
-          {de.feature.datasetPropertiesSectionTitle}
-        </h2>
-        <p className="mt-2 text-sm text-slate-400">{de.feature.datasetPropertiesLegacySnapshot}</p>
-      </section>
-    )
-  }
-
-  const official = forDisplay(row.officialProperties ?? null)
-  const osm = forDisplay(row.osmProperties ?? null)
+  const official = forDisplay(row.officialProperties)
+  const osm = forDisplay(row.osmProperties)
 
   return (
     <section

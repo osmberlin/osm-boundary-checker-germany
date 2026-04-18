@@ -20,7 +20,7 @@ import { hexToRgba } from '../components/MapLegend'
 import { ReportCategoryPill } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
-import { loadComparison } from '../data/load'
+import { loadFeature } from '../data/load'
 import { comparisonPmtilesMaplibreUrl } from '../data/paths'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
@@ -49,11 +49,11 @@ export function FeatureDetail() {
   const mapViewParam = useMapViewParam()
 
   useEffect(() => {
-    if (!areaId) return
+    if (!areaId || !featureKey) return
     let c = false
     ;(async () => {
       try {
-        const json = await loadComparison(areaId)
+        const json = await loadFeature(areaId, decodeURIComponent(featureKey))
         if (!c) {
           setData(json)
           setErr(null)
@@ -65,7 +65,7 @@ export function FeatureDetail() {
     return () => {
       c = true
     }
-  }, [areaId])
+  }, [areaId, featureKey])
 
   const row = useMemo(() => {
     if (!data || !featureKey) return null

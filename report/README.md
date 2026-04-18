@@ -2,9 +2,9 @@
 
 Bundled with **Bun’s HTML pipeline** (`index.html` entry → TSX/JS/CSS). No Vite.
 
-- **Dev**: `bun dev` runs [`dev-server.ts`](./dev-server.ts) — `Bun.serve` with an [HTML import](https://bun.sh/docs/bundler/fullstack), HMR, `/datasets/*` and `/areas.gen.json` from the repo root. **`predev` / `prebuild`** run [`generateAreasJson.ts`](./generateAreasJson.ts) so committed [`areas.gen.json`](../areas.gen.json) stays in sync (lists dataset slugs with `output/comparison_table.json`). The home page loads it at `/areas.gen.json`.
+- **Dev**: `bun dev` runs [`dev-server.ts`](./dev-server.ts) — `Bun.serve` with an [HTML import](https://bun.sh/docs/bundler/fullstack), HMR, `/datasets/*` and `/data/*` static file serving, plus `/api/areas*` endpoints backed by the runtime SQLite DB.
 - **Build**: `bun run build` → `bun build ./index.html --outdir=dist --minify`
-- **Preview**: `bun run preview` serves `dist/` plus `datasets/` and `areas.gen.json` the same way as dev.
+- **Preview**: `bun run preview` serves `dist/` with the same `/api/areas*`, `/datasets/*`, and `/data/*` behavior as dev.
 
 Tailwind v4 is wired via [`bun-plugin-tailwind`](https://bun.sh/docs/bundler/html) in [`bunfig.toml`](./bunfig.toml).
 
