@@ -39,14 +39,47 @@ jobs:
 
       - name: Bootstrap official reference data for fresh runner
         run: |
-          bun run bkg:download
-          bun run bkg:extract
-          bun run download:official
+          retry() {
+            local attempts="$1"
+            shift
+            local n=1
+            while true; do
+              "$@" && return 0
+              if [ "$n" -ge "$attempts" ]; then
+                return 1
+              fi
+              n=$((n + 1))
+              local wait_seconds=$((n * 15))
+              echo "Retry $n/$attempts in ${wait_seconds}s: $*"
+              sleep "$wait_seconds"
+            done
+          }
+
+          retry 3 bun run bkg:download
+          retry 2 bun run bkg:extract
+          retry 3 bun run download:official
         env:
           CI: '1'
 
       - name: Run nightly pipeline
-        run: bun run pipeline:nightly
+        run: |
+          retry() {
+            local attempts="$1"
+            shift
+            local n=1
+            while true; do
+              "$@" && return 0
+              if [ "$n" -ge "$attempts" ]; then
+                return 1
+              fi
+              n=$((n + 1))
+              local wait_seconds=$((n * 30))
+              echo "Retry $n/$attempts in ${wait_seconds}s: $*"
+              sleep "$wait_seconds"
+            done
+          }
+
+          retry 2 bun run pipeline:nightly
         env:
           CI: '1'
 
