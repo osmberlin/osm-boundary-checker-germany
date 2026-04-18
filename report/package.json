@@ -9,9 +9,9 @@
     "bundle-static-assets": "bun ./bundleStaticAssets.ts",
     "predev": "bun run generate-areas",
     "prebuild": "bun run prepare-static-snapshot && bun run generate-areas",
-    "dev": "bun dev-server.ts",
-    "build": "rm -rf dist && bun build ./index.html --outdir=dist --minify && bun run bundle-static-assets",
-    "preview": "bun preview-server.ts",
+    "dev": "vite",
+    "build": "rm -rf dist && vite build && bun run bundle-static-assets",
+    "preview": "vite preview",
     "report:data-sizes": "bun ./reportDataSizes.ts",
     "test": "vitest run"
   },
@@ -33,14 +33,18 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
+    "@rolldown/plugin-babel": "^0.2.3",
+    "@tailwindcss/vite": "^4.2.2",
     "@types/bun": "latest",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "bun-plugin-react-compiler": "^0.3.2",
     "bun-plugin-tailwind": "^0.1.2",
     "tailwindcss": "^4.2.2",
     "typescript": "~5.9.3",
+    "vite": "^8.0.8",
     "vitest": "^4.1.2"
   }
 }

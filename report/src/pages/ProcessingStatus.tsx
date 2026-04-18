@@ -140,8 +140,8 @@ export function ProcessingStatus() {
     async function load() {
       try {
         const [stateRes, logRes] = await Promise.all([
-          fetch(processingStateUrl, { cache: 'no-store' }),
-          fetch(processingLogJsonlUrl, { cache: 'no-store' }),
+          fetch(processingStateUrl(), { cache: 'no-store' }),
+          fetch(processingLogJsonlUrl(), { cache: 'no-store' }),
         ])
         if (!cancelled) {
           if (stateRes.ok) {

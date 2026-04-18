@@ -1,4 +1,5 @@
 import { DATASETS_DIRECTORY } from '../../../scripts/shared/datasetPaths.ts'
+import { detectSiteBasePath, withSiteBasePath } from '../lib/siteBasePath'
 import type { ReportRow } from '../types/report'
 
 /**
@@ -7,12 +8,20 @@ import type { ReportRow } from '../types/report'
  * - `/datasets/*` for PMTiles + generated API JSON payloads + official_for_edit artifacts
  */
 /** Runtime API endpoint for home area index and summaries. */
-export const areasIndexUrl = '/areas.gen.json'
-export const processingStateUrl = '/data/processing-state.json'
-export const processingLogJsonlUrl = '/data/processing-log.jsonl'
+export function areasIndexUrl(): string {
+  return withSiteBasePath('/areas.gen.json')
+}
+
+export function processingStateUrl(): string {
+  return withSiteBasePath('/data/processing-state.json')
+}
+
+export function processingLogJsonlUrl(): string {
+  return withSiteBasePath('/data/processing-log.jsonl')
+}
 
 function datasetDataPath(area: string, rel: string): string {
-  return `/${DATASETS_DIRECTORY}/${area}/${rel}`
+  return withSiteBasePath(`/${DATASETS_DIRECTORY}/${area}/${rel}`)
 }
 
 /** Path to PMTiles under the dev server (same origin). */
@@ -34,6 +43,10 @@ export function comparisonUnmatchedPmtilesPath(area: string): string {
 export function comparisonUnmatchedPmtilesMaplibreUrl(area: string): string {
   const path = comparisonUnmatchedPmtilesPath(area)
   return `pmtiles://${window.location.origin}${path}`
+}
+
+export function routerBasePath(): string {
+  return detectSiteBasePath() || '/'
 }
 
 export function snapshotsUrl(area: string) {

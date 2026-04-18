@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router'
 import { ReportLayout } from './App'
+import { routerBasePath } from './data/paths'
 import { AreaReport } from './pages/AreaReport'
 import { FeatureDetail } from './pages/FeatureDetail'
 import { Home } from './pages/Home'
@@ -61,6 +62,7 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
+  basepath: routerBasePath(),
 })
 
 declare module '@tanstack/react-router' {

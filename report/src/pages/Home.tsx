@@ -20,7 +20,7 @@ export function Home() {
 
   useEffect(() => {
     let cancelled = false
-    fetch(areasIndexUrl)
+    fetch(areasIndexUrl())
       .then((r) => {
         if (!r.ok) throw new Error(String(r.status))
         return r.json() as Promise<{ areas?: unknown; summaries?: unknown }>
