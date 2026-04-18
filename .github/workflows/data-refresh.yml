@@ -32,6 +32,11 @@ jobs:
         env:
           HUSKY: '0'
 
+      - name: Install system tools for pipeline
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y osmium-tool gdal-bin tippecanoe unzip
+
       - name: Run nightly pipeline
         run: bun run pipeline:nightly
         env:
