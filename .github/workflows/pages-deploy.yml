@@ -13,6 +13,7 @@ permissions:
 
 env:
   DATASET_ARTIFACT_NAME: datasets-last-good
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 concurrency:
   group: pages-deploy-${{ github.ref }}
@@ -42,17 +43,22 @@ jobs:
           name: ${{ env.DATASET_ARTIFACT_NAME }}
           search_artifacts: true
           path: .artifact-restore
-          if_no_artifact_found: fail
+          if_no_artifact_found: warn
 
       - name: Restore datasets into report/public
         run: |
           set -euo pipefail
-          rm -rf report/public/datasets report/public/data
-          mkdir -p report/public/datasets report/public/data
-          cp -R .artifact-restore/report/public/datasets/. report/public/datasets/ 2>/dev/null || true
-          cp -R .artifact-restore/report/public/data/. report/public/data/ 2>/dev/null || true
-          cp .artifact-restore/areas.gen.json ./areas.gen.json
-          test -f areas.gen.json
+          if [ -f .artifact-restore/areas.gen.json ]; then
+            echo "Restoring datasets-last-good artifact"
+            rm -rf report/public/datasets report/public/data
+            mkdir -p report/public/datasets report/public/data
+            cp -R .artifact-restore/report/public/datasets/. report/public/datasets/ 2>/dev/null || true
+            cp -R .artifact-restore/report/public/data/. report/public/data/ 2>/dev/null || true
+            cp .artifact-restore/areas.gen.json ./areas.gen.json
+          else
+            echo "No datasets artifact found yet; continuing with repository snapshot."
+            bun run report:generate-areas
+          fi
 
       - name: Build static report
         run: bun run report:build

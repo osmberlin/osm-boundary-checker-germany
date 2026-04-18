@@ -11,6 +11,7 @@ permissions:
 
 env:
   DATASET_ARTIFACT_NAME: datasets-last-good
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 concurrency:
   group: refresh-datasets-main
