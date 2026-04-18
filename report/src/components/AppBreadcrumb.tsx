@@ -1,5 +1,5 @@
 import { HomeIcon } from '@heroicons/react/20/solid'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { de } from '../i18n/de'
 
 export type AppBreadcrumbCrumb = { name: string; to: string } | { name: string; current: true }
@@ -84,7 +84,7 @@ export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
               <div className="flex h-full min-w-0 items-stretch">
                 <BreadcrumbChevron />
                 <Link
-                  to={link.to}
+                  to={link.to as never}
                   className="ml-4 flex min-w-0 items-center truncate text-sm font-medium text-slate-400 hover:text-slate-200"
                 >
                   {link.name}

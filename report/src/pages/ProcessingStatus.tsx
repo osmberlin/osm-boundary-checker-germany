@@ -1,5 +1,5 @@
+import { Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { processingLogJsonlUrl, processingStateUrl } from '../data/paths'
 import { de } from '../i18n/de'
 import { formatDeInteger } from '../lib/formatDe'

@@ -1,10 +1,11 @@
 import '@fontsource-variable/inter/wght.css'
 import './lib/pmtilesMaplibreRegister'
+import { RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
 import { de } from './i18n/de'
+import { router } from './router'
 
 document.title = de.appTitle
 
@@ -15,6 +16,6 @@ if (!rootEl) {
 
 createRoot(rootEl).render(
   <StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </StrictMode>,
 )

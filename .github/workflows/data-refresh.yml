@@ -1,0 +1,60 @@
+name: Refresh Datasets
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * *'
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  DATASET_ARTIFACT_NAME: datasets-last-good
+
+concurrency:
+  group: refresh-datasets-main
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+        env:
+          HUSKY: '0'
+
+      - name: Run nightly pipeline
+        run: bun run pipeline:nightly
+        env:
+          CI: '1'
+
+      - name: Prepare static report snapshot
+        run: bun run --filter report prepare-static-snapshot
+
+      - name: Generate area index
+        run: bun run report:generate-areas
+
+      - name: Validate snapshot output
+        run: |
+          test -f areas.gen.json
+          test -d report/public/datasets
+
+      - name: Upload reusable dataset artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DATASET_ARTIFACT_NAME }}
+          path: |
+            areas.gen.json
+            report/public/datasets
+            report/public/data
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7

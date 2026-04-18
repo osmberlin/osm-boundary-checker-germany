@@ -1,5 +1,5 @@
+import { useRouterState } from '@tanstack/react-router'
 import { useMemo } from 'react'
-import { useLocation } from 'react-router-dom'
 import { de } from '../i18n/de'
 import { AppBreadcrumb, type AppBreadcrumbCrumb } from './AppBreadcrumb'
 
@@ -10,7 +10,7 @@ function shortFeatureKey(encoded: string) {
 
 /** Route-derived crumbs in the global header (replaces a separate title bar). */
 export function PageBreadcrumb() {
-  const { pathname } = useLocation()
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
 
   const crumbs: { homeCurrent: boolean; items: AppBreadcrumbCrumb[] } = useMemo(() => {
     const segs = pathname.split('/').filter(Boolean)

@@ -1,5 +1,5 @@
+import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { StatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
 import { ReportCategoryPill, UnmatchedOsmStatPill } from '../components/reportCategoryStyles'
 import { areasIndexUrl } from '../data/paths'
@@ -90,7 +90,8 @@ export function Home() {
               <li key={a} className="rounded border border-slate-700 bg-slate-900 p-4">
                 <Link
                   className="font-medium text-sky-400 underline hover:text-sky-300"
-                  to={`/${a}`}
+                  to="/$areaId"
+                  params={{ areaId: a }}
                 >
                   {a}
                 </Link>
@@ -118,7 +119,11 @@ export function Home() {
                 </StatBlocksRow>
                 {entry != null && entry.unmatchedOsm > 0 ? (
                   <p className="mt-3 text-sm">
-                    <Link className="text-sky-400 underline" to={`/${a}/unmatched`}>
+                    <Link
+                      className="text-sky-400 underline"
+                      to="/$areaId/unmatched"
+                      params={{ areaId: a }}
+                    >
                       {de.home.unmatchedLink}
                     </Link>
                   </p>

@@ -49,18 +49,8 @@ async function main() {
   const { rows, unmatchedOsm, metricsCrs } = await runCompare(runtimeRoot, area, configRaw)
   const meta = toComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
   const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
-  writeOutputs(
-    workspaceRoot,
-    runtimeRoot,
-    areaPath,
-    area,
-    rows,
-    unmatchedOsm,
-    metricsCrs,
-    meta,
-    ogcInspectSources,
-  )
-  console.log(`Wrote output PMTiles and runtime DB entries under ${DATASETS_DIRECTORY}/${area}`)
+  writeOutputs(areaPath, area, rows, unmatchedOsm, metricsCrs, meta, ogcInspectSources)
+  console.log(`Wrote output PMTiles + static report payloads under ${DATASETS_DIRECTORY}/${area}`)
 }
 
 main().catch((e) => {

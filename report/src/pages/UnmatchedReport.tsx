@@ -1,5 +1,5 @@
+import { Link, useParams } from '@tanstack/react-router'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
 import { InfoNotice } from '../components/InfoNotice'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { loadUnmatched } from '../data/load'
@@ -35,7 +35,7 @@ function unionMapBboxes(rows: UnmatchedOsmReportRow[]): [number, number, number,
 }
 
 export function UnmatchedReport() {
-  const { areaId } = useParams<{ areaId: string }>()
+  const { areaId } = useParams({ strict: false })
   const [data, setData] = useState<ComparisonForReport | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const mapViewParam = useMapViewParam()
@@ -93,7 +93,7 @@ export function UnmatchedReport() {
         {de.areaReport.unmatchedCountLabel}: {formatDeInteger(unmatched.length)}
       </p>
       <p className="mb-6">
-        <Link className="text-sky-400 underline" to={`/${areaId}`}>
+        <Link className="text-sky-400 underline" to="/$areaId" params={{ areaId }}>
           {de.unmatched.backToArea}
         </Link>
       </p>

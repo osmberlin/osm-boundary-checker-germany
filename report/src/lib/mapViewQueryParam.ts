@@ -1,4 +1,4 @@
-import { createParser } from 'nuqs'
+import { z } from 'zod'
 
 /**
  * OSM-style map fragment: `zoom/latitude/longitude` (e.g. `14/47.30799/8.53252`).
@@ -34,25 +34,23 @@ export function serializeMapViewQueryString(
   return `${r.zoom}/${r.latitude}/${r.longitude}`
 }
 
-export const mapViewQueryParamParser = createParser({
-  parse: (query: string) => {
-    const parts = query.split('/')
-    if (parts.length !== 3) return null
-    const [zStr, latStr, lngStr] = parts
-    if (zStr === undefined || latStr === undefined || lngStr === undefined) return null
+const mapViewSchema = z.object({
+  zoom: z.number().min(0).max(24),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+})
 
-    const zoom = Number.parseFloat(zStr)
-    const lat = Number.parseFloat(latStr)
-    const lng = Number.parseFloat(lngStr)
-
-    if (Number.isNaN(zoom) || Number.isNaN(lat) || Number.isNaN(lng)) {
-      return null
-    }
-    if (zoom < 0 || zoom > 24) return null
-    if (lat < -90 || lat > 90) return null
-    if (lng < -180 || lng > 180) return null
-
-    return { zoom, latitude: lat, longitude: lng } satisfies MapViewQueryValue
-  },
-  serialize: (value: MapViewQueryValue) => serializeMapViewQueryString(value),
-}).withOptions({ history: 'replace' })
+export function parseMapViewQueryValue(query: unknown): MapViewQueryValue | null {
+  if (typeof query !== 'string') return null
+  const parts = query.split('/')
+  if (parts.length !== 3) return null
+  const [zStr, latStr, lngStr] = parts
+  if (zStr === undefined || latStr === undefined || lngStr === undefined) return null
+  const parsed = mapViewSchema.safeParse({
+    zoom: Number.parseFloat(zStr),
+    latitude: Number.parseFloat(latStr),
+    longitude: Number.parseFloat(lngStr),
+  })
+  if (!parsed.success) return null
+  return parsed.data
+}

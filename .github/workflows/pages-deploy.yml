@@ -1,0 +1,72 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: read
+
+env:
+  DATASET_ARTIFACT_NAME: datasets-last-good
+
+concurrency:
+  group: pages-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.event_name != 'push' || (github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message || '', '[skip ci]'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+        env:
+          HUSKY: '0'
+
+      - name: Download latest refresh artifact
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: data-refresh.yml
+          branch: main
+          name: ${{ env.DATASET_ARTIFACT_NAME }}
+          search_artifacts: true
+          path: .artifact-restore
+          if_no_artifact_found: fail
+
+      - name: Restore datasets into report/public
+        run: |
+          set -euo pipefail
+          rm -rf report/public/datasets report/public/data
+          mkdir -p report/public/datasets report/public/data
+          cp -R .artifact-restore/report/public/datasets/. report/public/datasets/ 2>/dev/null || true
+          cp -R .artifact-restore/report/public/data/. report/public/data/ 2>/dev/null || true
+          cp .artifact-restore/areas.gen.json ./areas.gen.json
+          test -f areas.gen.json
+
+      - name: Build static report
+        run: bun run report:build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: report/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

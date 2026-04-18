@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { de } from '../i18n/de'
 import { EM_DASH } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
@@ -53,7 +53,6 @@ export function ReportDataProvenanceFooter({
   const osmMeta = [osm?.provider, osm?.dataset].filter(Boolean).join(' · ')
 
   const unmatchedN = data.unmatchedOsm?.length ?? 0
-  const unmatchedHref = `/${areaId}/unmatched`
 
   const wrap = className ? className : ''
 
@@ -145,7 +144,7 @@ export function ReportDataProvenanceFooter({
       {!hideUnmatchedCrossLink && unmatchedN > 0 ? (
         <p className="mt-4 text-pretty text-slate-400">
           {p.unmatchedCrossLinkIntro}{' '}
-          <Link className="text-sky-400 underline" to={unmatchedHref}>
+          <Link className="text-sky-400 underline" to="/$areaId/unmatched" params={{ areaId }}>
             {de.areaReport.unmatchedPageLink}
           </Link>
         </p>

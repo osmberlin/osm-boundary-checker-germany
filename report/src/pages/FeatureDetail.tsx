@@ -1,5 +1,5 @@
+import { useParams } from '@tanstack/react-router'
 import { lazy, Suspense, useEffect, useId, useMemo, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import {
   LayerToggleStatBlock,
@@ -39,10 +39,7 @@ const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShe
 type MapLayerControls = ReturnType<typeof useComparisonMapLayers>
 
 export function FeatureDetail() {
-  const { areaId, featureKey } = useParams<{
-    areaId: string
-    featureKey: string
-  }>()
+  const { areaId, featureKey } = useParams({ strict: false })
   const [data, setData] = useState<ComparisonForReport | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const mapLayers = useComparisonMapLayers()
@@ -53,7 +50,7 @@ export function FeatureDetail() {
     let c = false
     ;(async () => {
       try {
-        const json = await loadFeature(areaId, decodeURIComponent(featureKey))
+        const json = await loadFeature(areaId, featureKey)
         if (!c) {
           setData(json)
           setErr(null)
@@ -69,8 +66,7 @@ export function FeatureDetail() {
 
   const row = useMemo(() => {
     if (!data || !featureKey) return null
-    const key = decodeURIComponent(featureKey)
-    return data.rows.find((r) => r.canonicalMatchKey === key) ?? null
+    return data.rows.find((r) => r.canonicalMatchKey === featureKey) ?? null
   }, [data, featureKey])
 
   if (!areaId || !featureKey) return null

@@ -1,14 +1,23 @@
-import { parseAsStringLiteral, useQueryStates } from 'nuqs'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useCallback, useMemo } from 'react'
+import { z } from 'zod'
 import type { ReportRow } from '../types/report'
 
 export const AREA_TABLE_SORT_KEYS = ['name', 'key', 'category', 'iou', 'area', 'haus'] as const
 
 export type AreaTableSortKey = (typeof AREA_TABLE_SORT_KEYS)[number]
 
-const areaTableSortParsers = {
-  sort: parseAsStringLiteral(AREA_TABLE_SORT_KEYS).withDefault('haus'),
-  dir: parseAsStringLiteral(['asc', 'desc'] as const).withDefault('desc'),
+const sortKeySchema = z.enum(AREA_TABLE_SORT_KEYS)
+const sortDirSchema = z.enum(['asc', 'desc'])
+
+function parseSortKey(value: unknown): AreaTableSortKey {
+  const parsed = sortKeySchema.safeParse(value)
+  return parsed.success ? parsed.data : 'haus'
+}
+
+function parseSortDir(value: unknown): 'asc' | 'desc' {
+  const parsed = sortDirSchema.safeParse(value)
+  return parsed.success ? parsed.data : 'desc'
 }
 
 function hausdorffValue(m: ReportRow['metrics']): number | null {
@@ -63,9 +72,10 @@ function compareNullableNum(a: number | null, b: number | null, inv: 1 | -1): nu
 }
 
 export function useAreaReportTableSort(rows: ReportRow[]) {
-  const [{ sort: sortBy, dir: sortDir }, setSort] = useQueryStates(areaTableSortParsers, {
-    history: 'replace',
-  })
+  const navigate = useNavigate()
+  const search = useSearch({ strict: false }) as Record<string, unknown>
+  const sortBy = parseSortKey(search.sort)
+  const sortDir = parseSortDir(search.dir)
 
   const sortedRows = useMemo(() => {
     const next = [...rows]
@@ -75,14 +85,28 @@ export function useAreaReportTableSort(rows: ReportRow[]) {
 
   const setColumn = useCallback(
     (column: AreaTableSortKey) => {
-      void setSort((prev) => {
-        if (prev.sort === column) {
-          return { dir: prev.dir === 'asc' ? 'desc' : 'asc' }
-        }
-        return { sort: column, dir: 'asc' }
+      void navigate({
+        search: ((prev: Record<string, unknown>) => {
+          const prevSort = parseSortKey(prev.sort)
+          const prevDir = parseSortDir(prev.dir)
+          if (prevSort === column) {
+            const nextDir = prevDir === 'asc' ? 'desc' : 'asc'
+            return {
+              ...prev,
+              sort: column === 'haus' ? undefined : column,
+              dir: nextDir === 'desc' ? undefined : nextDir,
+            }
+          }
+          return {
+            ...prev,
+            sort: column === 'haus' ? undefined : column,
+            dir: 'asc',
+          }
+        }) as never,
+        replace: true,
       })
     },
-    [setSort],
+    [navigate],
   )
 
   return {

@@ -5,28 +5,31 @@
   "type": "module",
   "scripts": {
     "generate-areas": "bun ./generateAreasJson.ts",
+    "prepare-static-snapshot": "bun ./prepareStaticSnapshot.ts",
+    "bundle-static-assets": "bun ./bundleStaticAssets.ts",
     "predev": "bun run generate-areas",
-    "prebuild": "bun run generate-areas",
+    "prebuild": "bun run prepare-static-snapshot && bun run generate-areas",
     "dev": "bun dev-server.ts",
-    "build": "rm -rf dist && bun build ./index.html --outdir=dist --minify",
+    "build": "rm -rf dist && bun build ./index.html --outdir=dist --minify && bun run bundle-static-assets",
     "preview": "bun preview-server.ts",
+    "report:data-sizes": "bun ./reportDataSizes.ts",
     "test": "vitest run"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
+    "@tanstack/react-router": "^1.168.22",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "maplibre-gl": "^5.21.1",
-    "nuqs": "^2.8.9",
     "pmtiles": "^4.4.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-map-gl": "^8.1.0",
-    "react-router-dom": "^7.13.2",
     "recharts": "^3.8.1",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

@@ -37,6 +37,7 @@
     "report:build": "bun run --filter report build",
     "report:preview": "bun run --filter report preview",
     "report:test": "bun run --filter report test",
+    "report:data-sizes": "bun run --filter report report:data-sizes",
     "report:generate-areas": "bun run --filter report generate-areas",
     "docker:up": "sh ./scripts/docker-run.sh up web",
     "docker:down": "sh ./scripts/docker-run.sh down",

@@ -1,4 +1,5 @@
 import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
+import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   lazy,
   type ReactNode,
@@ -9,7 +10,6 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   CartesianGrid,
   Line,
@@ -78,7 +78,7 @@ function unionMapBboxes(rows: ReportRow[]): [number, number, number, number] | n
 }
 
 export function AreaReport() {
-  const { areaId } = useParams<{ areaId: string }>()
+  const { areaId } = useParams({ strict: false })
   const navigate = useNavigate()
   const statsInputId = useId()
   const [data, setData] = useState<ComparisonForReport | null>(null)
@@ -118,7 +118,11 @@ export function AreaReport() {
 
   const goToFeature = useCallback(
     (featureKey: string) => {
-      void navigate(`/${areaId}/feature/${encodeURIComponent(featureKey)}`)
+      if (!areaId) return
+      void navigate({
+        to: '/$areaId/feature/$featureKey',
+        params: { areaId, featureKey },
+      })
     },
     [navigate, areaId],
   )
@@ -237,7 +241,7 @@ export function AreaReport() {
           {unmatchedCount > 0 ? (
             <>
               {' '}
-              <Link className="text-sky-400 underline" to={`/${areaId}/unmatched`}>
+              <Link className="text-sky-400 underline" to="/$areaId/unmatched" params={{ areaId }}>
                 {de.areaReport.unmatchedPageLink}
               </Link>
             </>
@@ -398,7 +402,8 @@ export function AreaReport() {
                 <td className="px-3 py-2">
                   <Link
                     className="text-sky-400 underline"
-                    to={`/${areaId}/feature/${encodeURIComponent(row.canonicalMatchKey)}`}
+                    to="/$areaId/feature/$featureKey"
+                    params={{ areaId, featureKey: row.canonicalMatchKey }}
                   >
                     {de.areaReport.table.view}
                   </Link>

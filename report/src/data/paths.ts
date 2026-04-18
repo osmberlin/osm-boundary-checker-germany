@@ -2,12 +2,12 @@ import { DATASETS_DIRECTORY } from '../../../scripts/shared/datasetPaths.ts'
 import type { ReportRow } from '../types/report'
 
 /**
- * Runtime routes:
- * - `/api/*` for comparison payloads and summary data
- * - `/datasets/*` only for static PMTiles + official_for_edit artifacts
+ * Static routes:
+ * - `/areas.gen.json` for home summaries
+ * - `/datasets/*` for PMTiles + generated API JSON payloads + official_for_edit artifacts
  */
 /** Runtime API endpoint for home area index and summaries. */
-export const areasIndexUrl = '/api/areas'
+export const areasIndexUrl = '/areas.gen.json'
 export const processingStateUrl = '/data/processing-state.json'
 export const processingLogJsonlUrl = '/data/processing-log.jsonl'
 
@@ -37,19 +37,19 @@ export function comparisonUnmatchedPmtilesMaplibreUrl(area: string): string {
 }
 
 export function snapshotsUrl(area: string) {
-  return `/api/areas/${encodeURIComponent(area)}/runs`
+  return datasetDataPath(area, 'snapshots.json')
 }
 
 export function comparisonApiUrl(area: string) {
-  return `/api/areas/${encodeURIComponent(area)}`
+  return datasetDataPath(area, 'output/comparison_table.json')
 }
 
 export function featureApiUrl(area: string, featureKey: string) {
-  return `/api/areas/${encodeURIComponent(area)}/features/${encodeURIComponent(featureKey)}`
+  return datasetDataPath(area, `output/features/${encodeURIComponent(featureKey)}.json`)
 }
 
 export function unmatchedApiUrl(area: string) {
-  return `/api/areas/${encodeURIComponent(area)}/unmatched`
+  return datasetDataPath(area, 'output/unmatched.json')
 }
 
 /** Public path for official-for-edit GeoJSON (leading slash, under site root). */

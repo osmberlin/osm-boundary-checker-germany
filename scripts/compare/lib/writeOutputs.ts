@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { area, bbox, difference, featureCollection } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
@@ -8,7 +8,6 @@ import {
   officialForEditGeojsonBasename,
 } from '../../shared/officialForEditGeojson.ts'
 import type { OgcWfsInspectSource } from '../../shared/ogcInspectSources.ts'
-import { ensureRuntimeDatabase } from '../../shared/runtimeDb.ts'
 import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/sourceMetadata.ts'
 import type { CompareRow, UnmatchedOsmRow } from './compare.ts'
 import { computeMeanIou } from './metrics.ts'
@@ -241,19 +240,151 @@ function removeLegacyJsonOutputs(outDir: string, areaPath: string) {
   }
 }
 
-function unmatchedRowsForTableDoc(unmatchedOsm: UnmatchedOsmRow[]): Record<string, unknown>[] {
-  return unmatchedOsm.map((u) => ({
-    canonicalMatchKey: u.canonicalMatchKey,
-    nameLabel: u.nameLabel,
-    osmRelationId: u.osmRelationId,
-    adminLevel: u.adminLevel,
-    mapBbox: mapBboxForGeometry(u.osmGeometryWgs84),
-  }))
+type StaticComparisonPayload = {
+  area: string
+  generatedAt: string
+  metricsCrs: string
+  hasPmtiles: boolean
+  hasUnmatchedPmtiles: boolean
+  tippecanoeLayer: string
+  sourceMetadata?: {
+    official: SourceMetadataSide | null
+    osm: SourceMetadataSide | null
+  }
+  ogcInspectSources?: OgcWfsInspectSource[]
+  rows: Array<{
+    canonicalMatchKey: string
+    nameLabel: string
+    category: 'matched' | 'official_only'
+    osmRelationId: string
+    metrics: CompareRow['metrics']
+    mapBbox: [number, number, number, number] | null
+    officialForEditPath: string | null
+    officialProperties: Record<string, unknown> | null
+    osmProperties: Record<string, unknown> | null
+  }>
+  unmatchedOsm: Array<{
+    canonicalMatchKey: string
+    nameLabel: string
+    osmRelationId: string
+    adminLevel: string | null
+    mapBbox: [number, number, number, number] | null
+  }>
+}
+
+function buildStaticPayloadBase(
+  areaFolder: string,
+  generatedAt: string,
+  metricsCrs: string,
+  hasPmtiles: boolean,
+  hasUnmatchedPmtiles: boolean,
+  sourceMetadata: ComparisonSourceMetadata | null,
+  ogcInspectSources: OgcWfsInspectSource[],
+): Omit<StaticComparisonPayload, 'rows' | 'unmatchedOsm'> {
+  const out: Omit<StaticComparisonPayload, 'rows' | 'unmatchedOsm'> = {
+    area: areaFolder,
+    generatedAt,
+    metricsCrs,
+    hasPmtiles,
+    hasUnmatchedPmtiles,
+    tippecanoeLayer: TIPPECANOE_LAYER,
+  }
+  if (sourceMetadata != null) {
+    out.sourceMetadata = {
+      official: sourceMetadata.official ?? null,
+      osm: sourceMetadata.osm ?? null,
+    }
+  }
+  if (ogcInspectSources.length > 0) out.ogcInspectSources = ogcInspectSources
+  return out
+}
+
+function comparisonRowToPayload(
+  row: CompareRow,
+  stemByKeyForOfficial: Map<string, string> | null,
+): StaticComparisonPayload['rows'][number] {
+  const editStem = stemByKeyForOfficial?.get(row.canonicalMatchKey)
+  const officialForEditPath =
+    row.officialGeometryWgs84 && editStem != null
+      ? `output/${OFFICIAL_FOR_EDIT_DIR}/${officialForEditGeojsonBasename(editStem)}`
+      : null
+  return {
+    canonicalMatchKey: row.canonicalMatchKey,
+    nameLabel: row.nameLabel,
+    category: row.category,
+    osmRelationId: row.osmRelationId,
+    metrics: row.metrics,
+    mapBbox: mapBboxForRow(row),
+    officialForEditPath,
+    officialProperties: row.officialProperties,
+    osmProperties: row.osmProperties,
+  }
+}
+
+function unmatchedRowToPayload(
+  row: UnmatchedOsmRow,
+): StaticComparisonPayload['unmatchedOsm'][number] {
+  return {
+    canonicalMatchKey: row.canonicalMatchKey,
+    nameLabel: row.nameLabel,
+    osmRelationId: row.osmRelationId,
+    adminLevel: row.adminLevel,
+    mapBbox: mapBboxForGeometry(row.osmGeometryWgs84),
+  }
+}
+
+function writeStaticJson(path: string, body: unknown): void {
+  writeFileSync(path, `${JSON.stringify(body, null, 2)}\n`, 'utf-8')
+}
+
+function updateSnapshotsFile(
+  areaPath: string,
+  snapshotId: string,
+  metricsCrs: string,
+  meanIou: number,
+  matchedCount: number,
+  officialOnlyCount: number,
+  unmatchedOsmCount: number,
+) {
+  const snapshotsPath = join(areaPath, 'snapshots.json')
+  let snapshots: {
+    area: string
+    metricsCrs: string
+    runs: Array<{
+      id: string
+      summary: { totalRows: number; meanIou: number; matched: number; unmatchedOsm: number }
+    }>
+  } = {
+    area: areaPath.split('/').pop() ?? '',
+    metricsCrs,
+    runs: [],
+  }
+  if (existsSync(snapshotsPath)) {
+    try {
+      const parsed = JSON.parse(readFileSync(snapshotsPath, 'utf-8')) as typeof snapshots
+      if (parsed && Array.isArray(parsed.runs)) snapshots = parsed
+    } catch {
+      // Rebuild snapshots file when parsing fails.
+    }
+  }
+  snapshots.metricsCrs = metricsCrs
+  const runSummary = {
+    id: snapshotId,
+    summary: {
+      totalRows: matchedCount + officialOnlyCount,
+      meanIou,
+      matched: matchedCount,
+      unmatchedOsm: unmatchedOsmCount,
+    },
+  }
+  const nextRuns = (snapshots.runs ?? []).filter((r) => r.id !== snapshotId)
+  nextRuns.push(runSummary)
+  nextRuns.sort((a, b) => a.id.localeCompare(b.id))
+  snapshots.runs = nextRuns
+  writeStaticJson(snapshotsPath, snapshots)
 }
 
 export function writeOutputs(
-  workspaceRoot: string,
-  runtimeRoot: string,
   areaPath: string,
   areaFolder: string,
   rows: CompareRow[],
@@ -347,201 +478,50 @@ export function writeOutputs(
     }
   }
 
-  const unmatchedTable = unmatchedRowsForTableDoc(unmatchedOsm)
-  persistRunDataToDb(
-    workspaceRoot,
-    runtimeRoot,
+  const base = buildStaticPayloadBase(
     areaFolder,
-    snapshotId,
     generatedAt,
     metricsCrs,
     hasPmtiles,
     hasUnmatchedPmtiles,
+    sourceMetadata,
+    ogcInspectSources,
+  )
+  const payloadRows = rows.map((row) => comparisonRowToPayload(row, stemByKeyForOfficial))
+  const payloadUnmatched = unmatchedOsm.map(unmatchedRowToPayload)
+  writeStaticJson(join(outDir, TABLE_JSON), {
+    ...base,
+    rows: payloadRows,
+    unmatchedOsm: payloadUnmatched,
+  } satisfies StaticComparisonPayload)
+
+  writeStaticJson(join(outDir, 'unmatched.json'), {
+    ...base,
+    rows: [],
+    unmatchedOsm: payloadUnmatched,
+  } satisfies StaticComparisonPayload)
+
+  const featureDir = join(outDir, 'features')
+  rmSync(featureDir, { recursive: true, force: true })
+  mkdirSync(featureDir, { recursive: true })
+  for (const row of payloadRows) {
+    writeStaticJson(join(featureDir, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
+      ...base,
+      rows: [row],
+      unmatchedOsm: [],
+    } satisfies StaticComparisonPayload)
+  }
+
+  updateSnapshotsFile(
+    areaPath,
+    snapshotId,
+    metricsCrs,
     meanIou,
     matched.length,
     officialOnly.length,
     unmatchedOsm.length,
-    rows,
-    unmatchedTable,
-    stemByKeyForOfficial,
-    sourceMetadata,
-    ogcInspectSources,
   )
   removeLegacyJsonOutputs(outDir, areaPath)
 
   return { snapshotId }
-}
-
-function persistRunDataToDb(
-  workspaceRoot: string,
-  runtimeRoot: string,
-  areaFolder: string,
-  snapshotId: string,
-  generatedAt: string,
-  metricsCrs: string,
-  hasPmtiles: boolean,
-  hasUnmatchedPmtiles: boolean,
-  meanIou: number,
-  matchedCount: number,
-  officialOnlyCount: number,
-  unmatchedOsmCount: number,
-  rows: CompareRow[],
-  unmatchedTable: Record<string, unknown>[],
-  stemByKeyForOfficial: Map<string, string> | null,
-  sourceMetadata: ComparisonSourceMetadata | null,
-  ogcInspectSources: OgcWfsInspectSource[],
-) {
-  const db = ensureRuntimeDatabase(runtimeRoot, workspaceRoot)
-  const writeTx = db.transaction(() => {
-    db.prepare(
-      `
-          INSERT INTO areas (area_id, display_name, metrics_crs, updated_at)
-          VALUES (?, ?, ?, ?)
-          ON CONFLICT(area_id) DO UPDATE SET
-            display_name = excluded.display_name,
-            metrics_crs = excluded.metrics_crs,
-            updated_at = excluded.updated_at
-        `,
-    ).run(areaFolder, areaFolder, metricsCrs, generatedAt)
-    db.prepare(
-      `
-          INSERT INTO area_runs (
-            area_id, run_id, generated_at, metrics_crs,
-            has_pmtiles, has_unmatched_pmtiles, tippecanoe_layer,
-            mean_iou, matched_count, official_only_count, unmatched_count
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(area_id, run_id) DO UPDATE SET
-            generated_at = excluded.generated_at,
-            metrics_crs = excluded.metrics_crs,
-            has_pmtiles = excluded.has_pmtiles,
-            has_unmatched_pmtiles = excluded.has_unmatched_pmtiles,
-            tippecanoe_layer = excluded.tippecanoe_layer,
-            mean_iou = excluded.mean_iou,
-            matched_count = excluded.matched_count,
-            official_only_count = excluded.official_only_count,
-            unmatched_count = excluded.unmatched_count
-        `,
-    ).run(
-      areaFolder,
-      snapshotId,
-      generatedAt,
-      metricsCrs,
-      hasPmtiles ? 1 : 0,
-      hasUnmatchedPmtiles ? 1 : 0,
-      TIPPECANOE_LAYER,
-      meanIou,
-      matchedCount,
-      officialOnlyCount,
-      unmatchedOsmCount,
-    )
-
-    db.prepare(`DELETE FROM area_rows WHERE area_id = ? AND run_id = ?`).run(areaFolder, snapshotId)
-    db.prepare(`DELETE FROM area_row_props WHERE area_id = ? AND run_id = ?`).run(
-      areaFolder,
-      snapshotId,
-    )
-    db.prepare(`DELETE FROM unmatched_rows WHERE area_id = ? AND run_id = ?`).run(
-      areaFolder,
-      snapshotId,
-    )
-    db.prepare(`DELETE FROM source_metadata WHERE area_id = ? AND run_id = ?`).run(
-      areaFolder,
-      snapshotId,
-    )
-
-    const insertRow = db.prepare(`
-      INSERT INTO area_rows (
-        area_id, run_id, canonical_match_key, name_label, category, osm_relation_id, map_bbox_json,
-        iou, area_diff_pct, symmetric_diff_pct, hausdorff_m, official_area_m2, osm_area_m2
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `)
-    const insertProps = db.prepare(`
-      INSERT INTO area_row_props (
-        area_id, run_id, canonical_match_key, official_props_json, osm_props_json, official_for_edit_path
-      )
-      VALUES (?, ?, ?, ?, ?, ?)
-    `)
-    for (const r of rows) {
-      const editStem = stemByKeyForOfficial?.get(r.canonicalMatchKey)
-      const officialForEditPath =
-        r.officialGeometryWgs84 && editStem != null
-          ? `output/${OFFICIAL_FOR_EDIT_DIR}/${officialForEditGeojsonBasename(editStem)}`
-          : null
-      insertRow.run(
-        areaFolder,
-        snapshotId,
-        r.canonicalMatchKey,
-        r.nameLabel,
-        r.category,
-        r.osmRelationId,
-        toDbJson(mapBboxForRow(r)),
-        r.metrics?.iou ?? null,
-        r.metrics?.areaDiffPct ?? null,
-        r.metrics?.symmetricDiffPct ?? null,
-        r.metrics?.hausdorffM ?? null,
-        r.metrics?.officialAreaM2 ?? null,
-        r.metrics?.osmAreaM2 ?? null,
-      )
-      insertProps.run(
-        areaFolder,
-        snapshotId,
-        r.canonicalMatchKey,
-        toDbJson(r.officialProperties),
-        toDbJson(r.osmProperties),
-        officialForEditPath,
-      )
-    }
-
-    const insertUnmatched = db.prepare(`
-      INSERT INTO unmatched_rows (
-        area_id, run_id, canonical_match_key, name_label, osm_relation_id, admin_level, map_bbox_json
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `)
-    for (const row of unmatchedTable) {
-      const data = row as {
-        canonicalMatchKey: string
-        nameLabel: string
-        osmRelationId: string
-        adminLevel: string | null
-        mapBbox: [number, number, number, number] | null
-      }
-      insertUnmatched.run(
-        areaFolder,
-        snapshotId,
-        data.canonicalMatchKey,
-        data.nameLabel,
-        data.osmRelationId,
-        data.adminLevel,
-        toDbJson(data.mapBbox),
-      )
-    }
-
-    if (sourceMetadata != null || ogcInspectSources.length > 0) {
-      db.prepare(
-        `
-          INSERT INTO source_metadata (area_id, run_id, official_json, osm_json, ogc_sources_json)
-          VALUES (?, ?, ?, ?, ?)
-        `,
-      ).run(
-        areaFolder,
-        snapshotId,
-        toDbJson(sourceMetadata?.official ?? null),
-        toDbJson(sourceMetadata?.osm ?? null),
-        toDbJson(ogcInspectSources),
-      )
-    }
-  })
-  try {
-    writeTx()
-  } finally {
-    db.close()
-  }
-}
-
-function toDbJson(value: unknown): string | null {
-  if (value == null) return null
-  return JSON.stringify(value)
 }
