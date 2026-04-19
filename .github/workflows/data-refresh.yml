@@ -3,7 +3,8 @@ name: Refresh Datasets
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 1 * * *'
+    # Wed/Fri/Sat/Sun at 03:00 UTC for fresh weekend data without daily runs.
+    - cron: '0 3 * * 0,3,5,6'
 
 permissions:
   contents: read
@@ -36,30 +37,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y osmium-tool gdal-bin tippecanoe unzip
-
-      - name: Bootstrap official reference data for fresh runner
-        run: |
-          retry() {
-            local attempts="$1"
-            shift
-            local n=1
-            while true; do
-              "$@" && return 0
-              if [ "$n" -ge "$attempts" ]; then
-                return 1
-              fi
-              n=$((n + 1))
-              local wait_seconds=$((n * 15))
-              echo "Retry $n/$attempts in ${wait_seconds}s: $*"
-              sleep "$wait_seconds"
-            done
-          }
-
-          retry 3 bun run bkg:download
-          retry 2 bun run bkg:extract
-          retry 3 bun run download:official
-        env:
-          CI: '1'
 
       - name: Run nightly pipeline
         run: |
@@ -111,4 +88,4 @@ jobs:
             .artifact-runtime/data
           include-hidden-files: true
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 4

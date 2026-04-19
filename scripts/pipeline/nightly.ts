@@ -87,18 +87,6 @@ function writeState(path: string, state: ProcessingState): void {
   writeFileSync(path, `${JSON.stringify(state, null, 2)}\n`, 'utf-8')
 }
 
-function weekdayInTz(date: Date, timezone: string): string {
-  return new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: timezone }).format(date)
-}
-
-function isFriday(timezone: string): boolean {
-  try {
-    return weekdayInTz(new Date(), timezone) === 'Friday'
-  } catch {
-    return weekdayInTz(new Date(), 'UTC') === 'Friday'
-  }
-}
-
 function discoverAreas(workspaceRoot: string): string[] {
   const datasetsRoot = join(workspaceRoot, DATASETS_DIRECTORY)
   if (!existsSync(datasetsRoot)) return []
@@ -200,87 +188,29 @@ async function main() {
   let exitCode = 0
 
   try {
-    // Download + extract OSM every run.
-    if (
-      (await runStep(
-        runId,
-        logPath,
-        statePath,
-        state,
-        'osm:download',
-        'bun',
-        ['run', 'osm:download'],
-        workspaceRoot,
-      )) !== 0
-    )
-      fail()
-    if (
-      !failed &&
-      (await runStep(
-        runId,
-        logPath,
-        statePath,
-        state,
-        'osm:extract',
-        'bun',
-        ['run', 'osm:extract'],
-        workspaceRoot,
-      )) !== 0
-    )
-      fail()
-
-    // Refresh official reference data only on Fridays.
-    if (!failed && isFriday(timezone)) {
+    const preparationSteps: Array<{ step: string; args: string[] }> = [
+      { step: 'bkg:download', args: ['run', 'bkg:download', '--', '--force'] },
+      { step: 'bkg:extract', args: ['run', 'bkg:extract'] },
+      { step: 'download:official', args: ['run', 'download:official', '--', '--force'] },
+      { step: 'osm:download', args: ['run', 'osm:download', '--', '--force'] },
+      { step: 'osm:extract', args: ['run', 'osm:extract'] },
+    ]
+    for (const prep of preparationSteps) {
+      if (failed) break
       if (
         (await runStep(
           runId,
           logPath,
           statePath,
           state,
-          'bkg:download',
+          prep.step,
           'bun',
-          ['run', 'bkg:download'],
+          prep.args,
           workspaceRoot,
         )) !== 0
-      )
+      ) {
         fail()
-      if (
-        !failed &&
-        (await runStep(
-          runId,
-          logPath,
-          statePath,
-          state,
-          'bkg:extract',
-          'bun',
-          ['run', 'bkg:extract'],
-          workspaceRoot,
-        )) !== 0
-      )
-        fail()
-      if (
-        !failed &&
-        (await runStep(
-          runId,
-          logPath,
-          statePath,
-          state,
-          'download:official',
-          'bun',
-          ['run', 'download:official'],
-          workspaceRoot,
-        )) !== 0
-      )
-        fail()
-    } else {
-      appendJsonl(logPath, {
-        kind: 'step_end',
-        runId,
-        at: nowIso(),
-        step: 'reference:refresh',
-        status: 'skipped',
-        reason: 'friday_only',
-      })
+      }
     }
 
     const areas = discoverAreas(workspaceRoot)

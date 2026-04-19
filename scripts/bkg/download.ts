@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
  * Download BKG VG25 utm32s GeoPackage (ZIP) into `.cache/bkg/`, unzip, record `downloadedAt`.
  * Requires `unzip` on PATH (macOS/Linux). Use `--zip /path/to/vg25.utm32s.gpkg.zip` to seed from a local file instead of HTTP.
  */
-import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import {
   BKG_CACHE_DIR,
@@ -93,6 +93,8 @@ async function main() {
     console.log(`Wrote ${zipDest} (${buf.length} bytes)`)
   }
 
+  // Keep only the latest extracted dataset to avoid stale archive leftovers.
+  rmSync(extractDir, { recursive: true, force: true })
   const unzip = spawnSync('unzip', ['-o', zipDest, '-d', extractDir], {
     stdio: 'inherit',
   })

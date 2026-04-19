@@ -52,7 +52,7 @@ These external endpoints can be slower or stricter than GitHub itself, so respec
 Current behavior already helps:
 
 - Workflow has `concurrency` to avoid overlap (`cancel-in-progress: true`).
-- Official reference refresh is limited to Fridays in `scripts/pipeline/nightly.ts`.
+- Scheduled refresh runs now happen four times per week (Wed/Fri/Sat/Sun at 03:00 UTC), reducing unnecessary daily load while keeping weekend freshness.
 - Download/compare steps include retry wrappers in `.github/workflows/data-refresh.yml`.
 
 Current behavior that still drives long runtime:
@@ -67,14 +67,13 @@ Start with these, in order:
 1. Add timing breakdown per step and per area to each run summary.
 2. Skip OSM re-download if source file is unchanged (HTTP conditional fetch or timestamp check).
 3. Skip OSM extract if input PBF is unchanged.
-4. Add "changed-area only" compare mode for routine nights, with a weekly full refresh.
+4. Add "changed-area only" compare mode for routine runs to reduce compare runtime.
 5. Keep heavy retries bounded (already present) and fail fast on persistent upstream errors.
 6. Consider splitting into multiple jobs only when needed, and keep each job under 6h with margin.
 
 ### Suggested operating model
 
-- Daily: cheap incremental run (reuse cached artifacts when inputs unchanged).
-- Weekly (for example Friday): full refresh + full compare.
+- Scheduled (Wed/Fri/Sat/Sun): full refresh + full compare.
 - Manual dispatch: full rebuild for verification or release snapshots.
 
 This preserves data freshness while reducing nightly runtime and operational risk.
