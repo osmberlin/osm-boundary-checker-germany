@@ -34,6 +34,23 @@ describe('parseDownloadOfficial', () => {
     })
   })
 
+  test('parses gml format', () => {
+    const o = parseDownloadOfficial({
+      download: {
+        official: {
+          url: 'https://example.com/wfs?request=GetFeature',
+          format: 'GML',
+        },
+      },
+    })
+    expect(o).toEqual({
+      kind: 'http',
+      url: 'https://example.com/wfs?request=GetFeature',
+      format: 'gml',
+      crs: undefined,
+    })
+  })
+
   test('rejects unsupported kind or format', () => {
     expect(() =>
       parseDownloadOfficial({
@@ -43,6 +60,11 @@ describe('parseDownloadOfficial', () => {
     expect(() =>
       parseDownloadOfficial({
         download: { official: { url: 'https://x', format: 'gml' } },
+      }),
+    ).not.toThrow()
+    expect(() =>
+      parseDownloadOfficial({
+        download: { official: { url: 'https://x', format: 'zip' } },
       }),
     ).toThrow(/format/)
   })

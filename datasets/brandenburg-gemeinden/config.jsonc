@@ -1,0 +1,45 @@
+{
+  // Compare: LGB Gazetteer Gemeinden `gemeindeschluessel` ↔ OSM `de:regionalschluessel` (BB-specific key reduction).
+  "official": {
+    "path": "source/official.fgb",
+    "matchProperty": "gemeindeschluessel",
+  },
+  "idNormalization": {
+    "preset": "brandenburg-gemeinden-8",
+  },
+  "metricsCrs": "EPSG:25832",
+
+  "compare": {
+    "applyBboxFilter": true,
+    "bboxBufferDegrees": 0.05,
+  },
+
+  "download": {
+    "official": {
+      "kind": "http",
+      "url": "https://isk.geobasis-bb.de/ows/gazetteer_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3AGemeinden&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326",
+      "format": "gml",
+      "crs": "EPSG:4326",
+    },
+  },
+
+  "sources": {
+    "official": {
+      "sourceUrl": "https://isk.geobasis-bb.de/ows/gazetteer_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3AGemeinden&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326",
+      "attribution": "© GeoBasis-DE/LGB, dl-de/by-2-0",
+    },
+  },
+
+  "ogcInspectSources": [
+    {
+      "id": "lgb-gazetteer-gemeinden",
+      "label": "LGB Gazetteer Gemeinden",
+      "type": "wfs",
+      "baseUrl": "https://isk.geobasis-bb.de/ows/gazetteer_wfs",
+      "typeName": "app:Gemeinden",
+      "wfsVersion": "2.0.0",
+      "bboxAxisOrder": "latlon",
+      "maxFeatures": 80,
+    },
+  ],
+}

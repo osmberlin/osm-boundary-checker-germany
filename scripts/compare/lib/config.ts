@@ -8,7 +8,11 @@ import {
   parseOfficialKeyTransposition,
 } from './officialKeyTransposition.ts'
 
-export type IdNormalizationPreset = 'berlin-bezirk-ags' | 'amtlicher-8' | 'regional-12'
+export type IdNormalizationPreset =
+  | 'berlin-bezirk-ags'
+  | 'amtlicher-8'
+  | 'regional-12'
+  | 'brandenburg-gemeinden-8'
 
 /** OSM tagging: fixed project-wide (all areas use the same column in GDAL output). */
 export const OSM_MATCH_PROPERTY = 'de:regionalschluessel'

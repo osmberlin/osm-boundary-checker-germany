@@ -34,6 +34,43 @@ function parseRegional12(d: string): NormalizedGermanKey['hierarchy'] {
   }
 }
 
+function parseRegional8(d: string): NormalizedGermanKey['hierarchy'] {
+  if (d.length !== 8) return null
+  return {
+    bundesland: d.slice(0, 2),
+    regierungsbezirk: d.slice(2, 3),
+    kreis: d.slice(3, 5),
+    gemeinde: d.slice(5, 8),
+  }
+}
+
+function normalizeBrandenburgGemeindenOfficial(raw: string): string {
+  const v = raw.trim()
+  if (!v) return ''
+  if (v.includes(';')) {
+    const parts = v
+      .split(';')
+      .map((p) => p.trim())
+      .filter(Boolean)
+    if (parts.length !== 4) {
+      throw new Error(`brandenburg-gemeinden-8: expected 4 semicolon-separated parts, got "${raw}"`)
+    }
+    const [land, rb, kreis, gemeinde] = parts.map((p) => {
+      if (!/^\d+$/.test(p)) {
+        throw new Error(`brandenburg-gemeinden-8: expected numeric segment, got "${raw}"`)
+      }
+      return p
+    })
+    return `${land.padStart(2, '0').slice(-2)}${rb.padStart(1, '0').slice(-1)}${kreis
+      .padStart(2, '0')
+      .slice(-2)}${gemeinde.padStart(3, '0').slice(-3)}`
+  }
+  const digits = v.replace(/\D/g, '')
+  if (!digits) return ''
+  if (digits.length >= 8) return digits.slice(0, 8)
+  return digits.padStart(8, '0')
+}
+
 export function normalizeOsmValue(
   sourceKey: string,
   rawValue: string | undefined | null,
@@ -76,6 +113,21 @@ export function normalizeOsmValue(
       canonicalMatchKey = digits
     }
     presetLabel = 'full-12-digit-regional'
+  } else if (preset === 'brandenburg-gemeinden-8') {
+    if (digits.length >= 12) {
+      // Brandenburg municipality compare: derive LLRKKGGG from OSM 12-digit key.
+      canonicalMatchKey = `${digits.slice(0, 5)}${digits.slice(9, 12)}`
+      hierarchy = parseRegional8(canonicalMatchKey)
+      notes.push('bb-gemeinden-first5-plus-last3')
+    } else if (digits.length === 8) {
+      canonicalMatchKey = digits
+      hierarchy = parseRegional8(canonicalMatchKey)
+      notes.push('bb-gemeinden-already-8')
+    } else {
+      canonicalMatchKey = digits
+      notes.push(`unexpected-digit-length:${digits.length}`)
+    }
+    presetLabel = 'brandenburg-gemeinden-8'
   }
 
   return {
@@ -95,6 +147,9 @@ export function normalizeOfficialValue(
 ): string {
   const raw = rawValue == null ? '' : String(rawValue)
   const digits = raw.replace(/\D/g, '')
+  if (preset === 'brandenburg-gemeinden-8') {
+    return normalizeBrandenburgGemeindenOfficial(raw)
+  }
   if (preset === 'regional-12' && digits.length > 0) {
     if (digits.length >= 12) return digits.slice(0, 12)
     return digits.padEnd(12, '0')

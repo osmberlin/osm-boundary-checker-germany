@@ -1,11 +1,11 @@
 /**
- * Machine-readable `download.official` in area `config.jsonc` (HTTP → GeoJSON → FlatGeobuf).
+ * Machine-readable `download.official` in area `config.jsonc`.
  */
 
 export type DownloadOfficialHttp = {
   kind: 'http'
   url: string
-  format: 'geojson'
+  format: 'geojson' | 'gml'
   /** Declared / requested CRS (for logs; GeoJSON from WFS follows srsName in URL). */
   crs?: string
 }
@@ -29,12 +29,12 @@ export function parseDownloadOfficial(doc: unknown): DownloadOfficialHttp | null
   }
 
   const formatRaw = typeof o.format === 'string' ? o.format.trim().toLowerCase() : 'geojson'
-  if (formatRaw !== 'geojson') {
+  if (formatRaw !== 'geojson' && formatRaw !== 'gml') {
     throw new Error(
-      `Unsupported download.official.format: "${formatRaw}" (only "geojson" is supported)`,
+      `Unsupported download.official.format: "${formatRaw}" (only "geojson" or "gml" is supported)`,
     )
   }
 
   const crs = typeof o.crs === 'string' ? o.crs.trim() : undefined
-  return { kind: 'http', url, format: 'geojson', crs }
+  return { kind: 'http', url, format: formatRaw, crs }
 }

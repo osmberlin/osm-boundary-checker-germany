@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// Config-driven HTTP official boundaries (e.g. WFS GeoJSON) → official.path FlatGeobuf. Requires ogr2ogr.
+// Config-driven HTTP official boundaries (WFS GeoJSON / GML) → official.path FlatGeobuf. Requires ogr2ogr.
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs'
@@ -51,11 +51,21 @@ function logLine(parts: Record<string, string | number | undefined>): void {
   console.log(`[download] ${tokens.join(' ')}`)
 }
 
-function runOgr2ogrGeojsonToFgb(geojsonPath: string, outFgb: string): void {
-  const r = spawnSync('ogr2ogr', ['-f', 'FlatGeobuf', '-t_srs', 'EPSG:4326', outFgb, geojsonPath], {
-    encoding: 'utf-8',
-    stdio: ['ignore', 'inherit', 'pipe'],
-  })
+function runOgr2ogrToFgb(sourcePathOrUrl: string, outFgb: string): void {
+  const args = [
+    '-f',
+    'FlatGeobuf',
+    '-t_srs',
+    'EPSG:4326',
+    // Turf/compare expects linear polygonal geometry, not CurvePolygon.
+    '-nlt',
+    'CONVERT_TO_LINEAR',
+    '-nlt',
+    'PROMOTE_TO_MULTI',
+    outFgb,
+    sourcePathOrUrl,
+  ]
+  const r = spawnSync('ogr2ogr', args, { encoding: 'utf-8', stdio: ['ignore', 'inherit', 'pipe'] })
   if (r.status !== 0) {
     const detail = (r.stderr ?? '').trim() || '(no stderr)'
     throw new Error(`ogr2ogr failed (exit ${r.status}): ${detail}`)
@@ -123,24 +133,29 @@ async function processArea(
   const tmpPath = join(tmpdir(), tmpName)
 
   try {
-    const res = await fetch(spec.url, {
-      headers: { Accept: 'application/geo+json, application/json, */*' },
-    })
-    if (!res.ok) {
-      logLine({
-        area,
-        source: 'official',
-        status: 'fail',
-        ms: Date.now() - t0,
-        reason: `http_${res.status}`,
-      })
-      return 'fail'
-    }
-    const buf = new Uint8Array(await res.arrayBuffer())
-    writeFileSync(tmpPath, buf)
-
     mkdirSync(join(outAbs, '..'), { recursive: true })
-    runOgr2ogrGeojsonToFgb(tmpPath, outAbs)
+
+    if (spec.format === 'geojson') {
+      const res = await fetch(spec.url, {
+        headers: { Accept: 'application/geo+json, application/json, */*' },
+      })
+      if (!res.ok) {
+        logLine({
+          area,
+          source: 'official',
+          status: 'fail',
+          ms: Date.now() - t0,
+          reason: `http_${res.status}`,
+        })
+        return 'fail'
+      }
+      const buf = new Uint8Array(await res.arrayBuffer())
+      writeFileSync(tmpPath, buf)
+      runOgr2ogrToFgb(tmpPath, outAbs)
+    } else {
+      // WFS GML responses are not always JSON-fetchable in-process; let GDAL read from URL directly.
+      runOgr2ogrToFgb(spec.url, outAbs)
+    }
 
     const downloadedAt = new Date().toISOString()
     const prev = readAreaSourceMetadataFile(areaPath) ?? {}
@@ -148,7 +163,7 @@ async function processArea(
       official: {
         downloadedAt,
         provider: 'HTTP',
-        dataset: 'GeoJSON',
+        dataset: spec.format === 'geojson' ? 'GeoJSON' : 'WFS GML',
         sourceUrl: spec.url,
         ...(spec.crs ? { note: `Declared CRS: ${spec.crs}` } : {}),
       },

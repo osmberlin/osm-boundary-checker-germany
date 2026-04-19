@@ -1,6 +1,7 @@
 # Paths below are relative to this `datasets/` directory (applies to every `datasets/<slug>/`).
 
 */source/*.fgb
+*/output/
 */output/comparison_table.json
 */output/comparison.pmtiles
 */output/comparison.pmtiles-journal
