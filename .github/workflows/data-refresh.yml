@@ -84,24 +84,31 @@ jobs:
           CI: '1'
 
       - name: Prepare static report snapshot
-        run: bun run --filter report prepare-static-snapshot
-
-      - name: Generate area index
-        run: bun run report:generate-areas
+        run: bun run report:sync-runtime-assets
 
       - name: Validate snapshot output
         run: |
           test -f areas.gen.json
           test -d report/public/datasets
+          node -e "const fs=require('node:fs'); const data=JSON.parse(fs.readFileSync('areas.gen.json','utf8')); if(!Array.isArray(data.areas)||data.areas.length===0){throw new Error('areas.gen.json has no areas after refresh')} console.log('areas:', data.areas.length)"
+
+      - name: Stage runtime artifact payload
+        run: |
+          set -euo pipefail
+          rm -rf .artifact-runtime
+          mkdir -p .artifact-runtime/datasets .artifact-runtime/data
+          cp -R datasets/. .artifact-runtime/datasets/
+          if [ -d data ]; then
+            cp -R data/. .artifact-runtime/data/
+          fi
 
       - name: Upload reusable dataset artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.DATASET_ARTIFACT_NAME }}
           path: |
-            areas.gen.json
-            report/public/datasets
-            report/public/data
+            .artifact-runtime/datasets
+            .artifact-runtime/data
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7

@@ -7,10 +7,10 @@ import { join, resolve } from 'node:path'
 import { AREAS_GEN_URL_PATH } from './generatedAssets.ts'
 import homepage from './index.html'
 import { listComparisonAreaSummaries } from './listComparisonAreas.ts'
+import { resolveRuntimeRoot } from './runtimeDataRoot.ts'
 import { repoDataFileResponse } from './serveRepoDataResponse.ts'
 
-const repoRoot = resolve(import.meta.dir, '..')
-const dataRoot = resolve(process.env.DATA_ROOT?.trim() || repoRoot)
+const dataRoot = resolveRuntimeRoot()
 const datasetsRoot = resolve(join(dataRoot, 'datasets'))
 const processingRoot = resolve(join(dataRoot, 'data'))
 

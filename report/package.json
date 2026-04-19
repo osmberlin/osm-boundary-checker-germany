@@ -6,11 +6,12 @@
   "scripts": {
     "generate-areas": "bun ./generateAreasJson.ts",
     "prepare-static-snapshot": "bun ./prepareStaticSnapshot.ts",
+    "sync-runtime-assets": "bun run prepare-static-snapshot && bun run generate-areas",
     "bundle-static-assets": "bun ./bundleStaticAssets.ts",
     "predev": "bun run generate-areas",
-    "prebuild": "bun run prepare-static-snapshot && bun run generate-areas",
     "dev": "vite",
     "build": "rm -rf dist && vite build && bun run bundle-static-assets",
+    "build:with-runtime": "bun run sync-runtime-assets && bun run build",
     "preview": "vite preview",
     "report:data-sizes": "bun ./reportDataSizes.ts",
     "test": "vitest run"
