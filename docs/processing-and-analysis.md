@@ -148,3 +148,4 @@ Implementations and German modal copy are indexed in **[docs/kpis.md](./kpis.md)
 - [vg25-bkg.md](./vg25-bkg.md) — BKG download and layers
 - [comparison-status.md](./comparison-status.md) — recent run notes and data gaps
 - [kpis.md](./kpis.md) — KPI index (links to `compute.ts` / `de.ts` per metric)
+- [nightly-runtime-rate-limits.md](./nightly-runtime-rate-limits.md) — GitHub/runtime limits and no-cost optimization guide
