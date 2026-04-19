@@ -1,12 +1,17 @@
-# Report UI (Bun + React)
+# Report UI (Vite + React)
 
-Bundled with **Bun’s HTML pipeline** (`index.html` entry → TSX/JS/CSS). No Vite.
+The app is built with **Vite** and consumes static runtime artifacts from `datasets/`, `data/`, and `areas.gen.json`.
 
-- **Dev**: `bun dev` runs `[dev-server.ts](./dev-server.ts)` — `Bun.serve` with an [HTML import](https://bun.sh/docs/bundler/fullstack), HMR, `/areas.gen.json`, `/datasets/`_, and `/data/`_ static file serving.
-- **Build**: `bun run build` → prepare static snapshot + `bun build ./index.html --outdir=dist --minify` + asset bundling into `dist/`.
-- **Preview**: `bun run preview` serves `dist/` with the same static behavior as dev.
+- **Dev**: `bun run dev` (Vite dev server).
+- **Preview**: `bun run preview` (Vite preview for `dist/`).
+- **Sync runtime assets**: `bun run sync-runtime-assets` copies from `DATA_ROOT` (`datasets/`, `data/`) into `report/public` and regenerates repo-root `areas.gen.json`.
+- **Build app shell**: `bun run build` builds Vite output and bundles static assets from `report/public` + `areas.gen.json`.
+- **Build from runtime in one command**: `bun run build:with-runtime`.
 
-Tailwind v4 is wired via `[bun-plugin-tailwind](https://bun.sh/docs/bundler/html)` in `[bunfig.toml](./bunfig.toml)`.
-Routing/query handling uses **TanStack Router** with **Zod**-validated payload parsing.
+Runtime root resolution:
 
+- If `DATA_ROOT` is set, report scripts read runtime files from there.
+- Otherwise scripts default to the repository root.
+
+Routing/query handling uses **TanStack Router** with **Zod**-validated payload parsing.  
 Basemap: [OpenFreeMap](https://openfreemap.org/) Positron (`https://tiles.openfreemap.org/styles/positron`).

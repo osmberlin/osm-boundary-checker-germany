@@ -4,6 +4,18 @@ This document describes how the **OSM boundary checker (Germany)** ingests offic
 
 ---
 
+## Runtime folder contract
+
+- **`scripts/`**: pipeline and compare implementation.
+- **`datasets/`**: area configs, official source files, and generated compare outputs.
+- **`data/`**: pipeline processing status/log artifacts consumed by report status views.
+- **`report/`**: frontend app and static snapshot/build tooling.
+- **`.cache/`**: downloaded source and extraction caches.
+
+`DATA_ROOT` is the runtime root that should contain `datasets/` and `data/`. Report snapshot/index generation and processing status are expected to read from the same `DATA_ROOT`.
+
+---
+
 ## End-to-end flow
 
 ```mermaid

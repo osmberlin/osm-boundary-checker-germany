@@ -15,7 +15,26 @@ Docker Compose uses a shared volume mounted at `/data` with `DATA_ROOT=/data`, s
 
 ## Stack
 
-**Bun** + **TypeScript**; compare uses **flatgeobuf**, **Turf**, **JSTS** (discrete Hausdorff), **proj4**; interactive picker **Clack** via `run.ts`. **Report**: **React** bundled/served by **Bun** (`index.html` + `Bun.serve`), **MapLibre**, **PMTiles**, **Tailwind**, **TanStack Router**, **Zod**. Workspaces: `scripts/`, `report/`.
+**Bun** + **TypeScript**; compare uses **flatgeobuf**, **Turf**, **JSTS** (discrete Hausdorff), **proj4**; interactive picker **Clack** via `run.ts`. **Report**: **React** + **Vite** build, Bun dev/preview data serving, **MapLibre**, **PMTiles**, **Tailwind**, **TanStack Router**, **Zod**. Workspaces: `scripts/`, `report/`.
+
+## Folder contract
+
+- **`scripts/`** — Processing pipeline (download, extract, compare, nightly orchestration).
+- **`datasets/`** — Per-area inputs/config + generated comparison outputs (`output/*.json`, `*.pmtiles`, `snapshots.json`).
+- **`data/`** — Processing status logs (`processing-state.json`, `processing-log.jsonl`) used by UI status pages.
+- **`report/`** — Frontend app and static bundle assembly (`prepareStaticSnapshot.ts`, `generateAreasJson.ts`, Vite build).
+- **`.cache/`** — Download and extract caches (transient, gitignored).
+
+`DATA_ROOT` controls where runtime `datasets/` and `data/` are read from. Default is repo root; Docker uses `/data`.
+
+## Canonical commands
+
+- **Prepare runtime data**: `bun run pipeline:nightly` (or `bun run download` + `bun run compare`).
+- **Sync report inputs from runtime tree**: `bun run report:sync-runtime-assets`.
+- **Build static app shell only**: `bun run report:build:app` (expects synced `report/public/*` + `areas.gen.json`).
+- **Build full static bundle from runtime tree**: `bun run report:build`.
+
+Legacy aliases still work for compatibility (`download-osm-pbf`, `extract-osm`, `download-bkg-vg25`, `extract-vg250`), but prefer the `download:*` / `osm:*` / `bkg:*` names.
 
 ## Setup
 
@@ -151,7 +170,7 @@ docker compose run --rm pipeline bun run test
 
 ## Report UI
 
-Development (Bun bundles `./index.html`, HMR; static payloads from `/areas.gen.json` + `/datasets/*` + `/data/*`):
+Development (Vite dev server; static payloads from `/areas.gen.json` + `/datasets/*` + `/data/*`):
 
 ```bash
 docker compose up web
@@ -159,7 +178,7 @@ docker compose up web
 
 Open the printed URL (default port 3000). The home and detail pages load precomputed static JSON payloads (`areas.gen.json`, `datasets/<area>/output/*.json`), and the map loads `comparison.pmtiles` via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
 
-Production build:
+Production build from the current runtime tree (`DATA_ROOT` or repo root):
 
 ```bash
 docker compose run --rm pipeline bun run report:build
@@ -175,9 +194,26 @@ Workspace scripts use Bun’s [`--filter`](https://bun.sh/docs/pm/filter) so you
 
 The basemap uses **[OpenFreeMap](https://openfreemap.org/)** Positron (vector tiles, no API key). Attribution is handled by MapLibre per [OpenFreeMap](https://openfreemap.org/).
 
-**Deploy:** Put the built app and data on the same static host. Serve `report/dist/*` including copied `datasets/`, `data/`, and `areas.gen.json` assets. See [`report/src/data/paths.ts`](report/src/data/paths.ts).
+**Deploy:** Put the built app and data on the same static host. Serve `report/dist/*` including copied `datasets/`, `data/`, and `areas.gen.json` assets. Deterministic CI order should be:
+
+1. restore/prepare runtime tree (`datasets/`, `data/`)
+2. `bun run report:sync-runtime-assets`
+3. verify `areas.gen.json` is non-empty
+4. `bun run report:build:app`
+5. deploy `report/dist`
+
+See [`report/src/data/paths.ts`](report/src/data/paths.ts).
 
 **PMTiles:** The library uses HTTP **`Range`** requests against the `.pmtiles` URL ([`FetchSource`](https://github.com/protomaps/PMTiles/blob/main/js/src/v2.ts)); the response must expose **`Content-Length`** and, for range requests, **`206`** + **`Content-Range`**. **Local dev/preview** uses [`report/serveRepoDataResponse.ts`](report/serveRepoDataResponse.ts) (Node `fs` + `Range` handling; static file semantics). Production hosting should preserve byte-range support for PMTiles files.
+
+Smoke-test a deployed PMTiles URL:
+
+```bash
+curl -I "https://<org>.github.io/<repo>/datasets/<area>/output/comparison.pmtiles"
+curl -I -H "Range: bytes=0-15" "https://<org>.github.io/<repo>/datasets/<area>/output/comparison.pmtiles"
+```
+
+Expected: first response includes `Content-Length`; second returns `206 Partial Content` with `Content-Range`.
 
 The report registers the MapLibre `pmtiles://` protocol once at startup via [`report/src/main.tsx`](report/src/main.tsx) → [`report/src/lib/pmtilesMaplibreRegister.ts`](report/src/lib/pmtilesMaplibreRegister.ts) (see [PMTiles + MapLibre](https://github.com/protomaps/PMTiles#maplibre-gl-js)).
 
