@@ -1,9 +1,10 @@
 name: Deploy GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+  workflow_run:
+    workflows: ['Refresh Datasets']
+    types: [completed]
 
 permissions:
   contents: read
@@ -21,7 +22,11 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name != 'push' || (github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message || '', '[skip ci]'))
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +40,20 @@ jobs:
         env:
           HUSKY: '0'
 
+      - name: Download refresh artifact from triggering run
+        if: github.event_name == 'workflow_run'
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: data-refresh.yml
+          branch: main
+          name: ${{ env.DATASET_ARTIFACT_NAME }}
+          run_id: ${{ github.event.workflow_run.id }}
+          search_artifacts: false
+          path: .artifact-restore
+          if_no_artifact_found: fail
+
       - name: Download latest refresh artifact
+        if: github.event_name == 'workflow_dispatch'
         uses: dawidd6/action-download-artifact@v11
         with:
           workflow: data-refresh.yml
@@ -43,7 +61,7 @@ jobs:
           name: ${{ env.DATASET_ARTIFACT_NAME }}
           search_artifacts: true
           path: .artifact-restore
-          if_no_artifact_found: warn
+          if_no_artifact_found: fail
 
       - name: Select runtime root for static snapshot
         run: |
