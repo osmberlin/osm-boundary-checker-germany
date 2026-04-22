@@ -3,7 +3,7 @@ import { DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS } from '../shared/germanyOsmPbf.ts'
 
 /**
  * Per-area extraction from a Germany (or other) `.osm.pbf` via osmium + ogr2ogr.
- * Defined under `osmExtract` in `config.jsonc`, or legacy `osm-extract.json`.
+ * Defined under `osmExtract` in `config.jsonc`.
  */
 export type OsmExtractConfig = {
   /**
@@ -56,7 +56,7 @@ export function loadOsmExtractConfig(workspaceRoot: string, area: string): OsmEx
   const doc = loadAreaConfig(workspaceRoot, area) as Record<string, unknown>
   const oe = doc.osmExtract
   if (oe === undefined) {
-    throw new Error(`${area}: missing osmExtract in config.jsonc (or legacy osm-extract.json)`)
+    throw new Error(`${area}: missing osmExtract in config.jsonc`)
   }
   return parseOsmExtractSection(area, oe)
 }

@@ -39,24 +39,7 @@ jobs:
           sudo apt-get install -y osmium-tool gdal-bin tippecanoe unzip
 
       - name: Run nightly pipeline
-        run: |
-          retry() {
-            local attempts="$1"
-            shift
-            local n=1
-            while true; do
-              "$@" && return 0
-              if [ "$n" -ge "$attempts" ]; then
-                return 1
-              fi
-              n=$((n + 1))
-              local wait_seconds=$((n * 30))
-              echo "Retry $n/$attempts in ${wait_seconds}s: $*"
-              sleep "$wait_seconds"
-            done
-          }
-
-          retry 2 bun run pipeline:nightly
+        run: bun run scripts/ci/run-nightly-pipeline-with-retry.ts
         env:
           CI: '1'
 
@@ -64,28 +47,16 @@ jobs:
         run: bun run report:sync-runtime-assets
 
       - name: Validate snapshot output
-        run: |
-          test -f areas.gen.json
-          test -d report/public/datasets
-          node -e "const fs=require('node:fs'); const data=JSON.parse(fs.readFileSync('areas.gen.json','utf8')); if(!Array.isArray(data.areas)||data.areas.length===0){throw new Error('areas.gen.json has no areas after refresh')} console.log('areas:', data.areas.length)"
+        run: bun run scripts/ci/validate-refresh-snapshot.ts
 
       - name: Stage runtime artifact payload
-        run: |
-          set -euo pipefail
-          rm -rf .artifact-runtime
-          mkdir -p .artifact-runtime/datasets .artifact-runtime/data
-          cp -R datasets/. .artifact-runtime/datasets/
-          if [ -d data ]; then
-            cp -R data/. .artifact-runtime/data/
-          fi
+        run: bun run scripts/ci/stage-runtime-artifact-payload.ts
 
       - name: Upload reusable dataset artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.DATASET_ARTIFACT_NAME }}
-          path: |
-            .artifact-runtime/datasets
-            .artifact-runtime/data
+          path: .artifact-runtime
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 4

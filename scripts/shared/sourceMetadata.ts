@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 export const SOURCE_METADATA_FILE = 'metadata.json'
-export const LEGACY_SOURCE_METADATA_FILE = 'source-metadata.json'
 
 /** One side (BKG or OSM) in `source/metadata.json`. */
 export type SourceMetadataSide = {
@@ -40,8 +39,7 @@ function readMetadataAt(path: string): AreaSourceMetadataFile | null {
 export function readAreaSourceMetadataFile(areaPath: string): AreaSourceMetadataFile | null {
   const dir = join(areaPath, 'source')
   const primary = join(dir, SOURCE_METADATA_FILE)
-  const legacy = join(dir, LEGACY_SOURCE_METADATA_FILE)
-  return readMetadataAt(primary) ?? readMetadataAt(legacy)
+  return readMetadataAt(primary)
 }
 
 function sideHasValues(s: SourceMetadataSide | undefined): boolean {

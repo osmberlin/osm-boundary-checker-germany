@@ -89,7 +89,7 @@ export function AreaReport() {
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
 
-  /** Main table: BKG-export rows only (excludes legacy `osm_only` if present in old JSON). */
+  /** Main table: BKG-export rows only. */
   const mainRows = useMemo(() => {
     if (!data) return []
     return data.rows.filter((r) => r.category === 'matched' || r.category === 'official_only')

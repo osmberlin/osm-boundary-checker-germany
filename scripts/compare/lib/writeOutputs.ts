@@ -215,9 +215,9 @@ function buildUnmatchedOsmFeatureCollection(unmatched: UnmatchedOsmRow[]): Featu
   return { type: 'FeatureCollection', features }
 }
 
-function removeLegacyOutputFiles(outDir: string) {
-  const legacy = ['comparison_for_report.json', 'detailed_results.csv', 'comparison_report.md']
-  for (const f of legacy) {
+function removeObsoleteOutputFiles(outDir: string) {
+  const obsolete = ['comparison_for_report.json', 'detailed_results.csv', 'comparison_report.md']
+  for (const f of obsolete) {
     const p = join(outDir, f)
     if (existsSync(p)) {
       try {
@@ -229,7 +229,7 @@ function removeLegacyOutputFiles(outDir: string) {
   }
 }
 
-function removeLegacyJsonOutputs(outDir: string, areaPath: string) {
+function removeObsoleteJsonOutputs(outDir: string, areaPath: string) {
   for (const p of [join(outDir, TABLE_JSON), join(areaPath, 'snapshots.json')]) {
     if (!existsSync(p)) continue
     try {
@@ -410,7 +410,7 @@ export function writeOutputs(
   const unmatchedFgbPath = join(buildDir, 'unmatched.fgb')
   const unmatchedPmtilesPath = join(outDir, PMTILES_UNMATCHED)
 
-  removeLegacyOutputFiles(outDir)
+  removeObsoleteOutputFiles(outDir)
 
   const withOfficialRows = rows.filter((r) => r.officialGeometryWgs84 != null)
   const stemByKeyForOfficial =
@@ -521,7 +521,7 @@ export function writeOutputs(
     officialOnly.length,
     unmatchedOsm.length,
   )
-  removeLegacyJsonOutputs(outDir, areaPath)
+  removeObsoleteJsonOutputs(outDir, areaPath)
 
   return { snapshotId }
 }

@@ -230,7 +230,7 @@ export const de = {
         'Falls Import per URL fehlschlägt: GeoJSON herunterladen und in JOSM über Datei öffnen.',
       josmMixedContent:
         'Von HTTPS-Seiten aus kann der Browser lokale http://127.0.0.1-Links blockieren — ggf. Link kopieren oder Lesezeichen nutzen.',
-      legacyTableHint:
+      tableHint:
         'Diese comparison_table.json enthält noch kein Feld officialForEditPath — bitte den Vergleich erneut ausführen, um die GeoJSON-Exports zu erzeugen.',
     },
   },

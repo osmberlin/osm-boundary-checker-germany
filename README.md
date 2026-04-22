@@ -34,7 +34,7 @@ Docker Compose uses a shared volume mounted at `/data` with `DATA_ROOT=/data`, s
 - **Build static app shell only**: `bun run report:build:app` (expects synced `report/public/*` + `areas.gen.json`).
 - **Build full static bundle from runtime tree**: `bun run report:build`.
 
-Legacy aliases still work for compatibility (`download-osm-pbf`, `extract-osm`, `download-bkg-vg25`, `extract-vg250`), but prefer the `download:*` / `osm:*` / `bkg:*` names.
+Use the canonical `download:*` / `osm:*` / `bkg:*` command names.
 
 ## Setup
 
@@ -47,7 +47,7 @@ Host installs for these tools are intentionally not required for normal repo wor
 
 ## Compare (CLI)
 
-Interactive (lists `datasets/*` folders that contain `config.jsonc`, or legacy `boundary-config.json`):
+Interactive (lists `datasets/*` folders that contain `config.jsonc`):
 
 ```bash
 docker compose run --rm pipeline bun run compare
@@ -91,8 +91,6 @@ This is a **`package.json` chain** (not a monolithic script): `download:bkg && d
 | `download:osm`                                | `osm:download` then `osm:extract`                                                                                 |
 | `download:osm:fetch` / `download:osm:extract` | OSM steps only                                                                                                    |
 
-Legacy names still work: `download-osm-pbf` → `download:osm:fetch`, `extract-osm` → `download:osm:extract`, `download-bkg-vg25` → `download:bkg:fetch`, `extract-vg250` → `download:bkg:extract`.
-
 **`download.official` in `config.jsonc`:** `kind` (`http`), `url`, `format` (`geojson` only for now), optional `crs` (for documentation / logs). WFS URLs should set the desired CRS with `srsName` / `SRSNAME` in the query string. Other WFS output formats (GML, Shapefile ZIP, etc.) are service-specific—check the service **GetCapabilities** if you need something other than GeoJSON.
 
 **`download:official` flags:** `--area <folder>` for one dataset; `--force` to re-fetch even when the output `.fgb` already exists.
@@ -109,7 +107,7 @@ Legacy names still work: `download-osm-pbf` → `download:osm:fetch`, `extract-o
 
 ### Source data (FlatGeobuf)
 
-Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Compare payloads are written as static JSON under `datasets/<slug>/output/` plus `snapshots.json`, while map artifacts stay file-based in `datasets/<slug>/output/*.pmtiles`. **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input for **all** compares is a **single shared** FlatGeobuf under **`.cache/osm/germany-admin-boundaries-rs.fgb`** produced by **`bun run osm:extract`**. Optional **`source/metadata.json`** records when data was fetched and is embedded into compare payload provenance. Legacy **`source/source-metadata.json`** is still read if present.
+Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Compare payloads are written as static JSON under `datasets/<slug>/output/` plus `snapshots.json`, while map artifacts stay file-based in `datasets/<slug>/output/*.pmtiles`. **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input for **all** compares is a **single shared** FlatGeobuf under **`.cache/osm/germany-admin-boundaries-rs.fgb`** produced by **`bun run osm:extract`**. Optional **`source/metadata.json`** records when data was fetched and is embedded into compare payload provenance.
 
 **`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, optional **`official.keyTransposition`** (map official IDs → `de:regionalschluessel` when the source has no Schlüssel), **`idNormalization`**, **`metricsCrs`**, optional **`compare.applyBboxFilter`** / **`compare.bboxBufferDegrees`** (prefilter shared OSM features by a buffered bbox around official data), optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). There is no per-area OSM path or `osmExtract` block anymore.
 

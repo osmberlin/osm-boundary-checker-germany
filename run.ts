@@ -53,9 +53,7 @@ async function main() {
   const areas = discoverAreas(repoRoot)
 
   if (areas.length === 0) {
-    console.error(
-      `No folders with config.jsonc (or legacy boundary-config.json) found under ${DATASETS_DIRECTORY}/.`,
-    )
+    console.error(`No folders with config.jsonc found under ${DATASETS_DIRECTORY}/.`)
     process.exit(1)
   }
 

@@ -28,6 +28,8 @@ jobs:
        github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
+    env:
+      DATA_ROOT: ${{ github.workspace }}/.artifact-restore/.artifact-runtime
     steps:
       - uses: actions/checkout@v4
 
@@ -63,80 +65,17 @@ jobs:
           path: .artifact-restore
           if_no_artifact_found: fail
 
-      - name: Select runtime root for static snapshot
-        run: |
-          set -euo pipefail
-          if [ -d .artifact-restore/.artifact-runtime/datasets ]; then
-            echo "Using runtime artifact root at .artifact-restore/.artifact-runtime"
-            echo "DATA_ROOT=$PWD/.artifact-restore/.artifact-runtime" >> "$GITHUB_ENV"
-          elif [ -d .artifact-restore/datasets ]; then
-            echo "Using runtime artifact root at .artifact-restore"
-            echo "DATA_ROOT=$PWD/.artifact-restore" >> "$GITHUB_ENV"
-          elif [ -d .artifact-restore/report/public/datasets ]; then
-            echo "Using legacy artifact layout and rebuilding runtime tree"
-            rm -rf .artifact-runtime
-            mkdir -p .artifact-runtime/datasets .artifact-runtime/data
-            cp -R .artifact-restore/report/public/datasets/. .artifact-runtime/datasets/
-            cp -R .artifact-restore/report/public/data/. .artifact-runtime/data/ 2>/dev/null || true
-            echo "DATA_ROOT=$PWD/.artifact-runtime" >> "$GITHUB_ENV"
-          else
-            echo "No reusable dataset artifact found; falling back to repository runtime tree."
-            echo "DATA_ROOT=$PWD" >> "$GITHUB_ENV"
-          fi
-
       - name: Prepare static snapshot assets
         run: bun run report:sync-runtime-assets
 
       - name: Validate non-empty area index
-        run: |
-          node -e "const fs=require('node:fs'); const data=JSON.parse(fs.readFileSync('areas.gen.json','utf8')); if(!Array.isArray(data.areas)||data.areas.length===0){throw new Error('areas.gen.json has no areas; refusing to deploy empty site.')} console.log('areas:', data.areas.length)"
+        run: bun run scripts/ci/validate-areas-index.ts
 
       - name: Build static report shell
         run: bun run report:build:app
 
-      - name: Locate PMTiles sample
-        id: pmtiles_probe
-        run: |
-          node - <<'EOF'
-          const fs = require('node:fs')
-          const path = require('node:path')
-          const root = path.resolve('report/dist/datasets')
-
-          function walk(dir) {
-            const out = []
-            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-              const full = path.join(dir, entry.name)
-              if (entry.isDirectory()) out.push(...walk(full))
-              else out.push(full)
-            }
-            return out
-          }
-
-          if (!fs.existsSync(root)) {
-            throw new Error(`Missing datasets in dist: ${root}`)
-          }
-          const sample = walk(root).find((filePath) =>
-            filePath.endsWith(path.join('output', 'comparison.pmtiles')),
-          )
-          if (!sample) {
-            throw new Error('No output/comparison.pmtiles found in report/dist')
-          }
-          const rel = path.relative(path.resolve('report/dist'), sample).replaceAll(path.sep, '/')
-          console.log(`PMTiles sample: ${rel}`)
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `pmtiles_path=${rel}\n`)
-          EOF
-
       - name: PMTiles byte-range smoke test
-        run: |
-          set -euo pipefail
-          python3 -m http.server 4173 --directory report/dist >/tmp/pmtiles-http.log 2>&1 &
-          server_pid=$!
-          trap 'kill "$server_pid"' EXIT
-          sleep 2
-
-          base_url="http://127.0.0.1:4173/${{ steps.pmtiles_probe.outputs.pmtiles_path }}"
-          curl -fsSI "$base_url" | grep -qi '^Content-Length:'
-          curl -fsSI -H 'Range: bytes=0-15' "$base_url" | grep -qi '^Content-Range: bytes'
+        run: bun run scripts/ci/pmtiles-byte-range-smoke-test.ts
 
       - uses: actions/upload-pages-artifact@v3
         with:

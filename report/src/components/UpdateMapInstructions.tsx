@@ -132,9 +132,7 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
       </div>
 
       {row.officialForEditPath === undefined && (
-        <p className="mt-6 border-t border-slate-700 pt-4 text-xs text-slate-500">
-          {u.legacyTableHint}
-        </p>
+        <p className="mt-6 border-t border-slate-700 pt-4 text-xs text-slate-500">{u.tableHint}</p>
       )}
     </section>
   )
