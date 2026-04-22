@@ -229,17 +229,6 @@ function removeObsoleteOutputFiles(outDir: string) {
   }
 }
 
-function removeObsoleteJsonOutputs(outDir: string, areaPath: string) {
-  for (const p of [join(outDir, TABLE_JSON), join(areaPath, 'snapshots.json')]) {
-    if (!existsSync(p)) continue
-    try {
-      unlinkSync(p)
-    } catch {
-      /* ignore */
-    }
-  }
-}
-
 type StaticComparisonPayload = {
   area: string
   generatedAt: string
@@ -521,7 +510,6 @@ export function writeOutputs(
     officialOnly.length,
     unmatchedOsm.length,
   )
-  removeObsoleteJsonOutputs(outDir, areaPath)
 
   return { snapshotId }
 }
