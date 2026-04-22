@@ -1,9 +1,8 @@
 #!/usr/bin/env bun
 import { spawnSync } from 'node:child_process'
 /**
- * Build one shared OSM FlatGeobuf for all compare runs: every administrative
- * boundary with `de:regionalschluessel`, plus Germany (`admin_level=2`) when
- * the tag is missing (synthetic RS for BKG Staat).
+ * Build one shared OSM FlatGeobuf for all compare runs:
+ * administrative boundaries with non-empty `de:regionalschluessel`.
  *
  * Outputs:
  * - admin (`--kind admin`, default): `.cache/osm/germany-admin-boundaries-rs.fgb`
@@ -33,23 +32,15 @@ const GDAL_OSM_BOUNDARIES_INI = join(
 )
 
 /**
- * Broad extract: any admin boundary with RS, or Deutschland without RS (synthetic).
- * SQLite dialect: aligned with the canonical `de-staat` extraction behavior when RS is missing.
+ * Broad extract: any administrative boundary with a non-empty
+ * `de:regionalschluessel`.
  */
 const SHARED_OSM_OGR_SQL = `
-SELECT geometry,
-  CASE
-    WHEN admin_level = '2' AND name = 'Deutschland'
-      AND ("de:regionalschluessel" IS NULL OR "de:regionalschluessel" = '')
-    THEN '000000000000'
-    ELSE "de:regionalschluessel"
-  END AS "de:regionalschluessel"
+SELECT geometry, "de:regionalschluessel"
 FROM multipolygons
 WHERE boundary = 'administrative'
-  AND (
-    ("de:regionalschluessel" IS NOT NULL AND "de:regionalschluessel" <> '')
-    OR (admin_level = '2' AND name = 'Deutschland')
-  )
+  AND "de:regionalschluessel" IS NOT NULL
+  AND "de:regionalschluessel" <> ''
 `.trim()
 
 const SHARED_OSM_PLZ_OGR_SQL = `

@@ -107,9 +107,9 @@ This is a **`package.json` chain** (not a monolithic script): `download:bkg && d
 
 ### Source data (FlatGeobuf)
 
-Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Compare payloads are written as static JSON under `datasets/<slug>/output/` plus `snapshots.json`, while map artifacts stay file-based in `datasets/<slug>/output/*.pmtiles`. **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input for **all** compares is a **single shared** FlatGeobuf under **`.cache/osm/germany-admin-boundaries-rs.fgb`** produced by **`bun run osm:extract`**. Optional **`source/metadata.json`** records when data was fetched and is embedded into compare payload provenance.
+Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Compare payloads are written as static JSON under `datasets/<slug>/output/` plus `snapshots.json`, while map artifacts stay file-based in `datasets/<slug>/output/*.pmtiles`. **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input defaults to shared FlatGeobufs under **`.cache/osm/`** produced by **`bun run osm:extract`** (admin: `germany-admin-boundaries-rs.fgb`, plz: `germany-postal-code-boundaries.fgb`), and can be overridden per area via `osm.path` or `osm.sharedFgbBasename`. Optional **`source/metadata.json`** records when data was fetched and is embedded into compare payload provenance.
 
-**`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, optional **`official.keyTransposition`** (map official IDs → `de:regionalschluessel` when the source has no Schlüssel), **`idNormalization`**, **`metricsCrs`**, optional **`compare.applyBboxFilter`** / **`compare.bboxBufferDegrees`** (prefilter shared OSM features by a buffered bbox around official data), optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). There is no per-area OSM path or `osmExtract` block anymore.
+**`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, optional **`official.constantMatchKey`**, optional **`official.keyTransposition`** (map official IDs to raw OSM-style keys when the source has no compatible Schlüssel), **`osm.matchProperty`**, optional **`osm.matchCriteria`** (for example `relation_id` selectors), optional **`osm.path`** / **`osm.sharedFgbBasename`**, **`idNormalization`**, **`metricsCrs`**, optional **`compare.applyBboxFilter`** / **`compare.bboxBufferDegrees`**, optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). Legacy per-area `osmExtract` blocks are no longer used by compare.
 
 Convert from GeoJSON (or GPKG, etc.) with GDAL:
 
@@ -131,7 +131,7 @@ docker compose run --rm pipeline bun run bkg:extract
 
 See [docs/vg25-bkg.md](docs/vg25-bkg.md) for URLs, `ogrinfo`, and layer notes.
 
-**OSM PBF → shared OSM FlatGeobuf:** one **`ogr2ogr`** pass writes **`.cache/osm/germany-admin-boundaries-rs.fgb`**. It includes **every** administrative boundary with a non-empty **`de:regionalschluessel`**, and **Germany** (`admin_level=2`, `name=Deutschland`) with a **synthetic** `000000000000` when the tag is missing (Staat compare). Per-area `admin_level` filtering was removed so mismatched keys stay visible in **`unmatchedOsm`**.
+**OSM PBF → shared OSM FlatGeobuf:** one **`ogr2ogr`** pass writes **`.cache/osm/germany-admin-boundaries-rs.fgb`** (default `--kind admin`). It includes administrative boundaries with a non-empty **`de:regionalschluessel`** only. For `de-staat`, matching is configured via Germany relation identity (`relation/51477`) instead of synthetic RS injection. Per-area `admin_level` filtering was removed so mismatched keys stay visible in **`unmatchedOsm`**.
 
 ```bash
 docker compose run --rm pipeline bun run osm:download              # → .cache/osm/germany-latest.osm.pbf
@@ -141,7 +141,7 @@ docker compose run --rm pipeline bun run osm                       # download th
 # bun run osm:extract -- --dry-run
 ```
 
-Under the hood: **`osmium tags-filter`** (`r/w boundary=administrative`) then **`ogr2ogr -f FlatGeobuf`** with **`OSM_CONFIG_FILE=scripts/osm/gdal-osm-boundaries.ini`** and a **SQLite** `-sql` that selects the broad predicate (see [`scripts/osm/extract-osm.ts`](scripts/osm/extract-osm.ts)). The `--area` flag is ignored (compat only).
+Under the hood: **`osmium tags-filter`** then **`ogr2ogr -f FlatGeobuf`** with **`OSM_CONFIG_FILE=scripts/osm/gdal-osm-boundaries.ini`** and a **SQLite** `-sql` selected by `--kind` (admin/plz) in [`scripts/osm/extract-osm.ts`](scripts/osm/extract-osm.ts). The `--area` flag is ignored (compat only).
 
 Loading is implemented in [`scripts/compare/lib/loadFeatureCollection.ts`](scripts/compare/lib/loadFeatureCollection.ts); tippecanoe input is built in [`scripts/compare/lib/writeOutputs.ts`](scripts/compare/lib/writeOutputs.ts).
 

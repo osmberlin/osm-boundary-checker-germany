@@ -11,7 +11,7 @@ export const GERMANY_OSM_FILTERED_BASENAME = 'germany-boundaries-administrative.
 
 /**
  * Single shared FlatGeobuf for all compare runs: administrative boundaries with
- * `de:regionalschluessel`, plus Staat (Germany) with synthetic RS when missing.
+ * non-empty `de:regionalschluessel`.
  */
 export const GERMANY_OSM_SHARED_FGB_BASENAME = 'germany-admin-boundaries-rs.fgb'
 /** Shared FlatGeobuf for postal code boundaries keyed by `postal_code`. */

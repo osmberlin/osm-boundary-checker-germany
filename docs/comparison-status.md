@@ -28,11 +28,11 @@ Approximate row counts from `output/comparison_table.json`:
 
 ## OSM `ogrWhere` vs BKG (feature counts)
 
-Source: `ogrinfo … -so` on `datasets/<area>/source/official.fgb` (BKG layer) and `source/osm.fgb` layer `boundaries` after `osm:extract`. Postpass (same SQL predicates + Germany bbox) matches these OSM counts for the **Germany** extract; a raw bbox query on the planet DB can include foreign `admin_level=4` polygons — use Geofabrik-derived extracts as ground truth.
+Source: `ogrinfo … -so` on `datasets/<area>/source/official.fgb` (BKG layer) and the shared OSM extract layer `boundaries` after `osm:extract`. Postpass (same SQL predicates + Germany bbox) matches these OSM counts for the **Germany** extract; a raw bbox query on the planet DB can include foreign `admin_level=4` polygons — use Geofabrik-derived extracts as ground truth.
 
 | Area                         | BKG features        | OSM `boundaries` | Notes                                                                                                                                                                                                                                                                                                       |
 | ---------------------------- | ------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| de-staat                     | `vg25_sta`: 8       | 1                | National border compare uses `ogrSql` on OSM Deutschland only, not full `vg25_sta`.                                                                                                                                                                                                                         |
+| de-staat                     | `vg25_sta`: 8       | 1                | National border compare is pinned to Germany relation identity (`relation/51477`) via area config; it does not require synthetic RS in the shared extract.                                                                                                                                                  |
 | de-laender                   | `vg25_lan`: 26      | 16               | 26 polygons in GPKG; **16** unique match rows after `regional-12` join (full Länder set in OSM).                                                                                                                                                                                                            |
 | de-regierungsbezirke         | `vg25_rbz`: 19      | 19               | Aligned.                                                                                                                                                                                                                                                                                                    |
 | **de-landkreise**            | `vg25_krs`: **403** | **401**          | **Stadtstaaten:** `ogrWhere` ORs `admin_level=4` where RS matches Kreis-form **LL0000000000** with `SUBSTR` and **Land code** `LL` ∈ {`02`,`11`} (HH/BE; excludes e.g. `09…` Land polygons). 399 `@ al6` + 2. **Remaining gap:** **3** `official_only` keys (see below), **1** `osm_only` → 404 union rows. |
@@ -48,7 +48,7 @@ Source: `ogrinfo … -so` on `datasets/<area>/source/official.fgb` (BKG layer) a
 
 - **de-landkreise** — Stadtstaaten HH/BE are covered by the explicit OR in `datasets/de-landkreise/config.jsonc` (see table above). Remaining `official_only` rows are other ARS (e.g. RP/Saar edge cases); `osm_only` is usually Kreis mergers (e.g. Hanau).
 
-- **de-staat** — One `official_only` row uses a non-numeric match key (`--`), i.e. bad/empty ARS in the official file; the national border row matches the synthetic OSM key `000000000000`.
+- **de-staat** — One `official_only` row uses a non-numeric match key (`--`), i.e. bad/empty ARS in the official file; national-border matching is now configured by OSM relation identity instead of synthetic `000000000000`.
 
 - **de-gemeinden** — ~1k unmatched rows mix missing OSM tags, `admin_level=8` coverage gaps, and edge cases (names, dissolved municipalities, etc.). Expect ongoing drift; the compare pipeline is behaving as designed.
 

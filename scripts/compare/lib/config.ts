@@ -29,6 +29,12 @@ export type OsmConfig = {
   /** Property on OSM features used as matching key (for example `de:regionalschluessel`, `postal_code`). */
   matchProperty: string
   /**
+   * Optional alternate matching criteria.
+   * - `property`: match on a property value (default behavior).
+   * - `relation_id`: match only selected relation IDs using `@id` (for example `relation/51477`).
+   */
+  matchCriteria?: { kind: 'property' } | { kind: 'relation_id'; relationIds: string[] }
+  /**
    * Optional runtime-root relative or absolute path to the OSM FlatGeobuf.
    * If omitted, sharedFgbBasename under `.cache/osm` is used.
    */
@@ -42,6 +48,8 @@ export type BoundaryConfig = {
   official: {
     path: string
     matchProperty: string
+    /** Optional fixed key for all official rows in this dataset (normalized with preset). */
+    constantMatchKey?: string
     keyTransposition?: OfficialKeyTransposition
   }
   osm: OsmConfig
@@ -104,8 +112,40 @@ function parseOsmConfig(areaLabel: string, raw: unknown): OsmConfig {
     throw new Error(`${areaLabel}: osm.path or osm.sharedFgbBasename must be provided`)
   }
 
-  if (pathRaw) return { matchProperty, path: pathRaw }
-  return { matchProperty, sharedFgbBasename: sharedRaw }
+  const matchCriteriaRaw = o.matchCriteria
+  let matchCriteria: OsmConfig['matchCriteria'] | undefined
+  if (matchCriteriaRaw !== undefined) {
+    if (
+      typeof matchCriteriaRaw !== 'object' ||
+      matchCriteriaRaw === null ||
+      Array.isArray(matchCriteriaRaw)
+    ) {
+      throw new Error(`${areaLabel}: osm.matchCriteria must be an object`)
+    }
+    const m = matchCriteriaRaw as Record<string, unknown>
+    const kind = typeof m.kind === 'string' ? m.kind.trim() : ''
+    if (kind === '' || kind === 'property') {
+      matchCriteria = { kind: 'property' }
+    } else if (kind === 'relation_id') {
+      if (!Array.isArray(m.relationIds) || m.relationIds.length === 0) {
+        throw new Error(`${areaLabel}: osm.matchCriteria.relationIds must be a non-empty array`)
+      }
+      const relationIds = m.relationIds.map((v) => String(v).trim()).filter((v) => v.length > 0)
+      if (relationIds.length === 0) {
+        throw new Error(`${areaLabel}: osm.matchCriteria.relationIds must contain non-empty values`)
+      }
+      matchCriteria = { kind: 'relation_id', relationIds }
+    } else {
+      throw new Error(`${areaLabel}: osm.matchCriteria.kind must be "property" or "relation_id"`)
+    }
+  }
+
+  if (pathRaw) return { matchProperty, ...(matchCriteria ? { matchCriteria } : {}), path: pathRaw }
+  return {
+    matchProperty,
+    ...(matchCriteria ? { matchCriteria } : {}),
+    sharedFgbBasename: sharedRaw,
+  }
 }
 
 export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryConfig {
@@ -136,6 +176,9 @@ export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryC
     official: {
       path: String(official.path).trim(),
       matchProperty,
+      ...(typeof official.constantMatchKey === 'string' && official.constantMatchKey.trim() !== ''
+        ? { constantMatchKey: official.constantMatchKey.trim() }
+        : {}),
       ...(keyTransposition ? { keyTransposition } : {}),
     },
     osm,

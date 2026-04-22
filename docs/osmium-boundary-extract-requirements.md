@@ -42,11 +42,7 @@ osmium tags-filter \
 During conversion to final output, include only features that satisfy:
 
 - `boundary = administrative`, and
-- either non-empty `de:regionalschluessel`, or national Germany polygon (`admin_level=2`, `name=Deutschland`).
-
-Special rule:
-
-- If Germany (`admin_level=2`, `name=Deutschland`) has missing `de:regionalschluessel`, set synthetic value `000000000000`.
+- non-empty `de:regionalschluessel`.
 
 ## Output Target Format
 
@@ -61,7 +57,7 @@ Special rule:
 ### Required output attributes
 
 - `geometry`
-- `de:regionalschluessel` (string, non-empty except synthetic national fallback now filled)
+- `de:regionalschluessel` (string, non-empty)
 - `boundary`
 - `admin_level`
 - `name`
@@ -72,20 +68,17 @@ Special rule:
 Equivalent to:
 
 ```sql
-SELECT geometry,
-  CASE
-    WHEN admin_level = '2' AND name = 'Deutschland'
-      AND ("de:regionalschluessel" IS NULL OR "de:regionalschluessel" = '')
-    THEN '000000000000'
-    ELSE "de:regionalschluessel"
-  END AS "de:regionalschluessel"
+SELECT geometry, "de:regionalschluessel"
 FROM multipolygons
 WHERE boundary = 'administrative'
-  AND (
-    ("de:regionalschluessel" IS NOT NULL AND "de:regionalschluessel" <> '')
-    OR (admin_level = '2' AND name = 'Deutschland')
-  )
+  AND "de:regionalschluessel" IS NOT NULL
+  AND "de:regionalschluessel" <> ''
 ```
+
+## Germany national compare note
+
+- National-border compare (`de-staat`) should not rely on synthetic RS injection in the extract.
+- It is supported via dataset-level compare matching criteria (for example OSM relation identity such as `relation/51477`) configured in area `config.jsonc`.
 
 ## Non-functional Requirements
 
@@ -105,7 +98,7 @@ WHERE boundary = 'administrative'
 - Nightly job completes with exit code `0`.
 - Output file exists and is readable as FlatGeobuf.
 - Layer `boundaries` can be queried and returns administrative polygons.
-- All records have a usable `de:regionalschluessel`; Germany national polygon uses `000000000000` when missing in source.
+- All records have a non-empty `de:regionalschluessel`.
 - Downstream compare step can consume the file without config changes.
 
 ## Open Decisions

@@ -8,7 +8,7 @@ import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
 import { unionFeaturesByKey } from './geoMerge.ts'
 import { loadFeatureCollection } from './loadFeatureCollection.ts'
 import { calculateMetrics, type MetricResult } from './metrics.ts'
-import { normalizeOsmValue } from './normalizeGermanKey.ts'
+import { normalizeOfficialValue, normalizeOsmValue } from './normalizeGermanKey.ts'
 import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
 import { projectGeometry } from './projectGeometry.ts'
 
@@ -85,6 +85,13 @@ function filterOsmByOfficialBbox(
 
 const DEFAULT_BBOX_BUFFER_DEG = 0.05
 
+function parseRelationId(rawId: unknown): string | null {
+  const id = typeof rawId === 'string' ? rawId.trim() : ''
+  if (!id.startsWith('relation/')) return null
+  const relId = id.slice('relation/'.length).trim()
+  return relId.length > 0 ? relId : null
+}
+
 export async function runCompare(
   runtimeRoot: string,
   areaFolder: string,
@@ -105,6 +112,10 @@ export async function runCompare(
     )
   }
   const osmMatchProperty = config.osm.matchProperty
+  const relationIdCriteria =
+    config.osm.matchCriteria?.kind === 'relation_id'
+      ? new Set(config.osm.matchCriteria.relationIds)
+      : null
   const preset = config.idNormalization.preset
   const metricsCrs = config.metricsCrs
 
@@ -126,30 +137,47 @@ export async function runCompare(
     osmFc = { type: 'FeatureCollection', features: filtered }
   }
 
-  const officialMap = unionFeaturesByKey(officialFc, (props) =>
-    officialPropertyToMatchKey(
+  const officialMap = unionFeaturesByKey(officialFc, (props) => {
+    if (config.official.constantMatchKey) {
+      return normalizeOfficialValue(config.official.constantMatchKey, preset)
+    }
+    return officialPropertyToMatchKey(
       props as Record<string, unknown> | null,
       config.official.matchProperty,
       config.official.keyTransposition,
       preset,
-    ),
-  )
+    )
+  })
 
   const osmMap = unionFeaturesByKey(osmFc, (props) => {
-    const v = (props as Record<string, unknown>)?.[osmMatchProperty]
+    const p = props as Record<string, unknown>
+    if (relationIdCriteria) {
+      const relId = parseRelationId(p?.['@id'])
+      if (!relId || !relationIdCriteria.has(relId)) return null
+      return normalizeOsmValue('osm_relation_id', relId, preset).canonicalMatchKey
+    }
+    const v = p?.[osmMatchProperty]
     if (v == null) return null
-    const n = normalizeOsmValue(osmMatchProperty, String(v), preset)
-    return n.canonicalMatchKey
+    return normalizeOsmValue(osmMatchProperty, String(v), preset).canonicalMatchKey
   })
 
   const osmNameByKey = new Map<string, string>()
   for (const f of osmFc.features) {
-    const v = (f.properties as Record<string, unknown>)?.[osmMatchProperty]
-    if (v == null) continue
-    const n = normalizeOsmValue(osmMatchProperty, String(v), preset)
+    const props = f.properties as Record<string, unknown>
+    let canonicalKey: string | null = null
+    if (relationIdCriteria) {
+      const relId = parseRelationId(props?.['@id'])
+      if (!relId || !relationIdCriteria.has(relId)) continue
+      canonicalKey = normalizeOsmValue('osm_relation_id', relId, preset).canonicalMatchKey
+    } else {
+      const v = props?.[osmMatchProperty]
+      if (v == null) continue
+      canonicalKey = normalizeOsmValue(osmMatchProperty, String(v), preset).canonicalMatchKey
+    }
+    if (canonicalKey == null || canonicalKey.length === 0) continue
     const nm = (f.properties as Record<string, unknown>)?.name
-    if (typeof nm === 'string' && nm && !osmNameByKey.has(n.canonicalMatchKey)) {
-      osmNameByKey.set(n.canonicalMatchKey, nm)
+    if (typeof nm === 'string' && nm && !osmNameByKey.has(canonicalKey)) {
+      osmNameByKey.set(canonicalKey, nm)
     }
   }
 

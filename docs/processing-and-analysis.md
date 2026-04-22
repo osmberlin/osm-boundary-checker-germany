@@ -71,7 +71,9 @@ Nightlies and one-shot runs are orchestrated from the workspace root (see [READM
 2. **Matching key**
 
 - OSM side uses `**osm.matchProperty**` from that area’s `config.jsonc` (default `de:regionalschluessel`; PLZ compare uses `postal_code`).
+- Optional `**osm.matchCriteria**` supports identity matching (for example `relation_id` for Germany relation `51477` in `de-staat`) when tag-based joins are not reliable.
 - Official side uses the property named in `**official.matchProperty`\*\* in that area’s `config.jsonc` (e.g. BKG ARS column, Berlin Bezirke `name`, Berlin Ortsteile `sch`).
+- Optional `**official.constantMatchKey**` can pin a dataset to one stable join key regardless of source column quirks (used by `de-staat`).
 - Optional `**official.keyTransposition**`: when the official dataset has no compatible Schlüssel, map values from `**official.matchProperty**` to raw OSM Schlüssel strings, then normalize (`[scripts/compare/lib/officialKeyTransposition.ts](../scripts/compare/lib/officialKeyTransposition.ts)`).
 - Values are normalized with a **preset** (`berlin-bezirk-ags`, `amtlicher-8`, `regional-12`, `plz-5`) in `[scripts/compare/lib/normalizeGermanKey.ts](../scripts/compare/lib/normalizeGermanKey.ts)` so key formats align where intended.
 
@@ -120,7 +122,7 @@ Nightlies and one-shot runs are orchestrated from the workspace root (see [READM
 **Interpretation:**
 
 - **Matched + metrics** — Same normalized ID on both sides; IoU, area delta, symmetric difference, and Hausdorff describe **geometric** agreement. Low IoU or high Hausdorff → inspect map and tagging.
-- `**official_only`\*\* — Official unit has no OSM polygon with that key in the shared extract (missing or wrong `de:regionalschluessel`, wrong admin level in extract, mergers, etc.).
+- `**official_only`\*\* — Official unit has no OSM polygon with that key in the selected OSM extract (missing/wrong OSM key, missing identity target, mergers, etc.).
 - `**unmatchedOsm`\*\* — OSM has a boundary with a regional key that does not appear in this area’s official layer (extra mapping, wrong area file, or key normalization edge cases).
 
 Operational notes and example counts: [comparison-status.md](./comparison-status.md).

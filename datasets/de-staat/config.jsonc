@@ -1,8 +1,16 @@
 {
-  // National border: BKG ARS vs shared OSM extract (Germany RS or synthetic 000000000000).
+  // National border: match BKG national geometry to Germany relation ID (relation/51477).
   "official": {
     "path": "source/official.fgb",
     "matchProperty": "ARS",
+    // Ignore ARS-specific quirks and force a stable cross-source key for this dataset.
+    "constantMatchKey": "51477",
+  },
+  "osm": {
+    "matchCriteria": {
+      "kind": "relation_id",
+      "relationIds": ["51477"],
+    },
   },
   "idNormalization": {
     "preset": "regional-12",
