@@ -79,6 +79,14 @@ function nowIso(): string {
   return new Date().toISOString()
 }
 
+function formatDuration(durationMs: number): string {
+  if (durationMs < 1000) return `${durationMs}ms`
+  if (durationMs < 60_000) return `${(durationMs / 1000).toFixed(1)}s`
+  const minutes = Math.floor(durationMs / 60_000)
+  const seconds = ((durationMs % 60_000) / 1000).toFixed(1)
+  return `${minutes}m ${seconds}s`
+}
+
 function appendJsonl(path: string, event: LogEvent): void {
   appendFileSync(path, `${JSON.stringify(event)}\n`, 'utf-8')
 }
@@ -131,19 +139,24 @@ async function runStep(
   extraEnv?: Record<string, string>,
 ): Promise<number> {
   const t0 = Date.now()
+  console.log(`[pipeline] starting ${step}`)
   appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step })
   writeState(statePath, { ...state, phase: step, updatedAt: nowIso() })
   const exitCode = await runCommand(command, args, cwd, extraEnv)
   const status: StepStatus = exitCode === 0 ? 'ok' : 'fail'
+  const durationMs = Date.now() - t0
   appendJsonl(logPath, {
     kind: 'step_end',
     runId,
     at: nowIso(),
     step,
     status,
-    durationMs: Date.now() - t0,
+    durationMs,
     exitCode,
   })
+  console.log(
+    `[pipeline] ${status === 'ok' ? 'finished' : 'failed'} ${step} in ${formatDuration(durationMs)} (exit ${exitCode})`,
+  )
   return exitCode
 }
 
@@ -180,6 +193,7 @@ async function main() {
   writeState(statePath, state)
   appendJsonl(logPath, { kind: 'run_start', runId, at: startedAt, timezone })
   const runT0 = Date.now()
+  console.log(`[pipeline] run ${runId} started (${timezone})`)
 
   let failed = false
   const fail = () => {
@@ -222,35 +236,45 @@ async function main() {
     for (const area of areas) {
       if (failed) break
       const t0 = Date.now()
+      const stepName = `compare:${area}`
+      console.log(`[pipeline] starting ${stepName}`)
       appendJsonl(logPath, { kind: 'dataset_start', runId, at: nowIso(), dataset: area })
-      writeState(statePath, { ...state, phase: `compare:${area}`, updatedAt: nowIso() })
+      writeState(statePath, { ...state, phase: stepName, updatedAt: nowIso() })
       const exitCode = await runCommand(
         'bun',
         ['run', 'compare:boundaries', '--', '--area', area],
         workspaceRoot,
         { CI: '1' },
       )
+      const durationMs = Date.now() - t0
       appendJsonl(logPath, {
         kind: 'dataset_end',
         runId,
         at: nowIso(),
         dataset: area,
         status: exitCode === 0 ? 'ok' : 'fail',
-        durationMs: Date.now() - t0,
+        durationMs,
         exitCode,
       })
+      console.log(
+        `[pipeline] ${exitCode === 0 ? 'finished' : 'failed'} ${stepName} in ${formatDuration(durationMs)} (exit ${exitCode})`,
+      )
       if (exitCode !== 0) fail()
     }
 
     const finalStatus = failed ? 'fail' : 'ok'
     const finishedAt = nowIso()
+    const runDurationMs = Date.now() - runT0
     appendJsonl(logPath, {
       kind: 'run_end',
       runId,
       at: finishedAt,
       status: finalStatus,
-      durationMs: Date.now() - runT0,
+      durationMs: runDurationMs,
     })
+    console.log(
+      `[pipeline] run ${runId} ${finalStatus === 'ok' ? 'finished' : 'failed'} in ${formatDuration(runDurationMs)}`,
+    )
     writeState(statePath, {
       ...state,
       inProgress: false,
