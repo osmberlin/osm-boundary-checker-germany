@@ -10,10 +10,10 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["bun"],
-    "baseUrl": ".",
     "paths": {
+      "*": ["./*"],
       "@compare-metrics/*": ["../scripts/compare/lib/metrics/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts", "index.html"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts", "index.html", "vite-env.d.ts"]
 }
