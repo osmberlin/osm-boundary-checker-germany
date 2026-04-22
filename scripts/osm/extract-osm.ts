@@ -5,7 +5,9 @@ import { spawnSync } from 'node:child_process'
  * boundary with `de:regionalschluessel`, plus Germany (`admin_level=2`) when
  * the tag is missing (synthetic RS for BKG Staat).
  *
- * Output: `.cache/osm/germany-admin-boundaries-rs.fgb` (see `germanyOsmPbf.ts`).
+ * Outputs:
+ * - admin (`--kind admin`, default): `.cache/osm/germany-admin-boundaries-rs.fgb`
+ * - plz (`--kind plz`): `.cache/osm/germany-postal-code-boundaries.fgb`
  *
  * Prerequisites: `osmium` and `ogr2ogr` on PATH; run `bun run osm:download` first
  * (or set `OSM_GERMANY_PBF` / `--pbf`).
@@ -19,6 +21,7 @@ import {
   GERMANY_OSM_FILTERED_BASENAME,
   GERMANY_OSM_PBF_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
+  GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
 } from '../shared/germanyOsmPbf.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
@@ -31,7 +34,7 @@ const GDAL_OSM_BOUNDARIES_INI = join(
 
 /**
  * Broad extract: any admin boundary with RS, or Deutschland without RS (synthetic).
- * SQLite dialect: same as legacy `de-staat` when RS missing.
+ * SQLite dialect: aligned with the canonical `de-staat` extraction behavior when RS is missing.
  */
 const SHARED_OSM_OGR_SQL = `
 SELECT geometry,
@@ -49,11 +52,22 @@ WHERE boundary = 'administrative'
   )
 `.trim()
 
+const SHARED_OSM_PLZ_OGR_SQL = `
+SELECT geometry, postal_code
+FROM multipolygons
+WHERE boundary = 'postal_code'
+  AND postal_code IS NOT NULL
+  AND postal_code <> ''
+`.trim()
+
+type ExtractKind = 'admin' | 'plz'
+
 function parseArgs(argv: string[]) {
   let pbf: string | null = null
   let skipTagsFilter = false
   let forceTagsFilter = false
   let dryRun = false
+  let kind: ExtractKind = 'admin'
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--pbf') {
       const v = argv[i + 1]
@@ -66,13 +80,22 @@ function parseArgs(argv: string[]) {
     if (argv[i] === '--skip-tags-filter') skipTagsFilter = true
     if (argv[i] === '--force-tags-filter') forceTagsFilter = true
     if (argv[i] === '--dry-run') dryRun = true
+    if (argv[i] === '--kind') {
+      const v = argv[i + 1]?.trim().toLowerCase()
+      if (v === 'admin' || v === 'plz') {
+        kind = v
+        i++
+        continue
+      }
+      throw new Error(`--kind must be "admin" or "plz"`)
+    }
     if (argv[i] === '--area') {
       console.warn('[osm:extract] --area is ignored; a single shared OSM FGB is always built.')
       const v = argv[i + 1]
       if (v !== undefined) i++
     }
   }
-  return { pbf, skipTagsFilter, forceTagsFilter, dryRun }
+  return { pbf, skipTagsFilter, forceTagsFilter, dryRun, kind }
 }
 
 function shouldRunTagsFilter(inputPbf: string, filteredPbf: string, force: boolean): boolean {
@@ -105,7 +128,7 @@ function runOsmiumTagsFilter(
   if (r.status !== 0) process.exit(r.status ?? 1)
 }
 
-function runOgr2ogr(inputPbf: string, outFgb: string, dryRun: boolean): void {
+function runOgr2ogr(inputPbf: string, outFgb: string, sql: string, dryRun: boolean): void {
   const args = [
     '--config',
     'OSM_CONFIG_FILE',
@@ -120,7 +143,7 @@ function runOgr2ogr(inputPbf: string, outFgb: string, dryRun: boolean): void {
     '-dialect',
     'SQLITE',
     '-sql',
-    SHARED_OSM_OGR_SQL,
+    sql,
   ]
 
   if (dryRun) {
@@ -142,7 +165,13 @@ function runOgr2ogr(inputPbf: string, outFgb: string, dryRun: boolean): void {
 function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
-  const { pbf: pbfArg, skipTagsFilter, forceTagsFilter, dryRun } = parseArgs(process.argv.slice(2))
+  const {
+    pbf: pbfArg,
+    skipTagsFilter,
+    forceTagsFilter,
+    dryRun,
+    kind,
+  } = parseArgs(process.argv.slice(2))
 
   const defaultPbf = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_PBF_BASENAME)
   const inputPbf = pbfArg?.trim() || process.env.OSM_GERMANY_PBF?.trim() || defaultPbf
@@ -180,11 +209,14 @@ function main() {
     console.log('Using full input PBF for ogr2ogr (--skip-tags-filter). This can be very slow.')
   }
 
-  const outFgb = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_SHARED_FGB_BASENAME)
-  console.log(
-    `\nShared OSM extract → ${join(GERMANY_OSM_CACHE_DIR, GERMANY_OSM_SHARED_FGB_BASENAME)}`,
-  )
-  runOgr2ogr(pbfForOgr, outFgb, dryRun)
+  const extractTargets: Record<ExtractKind, { basename: string; sql: string }> = {
+    admin: { basename: GERMANY_OSM_SHARED_FGB_BASENAME, sql: SHARED_OSM_OGR_SQL },
+    plz: { basename: GERMANY_OSM_SHARED_PLZ_FGB_BASENAME, sql: SHARED_OSM_PLZ_OGR_SQL },
+  }
+  const target = extractTargets[kind]
+  const outFgb = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, target.basename)
+  console.log(`\nShared OSM extract (${kind}) → ${join(GERMANY_OSM_CACHE_DIR, target.basename)}`)
+  runOgr2ogr(pbfForOgr, outFgb, target.sql, dryRun)
 
   console.log('\nDone.')
 }

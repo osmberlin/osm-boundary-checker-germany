@@ -37,6 +37,11 @@ describe('normalizeOfficialValue', () => {
     expect(normalizeOfficialValue('12;0;60;280', 'brandenburg-gemeinden-8')).toBe('12060280')
     expect(normalizeOfficialValue('12;0;51;000', 'brandenburg-gemeinden-8')).toBe('12051000')
   })
+  test('plz-5 normalizes official values to 5 digits', () => {
+    expect(normalizeOfficialValue('13585', 'plz-5')).toBe('13585')
+    expect(normalizeOfficialValue('1234', 'plz-5')).toBe('01234')
+    expect(normalizeOfficialValue('10115-000', 'plz-5')).toBe('10115')
+  })
 })
 
 describe('normalizeOsmValue regional-12', () => {
@@ -52,5 +57,21 @@ describe('normalizeOsmValue brandenburg-gemeinden-8', () => {
     const n = normalizeOsmValue('de:regionalschluessel', '120605003024', 'brandenburg-gemeinden-8')
     expect(n.canonicalMatchKey).toBe('12060024')
     expect(n.notes.some((x) => x.includes('first5-plus-last3'))).toBe(true)
+  })
+})
+
+describe('normalizeOsmValue plz-5', () => {
+  test('normalizes postal_code values to 5 digits', () => {
+    const n = normalizeOsmValue('postal_code', '12105', 'plz-5')
+    expect(n.canonicalMatchKey).toBe('12105')
+  })
+  test('pads short and truncates long values with notes', () => {
+    const padded = normalizeOsmValue('postal_code', '987', 'plz-5')
+    expect(padded.canonicalMatchKey).toBe('00987')
+    expect(padded.notes.some((x) => x.includes('left-padded'))).toBe(true)
+
+    const truncated = normalizeOsmValue('postal_code', '123456', 'plz-5')
+    expect(truncated.canonicalMatchKey).toBe('12345')
+    expect(truncated.notes.some((x) => x.includes('truncated'))).toBe(true)
   })
 })

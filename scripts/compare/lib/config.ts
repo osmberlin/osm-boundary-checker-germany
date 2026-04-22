@@ -1,4 +1,4 @@
-import { join } from 'node:path'
+import { isAbsolute, join } from 'node:path'
 import {
   GERMANY_OSM_CACHE_DIR,
   GERMANY_OSM_SHARED_FGB_BASENAME,
@@ -13,9 +13,9 @@ export type IdNormalizationPreset =
   | 'amtlicher-8'
   | 'regional-12'
   | 'brandenburg-gemeinden-8'
+  | 'plz-5'
 
-/** OSM tagging: fixed project-wide (all areas use the same column in GDAL output). */
-export const OSM_MATCH_PROPERTY = 'de:regionalschluessel'
+export const DEFAULT_OSM_MATCH_PROPERTY = 'de:regionalschluessel'
 
 /** Optional compare tuning (bbox prefilter, etc.). */
 export type CompareConfig = {
@@ -25,13 +25,26 @@ export type CompareConfig = {
   bboxBufferDegrees?: number
 }
 
-/** Paths under the area folder for official input only; OSM is always the shared cache FGB. */
+export type OsmConfig = {
+  /** Property on OSM features used as matching key (for example `de:regionalschluessel`, `postal_code`). */
+  matchProperty: string
+  /**
+   * Optional runtime-root relative or absolute path to the OSM FlatGeobuf.
+   * If omitted, sharedFgbBasename under `.cache/osm` is used.
+   */
+  path?: string
+  /** Optional basename under `.cache/osm` when `path` is not provided. */
+  sharedFgbBasename?: string
+}
+
+/** Paths under the area folder for official input; OSM path/key are configurable. */
 export type BoundaryConfig = {
   official: {
     path: string
     matchProperty: string
     keyTransposition?: OfficialKeyTransposition
   }
+  osm: OsmConfig
   compare?: CompareConfig
   idNormalization: { preset: IdNormalizationPreset }
   metricsCrs: string
@@ -61,41 +74,85 @@ function parseCompareConfig(areaLabel: string, raw: unknown): CompareConfig | un
   return Object.keys(out).length > 0 ? out : undefined
 }
 
+function parseOsmConfig(areaLabel: string, raw: unknown): OsmConfig {
+  if (raw === undefined || raw === null) {
+    return {
+      matchProperty: DEFAULT_OSM_MATCH_PROPERTY,
+      sharedFgbBasename: GERMANY_OSM_SHARED_FGB_BASENAME,
+    }
+  }
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error(`${areaLabel}: osm must be an object`)
+  }
+  const o = raw as Record<string, unknown>
+  const matchPropertyRaw = typeof o.matchProperty === 'string' ? o.matchProperty.trim() : ''
+  const matchProperty = matchPropertyRaw || DEFAULT_OSM_MATCH_PROPERTY
+
+  const pathRaw = typeof o.path === 'string' ? o.path.trim() : ''
+  const sharedRaw =
+    typeof o.sharedFgbBasename === 'string'
+      ? o.sharedFgbBasename.trim()
+      : GERMANY_OSM_SHARED_FGB_BASENAME
+
+  if (!matchProperty) {
+    throw new Error(`${areaLabel}: osm.matchProperty is empty`)
+  }
+  if (pathRaw && sharedRaw && sharedRaw !== GERMANY_OSM_SHARED_FGB_BASENAME) {
+    throw new Error(`${areaLabel}: set only one of osm.path or osm.sharedFgbBasename`)
+  }
+  if (!pathRaw && !sharedRaw) {
+    throw new Error(`${areaLabel}: osm.path or osm.sharedFgbBasename must be provided`)
+  }
+
+  if (pathRaw) return { matchProperty, path: pathRaw }
+  return { matchProperty, sharedFgbBasename: sharedRaw }
+}
+
 export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryConfig {
-  const c = json as BoundaryConfig
-  if (!c?.official?.path || !c?.official?.matchProperty) {
+  const c = json as Record<string, unknown>
+  const official = c.official as Record<string, unknown> | undefined
+  if (!official?.path || !official?.matchProperty) {
     throw new Error('Invalid area config: missing official.path or official.matchProperty')
   }
-  if (!c?.idNormalization?.preset || !c?.metricsCrs) {
+  const idNormalization = c.idNormalization as Record<string, unknown> | undefined
+  if (!idNormalization?.preset || !c?.metricsCrs) {
     throw new Error('Invalid area config: missing idNormalization.preset or metricsCrs')
   }
-  const matchProperty = String(c.official.matchProperty).trim()
+  const matchProperty = String(official.matchProperty).trim()
   if (!matchProperty) {
     throw new Error('Invalid area config: official.matchProperty is empty')
   }
 
-  const officialRaw = c.official as Record<string, unknown>
   const keyTransposition = parseOfficialKeyTransposition(
     areaLabel,
     matchProperty,
-    officialRaw.keyTransposition,
+    official.keyTransposition,
   )
 
-  const compare = parseCompareConfig(areaLabel, (c as Record<string, unknown>).compare)
+  const compare = parseCompareConfig(areaLabel, c.compare)
+  const osm = parseOsmConfig(areaLabel, c.osm)
 
   return {
     official: {
-      path: String(c.official.path).trim(),
+      path: String(official.path).trim(),
       matchProperty,
       ...(keyTransposition ? { keyTransposition } : {}),
     },
+    osm,
     ...(compare ? { compare } : {}),
-    idNormalization: c.idNormalization,
+    idNormalization: { preset: String(idNormalization.preset).trim() as IdNormalizationPreset },
     metricsCrs: String(c.metricsCrs).trim(),
   }
 }
 
-/** Runtime-root path to the shared OSM FlatGeobuf (`bun run osm:extract`). */
-export function sharedGermanyOsmFgbPath(runtimeRoot: string): string {
-  return join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_SHARED_FGB_BASENAME)
+/** Runtime-root path for configured OSM FlatGeobuf. */
+export function osmFgbPathFromConfig(runtimeRoot: string, osm: OsmConfig): string {
+  if (osm.path) {
+    return isAbsolute(osm.path) ? osm.path : join(runtimeRoot, osm.path)
+  }
+  return join(
+    runtimeRoot,
+    GERMANY_OSM_CACHE_DIR,
+    osm.sharedFgbBasename ?? GERMANY_OSM_SHARED_FGB_BASENAME,
+  )
 }

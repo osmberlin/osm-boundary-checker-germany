@@ -1,0 +1,9 @@
+{
+  "official": {
+    "downloadedAt": "2026-04-22T18:56:19.568Z",
+    "provider": "HTTP",
+    "dataset": "GeoJSON",
+    "sourceUrl": "https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json",
+    "note": "Declared CRS: EPSG:4326"
+  }
+}

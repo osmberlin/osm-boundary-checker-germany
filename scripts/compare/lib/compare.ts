@@ -4,7 +4,7 @@ import * as turf from '@turf/turf'
 import type { BBox, Feature, Geometry } from 'geojson'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
 import type { BoundaryConfig } from './config.ts'
-import { loadBoundaryConfig, OSM_MATCH_PROPERTY, sharedGermanyOsmFgbPath } from './config.ts'
+import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
 import { unionFeaturesByKey } from './geoMerge.ts'
 import { loadFeatureCollection } from './loadFeatureCollection.ts'
 import { calculateMetrics, type MetricResult } from './metrics.ts'
@@ -98,10 +98,13 @@ export async function runCompare(
   const config = loadBoundaryConfig(configRaw, `${areaFolder}`)
   const areaPath = datasetFolderPath(runtimeRoot, areaFolder)
   const officialPath = join(areaPath, config.official.path)
-  const osmPath = sharedGermanyOsmFgbPath(runtimeRoot)
+  const osmPath = osmFgbPathFromConfig(runtimeRoot, config.osm)
   if (!existsSync(osmPath)) {
-    throw new Error(`Shared OSM FlatGeobuf not found:\n  ${osmPath}\n\nRun: bun run osm:extract`)
+    throw new Error(
+      `Configured OSM FlatGeobuf not found:\n  ${osmPath}\n\nRun: bun run osm:extract`,
+    )
   }
+  const osmMatchProperty = config.osm.matchProperty
   const preset = config.idNormalization.preset
   const metricsCrs = config.metricsCrs
 
@@ -133,17 +136,17 @@ export async function runCompare(
   )
 
   const osmMap = unionFeaturesByKey(osmFc, (props) => {
-    const v = (props as Record<string, unknown>)?.[OSM_MATCH_PROPERTY]
+    const v = (props as Record<string, unknown>)?.[osmMatchProperty]
     if (v == null) return null
-    const n = normalizeOsmValue(OSM_MATCH_PROPERTY, String(v), preset)
+    const n = normalizeOsmValue(osmMatchProperty, String(v), preset)
     return n.canonicalMatchKey
   })
 
   const osmNameByKey = new Map<string, string>()
   for (const f of osmFc.features) {
-    const v = (f.properties as Record<string, unknown>)?.[OSM_MATCH_PROPERTY]
+    const v = (f.properties as Record<string, unknown>)?.[osmMatchProperty]
     if (v == null) continue
-    const n = normalizeOsmValue(OSM_MATCH_PROPERTY, String(v), preset)
+    const n = normalizeOsmValue(osmMatchProperty, String(v), preset)
     const nm = (f.properties as Record<string, unknown>)?.name
     if (typeof nm === 'string' && nm && !osmNameByKey.has(n.canonicalMatchKey)) {
       osmNameByKey.set(n.canonicalMatchKey, nm)

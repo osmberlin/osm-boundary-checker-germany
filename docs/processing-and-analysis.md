@@ -66,14 +66,14 @@ Nightlies and one-shot runs are orchestrated from the workspace root (see [READM
 1. **Inputs**
 
 - **Official:** one FlatGeobuf per area at `datasets/<area>/<official.path>` (typically `source/official.fgb`).
-- **OSM:** a **single shared** FlatGeobuf for all areas: `.cache/osm/germany-admin-boundaries-rs.fgb`, built from the Germany extract. Every administrative feature carries a non-empty `de:regionalschluessel` where applicable (plus a synthetic key for the national border compare).
+- **OSM:** a shared FlatGeobuf selected per area via `osm.path` or `osm.sharedFgbBasename` (defaults to `.cache/osm/germany-admin-boundaries-rs.fgb`), built from the Germany extract.
 
 2. **Matching key**
 
-- OSM side always uses the tag `**de:regionalschluessel`\*\* (see `OSM_MATCH_PROPERTY` in `[scripts/compare/lib/config.ts](../scripts/compare/lib/config.ts)`).
+- OSM side uses `**osm.matchProperty**` from that area’s `config.jsonc` (default `de:regionalschluessel`; PLZ compare uses `postal_code`).
 - Official side uses the property named in `**official.matchProperty`\*\* in that area’s `config.jsonc` (e.g. BKG ARS column, Berlin Bezirke `name`, Berlin Ortsteile `sch`).
 - Optional `**official.keyTransposition**`: when the official dataset has no compatible Schlüssel, map values from `**official.matchProperty**` to raw OSM Schlüssel strings, then normalize (`[scripts/compare/lib/officialKeyTransposition.ts](../scripts/compare/lib/officialKeyTransposition.ts)`).
-- Values are normalized with a **preset** (`berlin-bezirk-ags`, `amtlicher-8`, `regional-12`) in `[scripts/compare/lib/normalizeGermanKey.ts](../scripts/compare/lib/normalizeGermanKey.ts)` so shortened official keys and 12-digit OSM keys align where intended.
+- Values are normalized with a **preset** (`berlin-bezirk-ags`, `amtlicher-8`, `regional-12`, `plz-5`) in `[scripts/compare/lib/normalizeGermanKey.ts](../scripts/compare/lib/normalizeGermanKey.ts)` so key formats align where intended.
 
 2b. **Optional bbox prefilter**  
  If `**compare.applyBboxFilter`** is true, compare derives a union bbox from official geometries, expands it by `**compare.bboxBufferDegrees`** (default `0.05`° when omitted), and drops OSM features whose bbox does not overlap before merge/metrics (`[scripts/compare/lib/compare.ts](../scripts/compare/lib/compare.ts)`).

@@ -1,0 +1,35 @@
+{
+  // Compare official BB/BE postal code polygons to OSM `boundary=postal_code` features.
+  "official": {
+    "path": "source/official.fgb",
+    "matchProperty": "plz",
+  },
+  "osm": {
+    "matchProperty": "postal_code",
+    "sharedFgbBasename": "germany-postal-code-boundaries.fgb",
+  },
+  "idNormalization": {
+    "preset": "plz-5",
+  },
+  "metricsCrs": "EPSG:25832",
+
+  "compare": {
+    "applyBboxFilter": true,
+    "bboxBufferDegrees": 0.05,
+  },
+
+  "download": {
+    "official": {
+      "kind": "http",
+      "url": "https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+    },
+  },
+
+  "sources": {
+    "official": {
+      "sourceUrl": "https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json",
+    },
+  },
+}

@@ -71,6 +71,12 @@ function normalizeBrandenburgGemeindenOfficial(raw: string): string {
   return digits.padStart(8, '0')
 }
 
+function normalizePlz5Digits(digits: string): string {
+  if (!digits) return ''
+  if (digits.length >= 5) return digits.slice(0, 5)
+  return digits.padStart(5, '0')
+}
+
 export function normalizeOsmValue(
   sourceKey: string,
   rawValue: string | undefined | null,
@@ -128,6 +134,11 @@ export function normalizeOsmValue(
       notes.push(`unexpected-digit-length:${digits.length}`)
     }
     presetLabel = 'brandenburg-gemeinden-8'
+  } else if (preset === 'plz-5') {
+    canonicalMatchKey = normalizePlz5Digits(digits)
+    if (digits.length > 5) notes.push('plz-5-truncated')
+    if (digits.length > 0 && digits.length < 5) notes.push('plz-5-left-padded')
+    presetLabel = 'plz-5'
   }
 
   return {
@@ -149,6 +160,9 @@ export function normalizeOfficialValue(
   const digits = raw.replace(/\D/g, '')
   if (preset === 'brandenburg-gemeinden-8') {
     return normalizeBrandenburgGemeindenOfficial(raw)
+  }
+  if (preset === 'plz-5') {
+    return normalizePlz5Digits(digits)
   }
   if (preset === 'regional-12' && digits.length > 0) {
     if (digits.length >= 12) return digits.slice(0, 12)
