@@ -8,7 +8,7 @@
     "prepare-static-snapshot": "bun ./prepareStaticSnapshot.ts",
     "sync-runtime-assets": "bun run prepare-static-snapshot && bun run generate-areas",
     "bundle-static-assets": "bun ./bundleStaticAssets.ts",
-    "predev": "bun run generate-areas",
+    "predev": "bun run sync-runtime-assets",
     "dev": "vite",
     "lint:react-compiler": "eslint --max-warnings=0 .",
     "build": "bun run lint:react-compiler && rm -rf dist && vite build && bun run bundle-static-assets",

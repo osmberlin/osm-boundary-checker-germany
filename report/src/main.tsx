@@ -6,10 +6,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { de } from './i18n/de'
-import { router } from './router'
+import { createAppRouter } from './router'
 
 document.title = de.appTitle
 const queryClient = new QueryClient()
+const router = createAppRouter(queryClient)
 
 const rootEl = document.getElementById('root')
 if (!rootEl) {

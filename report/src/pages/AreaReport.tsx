@@ -1,6 +1,7 @@
 import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { lazy, type ReactNode, Suspense, useEffect, useId, useRef, useState } from 'react'
+import { lazy, type ReactNode, Suspense, useId, useRef, useState } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { LayerToggleStatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
@@ -12,7 +13,7 @@ import {
 } from '../components/HausdorffInfoModal'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
-import { loadComparison, loadSnapshots } from '../data/load'
+import { comparisonQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
 import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
@@ -72,17 +73,18 @@ function normalizeUnmatchedRows(data: ComparisonForReport): AreaReportRow[] {
 }
 
 export function AreaReport() {
-  const { areaId } = useParams({ strict: false })
+  const { areaId } = useParams({ strict: true })
   const navigate = useNavigate()
   const statsInputId = useId()
-  const [data, setData] = useState<ComparisonForReport | null>(null)
-  const [err, setErr] = useState<string | null>(null)
-  const [snapIndex, setSnapIndex] = useState<SnapshotsJson | null>(null)
   const { enabledSet, enabledCategories, setCategoryEnabled, isCategoryEnabled } =
     useAreaReportCategoryFilter()
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
   const { ref: chartRef, size: chartSize } = useMeasuredElementSize<HTMLDivElement>()
+  const comparisonQuery = useQuery(comparisonQueryOptions(areaId))
+  const snapshotsQuery = useQuery(snapshotsQueryOptions(areaId))
+  const data: ComparisonForReport | null = comparisonQuery.data ?? null
+  const snapIndex: SnapshotsJson | null = snapshotsQuery.data ?? null
 
   /** Main table rows from comparison payload. */
   const mainRows =
@@ -105,25 +107,6 @@ export function AreaReport() {
   const unmatchedMapAllowlist = !data || enabledSet.has('unmatched_osm') ? null : []
   const overviewMapBbox = unionMapBboxes(visibleRows)
 
-  useEffect(() => {
-    if (!areaId) return
-    let cancelled = false
-    ;(async () => {
-      try {
-        const [json, snap] = await Promise.all([loadComparison(areaId), loadSnapshots(areaId)])
-        if (cancelled) return
-        setData(json)
-        setErr(null)
-        setSnapIndex(snap)
-      } catch (e) {
-        if (!cancelled) setErr(String(e))
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [areaId])
-
   const chartData = !data
     ? []
     : (() => {
@@ -139,13 +122,11 @@ export function AreaReport() {
       })()
   const chartIsReady = chartSize.width > 0 && chartSize.height > 0
 
-  if (!areaId) return null
-
-  if (err) {
+  if (comparisonQuery.isError) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
         <div className="text-red-400">
-          {err}
+          {String(comparisonQuery.error)}
           <p className="mt-2 text-sm text-slate-400">
             {de.areaReport.errorRunCompare}{' '}
             <code className="rounded bg-slate-800 px-1 text-slate-200">bun run compare</code>{' '}
@@ -155,7 +136,7 @@ export function AreaReport() {
       </div>
     )
   }
-  if (!data) {
+  if (comparisonQuery.isPending || !data) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
         <p className="text-slate-400">{de.areaReport.loading}</p>
@@ -449,15 +430,15 @@ function SummaryStatColumn({
   relativeLine: string
   absoluteLine: string
 }) {
-  const mobileRelativeLine = relativeLine.replace(/\bStunden?\b/g, 'Std.')
+  const compactRelativeLine = relativeLine.replace(/\bStunden?\b/g, 'Std.')
   const mobileAbsoluteLine = toNumericMonthAbsoluteDe(absoluteLine)
 
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
       <dt className="text-sm font-medium text-slate-300">{heading}</dt>
       <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-slate-100 tabular-nums sm:text-3xl">
-        <span className="sm:hidden">{mobileRelativeLine}</span>
-        <span className="hidden sm:inline">{relativeLine}</span>
+        <span className="sm:hidden">{compactRelativeLine}</span>
+        <span className="hidden sm:inline">{compactRelativeLine}</span>
       </dd>
       <dd className="m-0 text-sm text-slate-400">
         <span className="sm:hidden">{mobileAbsoluteLine}</span>

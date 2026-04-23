@@ -1,5 +1,6 @@
+import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
-import { lazy, Suspense, useEffect, useId, useState } from 'react'
+import { lazy, Suspense, useId } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import {
@@ -21,7 +22,7 @@ import { hexToRgba } from '../components/MapLegend'
 import { ReportCategoryPill } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
-import { loadComparison, loadFeature } from '../data/load'
+import { featureQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
@@ -60,54 +61,21 @@ function findRow(data: ComparisonForReport, featureKey: string): ReportRow | nul
 }
 
 export function FeatureDetail() {
-  const { areaId, featureKey } = useParams({ strict: false })
-  const [data, setData] = useState<ComparisonForReport | null>(null)
-  const [err, setErr] = useState<string | null>(null)
+  const { areaId, featureKey } = useParams({ strict: true })
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
-
-  useEffect(() => {
-    if (!areaId || !featureKey) return
-    let c = false
-    ;(async () => {
-      try {
-        const json = await loadFeature(areaId, featureKey)
-        if (c) return
-        setData(json)
-        setErr(null)
-      } catch (e) {
-        if (c) return
-        try {
-          const fallback = await loadComparison(areaId)
-          const hasUnmatched = fallback.unmatchedOsm.some((r) => r.canonicalMatchKey === featureKey)
-          if (hasUnmatched) {
-            setData(fallback)
-            setErr(null)
-            return
-          }
-        } catch {
-          // Keep original error from feature endpoint below.
-        }
-        setErr(String(e))
-      }
-    })()
-    return () => {
-      c = true
-    }
-  }, [areaId, featureKey])
+  const featureQuery = useQuery(featureQueryOptions(areaId, featureKey))
+  const data: ComparisonForReport | null = featureQuery.data ?? null
 
   const row = !data || !featureKey ? null : findRow(data, featureKey)
-
-  if (!areaId || !featureKey) return null
-
-  if (err) {
+  if (featureQuery.isError) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
-        <div className="text-red-400">{err}</div>
+        <div className="text-red-400">{String(featureQuery.error)}</div>
       </div>
     )
   }
-  if (!data || !row) {
+  if (featureQuery.isPending || !data || !row) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
         <p className="text-slate-400">{!data ? de.feature.loading : de.feature.notFound}</p>

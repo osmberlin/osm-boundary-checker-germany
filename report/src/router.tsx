@@ -1,12 +1,14 @@
 import {
-  createRootRoute,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
   defaultParseSearch,
   redirect,
 } from '@tanstack/react-router'
+import type { QueryClient } from '@tanstack/react-query'
 import { ReportLayout } from './App'
-import { loadAreasIndex } from './data/areasIndexQuery'
+import { areasIndexQueryOptions } from './data/areasIndexQuery'
+import { comparisonQueryOptions, featureQueryOptions, snapshotsQueryOptions } from './data/load'
 import { routerBasePath } from './data/paths'
 import { stringifySearchPretty } from './lib/routerSearchStringify'
 import { AreaReport } from './pages/AreaReport'
@@ -14,8 +16,14 @@ import { FeatureDetail } from './pages/FeatureDetail'
 import { Home } from './pages/Home'
 import { ProcessingStatus } from './pages/ProcessingStatus'
 
-export const rootRoute = createRootRoute({
-  loader: async () => ({ areasIndex: await loadAreasIndex() }),
+export type RouterContext = {
+  queryClient: QueryClient
+}
+
+export const rootRoute = createRootRouteWithContext<RouterContext>()({
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(areasIndexQueryOptions())
+  },
   component: ReportLayout,
 })
 
@@ -34,12 +42,21 @@ const statusRoute = createRoute({
 const areaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/$areaId',
+  loader: async ({ context, params }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(comparisonQueryOptions(params.areaId)),
+      context.queryClient.ensureQueryData(snapshotsQueryOptions(params.areaId)),
+    ])
+  },
   component: AreaReport,
 })
 
 const featureRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/$areaId/feature/$featureKey',
+  loader: async ({ context, params }) => {
+    await context.queryClient.ensureQueryData(featureQueryOptions(params.areaId, params.featureKey))
+  },
   component: FeatureDetail,
 })
 
@@ -60,16 +77,21 @@ const routeTree = rootRoute.addChildren([
   fallbackRoute,
 ])
 
-export const router = createRouter({
-  routeTree,
-  defaultPreload: 'intent',
-  basepath: routerBasePath(),
-  parseSearch: defaultParseSearch,
-  stringifySearch: stringifySearchPretty,
-})
+export function createAppRouter(queryClient: QueryClient) {
+  return createRouter({
+    routeTree,
+    context: { queryClient },
+    defaultPreload: 'intent',
+    basepath: routerBasePath(),
+    parseSearch: defaultParseSearch,
+    stringifySearch: stringifySearchPretty,
+  })
+}
+
+export type AppRouter = ReturnType<typeof createAppRouter>
 
 declare module '@tanstack/react-router' {
   interface Register {
-    router: typeof router
+    router: AppRouter
   }
 }

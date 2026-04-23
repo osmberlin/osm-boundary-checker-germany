@@ -1,5 +1,6 @@
+import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { processingLogJsonlUrl, processingStateUrl } from '../data/paths'
 import { de } from '../i18n/de'
 import { formatDeInteger } from '../lib/formatDe'
@@ -130,44 +131,28 @@ function buildRuns(events: LogEvent[]): RunView[] {
   )
 }
 
-export function ProcessingStatus() {
-  const [state, setState] = useState<ProcessingState | null>(null)
-  const [events, setEvents] = useState<LogEvent[]>([])
-  const [error, setError] = useState<string | null>(null)
+async function loadProcessingStatusData(): Promise<{
+  state: ProcessingState | null
+  events: LogEvent[]
+}> {
+  const [stateRes, logRes] = await Promise.all([
+    fetch(processingStateUrl(), { cache: 'no-store' }),
+    fetch(processingLogJsonlUrl(), { cache: 'no-store' }),
+  ])
+  const state = stateRes.ok ? ((await stateRes.json()) as ProcessingState) : null
+  const events = logRes.ok ? parseJsonl(await logRes.text()) : []
+  return { state, events }
+}
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      try {
-        const [stateRes, logRes] = await Promise.all([
-          fetch(processingStateUrl(), { cache: 'no-store' }),
-          fetch(processingLogJsonlUrl(), { cache: 'no-store' }),
-        ])
-        if (!cancelled) {
-          if (stateRes.ok) {
-            setState((await stateRes.json()) as ProcessingState)
-          } else {
-            setState(null)
-          }
-          if (logRes.ok) {
-            const text = await logRes.text()
-            setEvents(parseJsonl(text))
-          } else {
-            setEvents([])
-          }
-          setError(null)
-        }
-      } catch (e) {
-        if (!cancelled) setError(String(e))
-      }
-    }
-    void load()
-    const timer = setInterval(load, state?.inProgress ? 10_000 : 30_000)
-    return () => {
-      cancelled = true
-      clearInterval(timer)
-    }
-  }, [state?.inProgress])
+export function ProcessingStatus() {
+  const processingQuery = useQuery({
+    queryKey: ['processing-status'],
+    queryFn: loadProcessingStatusData,
+    refetchInterval: (query) => (query.state.data?.state?.inProgress ? 10_000 : 30_000),
+  })
+  const state = processingQuery.data?.state ?? null
+  const events = processingQuery.data?.events ?? []
+  const error = processingQuery.isError ? String(processingQuery.error) : null
 
   const runs = useMemo(() => buildRuns(events), [events])
 
