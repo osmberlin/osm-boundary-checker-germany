@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query'
 import {
   createRootRouteWithContext,
   createRoute,
@@ -5,7 +6,6 @@ import {
   defaultParseSearch,
   redirect,
 } from '@tanstack/react-router'
-import type { QueryClient } from '@tanstack/react-query'
 import { ReportLayout } from './App'
 import { areasIndexQueryOptions } from './data/areasIndexQuery'
 import { comparisonQueryOptions, featureQueryOptions, snapshotsQueryOptions } from './data/load'

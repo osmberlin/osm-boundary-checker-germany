@@ -1,6 +1,7 @@
+import { useQuery } from '@tanstack/react-query'
 import { useRouterState } from '@tanstack/react-router'
+import { areasIndexQueryOptions } from '../data/areasIndexQuery'
 import { de } from '../i18n/de'
-import { rootRoute } from '../router'
 import { AppBreadcrumb, type AppBreadcrumbCrumb } from './AppBreadcrumb'
 
 function shortFeatureKey(encoded: string) {
@@ -11,12 +12,9 @@ function shortFeatureKey(encoded: string) {
 /** Route-derived crumbs in the global header (replaces a separate title bar). */
 export function PageBreadcrumb() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const rootLoaderData = rootRoute.useLoaderData()
+  const areasIndexQuery = useQuery(areasIndexQueryOptions())
   const displayNameByArea = new Map(
-    (rootLoaderData.areasIndex?.summaries ?? []).map((summary) => [
-      summary.area,
-      summary.displayName,
-    ]),
+    (areasIndexQuery.data?.summaries ?? []).map((summary) => [summary.area, summary.displayName]),
   )
 
   const segs = pathname.split('/').filter(Boolean)

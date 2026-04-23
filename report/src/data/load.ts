@@ -1,7 +1,7 @@
+import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { textPreview } from '../lib/textPreview'
 import type { ComparisonForReport, SnapshotsJson } from '../types/report'
-import { queryOptions } from '@tanstack/react-query'
 import { comparisonApiUrl, featureApiUrl, snapshotsUrl } from './paths'
 
 const reportMetricsSchema = z.object({
