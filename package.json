@@ -35,6 +35,7 @@
     "report:sync-runtime-assets": "bun run --filter report sync-runtime-assets",
     "report:preview": "bun run --filter report preview",
     "report:test": "bun run --filter report test",
+    "report:lint:react-compiler": "bun run --filter report lint:react-compiler",
     "report:data-sizes": "bun run --filter report report:data-sizes",
     "report:generate-areas": "bun run --filter report generate-areas",
     "docker:up": "sh ./scripts/docker-run.sh up web",

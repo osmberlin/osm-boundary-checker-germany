@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import { z } from 'zod'
 
 const MATCH_CATEGORIES = ['matched', 'official_only'] as const
@@ -28,8 +28,7 @@ export function useAreaReportCategoryFilter() {
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as Record<string, unknown>
   const cats = parseCategoriesFromSearch(search.cats)
-
-  const enabledSet = useMemo(() => new Set(cats), [cats])
+  const enabledSet = new Set(cats)
 
   const setCategoryEnabled = useCallback(
     (c: MatchCategory, enabled: boolean) => {

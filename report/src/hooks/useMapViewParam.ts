@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import type { ViewState } from 'react-map-gl/maplibre'
 import {
   MAP_VIEW_QUERY_KEY,
@@ -37,14 +37,11 @@ export function useMapViewParam() {
     [setMapView],
   )
 
-  return useMemo(
-    () => ({
-      mapView,
-      setMapView,
-      commitMapViewFromMap,
-    }),
-    [mapView, setMapView, commitMapViewFromMap],
-  )
+  return {
+    mapView,
+    setMapView,
+    commitMapViewFromMap,
+  }
 }
 
 export type { MapViewQueryValue }

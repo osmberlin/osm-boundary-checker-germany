@@ -24,7 +24,7 @@ async function serveDatasets(req: Request): Promise<Response> {
   return repoDataFileResponse(req, filePath)
 }
 
-async function serveAreasJson(_req: Request): Promise<Response> {
+async function serveAreasJson(): Promise<Response> {
   const summaries = listComparisonAreaSummaries(dataRoot)
   const areas = summaries.map((s) => s.area)
   return new Response(`${JSON.stringify({ areas, summaries }, null, 2)}\n`, {

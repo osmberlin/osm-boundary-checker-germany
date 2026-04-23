@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import { z } from 'zod'
 
 const boolSearchSchema = z
@@ -58,15 +58,12 @@ export function useComparisonMapLayers() {
     [navigate],
   )
 
-  return useMemo(
-    () => ({
-      showOfficial: mapOfficial,
-      showOsm: mapOsm,
-      showDiff: mapDiff,
-      setShowOfficial,
-      setShowOsm,
-      setShowDiff,
-    }),
-    [mapOfficial, mapOsm, mapDiff, setShowOfficial, setShowOsm, setShowDiff],
-  )
+  return {
+    showOfficial: mapOfficial,
+    showOsm: mapOsm,
+    showDiff: mapDiff,
+    setShowOfficial,
+    setShowOsm,
+    setShowDiff,
+  }
 }

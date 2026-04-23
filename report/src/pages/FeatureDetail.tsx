@@ -1,5 +1,5 @@
 import { useParams } from '@tanstack/react-router'
-import { lazy, Suspense, useEffect, useId, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useId, useState } from 'react'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import {
   LayerToggleStatBlock,
@@ -64,10 +64,7 @@ export function FeatureDetail() {
     }
   }, [areaId, featureKey])
 
-  const row = useMemo(() => {
-    if (!data || !featureKey) return null
-    return data.rows.find((r) => r.canonicalMatchKey === featureKey) ?? null
-  }, [data, featureKey])
+  const row = !data || !featureKey ? null : data.rows.find((r) => r.canonicalMatchKey === featureKey) ?? null
 
   if (!areaId || !featureKey) return null
 
