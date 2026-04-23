@@ -126,7 +126,12 @@ export function ComparisonVectorLayers({
         layout={{ visibility: showDiff ? 'visible' : 'none' }}
         paint={{
           'fill-color': d.osm.fill,
-          'fill-opacity': ['case', hoveredExpr, Math.min(1, d.osm.fillOpacity + 0.05), d.osm.fillOpacity],
+          'fill-opacity': [
+            'case',
+            hoveredExpr,
+            Math.min(1, d.osm.fillOpacity + 0.05),
+            d.osm.fillOpacity,
+          ],
         }}
       />
       <Layer

@@ -93,11 +93,7 @@ export function ReportCategorySwatch({ category }: { category: ReportRow['catego
 export function ReportCategorySquareSwatch({ category }: { category: ReportRow['category'] }) {
   const s = reportCategorySwatchStyle(category)
   const borderColor =
-    category === 'official_only'
-      ? o.line
-      : category === 'unmatched_osm'
-        ? osm.line
-        : o.line
+    category === 'official_only' ? o.line : category === 'unmatched_osm' ? osm.line : o.line
 
   return (
     <div

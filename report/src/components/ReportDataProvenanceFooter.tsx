@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import { de } from '../i18n/de'
 import { EM_DASH } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
@@ -7,9 +6,6 @@ import type { ComparisonForReport } from '../types/report'
 
 export type ReportDataProvenanceFooterProps = {
   data: ComparisonForReport
-  areaId: string
-  /** Omit cross-link to /:areaId/unmatched (e.g. on that page). */
-  hideUnmatchedCrossLink?: boolean
   className?: string
 }
 
@@ -32,8 +28,6 @@ function DateLine({ label, abs, rel }: { label: string; abs: string; rel: string
 
 export function ReportDataProvenanceFooter({
   data,
-  areaId,
-  hideUnmatchedCrossLink = false,
   className = '',
 }: ReportDataProvenanceFooterProps) {
   const p = de.provenance
@@ -51,8 +45,6 @@ export function ReportDataProvenanceFooter({
   const osm = data.sourceMetadata?.osm
   const officialMeta = [off?.provider, off?.dataset, off?.layer].filter(Boolean).join(' · ')
   const osmMeta = [osm?.provider, osm?.dataset].filter(Boolean).join(' · ')
-
-  const unmatchedN = data.unmatchedOsm?.length ?? 0
 
   const wrap = className ? className : ''
 
@@ -139,15 +131,6 @@ export function ReportDataProvenanceFooter({
             {osm.note.trim()}
           </pre>
         </>
-      ) : null}
-
-      {!hideUnmatchedCrossLink && unmatchedN > 0 ? (
-        <p className="mt-4 text-pretty text-slate-400">
-          {p.unmatchedCrossLinkIntro}{' '}
-          <Link className="text-sky-400 underline" to="/$areaId/unmatched" params={{ areaId }}>
-            {de.areaReport.unmatchedPageLink}
-          </Link>
-        </p>
       ) : null}
     </section>
   )

@@ -63,10 +63,6 @@ export function featureApiUrl(area: string, featureKey: string) {
   return datasetDataPath(area, `output/features/${encodeURIComponent(featureKey)}.json`)
 }
 
-export function unmatchedApiUrl(area: string) {
-  return datasetDataPath(area, 'output/unmatched.json')
-}
-
 /** Public path for official-for-edit GeoJSON (leading slash, under site root). */
 export function officialForEditGeojsonHref(area: string, row: ReportRow): string | null {
   const rel = row.officialForEditPath

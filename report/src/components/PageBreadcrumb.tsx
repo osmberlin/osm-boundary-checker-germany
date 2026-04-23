@@ -37,16 +37,6 @@ export function PageBreadcrumb() {
               return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
             }
 
-            if (segs[1] === 'unmatched') {
-              return {
-                homeCurrent: false,
-                items: [
-                  { name: areaLabel, to: `/${areaId}` },
-                  { name: de.unmatched.breadcrumbLabel, current: true },
-                ],
-              }
-            }
-
             if (segs[1] === 'feature' && segs[2]) {
               const fk = segs[2]
               return {

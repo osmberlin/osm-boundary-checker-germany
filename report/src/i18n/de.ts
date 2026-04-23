@@ -53,8 +53,6 @@ export const de = {
     osmFilterBody:
       'Zuerst schränkt osmium tags-filter die PBF typischerweise auf administrative Grenz-Relationen und -Ways ein (Standard z. B. r/boundary=administrative und w/boundary=administrative). Danach wählt ogr2ogr auf dem GDAL-Layer multipolygons mit einer gebietsspezifischen Bedingung (ogrWhere oder -sql in config.jsonc) die Zielobjekte aus.',
     osmFilterNoteTitle: 'Konkrete Zusammenfassung aus dem Build',
-    unmatchedCrossLinkIntro:
-      'Zusätzliche OSM-Grenzen ohne Entsprechung im amtlichen Export dieses Gebiets:',
   },
 
   home: {
@@ -116,7 +114,6 @@ export const de = {
       view: 'Detail',
     },
     chartTooltipIou: meanIouChartDe.chartTooltipIou,
-    unmatchedPageLink: 'OSM ohne Treffer in diesem amtlichen Layer →',
     unmatchedCountLabel: 'OSM ohne Treffer in offiziellen Daten (gesamt)',
     stats: {
       summaryRowAria: 'Auswertungszeit und Quelldaten, Kategorien für Tabelle und Karte',
@@ -240,20 +237,6 @@ export const de = {
     },
   },
 
-  unmatched: {
-    /** Short label for the breadcrumb (full title stays on the page). */
-    breadcrumbLabel: 'OSM ohne Treffer',
-    title: 'OSM ohne Treffer im amtlichen Export',
-    lead: 'Diese OSM-Grenzen haben ein „de:regionalschluessel“, das nach Normalisierung in keiner Zeile des amtlichen FlatGeobuf dieser Fläche vorkommt (falsche Hierarchie, veralteter Schlüssel, Tippfehler, …).',
-    backToArea: '← Zur Gebietsauswertung',
-    tableKey: 'Schlüssel',
-    tableName: 'Name',
-    tableAdminLevel: 'admin_level',
-    tableRelation: 'Relation',
-    noData: 'Keine Einträge — alle extrahierten OSM-Schlüssel passen zum amtlichen Export.',
-    noPmtiles: 'Keine Karte (unmatched.pmtiles fehlt oder leer).',
-  },
-
   map: {
     legendAria: 'Kartenlegende',
     official: 'Amtliche Grenze',
@@ -272,6 +255,8 @@ export function categoryLabelDe(cat: ReportRow['category']): string {
       return 'Zugeordnet'
     case 'official_only':
       return 'Nur amtlich'
+    case 'unmatched_osm':
+      return 'Nur OSM'
     default:
       return cat
   }

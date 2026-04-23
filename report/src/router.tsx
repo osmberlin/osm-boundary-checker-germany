@@ -13,7 +13,6 @@ import { AreaReport } from './pages/AreaReport'
 import { FeatureDetail } from './pages/FeatureDetail'
 import { Home } from './pages/Home'
 import { ProcessingStatus } from './pages/ProcessingStatus'
-import { UnmatchedReport } from './pages/UnmatchedReport'
 
 export const rootRoute = createRootRoute({
   loader: async () => ({ areasIndex: await loadAreasIndex() }),
@@ -38,12 +37,6 @@ const areaRoute = createRoute({
   component: AreaReport,
 })
 
-const unmatchedRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/$areaId/unmatched',
-  component: UnmatchedReport,
-})
-
 const featureRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/$areaId/feature/$featureKey',
@@ -63,7 +56,6 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   statusRoute,
   areaRoute,
-  unmatchedRoute,
   featureRoute,
   fallbackRoute,
 ])

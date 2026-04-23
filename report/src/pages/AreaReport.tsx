@@ -1,14 +1,6 @@
 import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import {
-  lazy,
-  type ReactNode,
-  Suspense,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useId, useRef, useState } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { LayerToggleStatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
@@ -18,10 +10,7 @@ import {
   IouInfoButton,
   MeanIouInfoButton,
 } from '../components/HausdorffInfoModal'
-import {
-  ReportCategoryPill,
-  ReportCategorySquareSwatch,
-} from '../components/reportCategoryStyles'
+import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { loadComparison, loadSnapshots } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
@@ -135,20 +124,19 @@ export function AreaReport() {
     }
   }, [areaId])
 
-  const chartData =
-    !data
-      ? []
-      : (() => {
-          const fromSnapshots =
-            snapIndex?.runs
-              .map((r) => ({
-                id: r.id,
-                meanIou: r.summary.meanIou,
-              }))
-              .filter((run) => Number.isFinite(run.meanIou)) ?? []
-          if (fromSnapshots.length > 0) return fromSnapshots
-          return [{ id: 'current', meanIou: computeMeanIou(data.rows) }]
-        })()
+  const chartData = !data
+    ? []
+    : (() => {
+        const fromSnapshots =
+          snapIndex?.runs
+            .map((r) => ({
+              id: r.id,
+              meanIou: r.summary.meanIou,
+            }))
+            .filter((run) => Number.isFinite(run.meanIou)) ?? []
+        if (fromSnapshots.length > 0) return fromSnapshots
+        return [{ id: 'current', meanIou: computeMeanIou(data.rows) }]
+      })()
   const chartIsReady = chartSize.width > 0 && chartSize.height > 0
 
   if (!areaId) return null

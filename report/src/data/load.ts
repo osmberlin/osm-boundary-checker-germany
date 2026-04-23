@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { ComparisonForReport, SnapshotsJson } from '../types/report'
-import { comparisonApiUrl, featureApiUrl, snapshotsUrl, unmatchedApiUrl } from './paths'
+import { comparisonApiUrl, featureApiUrl, snapshotsUrl } from './paths'
 
 const reportMetricsSchema = z.object({
   iou: z.number(),
@@ -76,13 +76,6 @@ export async function loadComparison(area: string): Promise<ComparisonForReport>
 
 export async function loadFeature(area: string, featureKey: string): Promise<ComparisonForReport> {
   const url = featureApiUrl(area, featureKey)
-  const r = await fetch(url)
-  if (!r.ok) throw new Error(`Failed to load ${url}: ${r.status}`)
-  return comparisonForReportSchema.parse(await r.json()) as ComparisonForReport
-}
-
-export async function loadUnmatched(area: string): Promise<ComparisonForReport> {
-  const url = unmatchedApiUrl(area)
   const r = await fetch(url)
   if (!r.ok) throw new Error(`Failed to load ${url}: ${r.status}`)
   return comparisonForReportSchema.parse(await r.json()) as ComparisonForReport
