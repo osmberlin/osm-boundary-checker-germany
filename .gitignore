@@ -7,6 +7,8 @@ dist/
 .env
 .env.local
 data/
+!report/src/data/
+!report/src/data/**
 
 # Transient tippecanoe input (removed after successful run; ignore if left behind)
 **/output/_build/

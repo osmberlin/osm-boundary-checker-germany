@@ -64,7 +64,10 @@ export function FeatureDetail() {
     }
   }, [areaId, featureKey])
 
-  const row = !data || !featureKey ? null : data.rows.find((r) => r.canonicalMatchKey === featureKey) ?? null
+  const row =
+    !data || !featureKey
+      ? null
+      : (data.rows.find((r) => r.canonicalMatchKey === featureKey) ?? null)
 
   if (!areaId || !featureKey) return null
 

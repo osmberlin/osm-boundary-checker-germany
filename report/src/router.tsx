@@ -1,5 +1,6 @@
 import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router'
 import { ReportLayout } from './App'
+import { loadAreasIndex } from './data/areasIndexQuery'
 import { routerBasePath } from './data/paths'
 import { AreaReport } from './pages/AreaReport'
 import { FeatureDetail } from './pages/FeatureDetail'
@@ -7,7 +8,8 @@ import { Home } from './pages/Home'
 import { ProcessingStatus } from './pages/ProcessingStatus'
 import { UnmatchedReport } from './pages/UnmatchedReport'
 
-const rootRoute = createRootRoute({
+export const rootRoute = createRootRoute({
+  loader: async () => ({ areasIndex: await loadAreasIndex() }),
   component: ReportLayout,
 })
 

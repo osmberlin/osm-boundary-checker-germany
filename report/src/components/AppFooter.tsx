@@ -1,4 +1,7 @@
 import { HeartIcon } from '@heroicons/react/20/solid'
+import { useQuery } from '@tanstack/react-query'
+import { type ReactNode } from 'react'
+import { areasIndexQueryOptions, type GeoDataSource } from '../data/areasIndexQuery'
 import { de } from '../i18n/de'
 
 const bodyFooterLinkClass =
@@ -8,8 +11,35 @@ const bodyFooterLinkClass =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ' +
   'focus-visible:outline-sky-500/50'
 
+function renderSourceList(items: GeoDataSource[]): ReactNode {
+  return items.map((item, i) => {
+    const isLast = i === items.length - 1
+    const separator = isLast ? null : i === items.length - 2 ? ' und ' : ', '
+    return (
+      <span key={`${item.name}-${item.href ?? 'nolink'}`}>
+        {item.href ? (
+          <a href={item.href} className={bodyFooterLinkClass} target="_blank" rel="noreferrer">
+            {item.name}
+          </a>
+        ) : (
+          item.name
+        )}
+        {separator}
+      </span>
+    )
+  })
+}
+
 export function AppFooter() {
   const f = de.footer
+  const areasIndexQuery = useQuery(areasIndexQueryOptions())
+
+  const fallbackGeoSources: GeoDataSource[] = [
+    { name: f.osmLinkLabel, href: f.osmLinkHref },
+    { name: f.bkgLinkLabel, href: f.bkgLinkHref },
+  ]
+  const geoSources = areasIndexQuery.data?.geoDataSources ?? []
+  const effectiveGeoSources = geoSources.length > 0 ? geoSources : fallbackGeoSources
 
   return (
     <footer className="group/footer border-t border-slate-700 bg-slate-900/50 py-8 text-xs text-slate-400 transition-colors hover:text-slate-300">
@@ -18,23 +48,7 @@ export function AppFooter() {
           <HeartIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-inherit" />
           <span>
             {f.geoDataLine}
-            <a
-              href={f.osmLinkHref}
-              className={bodyFooterLinkClass}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {f.osmLinkLabel}
-            </a>
-            {f.geoDataBetween}
-            <a
-              href={f.bkgLinkHref}
-              className={bodyFooterLinkClass}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {f.bkgLinkLabel}
-            </a>
+            {renderSourceList(effectiveGeoSources)}
             {f.geoDataSuffix}
           </span>
         </p>

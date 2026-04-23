@@ -22,9 +22,14 @@ export const de = {
     openSourceComponentsLine: 'Open-Source-Komponenten: ',
     openSourceThanks: [
       { name: 'React', href: 'https://react.dev/' },
+      { name: 'TanStack Router', href: 'https://tanstack.com/router' },
+      { name: 'Vite', href: 'https://vite.dev/' },
       { name: 'MapLibre GL', href: 'https://maplibre.org/' },
       { name: 'PMTiles', href: 'https://github.com/protomaps/PMTiles' },
       { name: 'Recharts', href: 'https://recharts.org/' },
+      { name: 'Tippecanoe', href: 'https://github.com/felt/tippecanoe' },
+      { name: 'osmium-tool', href: 'https://osmcode.org/osmium-tool/' },
+      { name: 'GDAL/OGR', href: 'https://gdal.org/' },
     ],
   },
 
@@ -65,8 +70,8 @@ export const de = {
       'Keine Gebiete mit output/comparison_table.json unter datasets/ gefunden. Vergleich ausführen (bun run compare).',
     areasError: `Gebiete konnten nicht geladen werden (${AREAS_GEN_BASENAME} fehlt oder ist ungültig).`,
     /** Home list: per-area row of category counts. */
-    categoryStatsAria: 'Zugeordnet, nur amtlich, OSM ohne BKG-Treffer — Anzahl',
-    unmatchedStat: 'OSM ohne BKG-Treffer',
+    categoryStatsAria: 'Zugeordnet, nur amtlich, OSM ohne Treffer in offiziellen Daten — Anzahl',
+    unmatchedStat: 'Nur OSM',
     unmatchedLink: 'Liste: OSM ohne Treffer im amtlichen Export',
   },
 
@@ -112,7 +117,7 @@ export const de = {
     },
     chartTooltipIou: meanIouChartDe.chartTooltipIou,
     unmatchedPageLink: 'OSM ohne Treffer in diesem amtlichen Layer →',
-    unmatchedCountLabel: 'OSM ohne BKG-Treffer (gesamt)',
+    unmatchedCountLabel: 'OSM ohne Treffer in offiziellen Daten (gesamt)',
     stats: {
       summaryRowAria: 'Auswertungszeit und Quelldaten, Kategorien für Tabelle und Karte',
       /** Row 1: Auswertung, amtliche und OSM-Quelle — jeweils Alter und Zeitpunkt. */
