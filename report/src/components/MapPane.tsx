@@ -1,7 +1,7 @@
 import maplibregl from 'maplibre-gl'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
-import MapLibre, { type MapRef } from 'react-map-gl/maplibre'
+import MapLibre from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
 import {
   COMPARISON_BASEMAP_STYLE,
@@ -57,12 +57,7 @@ export default function MapPane({
   /** Optional callback for zoom-aware UI hints outside the map component. */
   onZoomChange?: (zoom: number) => void
 }) {
-  const mapRef = useRef<MapRef>(null)
   const skipNextMoveEndCommitRef = useRef(false)
-  const lastCommittedMapSerializationRef = useRef<string | null>(
-    urlMapView ? serializeMapViewQueryString(urlMapView) : null,
-  )
-  const [mapReady, setMapReady] = useState(false)
 
   const featureIdExpr = useMemo(
     () => featureIdFilterExpr(featureId, allowedFeatureIds ?? null),
@@ -103,7 +98,6 @@ export default function MapPane({
 
   const onLoad = useCallback(
     (e: { target: maplibregl.Map }) => {
-      setMapReady(true)
       onZoomChange?.(e.target.getZoom())
       if (urlMapView) return
       if (!mapBbox) return
@@ -128,12 +122,13 @@ export default function MapPane({
         skipNextMoveEndCommitRef.current = false
         return
       }
-      const s = serializeMapViewQueryString(e.viewState)
-      lastCommittedMapSerializationRef.current = s
+      const nextSerialized = serializeMapViewQueryString(e.viewState)
+      const currentSerialized = urlMapView ? serializeMapViewQueryString(urlMapView) : null
+      if (nextSerialized === currentSerialized) return
       onZoomChange?.(e.viewState.zoom)
       onMoveEndCommitUrl(e.viewState)
     },
-    [onMoveEndCommitUrl, onZoomChange],
+    [onMoveEndCommitUrl, onZoomChange, urlMapView],
   )
 
   const onMapClick = useCallback(
@@ -153,30 +148,8 @@ export default function MapPane({
     [onFeatureClick],
   )
 
-  useEffect(() => {
-    if (!mapReady) return
-
-    const serialized = urlMapView ? serializeMapViewQueryString(urlMapView) : null
-
-    if (serialized === lastCommittedMapSerializationRef.current) return
-
-    const map = mapRef.current?.getMap()
-    if (!urlMapView) {
-      lastCommittedMapSerializationRef.current = serialized
-      return
-    }
-    if (!map) return
-
-    map.jumpTo({
-      center: [urlMapView.longitude, urlMapView.latitude],
-      zoom: urlMapView.zoom,
-    })
-    lastCommittedMapSerializationRef.current = serialized
-  }, [urlMapView, mapReady])
-
   return (
     <MapLibre
-      ref={mapRef}
       id={mapId}
       mapLib={maplibregl}
       initialViewState={initialViewState}

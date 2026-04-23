@@ -1,5 +1,6 @@
 import { Link, useParams } from '@tanstack/react-router'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { MapProvider } from 'react-map-gl/maplibre'
 import { InfoNotice } from '../components/InfoNotice'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { loadUnmatched } from '../data/load'
@@ -110,18 +111,20 @@ export function UnmatchedReport() {
                     <div className="flex h-full items-center justify-center text-slate-500">…</div>
                   }
                 >
-                  <ComparisonMapShell
-                    pmtilesUrl={comparisonUnmatchedPmtilesMaplibreUrl(areaId)}
-                    sourceLayer={data.tippecanoeLayer}
-                    featureId={null}
-                    allowedFeatureIds={null}
-                    mapBbox={overviewMapBbox}
-                    urlMapView={mapViewParam.mapView}
-                    onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
-                    showOfficial={false}
-                    showOsm
-                    showDiff={false}
-                  />
+                  <MapProvider>
+                    <ComparisonMapShell
+                      pmtilesUrl={comparisonUnmatchedPmtilesMaplibreUrl(areaId)}
+                      sourceLayer={data.tippecanoeLayer}
+                      featureId={null}
+                      allowedFeatureIds={null}
+                      mapBbox={overviewMapBbox}
+                      urlMapView={mapViewParam.mapView}
+                      onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
+                      showOfficial={false}
+                      showOsm
+                      showDiff={false}
+                    />
+                  </MapProvider>
                 </Suspense>
               </div>
             </div>

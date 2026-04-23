@@ -16,14 +16,18 @@ export const MAP_VIEW_QUERY_KEY = 'map'
 const COORD_DECIMALS = 6
 const ZOOM_DECIMALS = 1
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
 export function roundMapViewForUrl(
   v: Pick<MapViewQueryValue, 'zoom' | 'latitude' | 'longitude'>,
 ): MapViewQueryValue {
   const z = 10 ** COORD_DECIMALS
   return {
-    zoom: Math.round(v.zoom * 10 ** ZOOM_DECIMALS) / 10 ** ZOOM_DECIMALS,
-    latitude: Math.round(v.latitude * z) / z,
-    longitude: Math.round(v.longitude * z) / z,
+    zoom: clamp(Math.round(v.zoom * 10 ** ZOOM_DECIMALS) / 10 ** ZOOM_DECIMALS, 0, 24),
+    latitude: clamp(Math.round(v.latitude * z) / z, -90, 90),
+    longitude: clamp(Math.round(v.longitude * z) / z, -180, 180),
   }
 }
 

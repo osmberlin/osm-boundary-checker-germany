@@ -260,8 +260,9 @@ export const de = {
     osm: 'OpenStreetMap-Grenze',
     diff: 'Abweichungsflächen',
     simplificationLikelyBelowZoom15:
-      '(i) Geometiren werden bis Zoom 15 wahrscheinlich vereinfacht dargestellt.',
-    fullDetailFromZoom15: '(i) Geometrien sollten volle Details haben.',
+      'Geometiren werden bis Zoom 15 wahrscheinlich vereinfacht dargestellt.',
+    fullDetailFromZoom15: 'Geometrien sollten volle Details haben.',
+    zoomInForFullDetail: 'Auf Zoom 15 wechseln',
   },
 } as const
 

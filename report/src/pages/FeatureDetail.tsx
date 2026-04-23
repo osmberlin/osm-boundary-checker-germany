@@ -1,5 +1,6 @@
 import { useParams } from '@tanstack/react-router'
 import { lazy, Suspense, useEffect, useId, useState } from 'react'
+import { MapProvider } from 'react-map-gl/maplibre'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import {
   LayerToggleStatBlock,
@@ -102,17 +103,19 @@ export function FeatureDetail() {
                 </div>
               }
             >
-              <ComparisonMapShell
-                pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId)}
-                sourceLayer={data.tippecanoeLayer}
-                featureId={row.canonicalMatchKey}
-                mapBbox={row.mapBbox}
-                urlMapView={mapViewParam.mapView}
-                onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
-                showOfficial={mapLayers.showOfficial}
-                showOsm={mapLayers.showOsm}
-                showDiff={mapLayers.showDiff}
-              />
+              <MapProvider>
+                <ComparisonMapShell
+                  pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId)}
+                  sourceLayer={data.tippecanoeLayer}
+                  featureId={row.canonicalMatchKey}
+                  mapBbox={row.mapBbox}
+                  urlMapView={mapViewParam.mapView}
+                  onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
+                  showOfficial={mapLayers.showOfficial}
+                  showOsm={mapLayers.showOsm}
+                  showDiff={mapLayers.showDiff}
+                />
+              </MapProvider>
             </Suspense>
           </div>
         </div>

@@ -1,7 +1,14 @@
-import { createRootRoute, createRoute, createRouter, redirect } from '@tanstack/react-router'
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  defaultParseSearch,
+  redirect,
+} from '@tanstack/react-router'
 import { ReportLayout } from './App'
 import { loadAreasIndex } from './data/areasIndexQuery'
 import { routerBasePath } from './data/paths'
+import { stringifySearchPretty } from './lib/routerSearchStringify'
 import { AreaReport } from './pages/AreaReport'
 import { FeatureDetail } from './pages/FeatureDetail'
 import { Home } from './pages/Home'
@@ -65,6 +72,8 @@ export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
   basepath: routerBasePath(),
+  parseSearch: defaultParseSearch,
+  stringifySearch: stringifySearchPretty,
 })
 
 declare module '@tanstack/react-router' {
