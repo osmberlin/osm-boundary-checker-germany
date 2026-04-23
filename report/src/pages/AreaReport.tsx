@@ -8,17 +8,11 @@ import {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
 } from 'react'
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { MapProvider } from 'react-map-gl/maplibre'
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { LayerToggleStatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
 import {
   AreaDeltaInfoButton,
@@ -88,6 +82,7 @@ export function AreaReport() {
     useAreaReportCategoryFilter()
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
+  const { ref: chartRef, size: chartSize } = useMeasuredElementSize<HTMLDivElement>()
 
   /** Main table: BKG-export rows only. */
   const mainRows = useMemo(() => {
@@ -146,6 +141,20 @@ export function AreaReport() {
     }
   }, [areaId])
 
+  const chartData = useMemo(() => {
+    if (!data) return []
+    const fromSnapshots =
+      snapIndex?.runs
+        .map((r) => ({
+          id: r.id,
+          meanIou: r.summary.meanIou,
+        }))
+        .filter((run) => Number.isFinite(run.meanIou)) ?? []
+    if (fromSnapshots.length > 0) return fromSnapshots
+    return [{ id: 'current', meanIou: computeMeanIou(data.rows) }]
+  }, [data, snapIndex])
+  const chartIsReady = chartSize.width > 0 && chartSize.height > 0
+
   if (!areaId) return null
 
   if (err) {
@@ -169,11 +178,6 @@ export function AreaReport() {
       </div>
     )
   }
-
-  const chartData = snapIndex?.runs?.map((r) => ({
-    id: r.id,
-    meanIou: r.summary.meanIou,
-  })) ?? [{ id: 'current', meanIou: computeMeanIou(data.rows) }]
 
   const chartTick = '#d4d4d8'
   const chartAxisLine = '#71717a'
@@ -264,19 +268,21 @@ export function AreaReport() {
                   </div>
                 }
               >
-                <ComparisonMapShell
-                  pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId)}
-                  sourceLayer={data.tippecanoeLayer}
-                  featureId={null}
-                  allowedFeatureIds={mapAllowlist}
-                  mapBbox={overviewMapBbox}
-                  urlMapView={mapViewParam.mapView}
-                  onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
-                  showOfficial={mapLayers.showOfficial}
-                  showOsm={mapLayers.showOsm}
-                  showDiff={mapLayers.showDiff}
-                  onFeatureClick={goToFeature}
-                />
+                <MapProvider>
+                  <ComparisonMapShell
+                    pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId)}
+                    sourceLayer={data.tippecanoeLayer}
+                    featureId={null}
+                    allowedFeatureIds={mapAllowlist}
+                    mapBbox={overviewMapBbox}
+                    urlMapView={mapViewParam.mapView}
+                    onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
+                    showOfficial={mapLayers.showOfficial}
+                    showOsm={mapLayers.showOsm}
+                    showDiff={mapLayers.showDiff}
+                    onFeatureClick={goToFeature}
+                  />
+                </MapProvider>
               </Suspense>
             ) : (
               <div className="flex h-full items-center justify-center p-4">
@@ -289,31 +295,40 @@ export function AreaReport() {
         </div>
       </div>
 
-      <div className="mb-8 h-64 rounded border border-slate-700 bg-slate-900 p-2">
+      <div className="mb-8 flex h-64 min-w-0 flex-col rounded border border-slate-700 bg-slate-900 p-2">
         <h2 className="mb-2 flex flex-wrap items-center gap-1 text-sm font-medium text-slate-300">
           <span>{de.areaReport.chartTitle}</span>
           <MeanIouInfoButton className="-ml-0.5" iconClassName="size-[0.95rem]" />
         </h2>
-        <ResponsiveContainer width="100%" height="90%">
-          <LineChart data={chartData} margin={{ left: 8, right: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
-            <XAxis dataKey="id" tick={{ fontSize: 11, fill: chartTick }} stroke={chartAxisLine} />
-            <YAxis
-              domain={[0, 1]}
-              tick={{ fontSize: 11, fill: chartTick }}
-              stroke={chartAxisLine}
-              tickFormatter={(v) => formatDeFixed(v, 2)}
-            />
-            <Tooltip
-              contentStyle={tooltipStyles}
-              formatter={(value) => [
-                formatDeIou(Number(value ?? 0)),
-                de.areaReport.chartTooltipIou,
-              ]}
-            />
-            <Line type="monotone" dataKey="meanIou" stroke="#7c3aed" dot />
-          </LineChart>
-        </ResponsiveContainer>
+        <div ref={chartRef} className="min-h-0 min-w-0 flex-1">
+          {chartIsReady ? (
+            <LineChart
+              width={chartSize.width}
+              height={chartSize.height}
+              data={chartData}
+              margin={{ left: 8, right: 8 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+              <XAxis dataKey="id" tick={{ fontSize: 11, fill: chartTick }} stroke={chartAxisLine} />
+              <YAxis
+                domain={[0, 1]}
+                tick={{ fontSize: 11, fill: chartTick }}
+                stroke={chartAxisLine}
+                tickFormatter={(v) => formatDeFixed(v, 2)}
+              />
+              <Tooltip
+                contentStyle={tooltipStyles}
+                formatter={(value) => [
+                  formatDeIou(Number(value ?? 0)),
+                  de.areaReport.chartTooltipIou,
+                ]}
+              />
+              <Line type="monotone" dataKey="meanIou" stroke="#7c3aed" dot />
+            </LineChart>
+          ) : (
+            <div className="h-full w-full" aria-hidden />
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded border border-slate-700">
@@ -493,4 +508,51 @@ function SortableTh({
       </div>
     </th>
   )
+}
+
+function useMeasuredElementSize<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null)
+  const [size, setSize] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+
+    let rafId: number | null = null
+
+    const measure = () => {
+      const rect = element.getBoundingClientRect()
+      const nextWidth = Math.max(0, Math.floor(rect.width))
+      const nextHeight = Math.max(0, Math.floor(rect.height))
+      setSize((prev) =>
+        prev.width === nextWidth && prev.height === nextHeight
+          ? prev
+          : { width: nextWidth, height: nextHeight },
+      )
+    }
+
+    const scheduleMeasure = () => {
+      if (rafId != null) window.cancelAnimationFrame(rafId)
+      rafId = window.requestAnimationFrame(measure)
+    }
+
+    measure()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => scheduleMeasure())
+      observer.observe(element)
+      return () => {
+        observer.disconnect()
+        if (rafId != null) window.cancelAnimationFrame(rafId)
+      }
+    }
+
+    window.addEventListener('resize', scheduleMeasure)
+    return () => {
+      window.removeEventListener('resize', scheduleMeasure)
+      if (rafId != null) window.cancelAnimationFrame(rafId)
+    }
+  }, [])
+
+  return { ref, size }
 }
