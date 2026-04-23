@@ -111,12 +111,12 @@ export function FeatureDetail() {
                 <ComparisonMapShell
                   sources={{
                     primary: {
-                      pmtilesUrl: comparisonPmtilesMaplibreUrl(areaId),
+                      pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
                       sourceLayer: data.tippecanoeLayer,
                     },
                     unmatched: data.hasUnmatchedPmtiles
                       ? {
-                          pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaId),
+                          pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
                           sourceLayer: data.tippecanoeLayer,
                           visible: row.category === 'unmatched_osm',
                         }
@@ -144,7 +144,7 @@ export function FeatureDetail() {
 
       <LiveSourceProperties data={data} row={row} />
 
-      <UpdateMapInstructions areaId={areaId} row={row} />
+      <UpdateMapInstructions areaId={areaKey} row={row} />
 
       {row.metrics && (
         <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-xs text-slate-400">

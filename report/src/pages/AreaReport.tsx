@@ -242,13 +242,13 @@ export function AreaReport() {
                   <ComparisonMapShell
                     sources={{
                       primary: {
-                        pmtilesUrl: comparisonPmtilesMaplibreUrl(areaId),
+                        pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
                         sourceLayer: data.tippecanoeLayer,
                         allowedFeatureIds: mapAllowlist,
                       },
                       unmatched: data.hasUnmatchedPmtiles
                         ? {
-                            pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaId),
+                            pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
                             sourceLayer: data.tippecanoeLayer,
                             allowedFeatureIds: unmatchedMapAllowlist,
                             visible: enabledSet.has('unmatched_osm') && mapLayers.showOsm,
@@ -270,7 +270,7 @@ export function AreaReport() {
                       onFeatureClick: (featureKey) => {
                         void navigate({
                           to: '/$areaId/feature/$featureKey',
-                          params: { areaId, featureKey },
+                          params: { areaId: areaKey, featureKey },
                         })
                       },
                     }}
@@ -411,7 +411,7 @@ export function AreaReport() {
                   <Link
                     className="text-sky-400 underline"
                     to="/$areaId/feature/$featureKey"
-                    params={{ areaId, featureKey: row.canonicalMatchKey }}
+                    params={{ areaId: areaKey, featureKey: row.canonicalMatchKey }}
                   >
                     {de.areaReport.table.view}
                   </Link>
