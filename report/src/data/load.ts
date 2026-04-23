@@ -1,6 +1,6 @@
+import { z } from 'zod'
 import type { ComparisonForReport, SnapshotsJson } from '../types/report'
 import { comparisonApiUrl, featureApiUrl, snapshotsUrl, unmatchedApiUrl } from './paths'
-import { z } from 'zod'
 
 const reportMetricsSchema = z.object({
   iou: z.number(),

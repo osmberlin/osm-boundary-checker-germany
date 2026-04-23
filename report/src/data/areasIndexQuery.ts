@@ -55,8 +55,12 @@ export async function loadAreasIndex(): Promise<AreasIndexPayload> {
     geoDataSources?: unknown
   }
 
-  const areas = Array.isArray(body.areas) ? body.areas.filter((x): x is string => typeof x === 'string') : []
-  const summaries = Array.isArray(body.summaries) ? body.summaries.map(parseAreaSummary).filter((x): x is AreaSummary => x != null) : []
+  const areas = Array.isArray(body.areas)
+    ? body.areas.filter((x): x is string => typeof x === 'string')
+    : []
+  const summaries = Array.isArray(body.summaries)
+    ? body.summaries.map(parseAreaSummary).filter((x): x is AreaSummary => x != null)
+    : []
   const geoDataSources = Array.isArray(body.geoDataSources)
     ? body.geoDataSources.map(parseGeoDataSource).filter((x): x is GeoDataSource => x != null)
     : []
