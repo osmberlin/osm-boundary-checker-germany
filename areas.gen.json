@@ -1,8 +1,8 @@
 {
   "areas": [
-    "bb-be-plz",
     "berlin-bezirke",
     "berlin-ortsteile",
+    "brandenburg-berlin-plz",
     "brandenburg-gemeinden",
     "de-gemeinden",
     "de-laender",
@@ -14,12 +14,6 @@
   ],
   "summaries": [
     {
-      "area": "bb-be-plz",
-      "matched": 410,
-      "officialOnly": 0,
-      "unmatchedOsm": 322
-    },
-    {
       "area": "berlin-bezirke",
       "matched": 12,
       "officialOnly": 0,
@@ -30,6 +24,12 @@
       "matched": 0,
       "officialOnly": 97,
       "unmatchedOsm": 83
+    },
+    {
+      "area": "brandenburg-berlin-plz",
+      "matched": 410,
+      "officialOnly": 0,
+      "unmatchedOsm": 322
     },
     {
       "area": "brandenburg-gemeinden",

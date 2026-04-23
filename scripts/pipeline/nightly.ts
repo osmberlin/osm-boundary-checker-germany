@@ -208,7 +208,7 @@ async function main() {
       { step: 'download:official', args: ['run', 'download:official', '--', '--force'] },
       { step: 'osm:download', args: ['run', 'osm:download', '--', '--force'] },
       { step: 'osm:extract', args: ['run', 'osm:extract'] },
-      // `bb-be-plz` uses `.cache/osm/germany-postal-code-boundaries.fgb` from the same filtered PBF.
+      // `brandenburg-berlin-plz` uses `.cache/osm/germany-postal-code-boundaries.fgb` from the same filtered PBF.
       { step: 'osm:extract:plz', args: ['run', 'osm:extract', '--', '--kind', 'plz'] },
     ]
     for (const prep of preparationSteps) {
