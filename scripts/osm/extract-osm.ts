@@ -11,9 +11,11 @@ import { spawnSync } from 'node:child_process'
  * Prerequisites: `osmium` and `ogr2ogr` on PATH; run `bun run osm:download` first
  * (or set `OSM_GERMANY_PBF` / `--pbf`).
  */
-import { existsSync, mkdirSync, statSync, unlinkSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { areaHasCompareConfig } from '../shared/areaConfig.ts'
+import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import {
   DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS,
   GERMANY_OSM_CACHE_DIR,
@@ -21,8 +23,14 @@ import {
   GERMANY_OSM_PBF_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
+  GERMANY_OSM_PBF_URL,
 } from '../shared/germanyOsmPbf.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
+import {
+  mergeAreaSourceMetadata,
+  readAreaSourceMetadataFile,
+  writeAreaSourceMetadataFile,
+} from '../shared/sourceMetadata.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 /** GDAL OSM driver config: promotes `de:regionalschluessel` etc. out of `other_tags`. */
@@ -153,6 +161,76 @@ function runOgr2ogr(inputPbf: string, outFgb: string, sql: string, dryRun: boole
   if (r.status !== 0) process.exit(r.status ?? 1)
 }
 
+function readOsmPbfHeaderTimestamp(inputPbf: string, dryRun: boolean): string | null {
+  if (dryRun) {
+    console.log(`[dry-run] osmium fileinfo ${inputPbf} -g header.option.timestamp`)
+    return null
+  }
+  const r = spawnSync('osmium', ['fileinfo', inputPbf, '-g', 'header.option.timestamp'], {
+    encoding: 'utf-8',
+  })
+  if (r.status !== 0) {
+    const detail = (r.stderr ?? '').trim()
+    console.warn(
+      `[osm:extract] Could not read OSM header timestamp via osmium fileinfo (${detail || `exit ${r.status}`}).`,
+    )
+    return null
+  }
+  const ts = (r.stdout ?? '').trim()
+  return ts.length > 0 ? ts : null
+}
+
+function discoverConfiguredAreas(workspaceRoot: string): string[] {
+  const datasetsRoot = join(workspaceRoot, DATASETS_DIRECTORY)
+  if (!existsSync(datasetsRoot)) return []
+  const out: string[] = []
+  for (const entry of readdirSync(datasetsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    if (areaHasCompareConfig(workspaceRoot, entry.name)) out.push(entry.name)
+  }
+  return out.sort()
+}
+
+function writeOsmSourceMetadataForAreas(
+  workspaceRoot: string,
+  runtimeRoot: string,
+  downloadedAt: string | null,
+  dryRun: boolean,
+): void {
+  const areas = discoverConfiguredAreas(workspaceRoot)
+  if (areas.length === 0) return
+
+  if (downloadedAt == null && !dryRun) {
+    console.warn(
+      '[osm:extract] OSM header timestamp unavailable; keeping existing osm.downloadedAt values.',
+    )
+  }
+
+  for (const area of areas) {
+    const areaPath = datasetFolderPath(runtimeRoot, area)
+    const prev = readAreaSourceMetadataFile(areaPath) ?? {}
+    const prevOsm = prev.osm ?? {}
+    const patch = {
+      osm: {
+        downloadedAt: downloadedAt ?? prevOsm.downloadedAt,
+        provider: prevOsm.provider ?? 'OpenStreetMap (Geofabrik Germany extract)',
+        dataset: prevOsm.dataset ?? GERMANY_OSM_PBF_BASENAME,
+        sourceUrl: prevOsm.sourceUrl ?? GERMANY_OSM_PBF_URL,
+        note: prevOsm.note,
+        license: prevOsm.license,
+        layer: prevOsm.layer,
+      },
+    }
+    if (dryRun) {
+      console.log(
+        `[dry-run] update ${DATASETS_DIRECTORY}/${area}/source/metadata.json (osm.downloadedAt=${patch.osm.downloadedAt ?? 'unchanged'})`,
+      )
+      continue
+    }
+    writeAreaSourceMetadataFile(areaPath, mergeAreaSourceMetadata(prev, patch))
+  }
+}
+
 function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
@@ -182,6 +260,8 @@ function main() {
 
   const filteredPbf = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_FILTERED_BASENAME)
   const expressions = [...DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS]
+  const osmHeaderTimestamp = readOsmPbfHeaderTimestamp(inputPbf, dryRun)
+  writeOsmSourceMetadataForAreas(workspaceRoot, runtimeRoot, osmHeaderTimestamp, dryRun)
 
   let pbfForOgr = inputPbf
 

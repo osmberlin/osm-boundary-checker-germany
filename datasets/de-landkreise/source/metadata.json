@@ -7,7 +7,7 @@
     "sourceUrl": "https://daten.gdz.bkg.bund.de/produkte/vg/vg25_ebenen/aktuell/vg25.utm32s.gpkg.zip"
   },
   "osm": {
-    "downloadedAt": "2026-03-29T16:46:06.091Z",
+    "downloadedAt": "2026-04-21T20:20:22Z",
     "provider": "OpenStreetMap (Geofabrik Germany extract)",
     "dataset": "germany-latest.osm.pbf",
     "sourceUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf",

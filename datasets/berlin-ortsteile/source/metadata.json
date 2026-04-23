@@ -5,5 +5,11 @@
     "dataset": "GeoJSON",
     "sourceUrl": "https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
     "note": "Declared CRS: EPSG:4326"
+  },
+  "osm": {
+    "downloadedAt": "2026-04-21T20:20:22Z",
+    "provider": "OpenStreetMap (Geofabrik Germany extract)",
+    "dataset": "germany-latest.osm.pbf",
+    "sourceUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf"
   }
 }

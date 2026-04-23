@@ -5,5 +5,11 @@
     "dataset": "WFS GML",
     "sourceUrl": "https://isk.geobasis-bb.de/ows/gazetteer_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3AGemeinden&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326",
     "note": "Declared CRS: EPSG:4326"
+  },
+  "osm": {
+    "downloadedAt": "2026-04-21T20:20:22Z",
+    "provider": "OpenStreetMap (Geofabrik Germany extract)",
+    "dataset": "germany-latest.osm.pbf",
+    "sourceUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf"
   }
 }
