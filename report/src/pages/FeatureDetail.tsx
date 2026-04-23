@@ -61,10 +61,15 @@ function findRow(data: ComparisonForReport, featureKey: string): ReportRow | nul
 }
 
 export function FeatureDetail() {
-  const { areaId, featureKey } = useParams({ strict: true })
+  const { areaId, featureKey } = useParams({ strict: false })
+  const areaKey = areaId ?? ''
+  const featureLookupKey = featureKey ?? ''
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
-  const featureQuery = useQuery(featureQueryOptions(areaId, featureKey))
+  const featureQuery = useQuery({
+    ...featureQueryOptions(areaKey, featureLookupKey),
+    enabled: areaId != null && featureKey != null,
+  })
   const data: ComparisonForReport | null = featureQuery.data ?? null
 
   const row = !data || !featureKey ? null : findRow(data, featureKey)

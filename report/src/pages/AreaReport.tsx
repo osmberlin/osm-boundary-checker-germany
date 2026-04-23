@@ -1,7 +1,7 @@
 import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { lazy, type ReactNode, Suspense, useId, useRef, useState } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useId, useRef, useState } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { LayerToggleStatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
@@ -73,7 +73,8 @@ function normalizeUnmatchedRows(data: ComparisonForReport): AreaReportRow[] {
 }
 
 export function AreaReport() {
-  const { areaId } = useParams({ strict: true })
+  const { areaId } = useParams({ strict: false })
+  const areaKey = areaId ?? ''
   const navigate = useNavigate()
   const statsInputId = useId()
   const { enabledSet, enabledCategories, setCategoryEnabled, isCategoryEnabled } =
@@ -81,8 +82,14 @@ export function AreaReport() {
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
   const { ref: chartRef, size: chartSize } = useMeasuredElementSize<HTMLDivElement>()
-  const comparisonQuery = useQuery(comparisonQueryOptions(areaId))
-  const snapshotsQuery = useQuery(snapshotsQueryOptions(areaId))
+  const comparisonQuery = useQuery({
+    ...comparisonQueryOptions(areaKey),
+    enabled: areaId != null,
+  })
+  const snapshotsQuery = useQuery({
+    ...snapshotsQueryOptions(areaKey),
+    enabled: areaId != null,
+  })
   const data: ComparisonForReport | null = comparisonQuery.data ?? null
   const snapIndex: SnapshotsJson | null = snapshotsQuery.data ?? null
 
