@@ -1,6 +1,8 @@
-import { DATASETS_DIRECTORY } from '../../../scripts/shared/datasetPaths.ts'
 import { detectSiteBasePath, withSiteBasePath } from '../lib/siteBasePath'
 import type { ReportRow } from '../types/report'
+
+/** Keep browser runtime independent from Node-only `scripts/shared/datasetPaths.ts`. */
+const DATASETS_DIRECTORY = 'datasets'
 
 /**
  * Static routes:

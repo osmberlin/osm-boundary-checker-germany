@@ -1,5 +1,6 @@
 import { copyFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
@@ -49,5 +50,10 @@ export default defineConfig(({ command }) => ({
   },
   build: {
     sourcemap: true,
+  },
+  resolve: {
+    alias: {
+      '@compare-metrics': fileURLToPath(new URL('../scripts/compare/lib/metrics', import.meta.url)),
+    },
   },
 }))
