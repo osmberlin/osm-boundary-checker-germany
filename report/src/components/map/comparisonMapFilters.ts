@@ -1,5 +1,7 @@
 import type { ExpressionSpecification } from 'maplibre-gl'
 
+export const NEVER_MATCH_FILTER = ['==', ['literal', 1], 0] as ExpressionSpecification
+
 /** Tiles without `mapRole` are treated as overlay (older PMTiles). */
 export const OVERLAY_ROLE_FILTER = [
   'any',
@@ -16,7 +18,7 @@ export function featureIdFilterExpr(
   }
   if (allowedFeatureIds !== null) {
     if (allowedFeatureIds.length === 0) {
-      return ['==', 1, 0] as ExpressionSpecification
+      return NEVER_MATCH_FILTER
     }
     return ['in', ['get', 'featureId'], ['literal', allowedFeatureIds]] as ExpressionSpecification
   }

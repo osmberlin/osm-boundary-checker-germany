@@ -2,6 +2,7 @@
 export const COMPARISON_MAP_ID = 'comparison'
 
 export const SOURCE_ID = 'comparison-pmtiles'
+export const UNMATCHED_SOURCE_ID = 'comparison-unmatched-pmtiles'
 
 export const COMPARISON_INTERACTIVE_LAYER_IDS = [
   `${SOURCE_ID}-overlay-official-fill`,
@@ -12,6 +13,16 @@ export const COMPARISON_INTERACTIVE_LAYER_IDS = [
   `${SOURCE_ID}-diff-official-line`,
   `${SOURCE_ID}-diff-osm-fill`,
   `${SOURCE_ID}-diff-osm-line`,
+] as const
+
+export const UNMATCHED_INTERACTIVE_LAYER_IDS = [
+  `${UNMATCHED_SOURCE_ID}-overlay-osm-fill`,
+  `${UNMATCHED_SOURCE_ID}-overlay-osm-line`,
+] as const
+
+export const ALL_INTERACTIVE_LAYER_IDS = [
+  ...COMPARISON_INTERACTIVE_LAYER_IDS,
+  ...UNMATCHED_INTERACTIVE_LAYER_IDS,
 ] as const
 
 /** OpenFreeMap — Positron (light), no API key. https://openfreemap.org/quick_start */

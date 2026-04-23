@@ -4,6 +4,7 @@ import { mapLayerColors } from '../mapLayerColors'
 import { SOURCE_ID } from './comparisonMapConstants'
 
 export function ComparisonVectorLayers({
+  sourceId = SOURCE_ID,
   pmtilesUrl,
   sourceLayer,
   filterOfficialOverlay,
@@ -14,6 +15,7 @@ export function ComparisonVectorLayers({
   showOsm,
   showDiff,
 }: {
+  sourceId?: string
   pmtilesUrl: string
   sourceLayer: string
   filterOfficialOverlay: ExpressionSpecification
@@ -28,72 +30,79 @@ export function ComparisonVectorLayers({
   const s = mapLayerColors.osm
   const d = mapLayerColors.diff
 
+  const hoveredExpr: ExpressionSpecification = ['boolean', ['feature-state', 'hover'], false]
+
   return (
-    <Source id={SOURCE_ID} type="vector" url={pmtilesUrl}>
+    <Source id={sourceId} type="vector" url={pmtilesUrl} promoteId="featureId">
       <Layer
-        id={`${SOURCE_ID}-overlay-official-fill`}
+        id={`${sourceId}-overlay-official-fill`}
         type="fill"
-        source={SOURCE_ID}
+        source={sourceId}
         source-layer={sourceLayer}
         filter={filterOfficialOverlay}
         layout={{ visibility: showOfficial ? 'visible' : 'none' }}
         paint={{
           'fill-color': o.fill,
-          'fill-opacity': o.fillOpacity,
+          'fill-opacity': ['case', hoveredExpr, Math.min(1, o.fillOpacity + 0.18), o.fillOpacity],
         }}
       />
       <Layer
-        id={`${SOURCE_ID}-overlay-official-line`}
+        id={`${sourceId}-overlay-official-line`}
         type="line"
-        source={SOURCE_ID}
+        source={sourceId}
         source-layer={sourceLayer}
         filter={filterOfficialOverlay}
         layout={{ visibility: showOfficial ? 'visible' : 'none' }}
         paint={{
           'line-color': o.line,
-          'line-width': 2,
+          'line-width': ['case', hoveredExpr, 4, 2],
         }}
       />
       <Layer
-        id={`${SOURCE_ID}-overlay-osm-fill`}
+        id={`${sourceId}-overlay-osm-fill`}
         type="fill"
-        source={SOURCE_ID}
+        source={sourceId}
         source-layer={sourceLayer}
         filter={filterOsmOverlay}
         layout={{ visibility: showOsm ? 'visible' : 'none' }}
         paint={{
           'fill-color': s.fill,
-          'fill-opacity': s.fillOpacity,
+          'fill-opacity': ['case', hoveredExpr, Math.min(1, s.fillOpacity + 0.2), s.fillOpacity],
         }}
       />
       <Layer
-        id={`${SOURCE_ID}-overlay-osm-line`}
+        id={`${sourceId}-overlay-osm-line`}
         type="line"
-        source={SOURCE_ID}
+        source={sourceId}
         source-layer={sourceLayer}
         filter={filterOsmOverlay}
         layout={{ visibility: showOsm ? 'visible' : 'none' }}
         paint={{
           'line-color': s.line,
-          'line-width': 2,
+          'line-width': ['case', hoveredExpr, 4, 2],
         }}
       />
       <Layer
-        id={`${SOURCE_ID}-diff-official-fill`}
+        id={`${sourceId}-diff-official-fill`}
         type="fill"
-        source={SOURCE_ID}
+        source={sourceId}
         source-layer={sourceLayer}
         filter={filterOfficialDiff}
         layout={{ visibility: showDiff ? 'visible' : 'none' }}
         paint={{
           'fill-color': d.official.fill,
-          'fill-opacity': d.official.fillOpacity,
+          'fill-opacity': [
+            'case',
+            hoveredExpr,
+            Math.min(1, d.official.fillOpacity + 0.05),
+            d.official.fillOpacity,
+          ],
         }}
       />
       <Layer
-        id={`${SOURCE_ID}-diff-official-line`}
+        id={`${sourceId}-diff-official-line`}
         type="line"
-        source={SOURCE_ID}
+        source={sourceId}
         source-layer={sourceLayer}
         filter={filterOfficialDiff}
         layout={{
@@ -103,27 +112,27 @@ export function ComparisonVectorLayers({
         }}
         paint={{
           'line-color': d.official.line,
-          'line-width': d.lineWidth,
+          'line-width': ['case', hoveredExpr, d.lineWidth + 2, d.lineWidth],
           'line-opacity': d.official.lineOpacity,
           'line-offset': d.lineWidth / 2,
         }}
       />
       <Layer
-        id={`${SOURCE_ID}-diff-osm-fill`}
+        id={`${sourceId}-diff-osm-fill`}
         type="fill"
-        source={SOURCE_ID}
+        source={sourceId}
         source-layer={sourceLayer}
         filter={filterOsmDiff}
         layout={{ visibility: showDiff ? 'visible' : 'none' }}
         paint={{
           'fill-color': d.osm.fill,
-          'fill-opacity': d.osm.fillOpacity,
+          'fill-opacity': ['case', hoveredExpr, Math.min(1, d.osm.fillOpacity + 0.05), d.osm.fillOpacity],
         }}
       />
       <Layer
-        id={`${SOURCE_ID}-diff-osm-line`}
+        id={`${sourceId}-diff-osm-line`}
         type="line"
-        source={SOURCE_ID}
+        source={sourceId}
         source-layer={sourceLayer}
         filter={filterOsmDiff}
         layout={{
@@ -133,7 +142,7 @@ export function ComparisonVectorLayers({
         }}
         paint={{
           'line-color': d.osm.line,
-          'line-width': d.lineWidth,
+          'line-width': ['case', hoveredExpr, d.lineWidth + 2, d.lineWidth],
           'line-opacity': d.osm.lineOpacity,
           'line-offset': d.lineWidth / 2,
         }}

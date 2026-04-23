@@ -1,8 +1,7 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback } from 'react'
 import { z } from 'zod'
 
-const MATCH_CATEGORIES = ['matched', 'official_only'] as const
+const MATCH_CATEGORIES = ['matched', 'official_only', 'unmatched_osm'] as const
 
 export type MatchCategory = (typeof MATCH_CATEGORIES)[number]
 
@@ -30,25 +29,22 @@ export function useAreaReportCategoryFilter() {
   const cats = parseCategoriesFromSearch(search.cats)
   const enabledSet = new Set(cats)
 
-  const setCategoryEnabled = useCallback(
-    (c: MatchCategory, enabled: boolean) => {
-      void navigate({
-        search: ((prev: Record<string, unknown>) => {
-          const cur = parseCategoriesFromSearch(prev.cats)
-          const next = new Set(cur)
-          if (enabled) next.add(c)
-          else next.delete(c)
-          const arr = ALL_MATCH_CATEGORIES.filter((x) => next.has(x))
-          return {
-            ...prev,
-            cats: arr.length === ALL_MATCH_CATEGORIES.length ? undefined : arr.join(','),
-          }
-        }) as never,
-        replace: true,
-      })
-    },
-    [navigate],
-  )
+  const setCategoryEnabled = (c: MatchCategory, enabled: boolean) => {
+    void navigate({
+      search: ((prev: Record<string, unknown>) => {
+        const cur = parseCategoriesFromSearch(prev.cats)
+        const next = new Set(cur)
+        if (enabled) next.add(c)
+        else next.delete(c)
+        const arr = ALL_MATCH_CATEGORIES.filter((x) => next.has(x))
+        return {
+          ...prev,
+          cats: arr.length === ALL_MATCH_CATEGORIES.length ? undefined : arr.join(','),
+        }
+      }) as never,
+      replace: true,
+    })
+  }
 
   return {
     /** Same categories as `enabledSet`; prefer for row filtering so URL state stays in sync with the table. */

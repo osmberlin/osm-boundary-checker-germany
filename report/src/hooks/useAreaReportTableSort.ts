@@ -1,7 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useMemo } from 'react'
 import { z } from 'zod'
-import type { ReportRow } from '../types/report'
+import type { AreaReportRow, ReportCategory } from '../types/report'
 
 export const AREA_TABLE_SORT_KEYS = ['name', 'key', 'category', 'iou', 'area', 'haus'] as const
 
@@ -20,15 +19,17 @@ function parseSortDir(value: unknown): 'asc' | 'desc' {
   return parsed.success ? parsed.data : 'desc'
 }
 
-function hausdorffValue(m: ReportRow['metrics']): number | null {
+function hausdorffValue(m: AreaReportRow['metrics']): number | null {
   if (!m) return null
   const v = m.hausdorffM
   return Number.isNaN(v) ? null : v
 }
 
+const CATEGORY_ORDER: ReportCategory[] = ['matched', 'official_only', 'unmatched_osm']
+
 function compareRows(
-  a: ReportRow,
-  b: ReportRow,
+  a: AreaReportRow,
+  b: AreaReportRow,
   sort: AreaTableSortKey,
   dir: 'asc' | 'desc',
 ): number {
@@ -42,7 +43,7 @@ function compareRows(
     case 'key':
       return str(a.canonicalMatchKey, b.canonicalMatchKey)
     case 'category':
-      return str(a.category, b.category)
+      return inv * (CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category))
     case 'iou': {
       const va = a.metrics?.iou ?? null
       const vb = b.metrics?.iou ?? null
@@ -71,43 +72,36 @@ function compareNullableNum(a: number | null, b: number | null, inv: 1 | -1): nu
   return inv * (a - b)
 }
 
-export function useAreaReportTableSort(rows: ReportRow[]) {
+export function useAreaReportTableSort(rows: AreaReportRow[]) {
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as Record<string, unknown>
   const sortBy = parseSortKey(search.sort)
   const sortDir = parseSortDir(search.dir)
 
-  const sortedRows = useMemo(() => {
-    const next = [...rows]
-    next.sort((a, b) => compareRows(a, b, sortBy, sortDir))
-    return next
-  }, [rows, sortBy, sortDir])
+  const sortedRows = [...rows].sort((a, b) => compareRows(a, b, sortBy, sortDir))
 
-  const setColumn = useCallback(
-    (column: AreaTableSortKey) => {
-      void navigate({
-        search: ((prev: Record<string, unknown>) => {
-          const prevSort = parseSortKey(prev.sort)
-          const prevDir = parseSortDir(prev.dir)
-          if (prevSort === column) {
-            const nextDir = prevDir === 'asc' ? 'desc' : 'asc'
-            return {
-              ...prev,
-              sort: column === 'haus' ? undefined : column,
-              dir: nextDir === 'desc' ? undefined : nextDir,
-            }
-          }
+  const setColumn = (column: AreaTableSortKey) => {
+    void navigate({
+      search: ((prev: Record<string, unknown>) => {
+        const prevSort = parseSortKey(prev.sort)
+        const prevDir = parseSortDir(prev.dir)
+        if (prevSort === column) {
+          const nextDir = prevDir === 'asc' ? 'desc' : 'asc'
           return {
             ...prev,
             sort: column === 'haus' ? undefined : column,
-            dir: 'asc',
+            dir: nextDir === 'desc' ? undefined : nextDir,
           }
-        }) as never,
-        replace: true,
-      })
-    },
-    [navigate],
-  )
+        }
+        return {
+          ...prev,
+          sort: column === 'haus' ? undefined : column,
+          dir: 'asc',
+        }
+      }) as never,
+      replace: true,
+    })
+  }
 
   return {
     sortBy,

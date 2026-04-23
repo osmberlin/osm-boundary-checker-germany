@@ -21,8 +21,8 @@ import { hexToRgba } from '../components/MapLegend'
 import { ReportCategoryPill } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
-import { loadFeature } from '../data/load'
-import { comparisonPmtilesMaplibreUrl } from '../data/paths'
+import { loadComparison, loadFeature } from '../data/load'
+import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { categoryLabelDe, de } from '../i18n/de'
@@ -39,6 +39,26 @@ const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShe
 
 type MapLayerControls = ReturnType<typeof useComparisonMapLayers>
 
+function normalizeUnmatchedRows(data: ComparisonForReport): ReportRow[] {
+  return data.unmatchedOsm.map((row) => ({
+    canonicalMatchKey: row.canonicalMatchKey,
+    nameLabel: row.nameLabel,
+    category: 'unmatched_osm',
+    osmRelationId: row.osmRelationId,
+    metrics: null,
+    mapBbox: row.mapBbox,
+    officialForEditPath: null,
+    officialProperties: null,
+    osmProperties: null,
+  }))
+}
+
+function findRow(data: ComparisonForReport, featureKey: string): ReportRow | null {
+  const inMain = data.rows.find((row) => row.canonicalMatchKey === featureKey)
+  if (inMain) return inMain
+  return normalizeUnmatchedRows(data).find((row) => row.canonicalMatchKey === featureKey) ?? null
+}
+
 export function FeatureDetail() {
   const { areaId, featureKey } = useParams({ strict: false })
   const [data, setData] = useState<ComparisonForReport | null>(null)
@@ -52,12 +72,23 @@ export function FeatureDetail() {
     ;(async () => {
       try {
         const json = await loadFeature(areaId, featureKey)
-        if (!c) {
-          setData(json)
-          setErr(null)
-        }
+        if (c) return
+        setData(json)
+        setErr(null)
       } catch (e) {
-        if (!c) setErr(String(e))
+        if (c) return
+        try {
+          const fallback = await loadComparison(areaId)
+          const hasUnmatched = fallback.unmatchedOsm.some((r) => r.canonicalMatchKey === featureKey)
+          if (hasUnmatched) {
+            setData(fallback)
+            setErr(null)
+            return
+          }
+        } catch {
+          // Keep original error from feature endpoint below.
+        }
+        setErr(String(e))
       }
     })()
     return () => {
@@ -65,10 +96,7 @@ export function FeatureDetail() {
     }
   }, [areaId, featureKey])
 
-  const row =
-    !data || !featureKey
-      ? null
-      : (data.rows.find((r) => r.canonicalMatchKey === featureKey) ?? null)
+  const row = !data || !featureKey ? null : findRow(data, featureKey)
 
   if (!areaId || !featureKey) return null
 
@@ -87,11 +115,14 @@ export function FeatureDetail() {
     )
   }
 
+  const hasRowMapTiles =
+    row.category === 'unmatched_osm' ? data.hasUnmatchedPmtiles === true : data.hasPmtiles
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
       <StatsStrip row={row} mapLayers={mapLayers} />
 
-      {!data.hasPmtiles ? (
+      {!hasRowMapTiles ? (
         <InfoNotice className="mt-4">{de.feature.noPmtiles}</InfoNotice>
       ) : (
         <div className="mt-4 w-full overflow-hidden rounded border border-slate-700">
@@ -105,15 +136,30 @@ export function FeatureDetail() {
             >
               <MapProvider>
                 <ComparisonMapShell
-                  pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId)}
-                  sourceLayer={data.tippecanoeLayer}
-                  featureId={row.canonicalMatchKey}
-                  mapBbox={row.mapBbox}
-                  urlMapView={mapViewParam.mapView}
-                  onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
-                  showOfficial={mapLayers.showOfficial}
-                  showOsm={mapLayers.showOsm}
-                  showDiff={mapLayers.showDiff}
+                  sources={{
+                    primary: {
+                      pmtilesUrl: comparisonPmtilesMaplibreUrl(areaId),
+                      sourceLayer: data.tippecanoeLayer,
+                    },
+                    unmatched: data.hasUnmatchedPmtiles
+                      ? {
+                          pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaId),
+                          sourceLayer: data.tippecanoeLayer,
+                          visible: row.category === 'unmatched_osm',
+                        }
+                      : undefined,
+                  }}
+                  view={{
+                    featureId: row.canonicalMatchKey,
+                    mapBbox: row.mapBbox,
+                    urlMapView: mapViewParam.mapView,
+                    onMoveEndCommitUrl: mapViewParam.commitMapViewFromMap,
+                  }}
+                  layers={{
+                    showOfficial: row.category === 'unmatched_osm' ? false : mapLayers.showOfficial,
+                    showOsm: row.category === 'unmatched_osm' ? false : mapLayers.showOsm,
+                    showDiff: row.category === 'unmatched_osm' ? false : mapLayers.showDiff,
+                  }}
                 />
               </MapProvider>
             </Suspense>
@@ -145,7 +191,7 @@ export function FeatureDetail() {
         </p>
       )}
 
-      <ReportDataProvenanceFooter data={data} areaId={areaId} />
+      <ReportDataProvenanceFooter data={data} />
     </div>
   )
 }

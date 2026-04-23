@@ -18,6 +18,15 @@ export function reportCategorySwatchStyle(category: ReportRow['category']): {
   className: string
   style: CSSProperties
 } {
+  if (category === 'unmatched_osm') {
+    return {
+      className: swatchBox,
+      style: {
+        borderColor: osm.line,
+        backgroundColor: hexToRgba(osm.fill, osm.fillOpacity),
+      },
+    }
+  }
   if (category === 'official_only') {
     return {
       className: swatchBox,
@@ -42,6 +51,9 @@ export function reportCategoryPillStyle(category: ReportRow['category']): {
   className: string
   style: CSSProperties
 } {
+  if (category === 'unmatched_osm') {
+    return unmatchedOsmStatPillStyle()
+  }
   if (category === 'official_only') {
     return {
       className: pillBase,
@@ -61,7 +73,7 @@ export function reportCategoryPillStyle(category: ReportRow['category']): {
   }
 }
 
-/** Unmatched-OSM list stat: geometries use OSM overlay styling on the map (see UnmatchedReport). */
+/** Unmatched-OSM stat styling: geometries use OSM overlay colors on the map. */
 export function unmatchedOsmStatPillStyle(): { className: string; style: CSSProperties } {
   return {
     className: pillBase,
@@ -76,6 +88,28 @@ export function unmatchedOsmStatPillStyle(): { className: string; style: CSSProp
 export function ReportCategorySwatch({ category }: { category: ReportRow['category'] }) {
   const s = reportCategorySwatchStyle(category)
   return <div className={s.className} style={s.style} aria-hidden />
+}
+
+export function ReportCategorySquareSwatch({ category }: { category: ReportRow['category'] }) {
+  const s = reportCategorySwatchStyle(category)
+  const borderColor =
+    category === 'official_only'
+      ? o.line
+      : category === 'unmatched_osm'
+        ? osm.line
+        : o.line
+
+  return (
+    <div
+      className="h-[1em] w-[1em] shrink-0 rounded-[3px] border-2 border-solid"
+      style={{
+        borderColor,
+        background: s.style.background,
+        backgroundColor: s.style.backgroundColor as string | undefined,
+      }}
+      aria-hidden
+    />
+  )
 }
 
 export function ReportCategoryPill({

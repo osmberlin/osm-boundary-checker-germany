@@ -1,11 +1,13 @@
 import maplibregl from 'maplibre-gl'
-import { useCallback, useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
 import MapLibre from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
 import {
+  ALL_INTERACTIVE_LAYER_IDS,
   COMPARISON_BASEMAP_STYLE,
-  COMPARISON_INTERACTIVE_LAYER_IDS,
+  SOURCE_ID,
+  UNMATCHED_SOURCE_ID,
 } from './map/comparisonMapConstants'
 import {
   featureIdFilterExpr,
@@ -13,42 +15,75 @@ import {
   filterOfficialOverlay,
   filterOsmDiff,
   filterOsmOverlay,
+  NEVER_MATCH_FILTER,
 } from './map/comparisonMapFilters'
 import { ComparisonVectorLayers } from './map/ComparisonVectorLayers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
-export default function MapPane({
-  pmtilesUrl,
-  sourceLayer,
-  featureId,
-  allowedFeatureIds = null,
-  mapBbox,
-  urlMapView,
-  onMoveEndCommitUrl,
-  showOfficial,
-  showOsm,
-  showDiff,
-  onFeatureClick,
-  mapId,
-  onZoomChange,
-}: {
-  pmtilesUrl: string
-  sourceLayer: string
+type MapPaneSources = {
+  primary: {
+    pmtilesUrl: string
+    sourceLayer: string
+    allowedFeatureIds?: string[] | null
+  }
+  unmatched?: {
+    pmtilesUrl: string
+    sourceLayer: string
+    allowedFeatureIds?: string[] | null
+    visible?: boolean
+  }
+}
+
+type MapPaneView = {
   /** Single-feature view; use `null` to show all features (overview). */
   featureId: string | null
-  /**
-   * When `featureId` is `null`, optionally restrict to these keys.
-   * `null`: no restriction. `[]`: nothing visible.
-   */
-  allowedFeatureIds?: string[] | null
   mapBbox: [number, number, number, number] | null
   urlMapView: MapViewQueryValue | null
   onMoveEndCommitUrl: (viewState: ViewState) => void
+}
+
+type MapPaneLayers = {
   showOfficial: boolean
   showOsm: boolean
   showDiff: boolean
+}
+
+type MapPaneInteraction = {
   /** Overview: navigate to feature detail when clicking a polygon. */
   onFeatureClick?: (featureKey: string) => void
+}
+
+type FeatureStateTarget = {
+  source: string
+  sourceLayer: string
+  id: string | number
+}
+
+function toFeatureStateTarget(feature: GeoJSON.Feature): FeatureStateTarget | null {
+  const mapFeature = feature as GeoJSON.Feature & {
+    source?: unknown
+    sourceLayer?: unknown
+  }
+  const source = typeof mapFeature.source === 'string' ? mapFeature.source : null
+  const sourceLayer = typeof mapFeature.sourceLayer === 'string' ? mapFeature.sourceLayer : null
+  const id =
+    typeof mapFeature.id === 'string' || typeof mapFeature.id === 'number' ? mapFeature.id : null
+  if (!source || !sourceLayer || id == null) return null
+  return { source, sourceLayer, id }
+}
+
+export default function MapPane({
+  sources,
+  view,
+  layers,
+  interaction,
+  mapId,
+  onZoomChange,
+}: {
+  sources: MapPaneSources
+  view: MapPaneView
+  layers: MapPaneLayers
+  interaction?: MapPaneInteraction
   /**
    * When set (e.g. via ComparisonMapShell), registers this map with MapProvider for `useMap()[mapId]`.
    * @see https://visgl.github.io/react-map-gl/docs/api-reference/mapbox/map#mapprovider
@@ -58,95 +93,118 @@ export default function MapPane({
   onZoomChange?: (zoom: number) => void
 }) {
   const skipNextMoveEndCommitRef = useRef(false)
+  const onFeatureClick = interaction?.onFeatureClick
+  const { primary, unmatched } = sources
+  const { featureId, mapBbox, urlMapView, onMoveEndCommitUrl } = view
+  const { showOfficial, showOsm, showDiff } = layers
 
-  const featureIdExpr = useMemo(
-    () => featureIdFilterExpr(featureId, allowedFeatureIds ?? null),
-    [featureId, allowedFeatureIds],
-  )
+  const hoveredFeatureRef = useRef<{
+    source: string
+    sourceLayer: string
+    id: string | number
+  } | null>(null)
 
-  const filterOfficialOverlayExpr = useMemo(
-    () => filterOfficialOverlay(featureIdExpr),
-    [featureIdExpr],
-  )
-  const filterOsmOverlayExpr = useMemo(() => filterOsmOverlay(featureIdExpr), [featureIdExpr])
-  const filterOfficialDiffExpr = useMemo(() => filterOfficialDiff(featureIdExpr), [featureIdExpr])
-  const filterOsmDiffExpr = useMemo(() => filterOsmDiff(featureIdExpr), [featureIdExpr])
+  const featureIdExpr = featureIdFilterExpr(featureId, primary.allowedFeatureIds ?? null)
 
-  const mid = useMemo(() => {
-    if (mapBbox) {
-      const [w, s, e, n] = mapBbox
-      return [(w + e) / 2, (s + n) / 2] as [number, number]
-    }
-    return [13.4, 52.52] as [number, number]
-  }, [mapBbox])
-
-  const initialViewState = useMemo(
-    () =>
-      urlMapView
-        ? {
-            longitude: urlMapView.longitude,
-            latitude: urlMapView.latitude,
-            zoom: urlMapView.zoom,
-          }
-        : {
-            longitude: mid[0],
-            latitude: mid[1],
-            zoom: 10,
-          },
-    [urlMapView, mid],
-  )
-
-  const onLoad = useCallback(
-    (e: { target: maplibregl.Map }) => {
-      onZoomChange?.(e.target.getZoom())
-      if (urlMapView) return
-      if (!mapBbox) return
-      const [w, s, east, n] = mapBbox
-      if (w < east && s < n) {
-        skipNextMoveEndCommitRef.current = true
-        e.target.fitBounds(
-          [
-            [w, s],
-            [east, n],
-          ],
-          { padding: 40, duration: 0 },
-        )
+  const initialViewState = urlMapView
+    ? {
+        longitude: urlMapView.longitude,
+        latitude: urlMapView.latitude,
+        zoom: urlMapView.zoom,
       }
-    },
-    [urlMapView, mapBbox, onZoomChange],
-  )
+    : {
+        longitude: mapBbox ? (mapBbox[0] + mapBbox[2]) / 2 : 13.4,
+        latitude: mapBbox ? (mapBbox[1] + mapBbox[3]) / 2 : 52.52,
+        zoom: 10,
+      }
 
-  const onMoveEnd = useCallback(
-    (e: ViewStateChangeEvent) => {
-      if (skipNextMoveEndCommitRef.current) {
-        skipNextMoveEndCommitRef.current = false
+  const clearHoveredFeature = (map: maplibregl.Map) => {
+    const hovered = hoveredFeatureRef.current
+    if (!hovered) return
+    map.setFeatureState(
+      {
+        source: hovered.source,
+        sourceLayer: hovered.sourceLayer,
+        id: hovered.id,
+      },
+      { hover: false },
+    )
+    hoveredFeatureRef.current = null
+  }
+
+  function onLoad(e: { target: maplibregl.Map }) {
+    onZoomChange?.(e.target.getZoom())
+    if (urlMapView) return
+    if (!mapBbox) return
+    const [w, s, east, n] = mapBbox
+    if (w < east && s < n) {
+      skipNextMoveEndCommitRef.current = true
+      e.target.fitBounds(
+        [
+          [w, s],
+          [east, n],
+        ],
+        { padding: 40, duration: 0 },
+      )
+    }
+  }
+
+  function onMoveEnd(e: ViewStateChangeEvent) {
+    if (skipNextMoveEndCommitRef.current) {
+      skipNextMoveEndCommitRef.current = false
+      return
+    }
+    const nextSerialized = serializeMapViewQueryString(e.viewState)
+    const currentSerialized = urlMapView ? serializeMapViewQueryString(urlMapView) : null
+    if (nextSerialized === currentSerialized) return
+    onZoomChange?.(e.viewState.zoom)
+    onMoveEndCommitUrl(e.viewState)
+  }
+
+  function onMapClick(e: { features?: GeoJSON.Feature[] }) {
+    if (!onFeatureClick) return
+    const fs = e.features
+    if (!fs?.length) return
+    for (const f of fs) {
+      const props = f.properties as Record<string, unknown> | null
+      const id = props?.featureId
+      if (typeof id === 'string' && id.length > 0) {
+        onFeatureClick(id)
+        break
+      }
+    }
+  }
+
+  function onMapMouseMove(e: { target: maplibregl.Map; features?: GeoJSON.Feature[] }) {
+    const map = e.target
+    const fs = e.features
+    if (!fs?.length) {
+      clearHoveredFeature(map)
+      return
+    }
+    for (const f of fs) {
+      const target = toFeatureStateTarget(f)
+      if (!target) continue
+      const prev = hoveredFeatureRef.current
+      if (
+        prev &&
+        prev.source === target.source &&
+        prev.sourceLayer === target.sourceLayer &&
+        prev.id === target.id
+      ) {
         return
       }
-      const nextSerialized = serializeMapViewQueryString(e.viewState)
-      const currentSerialized = urlMapView ? serializeMapViewQueryString(urlMapView) : null
-      if (nextSerialized === currentSerialized) return
-      onZoomChange?.(e.viewState.zoom)
-      onMoveEndCommitUrl(e.viewState)
-    },
-    [onMoveEndCommitUrl, onZoomChange, urlMapView],
-  )
+      clearHoveredFeature(map)
+      map.setFeatureState(target, { hover: true })
+      hoveredFeatureRef.current = target
+      return
+    }
+    clearHoveredFeature(map)
+  }
 
-  const onMapClick = useCallback(
-    (e: { features?: GeoJSON.Feature[] }) => {
-      if (!onFeatureClick) return
-      const fs = e.features
-      if (!fs?.length) return
-      for (const f of fs) {
-        const props = f.properties as Record<string, unknown> | null
-        const id = props?.featureId
-        if (typeof id === 'string' && id.length > 0) {
-          onFeatureClick(id)
-          break
-        }
-      }
-    },
-    [onFeatureClick],
-  )
+  function onMapMouseLeave(e: { target: maplibregl.Map }) {
+    clearHoveredFeature(e.target)
+  }
 
   return (
     <MapLibre
@@ -162,19 +220,38 @@ export default function MapPane({
       onLoad={onLoad}
       onMoveEnd={onMoveEnd}
       onClick={onFeatureClick ? onMapClick : undefined}
-      interactiveLayerIds={onFeatureClick ? [...COMPARISON_INTERACTIVE_LAYER_IDS] : undefined}
+      onMouseMove={onFeatureClick ? onMapMouseMove : undefined}
+      onMouseLeave={onFeatureClick ? onMapMouseLeave : undefined}
+      interactiveLayerIds={onFeatureClick ? [...ALL_INTERACTIVE_LAYER_IDS] : undefined}
     >
       <ComparisonVectorLayers
-        pmtilesUrl={pmtilesUrl}
-        sourceLayer={sourceLayer}
-        filterOfficialOverlay={filterOfficialOverlayExpr}
-        filterOsmOverlay={filterOsmOverlayExpr}
-        filterOfficialDiff={filterOfficialDiffExpr}
-        filterOsmDiff={filterOsmDiffExpr}
+        sourceId={SOURCE_ID}
+        pmtilesUrl={primary.pmtilesUrl}
+        sourceLayer={primary.sourceLayer}
+        filterOfficialOverlay={filterOfficialOverlay(featureIdExpr)}
+        filterOsmOverlay={filterOsmOverlay(featureIdExpr)}
+        filterOfficialDiff={filterOfficialDiff(featureIdExpr)}
+        filterOsmDiff={filterOsmDiff(featureIdExpr)}
         showOfficial={showOfficial}
         showOsm={showOsm}
         showDiff={showDiff}
       />
+      {unmatched ? (
+        <ComparisonVectorLayers
+          sourceId={UNMATCHED_SOURCE_ID}
+          pmtilesUrl={unmatched.pmtilesUrl}
+          sourceLayer={unmatched.sourceLayer}
+          filterOfficialOverlay={NEVER_MATCH_FILTER}
+          filterOsmOverlay={filterOsmOverlay(
+            featureIdFilterExpr(featureId, unmatched.allowedFeatureIds ?? null),
+          )}
+          filterOfficialDiff={NEVER_MATCH_FILTER}
+          filterOsmDiff={NEVER_MATCH_FILTER}
+          showOfficial={false}
+          showOsm={unmatched.visible === true}
+          showDiff={false}
+        />
+      ) : null}
     </MapLibre>
   )
 }

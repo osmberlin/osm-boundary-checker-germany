@@ -7,6 +7,8 @@ export type ReportMetrics = {
   osmAreaM2: number
 }
 
+export type ReportCategory = 'matched' | 'official_only' | 'unmatched_osm'
+
 export type SourceMetadataSide = {
   downloadedAt?: string
   provider?: string
@@ -35,7 +37,7 @@ export type OgcWfsInspectSource = {
 export type ReportRow = {
   canonicalMatchKey: string
   nameLabel: string
-  category: 'matched' | 'official_only'
+  category: ReportCategory
   osmRelationId: string
   metrics: ReportMetrics | null
   /** WGS84 bbox [west, south, east, north] for fitting the map; null if no geometry. */
@@ -56,6 +58,9 @@ export type UnmatchedOsmReportRow = {
   adminLevel: string | null
   mapBbox: [number, number, number, number] | null
 }
+
+/** Unified table/view model on `/$areaId` (main + unmatched rows). */
+export type AreaReportRow = ReportRow
 
 /** Slim compare result JSON (`output/comparison_table.json`). */
 export type ComparisonForReport = {

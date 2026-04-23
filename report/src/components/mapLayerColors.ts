@@ -28,6 +28,6 @@ export const mapLayerColors = {
       lineOpacity: 0.38,
     },
     /** Outer halo width (px); offset in MapPane is half so stroke sits outside the fill. */
-    lineWidth: 12,
+    lineWidth: 8,
   },
 } as const

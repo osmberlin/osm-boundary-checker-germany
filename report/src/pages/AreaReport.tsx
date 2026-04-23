@@ -4,10 +4,8 @@ import {
   lazy,
   type ReactNode,
   Suspense,
-  useCallback,
   useEffect,
   useId,
-  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -20,19 +18,18 @@ import {
   IouInfoButton,
   MeanIouInfoButton,
 } from '../components/HausdorffInfoModal'
-import { ReportCategoryPill, ReportCategorySwatch } from '../components/reportCategoryStyles'
+import {
+  ReportCategoryPill,
+  ReportCategorySquareSwatch,
+} from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { loadComparison, loadSnapshots } from '../data/load'
-import { comparisonPmtilesMaplibreUrl } from '../data/paths'
-import {
-  ALL_MATCH_CATEGORIES,
-  useAreaReportCategoryFilter,
-} from '../hooks/useAreaReportCategoryFilter'
+import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
+import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
 import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { categoryLabelDe, de } from '../i18n/de'
-import { countMatchCategories } from '../lib/countMatchCategories'
 import {
   EM_DASH,
   formatDeFixed,
@@ -44,11 +41,11 @@ import {
 } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
 import { sourceStatLines } from '../lib/reportFreshnessLines'
-import type { ComparisonForReport, ReportRow, SnapshotsJson } from '../types/report'
+import type { AreaReportRow, ComparisonForReport, SnapshotsJson } from '../types/report'
 
 const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShell'))
 
-function unionMapBboxes(rows: ReportRow[]): [number, number, number, number] | null {
+function unionMapBboxes(rows: AreaReportRow[]): [number, number, number, number] | null {
   const boxes = rows
     .map((r) => r.mapBbox)
     .filter((b): b is [number, number, number, number] => b != null)
@@ -71,6 +68,20 @@ function unionMapBboxes(rows: ReportRow[]): [number, number, number, number] | n
   return [w, s, e, n]
 }
 
+function normalizeUnmatchedRows(data: ComparisonForReport): AreaReportRow[] {
+  return data.unmatchedOsm.map((row) => ({
+    canonicalMatchKey: row.canonicalMatchKey,
+    nameLabel: row.nameLabel,
+    category: 'unmatched_osm',
+    osmRelationId: row.osmRelationId,
+    metrics: null,
+    mapBbox: row.mapBbox,
+    officialForEditPath: null,
+    officialProperties: null,
+    osmProperties: null,
+  }))
+}
+
 export function AreaReport() {
   const { areaId } = useParams({ strict: false })
   const navigate = useNavigate()
@@ -84,43 +95,26 @@ export function AreaReport() {
   const mapViewParam = useMapViewParam()
   const { ref: chartRef, size: chartSize } = useMeasuredElementSize<HTMLDivElement>()
 
-  /** Main table: BKG-export rows only. */
-  const mainRows = useMemo(() => {
-    if (!data) return []
-    return data.rows.filter((r) => r.category === 'matched' || r.category === 'official_only')
-  }, [data])
-
-  const visibleRows = useMemo(() => {
-    return mainRows.filter((r) => enabledCategories.includes(r.category))
-  }, [mainRows, enabledCategories])
+  /** Main table rows from comparison payload. */
+  const mainRows =
+    data?.rows.filter((r) => r.category === 'matched' || r.category === 'official_only') ?? []
+  const unmatchedRows = data ? normalizeUnmatchedRows(data) : []
+  const visibleMainRows = mainRows.filter((r) => enabledCategories.includes(r.category))
+  const visibleUnmatchedRows = unmatchedRows.filter((r) => enabledCategories.includes(r.category))
+  const visibleRows = [...visibleMainRows, ...visibleUnmatchedRows]
 
   const { sortedRows, sortBy, sortDir, setColumn } = useAreaReportTableSort(visibleRows)
 
-  const catCounts = useMemo(() => countMatchCategories(mainRows), [mainRows])
+  const catCounts = {
+    matched: mainRows.filter((r) => r.category === 'matched').length,
+    official_only: mainRows.filter((r) => r.category === 'official_only').length,
+    unmatched_osm: unmatchedRows.length,
+  }
 
-  const unmatchedCount = (data?.unmatchedOsm ?? []).length
-
-  const mapAllowlist = useMemo(() => {
-    if (!data) return null
-    const allOn =
-      enabledSet.size === ALL_MATCH_CATEGORIES.length &&
-      ALL_MATCH_CATEGORIES.every((c) => enabledSet.has(c))
-    if (allOn) return null
-    return visibleRows.map((r) => r.canonicalMatchKey)
-  }, [data, enabledSet, visibleRows])
-
-  const overviewMapBbox = useMemo(() => unionMapBboxes(visibleRows), [visibleRows])
-
-  const goToFeature = useCallback(
-    (featureKey: string) => {
-      if (!areaId) return
-      void navigate({
-        to: '/$areaId/feature/$featureKey',
-        params: { areaId, featureKey },
-      })
-    },
-    [navigate, areaId],
-  )
+  const allMainOn = enabledSet.has('matched') && enabledSet.has('official_only')
+  const mapAllowlist = !data || allMainOn ? null : visibleMainRows.map((r) => r.canonicalMatchKey)
+  const unmatchedMapAllowlist = !data || enabledSet.has('unmatched_osm') ? null : []
+  const overviewMapBbox = unionMapBboxes(visibleRows)
 
   useEffect(() => {
     if (!areaId) return
@@ -141,18 +135,20 @@ export function AreaReport() {
     }
   }, [areaId])
 
-  const chartData = useMemo(() => {
-    if (!data) return []
-    const fromSnapshots =
-      snapIndex?.runs
-        .map((r) => ({
-          id: r.id,
-          meanIou: r.summary.meanIou,
-        }))
-        .filter((run) => Number.isFinite(run.meanIou)) ?? []
-    if (fromSnapshots.length > 0) return fromSnapshots
-    return [{ id: 'current', meanIou: computeMeanIou(data.rows) }]
-  }, [data, snapIndex])
+  const chartData =
+    !data
+      ? []
+      : (() => {
+          const fromSnapshots =
+            snapIndex?.runs
+              .map((r) => ({
+                id: r.id,
+                meanIou: r.summary.meanIou,
+              }))
+              .filter((run) => Number.isFinite(run.meanIou)) ?? []
+          if (fromSnapshots.length > 0) return fromSnapshots
+          return [{ id: 'current', meanIou: computeMeanIou(data.rows) }]
+        })()
   const chartIsReady = chartSize.width > 0 && chartSize.height > 0
 
   if (!areaId) return null
@@ -228,7 +224,7 @@ export function AreaReport() {
             onChange={(on) => setCategoryEnabled('matched', on)}
             label={categoryLabelDe('matched')}
             value={formatDeInteger(catCounts.matched)}
-            swatch={<ReportCategorySwatch category="matched" />}
+            swatch={<ReportCategorySquareSwatch category="matched" />}
           />
           <LayerToggleStatBlock
             inputId={`${statsInputId}-official`}
@@ -237,20 +233,18 @@ export function AreaReport() {
             onChange={(on) => setCategoryEnabled('official_only', on)}
             label={categoryLabelDe('official_only')}
             value={formatDeInteger(catCounts.official_only)}
-            swatch={<ReportCategorySwatch category="official_only" />}
+            swatch={<ReportCategorySquareSwatch category="official_only" />}
+          />
+          <LayerToggleStatBlock
+            inputId={`${statsInputId}-unmatched`}
+            checked={catCounts.unmatched_osm === 0 ? false : isCategoryEnabled('unmatched_osm')}
+            disabled={catCounts.unmatched_osm === 0}
+            onChange={(on) => setCategoryEnabled('unmatched_osm', on)}
+            label={categoryLabelDe('unmatched_osm')}
+            value={formatDeInteger(catCounts.unmatched_osm)}
+            swatch={<ReportCategorySquareSwatch category="unmatched_osm" />}
           />
         </StatBlocksRow>
-        <p className="mt-4 text-sm text-slate-300">
-          {de.areaReport.unmatchedCountLabel}: {formatDeInteger(unmatchedCount)}
-          {unmatchedCount > 0 ? (
-            <>
-              {' '}
-              <Link className="text-sky-400 underline" to="/$areaId/unmatched" params={{ areaId }}>
-                {de.areaReport.unmatchedPageLink}
-              </Link>
-            </>
-          ) : null}
-        </p>
       </section>
 
       <div className="mb-8">
@@ -270,17 +264,40 @@ export function AreaReport() {
               >
                 <MapProvider>
                   <ComparisonMapShell
-                    pmtilesUrl={comparisonPmtilesMaplibreUrl(areaId)}
-                    sourceLayer={data.tippecanoeLayer}
-                    featureId={null}
-                    allowedFeatureIds={mapAllowlist}
-                    mapBbox={overviewMapBbox}
-                    urlMapView={mapViewParam.mapView}
-                    onMoveEndCommitUrl={mapViewParam.commitMapViewFromMap}
-                    showOfficial={mapLayers.showOfficial}
-                    showOsm={mapLayers.showOsm}
-                    showDiff={mapLayers.showDiff}
-                    onFeatureClick={goToFeature}
+                    sources={{
+                      primary: {
+                        pmtilesUrl: comparisonPmtilesMaplibreUrl(areaId),
+                        sourceLayer: data.tippecanoeLayer,
+                        allowedFeatureIds: mapAllowlist,
+                      },
+                      unmatched: data.hasUnmatchedPmtiles
+                        ? {
+                            pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaId),
+                            sourceLayer: data.tippecanoeLayer,
+                            allowedFeatureIds: unmatchedMapAllowlist,
+                            visible: enabledSet.has('unmatched_osm') && mapLayers.showOsm,
+                          }
+                        : undefined,
+                    }}
+                    view={{
+                      featureId: null,
+                      mapBbox: overviewMapBbox,
+                      urlMapView: mapViewParam.mapView,
+                      onMoveEndCommitUrl: mapViewParam.commitMapViewFromMap,
+                    }}
+                    layers={{
+                      showOfficial: mapLayers.showOfficial,
+                      showOsm: mapLayers.showOsm,
+                      showDiff: mapLayers.showDiff,
+                    }}
+                    interaction={{
+                      onFeatureClick: (featureKey) => {
+                        void navigate({
+                          to: '/$areaId/feature/$featureKey',
+                          params: { areaId, featureKey },
+                        })
+                      },
+                    }}
                   />
                 </MapProvider>
               </Suspense>
@@ -429,7 +446,7 @@ export function AreaReport() {
         </table>
       </div>
 
-      <ReportDataProvenanceFooter data={data} areaId={areaId} />
+      <ReportDataProvenanceFooter data={data} />
     </div>
   )
 }
@@ -444,15 +461,48 @@ function SummaryStatColumn({
   relativeLine: string
   absoluteLine: string
 }) {
+  const mobileRelativeLine = relativeLine.replace(/\bStunden?\b/g, 'Std.')
+  const mobileAbsoluteLine = toNumericMonthAbsoluteDe(absoluteLine)
+
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
       <dt className="text-sm font-medium text-slate-300">{heading}</dt>
       <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-slate-100 tabular-nums sm:text-3xl">
-        {relativeLine}
+        <span className="sm:hidden">{mobileRelativeLine}</span>
+        <span className="hidden sm:inline">{relativeLine}</span>
       </dd>
-      <dd className="m-0 text-sm text-slate-400">{absoluteLine}</dd>
+      <dd className="m-0 text-sm text-slate-400">
+        <span className="sm:hidden">{mobileAbsoluteLine}</span>
+        <span className="hidden sm:inline">{absoluteLine}</span>
+      </dd>
     </div>
   )
+}
+
+function toNumericMonthAbsoluteDe(value: string): string {
+  const monthByName: Record<string, string> = {
+    Januar: '01',
+    Februar: '02',
+    März: '03',
+    April: '04',
+    Mai: '05',
+    Juni: '06',
+    Juli: '07',
+    August: '08',
+    September: '09',
+    Oktober: '10',
+    November: '11',
+    Dezember: '12',
+  }
+  const m = value.match(/^(\d{1,2})\.\s+([A-Za-zÄÖÜäöüß]+)\s+(\d{4})\s+(\d{2}:\d{2})$/)
+  if (!m) return value
+  const day = m[1]?.padStart(2, '0')
+  const monthName = m[2]
+  const year = m[3]
+  const time = m[4]
+  const month = monthName ? monthByName[monthName] : null
+  if (!day || !month || !year || !time) return value
+  return `${day}.${month}.${year} ${time}`
 }
 
 function SortableTh({

@@ -97,7 +97,6 @@ export function LayerToggleStatBlock({
               onChange(e.target.checked)
             }}
           />
-          <span className="inline-flex shrink-0 items-center">{swatch}</span>
           <span className="text-sm leading-snug">{label}</span>
         </label>
       </dt>
@@ -109,8 +108,9 @@ export function LayerToggleStatBlock({
       >
         <label
           htmlFor={inputId}
-          className={`block ${disabled ? `cursor-default` : `cursor-pointer`}`}
+          className={`inline-flex items-center gap-2 ${disabled ? `cursor-default` : `cursor-pointer`}`}
         >
+          <span className="inline-flex shrink-0 items-center">{swatch}</span>
           {value}
         </label>
       </dd>
