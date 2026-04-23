@@ -1,0 +1,15 @@
+{
+  "area": "berlin-bezirke",
+  "metricsCrs": "EPSG:32633",
+  "runs": [
+    {
+      "id": "2026-04-22",
+      "summary": {
+        "totalRows": 12,
+        "meanIou": 0.9991179294512476,
+        "matched": 12,
+        "unmatchedOsm": 12490
+      }
+    }
+  ]
+}

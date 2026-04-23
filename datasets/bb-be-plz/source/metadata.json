@@ -1,6 +1,6 @@
 {
   "official": {
-    "downloadedAt": "2026-04-22T18:56:19.568Z",
+    "downloadedAt": "2026-04-22T19:08:36.279Z",
     "provider": "HTTP",
     "dataset": "GeoJSON",
     "sourceUrl": "https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json",

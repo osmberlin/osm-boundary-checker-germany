@@ -1,4 +1,83 @@
 {
-  "areas": [],
-  "summaries": []
+  "areas": [
+    "bb-be-plz",
+    "berlin-bezirke",
+    "berlin-ortsteile",
+    "brandenburg-gemeinden",
+    "de-gemeinden",
+    "de-laender",
+    "de-landkreise",
+    "de-regierungsbezirke",
+    "de-staat",
+    "de-verwaltungsgemeinschaften",
+    "hamburg-bezirke"
+  ],
+  "summaries": [
+    {
+      "area": "bb-be-plz",
+      "matched": 410,
+      "officialOnly": 0,
+      "unmatchedOsm": 322
+    },
+    {
+      "area": "berlin-bezirke",
+      "matched": 12,
+      "officialOnly": 0,
+      "unmatchedOsm": 12490
+    },
+    {
+      "area": "berlin-ortsteile",
+      "matched": 0,
+      "officialOnly": 97,
+      "unmatchedOsm": 83
+    },
+    {
+      "area": "brandenburg-gemeinden",
+      "matched": 411,
+      "officialOnly": 2,
+      "unmatchedOsm": 676
+    },
+    {
+      "area": "de-gemeinden",
+      "matched": 10499,
+      "officialOnly": 482,
+      "unmatchedOsm": 2003
+    },
+    {
+      "area": "de-laender",
+      "matched": 16,
+      "officialOnly": 0,
+      "unmatchedOsm": 12486
+    },
+    {
+      "area": "de-landkreise",
+      "matched": 400,
+      "officialOnly": 3,
+      "unmatchedOsm": 12102
+    },
+    {
+      "area": "de-regierungsbezirke",
+      "matched": 19,
+      "officialOnly": 0,
+      "unmatchedOsm": 12483
+    },
+    {
+      "area": "de-staat",
+      "matched": 0,
+      "officialOnly": 1,
+      "unmatchedOsm": 0
+    },
+    {
+      "area": "de-verwaltungsgemeinschaften",
+      "matched": 1291,
+      "officialOnly": 3308,
+      "unmatchedOsm": 11211
+    },
+    {
+      "area": "hamburg-bezirke",
+      "matched": 0,
+      "officialOnly": 7,
+      "unmatchedOsm": 485
+    }
+  ]
 }

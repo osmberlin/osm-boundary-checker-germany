@@ -1,0 +1,15 @@
+{
+  "area": "de-regierungsbezirke",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-04-22",
+      "summary": {
+        "totalRows": 19,
+        "meanIou": 0.9997449084512915,
+        "matched": 19,
+        "unmatchedOsm": 12483
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "area": "de-verwaltungsgemeinschaften",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-04-22",
+      "summary": {
+        "totalRows": 4599,
+        "meanIou": 0.9908049549784499,
+        "matched": 1291,
+        "unmatchedOsm": 11211
+      }
+    }
+  ]
+}
