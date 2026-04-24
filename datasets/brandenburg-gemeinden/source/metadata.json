@@ -1,9 +1,9 @@
 {
   "official": {
-    "downloadedAt": "2026-04-24T07:00:25.328Z",
+    "downloadedAt": "2026-04-24T15:48:09.701Z",
     "provider": "HTTP",
     "dataset": "WFS GML",
-    "sourceUrl": "https://isk.geobasis-bb.de/ows/gazetteer_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3AGemeinden&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326",
+    "sourceUrl": "https://isk.geobasis-bb.de/ows/vg_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3Agem&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326",
     "note": "Declared CRS: EPSG:4326",
     "licenseId": "dl_de_by_20",
     "licenseLabel": "DL-DE-BY-2.0",

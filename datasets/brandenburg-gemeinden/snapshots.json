@@ -24,9 +24,9 @@
       "id": "2026-04-24",
       "summary": {
         "totalRows": 413,
-        "meanIou": 0.5098446162549686,
-        "matched": 411,
-        "unmatchedOsm": 100
+        "meanIou": 0.9948564390926743,
+        "matched": 409,
+        "unmatchedOsm": 65
       }
     }
   ]
