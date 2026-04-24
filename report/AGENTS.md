@@ -1,0 +1,3 @@
+- React Compiler: Skip manual `useMemo` / `useCallback` / `memo` unless profiling or an API needs stable identity.
+- Effects: only for real external sync (DOM, subscriptions, network, timers)—not to copy props or other state into more state.
+- State: update in event handlers where the change originates; otherwise derive in render.
