@@ -1,0 +1,9 @@
+{
+  "official": {
+    "downloadedAt": "2026-04-24T04:48:20.726Z",
+    "provider": "HTTP",
+    "dataset": "GeoJSON",
+    "sourceUrl": "https://gdi.berlin.de/services/wfs/postleitzahlen?service=WFS&version=2.0.0&request=GetFeature&typeNames=postleitzahlen%3Apostleitzahlen&outputFormat=application%2Fjson&srsName=EPSG%3A4326&count=1000000",
+    "note": "Declared CRS: EPSG:4326"
+  }
+}
