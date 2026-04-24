@@ -31,7 +31,8 @@
     "@turf/turf": "^7.2.0",
     "flatgeobuf": "^4.4.0",
     "jsts": "^2.12.1",
-    "proj4": "^2.15.0"
+    "proj4": "^2.15.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bun": "latest",

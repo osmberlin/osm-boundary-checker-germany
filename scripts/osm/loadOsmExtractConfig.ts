@@ -1,71 +1,140 @@
+import { existsSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
+import { z } from 'zod'
+import { loadBoundaryConfig } from '../compare/lib/config.ts'
 import { loadAreaConfig } from '../shared/areaConfig.ts'
-import { DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS } from '../shared/germanyOsmPbf.ts'
+import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
+import {
+  DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS,
+  GERMANY_OSM_SHARED_FGB_BASENAME,
+} from '../shared/germanyOsmPbf.ts'
 
-/**
- * Per-area extraction from a Germany (or other) `.osm.pbf` via osmium + ogr2ogr.
- * Defined under `osmExtract` in `config.jsonc`.
- */
-export type OsmExtractConfig = {
-  /**
-   * OGR attribute filter on the OSM `multipolygons` layer (`-where`). Namespaced
-   * keys need double quotes, e.g. `"de:regionalschluessel"`. Uses
-   * `gdal-osm-boundaries.ini` so that tag is a column, not only `other_tags`.
-   * Mutually exclusive with **`ogrSql`**.
-   */
-  ogrWhere?: string
-  /**
-   * SQLite dialect `-sql` against `multipolygons` (no separate layer arg). Use when
-   * you must synthesize columns (e.g. **`de-staat`**: Germany has no
-   * `de:regionalschluessel` on the `admin_level=2` relation). Mutually exclusive
-   * with **`ogrWhere`**.
-   */
-  ogrSql?: string
-  /** GDAL OSM layer name; almost always `multipolygons` for admin areas. */
-  ogrLayer?: string
-  /**
-   * `osmium tags-filter` expressions after the input path.
-   * Default: administrative boundary relations and ways.
-   */
+export type OsmExtractOverrideConfig = {
+  selectProperties?: string[]
+  includeRelationIds?: string[]
+  additionalWhereClauses?: string[]
   tagsFilterExpressions?: string[]
-  /**
-   * If true, pass `-R` / `--omit-referenced` to osmium (faster, single pass).
-   * Do not use for building closed polygons from relations.
-   */
-  omitReferenced?: boolean
-  /** Optional `ogr2ogr -spat` as [minX, minY, maxX, maxY] in WGS84 (lon/lat). */
-  ogrSpat?: [number, number, number, number]
 }
 
-export function parseOsmExtractSection(area: string, raw: unknown): OsmExtractConfig {
-  if (!raw || typeof raw !== 'object') {
-    throw new Error(`${area}: osmExtract must be an object`)
-  }
-  const r = raw as OsmExtractConfig
-  const hasWhere = typeof r.ogrWhere === 'string' && r.ogrWhere.trim() !== ''
-  const hasSql = typeof r.ogrSql === 'string' && r.ogrSql.trim() !== ''
-  if (hasWhere && hasSql) {
-    throw new Error(`${area}: use only one of osmExtract.ogrWhere or osmExtract.ogrSql`)
-  }
-  if (!hasWhere && !hasSql) {
-    throw new Error(`${area}: osmExtract needs non-empty ogrWhere or ogrSql`)
-  }
-  return r
+export type SharedAdminOsmExtractConfig = {
+  selectProperties: string[]
+  includeRelationIds: string[]
+  additionalWhereClauses: string[]
+  tagsFilterExpressions: string[]
 }
 
-export function loadOsmExtractConfig(workspaceRoot: string, area: string): OsmExtractConfig {
-  const doc = loadAreaConfig(workspaceRoot, area) as Record<string, unknown>
-  const oe = doc.osmExtract
-  if (oe === undefined) {
-    throw new Error(`${area}: missing osmExtract in config.jsonc`)
+const NonEmptyStringArraySchema = z.array(z.string().trim().min(1))
+const OsmExtractOverrideSchema = z
+  .object({
+    selectProperties: NonEmptyStringArraySchema.optional(),
+    includeRelationIds: NonEmptyStringArraySchema.optional(),
+    additionalWhereClauses: NonEmptyStringArraySchema.optional(),
+    tagsFilterExpressions: NonEmptyStringArraySchema.optional(),
+  })
+  .strict()
+const OsmObjectSchema = z
+  .object({
+    extract: OsmExtractOverrideSchema.optional(),
+  })
+  .passthrough()
+
+function discoverAreaFolders(workspaceRoot: string): string[] {
+  const datasetsRoot = join(workspaceRoot, DATASETS_DIRECTORY)
+  if (!existsSync(datasetsRoot)) return []
+  const out: string[] = []
+  for (const entry of readdirSync(datasetsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    if (existsSync(join(datasetFolderPath(workspaceRoot, entry.name), 'config.jsonc'))) {
+      out.push(entry.name)
+    }
   }
-  return parseOsmExtractSection(area, oe)
+  return out.sort()
 }
 
-export function resolvedTagsFilterExpressions(cfg: OsmExtractConfig): string[] {
-  if (cfg.tagsFilterExpressions?.length) return cfg.tagsFilterExpressions
-  return [...DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS]
+function issuePath(issue: z.core.$ZodIssue): string {
+  if (issue.path.length === 0) return '(root)'
+  return issue.path.map(String).join('.')
 }
 
-export function resolvedOgrLayer(cfg: OsmExtractConfig): string {
-  return cfg.ogrLayer?.trim() || 'multipolygons'
+function parseWithSchema<T>(area: string, schema: z.ZodType<T>, raw: unknown, label: string): T {
+  const parsed = schema.safeParse(raw)
+  if (parsed.success) return parsed.data
+  const details = parsed.error.issues
+    .map((issue) => `${label}.${issuePath(issue)}: ${issue.message}`)
+    .join('; ')
+  throw new Error(`${area}: ${details}`)
+}
+
+function parseAreaExtractOverride(
+  area: string,
+  rawDoc: Record<string, unknown>,
+): OsmExtractOverrideConfig {
+  if (rawDoc.osmExtract !== undefined) {
+    throw new Error(
+      `${area}: legacy "osmExtract" is no longer supported; use "osm.extract" instead`,
+    )
+  }
+  const osm = rawDoc.osm
+  if (osm === undefined) return {}
+  const osmObj = parseWithSchema(area, OsmObjectSchema, osm, 'osm')
+  return osmObj.extract ?? {}
+}
+
+function addAll(target: Set<string>, values: string[]): void {
+  for (const value of values) target.add(value)
+}
+
+export function loadSharedAdminOsmExtractConfig(
+  workspaceRoot: string,
+): SharedAdminOsmExtractConfig {
+  const propertySet = new Set<string>(['name', 'admin_level', 'de:regionalschluessel'])
+  const relationIdSet = new Set<string>()
+  const whereClauseSet = new Set<string>()
+  const tagsFilterSet = new Set<string>(DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS)
+
+  for (const area of discoverAreaFolders(workspaceRoot)) {
+    const rawDoc = loadAreaConfig(workspaceRoot, area) as Record<string, unknown>
+    const boundary = loadBoundaryConfig(rawDoc, area)
+    const usesSharedAdminFgb =
+      !boundary.osm.path &&
+      (boundary.osm.sharedFgbBasename ?? GERMANY_OSM_SHARED_FGB_BASENAME) ===
+        GERMANY_OSM_SHARED_FGB_BASENAME
+    if (!usesSharedAdminFgb) continue
+
+    if (boundary.osm.matchCriteria?.kind !== 'relation_id') {
+      propertySet.add(boundary.osm.matchProperty)
+    } else {
+      addAll(relationIdSet, boundary.osm.matchCriteria.relationIds)
+    }
+
+    const override = parseAreaExtractOverride(area, rawDoc)
+    addAll(propertySet, override.selectProperties ?? [])
+    addAll(relationIdSet, override.includeRelationIds ?? [])
+    addAll(whereClauseSet, override.additionalWhereClauses ?? [])
+    addAll(tagsFilterSet, override.tagsFilterExpressions ?? [])
+  }
+
+  const selectProperties = Array.from(propertySet)
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0)
+  const includeRelationIds = Array.from(relationIdSet)
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0)
+  const additionalWhereClauses = Array.from(whereClauseSet)
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0)
+  const tagsFilterExpressions = Array.from(tagsFilterSet)
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0)
+
+  if (selectProperties.length === 0 && includeRelationIds.length === 0) {
+    throw new Error('Shared admin extract has no configured match properties or relation IDs')
+  }
+
+  return {
+    selectProperties,
+    includeRelationIds,
+    additionalWhereClauses,
+    tagsFilterExpressions,
+  }
 }
