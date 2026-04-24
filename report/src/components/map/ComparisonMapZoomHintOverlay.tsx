@@ -11,7 +11,7 @@ export function ComparisonMapZoomHintOverlay({ zoom }: { zoom: number }) {
   if (!needsZoomIn) return null
 
   return (
-    <div className="absolute right-3 bottom-3 max-w-xs rounded border border-slate-600 bg-slate-900/90 px-2 py-1 text-xs text-slate-200">
+    <div className="absolute top-3 left-3 max-w-xs rounded border border-slate-600 bg-slate-900/90 px-2 py-1 text-xs text-slate-200">
       <div className="inline-flex items-start gap-1.5">
         <InformationCircleIcon aria-hidden className="mt-0.5 size-3.5 shrink-0 text-sky-300" />
         <span>{de.map.simplificationLikelyBelowZoom15}</span>
