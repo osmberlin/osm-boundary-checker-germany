@@ -58,9 +58,22 @@ export function formatDeSquareMeters(n: number): string {
   return `${nf0.format(n)}\u00a0m²`
 }
 
-/** Area from m² → km², integer km², German grouping */
+/**
+ * Area from m² → km² with compact thresholds:
+ * - < 0.1 km²: show as integer m²
+ * - < 1 km²: show as km² with 2 decimals
+ * - >= 1 km²: show as integer km²
+ */
 export function formatDeSquareKilometersFromM2(m2: number): string {
   const km2 = m2 / 1_000_000
+  const absKm2 = Math.abs(km2)
+
+  if (absKm2 < 0.1) {
+    return formatDeSquareMeters(m2)
+  }
+  if (absKm2 < 1) {
+    return `${nf2.format(km2)}\u00a0km²`
+  }
   return `${nf0.format(km2)}\u00a0km²`
 }
 
