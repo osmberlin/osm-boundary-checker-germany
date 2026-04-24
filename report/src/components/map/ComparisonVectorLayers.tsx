@@ -2,6 +2,7 @@ import type { ExpressionSpecification } from 'maplibre-gl'
 import { Layer, Source } from 'react-map-gl/maplibre'
 import { mapLayerColors } from '../mapLayerColors'
 import { SOURCE_ID } from './comparisonMapConstants'
+import { OSM_OVERLAY_STRIPE_PATTERN_ID } from './comparisonMapSprites'
 
 export function ComparisonVectorLayers({
   sourceId = SOURCE_ID,
@@ -67,7 +68,25 @@ export function ComparisonVectorLayers({
         layout={{ visibility: showOsm ? 'visible' : 'none' }}
         paint={{
           'fill-color': s.fill,
-          'fill-opacity': ['case', hoveredExpr, Math.min(1, s.fillOpacity + 0.2), s.fillOpacity],
+          // Keep OSM overlay fully transparent so only stripe marks are rendered above official fill.
+          'fill-opacity': 0,
+        }}
+      />
+      <Layer
+        id={`${sourceId}-overlay-osm-fill-stripes`}
+        type="fill"
+        source={sourceId}
+        source-layer={sourceLayer}
+        filter={filterOsmOverlay}
+        layout={{ visibility: showOsm ? 'visible' : 'none' }}
+        paint={{
+          'fill-pattern': OSM_OVERLAY_STRIPE_PATTERN_ID,
+          'fill-opacity': [
+            'case',
+            hoveredExpr,
+            Math.min(1, s.fillOpacity + 0.34),
+            s.fillOpacity + 0.14,
+          ],
         }}
       />
       <Layer

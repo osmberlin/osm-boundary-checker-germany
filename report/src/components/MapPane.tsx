@@ -17,6 +17,7 @@ import {
   filterOsmOverlay,
   NEVER_MATCH_FILTER,
 } from './map/comparisonMapFilters'
+import { ensureComparisonMapSprites } from './map/comparisonMapSprites'
 import { ComparisonVectorLayers } from './map/ComparisonVectorLayers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -133,6 +134,7 @@ export default function MapPane({
   }
 
   function onLoad(e: { target: maplibregl.Map }) {
+    ensureComparisonMapSprites(e.target)
     onZoomChange?.(e.target.getZoom())
     if (urlMapView) return
     if (!mapBbox) return
