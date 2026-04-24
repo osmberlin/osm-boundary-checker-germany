@@ -2,6 +2,13 @@ import { defineConfig } from 'oxlint'
 
 export default defineConfig({
   plugins: ['react', 'typescript', 'unicorn', 'oxc'],
+  ignorePatterns: [
+    '**/.cache/**',
+    '**/dist/**',
+    '**/node_modules/**',
+    'datasets/**/output/**',
+    '**/*.pmtiles',
+  ],
   categories: {
     correctness: 'error',
   },

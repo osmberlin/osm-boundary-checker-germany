@@ -47,8 +47,8 @@
     "typecheck": "tsgo -p tsconfig.json && tsgo -p scripts/tsconfig.json && tsgo -p report/tsconfig.json",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
-    "check": "oxlint . && oxfmt --check . && bun run typecheck",
-    "check:write": "oxfmt --write . && oxlint --fix ."
+    "check": "oxlint . && oxfmt --check . && bun run typecheck && bun run report:lint:react-compiler",
+    "check:write": "oxfmt --write . && oxlint --fix . && bun run report:lint:react-compiler"
   },
   "dependencies": {
     "@clack/prompts": "^0.10.0"

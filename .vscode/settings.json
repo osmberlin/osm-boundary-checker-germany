@@ -2,8 +2,10 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit"
+    "source.fixAll.oxc": "explicit",
+    "source.organizeImports.oxc": "explicit"
   },
+  "files.eol": "\n",
   "[javascript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
   },
