@@ -57,6 +57,8 @@ export function ComparisonVectorLayers({
         paint={{
           'line-color': o.line,
           'line-width': ['case', hoveredExpr, 4, 2],
+          // Nudge stroke inward by ~50% of its width so it remains visible under overlap styling.
+          'line-offset': ['case', hoveredExpr, -2, -1],
         }}
       />
       <Layer
