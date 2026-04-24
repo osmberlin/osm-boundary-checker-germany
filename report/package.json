@@ -10,6 +10,7 @@
     "bundle-static-assets": "bun ./bundleStaticAssets.ts",
     "predev": "bun run sync-runtime-assets",
     "dev": "vite",
+    "dev:with-rust": "bun run --cwd .. rust:build && bun run dev",
     "lint:react-compiler": "eslint --max-warnings=0 .",
     "format": "bun run --cwd .. format",
     "lint": "bun run --cwd .. lint",

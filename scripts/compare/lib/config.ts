@@ -45,6 +45,10 @@ export type OsmConfig = {
   sharedFgbBasename?: string
 }
 
+export type OutputConfig = {
+  perFeatureJson: boolean
+}
+
 /** Paths under the area folder for official input; OSM path/key are configurable. */
 export type BoundaryConfig = {
   official: {
@@ -56,6 +60,7 @@ export type BoundaryConfig = {
   }
   osm: OsmConfig
   compare: CompareConfig
+  output: OutputConfig
   idNormalization: { preset: IdNormalizationPreset }
   metricsCrs: string
 }
@@ -178,6 +183,20 @@ function parseOsmConfig(areaLabel: string, raw: unknown): OsmConfig {
   }
 }
 
+function parseOutputConfig(areaLabel: string, raw: unknown): OutputConfig {
+  if (raw === undefined || raw === null) {
+    return { perFeatureJson: false }
+  }
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error(`${areaLabel}: output must be an object`)
+  }
+  const o = raw as Record<string, unknown>
+  if (typeof o.perFeatureJson !== 'boolean') {
+    throw new Error(`${areaLabel}: output.perFeatureJson must be a boolean`)
+  }
+  return { perFeatureJson: o.perFeatureJson }
+}
+
 export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryConfig {
   const c = json as Record<string, unknown>
   const official = c.official as Record<string, unknown> | undefined
@@ -201,6 +220,7 @@ export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryC
 
   const compare = parseCompareConfig(areaLabel, c.compare)
   const osm = parseOsmConfig(areaLabel, c.osm)
+  const output = parseOutputConfig(areaLabel, c.output)
 
   return {
     official: {
@@ -213,6 +233,7 @@ export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryC
     },
     osm,
     compare,
+    output,
     idNormalization: { preset: String(idNormalization.preset).trim() as IdNormalizationPreset },
     metricsCrs: String(c.metricsCrs).trim(),
   }

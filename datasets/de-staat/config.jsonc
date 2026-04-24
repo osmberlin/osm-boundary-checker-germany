@@ -20,4 +20,7 @@
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },
+  "output": {
+    "perFeatureJson": false,
+  },
 }

@@ -13,6 +13,20 @@ Run everything from **this directory** with Docker Compose.
 
 Docker Compose uses a shared volume mounted at `/data` with `DATA_ROOT=/data`, so generated datasets, caches, and processing logs survive redeploys.
 
+## Local prerequisite (Rust sidecar)
+
+Compare runs require the Rust geometry sidecar.
+
+```bash
+bun run rust:build
+```
+
+If compare fails:
+
+- binary missing: run `bun run rust:build` again
+- custom binary location: set `RUST_GEOM_BIN=/absolute/path/to/geom-sidecar`
+- performance triage: inspect `data/internal-compare-timing.jsonl`
+
 ## Stack
 
 **Bun** + **TypeScript**; compare uses **flatgeobuf**, **Turf**, **JSTS** (discrete Hausdorff), **proj4**; interactive picker **Clack** via `run.ts`. **Report**: **React** + **Vite** build, Bun dev/preview data serving, **MapLibre**, **PMTiles**, **Tailwind**, **TanStack Router**, **Zod**. Workspaces: `scripts/`, `report/`.
@@ -30,6 +44,8 @@ Docker Compose uses a shared volume mounted at `/data` with `DATA_ROOT=/data`, s
 ## Canonical commands
 
 - **Prepare runtime data**: `bun run pipeline:nightly` (or `bun run download` + `bun run compare`).
+- **Quick test run without BKG download**: `CI=1 bun run download:official && bun run download:osm:extract && bun run compare -- --all`.
+- **Full refresh run**: `bun run pipeline:nightly`.
 - **Sync report inputs from runtime tree**: `bun run report:sync-runtime-assets`.
 - **Build static app shell only**: `bun run report:build:app` (expects synced `report/public/*` + `areas.gen.json`).
 - **Build full static bundle from runtime tree**: `bun run report:build`.
@@ -42,8 +58,8 @@ Use the canonical `download:*` / `osm:*` / `bkg:*` command names.
 docker compose build
 ```
 
-The Docker image contains **Bun**, **tippecanoe**, **GDAL** (`ogr2ogr`), **osmium-tool**, and **unzip**.
-Host installs for these tools are intentionally not required for normal repo work.
+The Docker image contains **Bun**, **tippecanoe**, **GDAL** (`ogr2ogr`), **osmium-tool**, **unzip**, and the built Rust geom sidecar.
+Host installs for these tools are not required when using Docker workflows.
 
 ## Compare (CLI)
 
@@ -99,7 +115,7 @@ This is a **`package.json` chain** (not a monolithic script): `download:bkg && d
 
 - **`output/comparison_table.json`** — Full latest comparison payload used by the area report.
 - **`output/unmatched.json`** — Latest unmatched-only payload for the unmatched route.
-- **`output/features/*.json`** — Feature detail payload shards for `/feature/<key>`.
+- **`output/features/*.json`** — Feature detail payload shards for `/feature/<key>` (written only when `output.perFeatureJson=true`).
 - **`snapshots.json`** — Historic run summary index per area.
 - **`output/comparison.pmtiles`** — Vector tiles for main compare (official + OSM overlays and diff patches for matched/official-only rows).
 - **`output/unmatched.pmtiles`** — Optional tiles for **`unmatchedOsm`** geometries (same `source-layer` name as the main archive: `boundaries`).
@@ -109,7 +125,7 @@ This is a **`package.json` chain** (not a monolithic script): `download:bkg && d
 
 Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Compare payloads are written as static JSON under `datasets/<slug>/output/` plus `snapshots.json`, while map artifacts stay file-based in `datasets/<slug>/output/*.pmtiles`. **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input defaults to shared FlatGeobufs under **`.cache/osm/`** produced by **`bun run osm:extract`** (admin: `germany-admin-boundaries-rs.fgb`, plz: `germany-postal-code-boundaries.fgb`), and can be overridden per area via `osm.path` or `osm.sharedFgbBasename`. Optional **`source/metadata.json`** records when data was fetched and is embedded into compare payload provenance.
 
-**`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, optional **`official.constantMatchKey`**, optional **`official.keyTransposition`** (map official IDs to raw OSM-style keys when the source has no compatible Schlüssel), **`osm.matchProperty`**, optional **`osm.matchCriteria`** (for example `relation_id` selectors), optional **`osm.path`** / **`osm.sharedFgbBasename`**, **`idNormalization`**, **`metricsCrs`**, required **`compare.bboxFilter`** (`none` or `official_bbox_overlap`), optional **`compare.bboxBufferDegrees`** (required when bboxFilter is `official_bbox_overlap`), required **`compare.osmScopeFilter`** (`none` or `centroid_in_official_coverage`), optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). Legacy per-area `osmExtract` blocks are no longer used by compare.
+**`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, optional **`official.constantMatchKey`**, optional **`official.keyTransposition`** (map official IDs to raw OSM-style keys when the source has no compatible Schlüssel), **`osm.matchProperty`**, optional **`osm.matchCriteria`** (for example `relation_id` selectors), optional **`osm.path`** / **`osm.sharedFgbBasename`**, **`idNormalization`**, **`metricsCrs`**, required **`compare.bboxFilter`** (`none` or `official_bbox_overlap`), optional **`compare.bboxBufferDegrees`** (required when bboxFilter is `official_bbox_overlap`), required **`compare.osmScopeFilter`** (`none` or `centroid_in_official_coverage`), optional **`output.perFeatureJson`** (feature shard files), optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). Legacy per-area `osmExtract` blocks are no longer used by compare.
 
 Convert from GeoJSON (or GPKG, etc.) with GDAL:
 

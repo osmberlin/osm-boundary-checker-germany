@@ -7,7 +7,7 @@ import type { BoundaryConfig } from './config.ts'
 import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
 import { unionFeaturesByKey } from './geoMerge.ts'
 import { loadFeatureCollection } from './loadFeatureCollection.ts'
-import { calculateMetrics, type MetricResult } from './metrics.ts'
+import { type MetricResult } from './metrics.ts'
 import { normalizeOfficialValue, normalizeOsmValue } from './normalizeGermanKey.ts'
 import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
 import { projectGeometry } from './projectGeometry.ts'
@@ -34,6 +34,12 @@ export type UnmatchedOsmRow = {
   adminLevel: string | null
   osmGeometryWgs84: Geometry | null
 }
+
+export type ComparePhaseLogger = (
+  phase: string,
+  durationMs: number,
+  meta?: Record<string, unknown>,
+) => void
 
 function pickOsmRelationId(featureIds: string[], props?: Record<string, unknown> | null): string {
   const rel = featureIds.find((id) => id.startsWith('relation/'))
@@ -158,6 +164,7 @@ export async function runCompare(
   runtimeRoot: string,
   areaFolder: string,
   configRaw: unknown,
+  phaseLogger?: ComparePhaseLogger,
 ): Promise<{
   config: BoundaryConfig
   rows: CompareRow[]
@@ -181,13 +188,22 @@ export async function runCompare(
   const preset = config.idNormalization.preset
   const metricsCrs = config.metricsCrs
 
+  const tLoadOfficial = Date.now()
   const officialFc = await loadFeatureCollection(officialPath)
+  phaseLogger?.('load_official', Date.now() - tLoadOfficial, {
+    featureCount: officialFc.features.length,
+  })
+
+  const tLoadOsm = Date.now()
   let osmFc = await loadFeatureCollection(osmPath)
+  phaseLogger?.('load_osm', Date.now() - tLoadOsm, { featureCount: osmFc.features.length })
+
   const initialOsmFeatureCount = osmFc.features.length
   let droppedByBbox = 0
   let droppedByScope = 0
 
   if (config.compare.bboxFilter === 'official_bbox_overlap') {
+    const tFilterBbox = Date.now()
     const ob = unionOfficialBbox(officialFc.features)
     if (!ob) {
       throw new Error(
@@ -198,11 +214,20 @@ export async function runCompare(
     const filtered = filterOsmByOfficialBbox(osmFc.features, ob, buf)
     droppedByBbox = osmFc.features.length - filtered.length
     osmFc = { type: 'FeatureCollection', features: filtered }
+    phaseLogger?.('filter_bbox', Date.now() - tFilterBbox, {
+      dropped: droppedByBbox,
+      remaining: osmFc.features.length,
+    })
   }
   if (config.compare.osmScopeFilter === 'centroid_in_official_coverage') {
+    const tScopeFilter = Date.now()
     const filtered = filterOsmByOfficialCoverageCentroid(osmFc.features, officialFc.features)
     droppedByScope = osmFc.features.length - filtered.length
     osmFc = { type: 'FeatureCollection', features: filtered }
+    phaseLogger?.('filter_scope', Date.now() - tScopeFilter, {
+      dropped: droppedByScope,
+      remaining: osmFc.features.length,
+    })
   }
   if (droppedByBbox > 0 || droppedByScope > 0) {
     console.log(
@@ -210,6 +235,7 @@ export async function runCompare(
     )
   }
 
+  const tUnionOfficial = Date.now()
   const officialMap = unionFeaturesByKey(officialFc, (props) => {
     if (config.official.constantMatchKey) {
       return normalizeOfficialValue(config.official.constantMatchKey, preset)
@@ -221,7 +247,9 @@ export async function runCompare(
       preset,
     )
   })
+  phaseLogger?.('union_official', Date.now() - tUnionOfficial, { keys: officialMap.size })
 
+  const tUnionOsm = Date.now()
   const osmMap = unionFeaturesByKey(osmFc, (props) => {
     const p = props as Record<string, unknown>
     if (relationIdCriteria) {
@@ -233,6 +261,7 @@ export async function runCompare(
     if (v == null) return null
     return normalizeOsmValue(osmMatchProperty, String(v), preset).canonicalMatchKey
   })
+  phaseLogger?.('union_osm', Date.now() - tUnionOsm, { keys: osmMap.size })
 
   const osmNameByKey = new Map<string, string>()
   for (const f of osmFc.features) {
@@ -262,6 +291,7 @@ export async function runCompare(
     osmProjected: Geometry
   }> = []
 
+  const tProject = Date.now()
   for (const key of officialKeys) {
     const o = officialMap.get(key)
     const s = osmMap.get(key)
@@ -298,26 +328,26 @@ export async function runCompare(
       osmProperties: s?.properties ?? null,
     })
   }
+  phaseLogger?.('project', Date.now() - tProject, {
+    rows: rows.length,
+    pendingMetrics: pendingMetrics.length,
+  })
 
   if (pendingMetrics.length > 0) {
+    const tMetrics = Date.now()
     const rustMetrics = calculateMetricsBatchWithRust(
       pendingMetrics.map((entry) => ({
         officialProjected: entry.officialProjected,
         osmProjected: entry.osmProjected,
       })),
     )
-    if (rustMetrics) {
-      for (let i = 0; i < pendingMetrics.length; i++) {
-        const row = rows[pendingMetrics[i]!.rowIndex]
-        if (row) row.metrics = rustMetrics[i] ?? null
-      }
-    } else {
-      for (const entry of pendingMetrics) {
-        const row = rows[entry.rowIndex]
-        if (!row) continue
-        row.metrics = calculateMetrics(entry.officialProjected, entry.osmProjected)
-      }
+    for (let i = 0; i < pendingMetrics.length; i++) {
+      const row = rows[pendingMetrics[i]!.rowIndex]
+      if (row) row.metrics = rustMetrics[i] ?? null
     }
+    phaseLogger?.('metrics', Date.now() - tMetrics, {
+      calculated: pendingMetrics.length,
+    })
   }
 
   const officialKeySet = new Set(officialMap.keys())

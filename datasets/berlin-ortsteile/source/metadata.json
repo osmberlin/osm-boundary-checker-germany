@@ -4,25 +4,25 @@
     "provider": "HTTP",
     "dataset": "GeoJSON",
     "sourceUrl": "https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
+    "note": "Declared CRS: EPSG:4326",
     "licenseId": "dl_de_zero_20",
     "licenseLabel": "DL-DE-ZERO-2.0",
     "licenseSourceUrl": "https://www.govdata.de/dl-de/zero-2-0",
     "osmCompatibility": "yes_waiver",
     "osmCompatibilitySourceUrl": "https://wiki.openstreetmap.org/w/images/3/34/2019-06-03_Datenlizenz_Deutschland_Berlin_OSM.pdf",
-    "osmCompatibilityComment": "Berlin veroeffentlicht diese Datengrundlage unter DL-DE-ZERO-2.0 mit dokumentierter OSM-Freigabe.",
-    "note": "Declared CRS: EPSG:4326"
+    "osmCompatibilityComment": "Berlin veroeffentlicht diese Datengrundlage unter DL-DE-ZERO-2.0 mit dokumentierter OSM-Freigabe."
   },
   "osm": {
     "downloadedAt": "2026-04-21T20:20:22Z",
     "sourceDateSource": "osm_pbf_header",
     "provider": "OpenStreetMap (Geofabrik Germany extract)",
     "dataset": "germany-latest.osm.pbf",
+    "sourceUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf",
     "licenseId": "odbl_10",
     "licenseLabel": "ODbL-1.0",
     "licenseSourceUrl": "https://www.openstreetmap.org/copyright",
     "osmCompatibility": "yes_licence",
     "osmCompatibilitySourceUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
-    "osmCompatibilityComment": "OSM-Geometrien stammen aus OpenStreetMap unter ODbL-1.0.",
-    "sourceUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf"
+    "osmCompatibilityComment": "OSM-Geometrien stammen aus OpenStreetMap unter ODbL-1.0."
   }
 }

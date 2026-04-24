@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
+    "rust:build": "cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml",
     "format": "oxfmt --write .",
     "compare": "bun run run.ts",
     "compare:boundaries": "bun run --filter ./scripts compare",
@@ -30,6 +31,7 @@
     "test": "bun test scripts/",
     "test:scripts": "bun run --filter ./scripts test",
     "report:dev": "bun run --filter report dev",
+    "report:dev:with-rust": "bun run rust:build && bun run --filter report dev",
     "report:build": "bun run --filter report build:with-runtime",
     "report:build:app": "bun run --filter report build",
     "report:sync-runtime-assets": "bun run --filter report sync-runtime-assets",

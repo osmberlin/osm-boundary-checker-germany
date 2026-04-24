@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { area, bbox, difference, featureCollection } from '@turf/turf'
+import { area, bbox, featureCollection } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
 import {
@@ -9,7 +9,7 @@ import {
 } from '../../shared/officialForEditGeojson.ts'
 import type { OgcWfsInspectSource } from '../../shared/ogcInspectSources.ts'
 import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/sourceMetadata.ts'
-import type { CompareRow, UnmatchedOsmRow } from './compare.ts'
+import type { ComparePhaseLogger, CompareRow, UnmatchedOsmRow } from './compare.ts'
 import { computeMeanIou } from './metrics.ts'
 import { runTippecanoe, TIPPECANOE_LAYER } from './runTippecanoe.ts'
 import { calculateDiffBatchWithRust } from './rustGeomSidecar.ts'
@@ -152,65 +152,35 @@ function appendDiffFeaturesForRowWithPrecomputed(
   precomputed: {
     externalDiff: Geometry | null
     osmDiff: Geometry | null
-  } | null,
+  },
 ) {
-  const { category, canonicalMatchKey, officialGeometryWgs84, osmGeometryWgs84 } = r
-
-  if (precomputed) {
-    if (precomputed.externalDiff) {
-      const external = asPolygonFeature(precomputed.externalDiff)
-      if (external) {
-        pushDiffFeature(features, external, {
-          featureId: canonicalMatchKey,
-          boundarySource: 'external',
-        })
-      }
-    }
-    if (precomputed.osmDiff) {
-      const osm = asPolygonFeature(precomputed.osmDiff)
-      if (osm) {
-        pushDiffFeature(features, osm, {
-          featureId: canonicalMatchKey,
-          boundarySource: 'osm',
-        })
-      }
-    }
-    return
-  }
-
-  if (category === 'matched' && officialGeometryWgs84 && osmGeometryWgs84) {
-    const off = asPolygonFeature(officialGeometryWgs84)
-    const osm = asPolygonFeature(osmGeometryWgs84)
-    if (!off || !osm) return
-    try {
-      // Turf 7+: difference(featureCollection([a, b])) = area of a minus b
-      pushDiffFeature(features, difference(featureCollection([off, osm])), {
+  const { canonicalMatchKey } = r
+  if (precomputed.externalDiff) {
+    const external = asPolygonFeature(precomputed.externalDiff)
+    if (external) {
+      pushDiffFeature(features, external, {
         featureId: canonicalMatchKey,
         boundarySource: 'external',
       })
-      pushDiffFeature(features, difference(featureCollection([osm, off])), {
+    }
+  }
+  if (precomputed.osmDiff) {
+    const osm = asPolygonFeature(precomputed.osmDiff)
+    if (osm) {
+      pushDiffFeature(features, osm, {
         featureId: canonicalMatchKey,
         boundarySource: 'osm',
-      })
-    } catch {
-      /* invalid topology for boolean op */
-    }
-    return
-  }
-
-  if (category === 'official_only' && officialGeometryWgs84) {
-    const off = asPolygonFeature(officialGeometryWgs84)
-    if (off) {
-      pushDiffFeature(features, off, {
-        featureId: canonicalMatchKey,
-        boundarySource: 'external',
       })
     }
   }
 }
 
-function buildGeometryFeatureCollection(rows: CompareRow[]): FeatureCollection {
+function buildGeometryFeatureCollection(
+  rows: CompareRow[],
+  phaseLogger?: ComparePhaseLogger,
+): FeatureCollection {
   const features: Feature[] = []
+  const tDiff = Date.now()
   const rustDiffRows = calculateDiffBatchWithRust(
     rows.map((row) => ({
       category: row.category,
@@ -219,17 +189,16 @@ function buildGeometryFeatureCollection(rows: CompareRow[]): FeatureCollection {
       osmGeometryWgs84: row.osmGeometryWgs84,
     })),
   )
-  const rustDiffByKey = rustDiffRows
-    ? new Map(
-        rustDiffRows.map((row) => [
-          row.canonicalMatchKey,
-          {
-            externalDiff: row.externalDiff,
-            osmDiff: row.osmDiff,
-          },
-        ]),
-      )
-    : null
+  const rustDiffByKey = new Map(
+    rustDiffRows.map((row) => [
+      row.canonicalMatchKey,
+      {
+        externalDiff: row.externalDiff,
+        osmDiff: row.osmDiff,
+      },
+    ]),
+  )
+  phaseLogger?.('diff', Date.now() - tDiff, { rows: rustDiffRows.length })
 
   for (const r of rows) {
     if (r.officialGeometryWgs84) {
@@ -254,11 +223,11 @@ function buildGeometryFeatureCollection(rows: CompareRow[]): FeatureCollection {
         geometry: r.osmGeometryWgs84,
       })
     }
-    appendDiffFeaturesForRowWithPrecomputed(
-      features,
-      r,
-      rustDiffByKey?.get(r.canonicalMatchKey) ?? null,
-    )
+    const precomputed = rustDiffByKey.get(r.canonicalMatchKey)
+    if (!precomputed) {
+      throw new Error(`Missing rust diff result for key "${r.canonicalMatchKey}"`)
+    }
+    appendDiffFeaturesForRowWithPrecomputed(features, r, precomputed)
   }
   return { type: 'FeatureCollection', features }
 }
@@ -450,6 +419,8 @@ export function writeOutputs(
   overpassBoundaryTag: OverpassBoundaryTag,
   sourceMetadata: ComparisonSourceMetadata | null = null,
   ogcInspectSources: OgcWfsInspectSource[] = [],
+  perFeatureJson = false,
+  phaseLogger?: ComparePhaseLogger,
 ): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
   const buildDir = join(outDir, BUILD_DIR)
@@ -462,7 +433,7 @@ export function writeOutputs(
   const officialOnly = rows.filter((r) => r.category === 'official_only')
   const meanIou = computeMeanIou(rows)
 
-  const geometryFc = buildGeometryFeatureCollection(rows)
+  const geometryFc = buildGeometryFeatureCollection(rows, phaseLogger)
   const fgbPath = join(buildDir, BUILD_FGB)
   const pmtilesPath = join(outDir, PMTILES)
   const unmatchedFgbPath = join(buildDir, 'unmatched.fgb')
@@ -482,7 +453,11 @@ export function writeOutputs(
     mkdirSync(buildDir, { recursive: true })
     writeFileSync(fgbPath, geojson.serialize(geometryFc))
     try {
+      const tTippecanoeMain = Date.now()
       runTippecanoe(fgbPath, pmtilesPath)
+      phaseLogger?.('tippecanoe_main', Date.now() - tTippecanoeMain, {
+        features: geometryFc.features.length,
+      })
       hasPmtiles = true
     } finally {
       try {
@@ -507,7 +482,11 @@ export function writeOutputs(
     mkdirSync(buildDir, { recursive: true })
     writeFileSync(unmatchedFgbPath, geojson.serialize(unmatchedFc))
     try {
+      const tTippecanoeUnmatched = Date.now()
       runTippecanoe(unmatchedFgbPath, unmatchedPmtilesPath)
+      phaseLogger?.('tippecanoe_unmatched', Date.now() - tTippecanoeUnmatched, {
+        features: unmatchedFc.features.length,
+      })
       hasUnmatchedPmtiles = true
     } finally {
       try {
@@ -548,6 +527,8 @@ export function writeOutputs(
   )
   const payloadRows = rows.map((row) => comparisonRowToPayload(row, stemByKeyForOfficial))
   const payloadUnmatched = unmatchedOsm.map(unmatchedRowToPayload)
+
+  const tWritePayloads = Date.now()
   writeStaticJson(join(outDir, TABLE_JSON), {
     ...base,
     rows: payloadRows,
@@ -562,13 +543,17 @@ export function writeOutputs(
 
   const featureDir = join(outDir, 'features')
   rmSync(featureDir, { recursive: true, force: true })
-  mkdirSync(featureDir, { recursive: true })
-  for (const row of payloadRows) {
-    writeStaticJson(join(featureDir, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
-      ...base,
-      rows: [row],
-      unmatchedOsm: [],
-    } satisfies StaticComparisonPayload)
+  let featureShardCount = 0
+  if (perFeatureJson) {
+    mkdirSync(featureDir, { recursive: true })
+    for (const row of payloadRows) {
+      featureShardCount++
+      writeStaticJson(join(featureDir, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
+        ...base,
+        rows: [row],
+        unmatchedOsm: [],
+      } satisfies StaticComparisonPayload)
+    }
   }
 
   updateSnapshotsFile(
@@ -580,6 +565,12 @@ export function writeOutputs(
     officialOnly.length,
     unmatchedOsm.length,
   )
+  phaseLogger?.('write_payloads', Date.now() - tWritePayloads, {
+    rows: payloadRows.length,
+    unmatched: payloadUnmatched.length,
+    featureShards: featureShardCount,
+    perFeatureJson,
+  })
 
   return { snapshotId }
 }

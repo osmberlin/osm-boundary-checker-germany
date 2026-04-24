@@ -5,15 +5,21 @@ WORKDIR /workspace
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
+  build-essential \
   curl \
   gdal-bin \
   osmium-tool \
+  pkg-config \
   tippecanoe \
   unzip \
   && rm -rf /var/lib/apt/lists/*
 
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal --default-toolchain stable
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 COPY package.json bun.lock tsconfig.json run.ts ./
 COPY scripts ./scripts
+COPY rust ./rust
 COPY report ./report
 COPY datasets ./datasets
 RUN mkdir -p /opt/seed && cp -R ./datasets /opt/seed/datasets
@@ -22,6 +28,7 @@ COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 RUN bun install --frozen-lockfile
+RUN cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml
 RUN bun run report:build
 
 ENV PORT=4173

@@ -25,30 +25,26 @@ type RustDiffBatchResult = {
   osmDiff: Geometry | null
 }
 
-let warned = false
-
-function warnOnce(message: string) {
-  if (warned) return
-  warned = true
-  console.warn(message)
-}
-
 function defaultRustBinaryPath(): string {
   const here = dirname(fileURLToPath(import.meta.url))
   const ext = process.platform === 'win32' ? '.exe' : ''
   return join(here, '../../../rust/geom-sidecar/target/release/geom-sidecar' + ext)
 }
 
-function rustGeomEnabled(): boolean {
-  return process.env.RUST_GEOM?.trim() === '1'
+function rustBootstrapHint(bin: string): string {
+  return (
+    `Rust geometry sidecar is required for compare runs.\n` +
+    `Expected binary: ${bin}\n\n` +
+    `Build it with:\n` +
+    `  cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml\n\n` +
+    `Optionally set RUST_GEOM_BIN to a custom binary path.`
+  )
 }
 
-function runRustCommand<TInput, TOutput>(command: string, payload: TInput): TOutput | null {
-  if (!rustGeomEnabled()) return null
+function runRustCommand<TInput, TOutput>(command: string, payload: TInput): TOutput {
   const bin = process.env.RUST_GEOM_BIN?.trim() || defaultRustBinaryPath()
   if (!existsSync(bin)) {
-    warnOnce(`[rust-geom] Binary not found at ${bin}; using TypeScript fallback.`)
-    return null
+    throw new Error(rustBootstrapHint(bin))
   }
   const result = spawnSync(bin, [command], {
     input: JSON.stringify(payload),
@@ -57,22 +53,22 @@ function runRustCommand<TInput, TOutput>(command: string, payload: TInput): TOut
   })
   if (result.error || result.status !== 0) {
     const stderr = (result.stderr ?? '').trim()
-    warnOnce(
+    throw new Error(
       `[rust-geom] ${command} failed (${result.status ?? 'spawn_error'}): ${
         stderr || String(result.error)
-      }. Using TypeScript fallback.`,
+      }\n\n${rustBootstrapHint(bin)}`,
     )
-    return null
   }
   try {
     return JSON.parse(result.stdout) as TOutput
-  } catch {
-    warnOnce(`[rust-geom] ${command} produced invalid JSON; using TypeScript fallback.`)
-    return null
+  } catch (error) {
+    throw new Error(
+      `[rust-geom] ${command} produced invalid JSON: ${String(error)}\n\n${rustBootstrapHint(bin)}`,
+    )
   }
 }
 
-export function unionByKeyWithRust(buckets: RustUnionBucket[]): RustUnionResult[] | null {
+export function unionByKeyWithRust(buckets: RustUnionBucket[]): RustUnionResult[] {
   const output = runRustCommand<
     { buckets: RustUnionBucket[] },
     {
@@ -84,7 +80,6 @@ export function unionByKeyWithRust(buckets: RustUnionBucket[]): RustUnionResult[
       }>
     }
   >('union-by-key', { buckets })
-  if (!output) return null
   return output.results.map((row) => ({
     key: row.key,
     geometry: row.geometry,
@@ -95,7 +90,7 @@ export function unionByKeyWithRust(buckets: RustUnionBucket[]): RustUnionResult[
 
 export function calculateMetricsBatchWithRust(
   rows: Array<{ officialProjected: Geometry | null; osmProjected: Geometry | null }>,
-): Array<MetricResult | null> | null {
+): Array<MetricResult | null> {
   const output = runRustCommand<
     { rows: Array<{ official_projected: Geometry | null; osm_projected: Geometry | null }> },
     {
@@ -114,7 +109,6 @@ export function calculateMetricsBatchWithRust(
       osm_projected: row.osmProjected,
     })),
   })
-  if (!output) return null
   return output.rows.map((row) =>
     row
       ? {
@@ -136,7 +130,7 @@ export function calculateDiffBatchWithRust(
     officialGeometryWgs84: Geometry | null
     osmGeometryWgs84: Geometry | null
   }>,
-): RustDiffBatchResult[] | null {
+): RustDiffBatchResult[] {
   const output = runRustCommand<
     {
       rows: Array<{
@@ -161,7 +155,6 @@ export function calculateDiffBatchWithRust(
       osm_geometry_wgs84: row.osmGeometryWgs84,
     })),
   })
-  if (!output) return null
   return output.rows.map((row) => ({
     canonicalMatchKey: row.canonical_match_key,
     externalDiff: row.external_diff,

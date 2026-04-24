@@ -171,6 +171,14 @@ export async function loadFeatureOrFallback(
     return await loadFeature(area, featureKey)
   } catch (error) {
     const fallback = await loadComparison(area)
+    const matchedRow = fallback.rows.find((row) => row.canonicalMatchKey === featureKey)
+    if (matchedRow) {
+      return {
+        ...fallback,
+        rows: [matchedRow],
+        unmatchedOsm: [],
+      }
+    }
     const hasUnmatched = fallback.unmatchedOsm.some((row) => row.canonicalMatchKey === featureKey)
     if (hasUnmatched) return fallback
     throw error
