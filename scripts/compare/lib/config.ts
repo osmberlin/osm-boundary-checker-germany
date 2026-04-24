@@ -19,10 +19,12 @@ export const DEFAULT_OSM_MATCH_PROPERTY = 'de:regionalschluessel'
 
 /** Optional compare tuning (bbox prefilter, etc.). */
 export type CompareConfig = {
-  /** If true, drop OSM features whose bbox does not overlap an expanded official union bbox. */
-  applyBboxFilter?: boolean
-  /** Pad official bbox in degrees (default 0.05 ≈ few km at mid-latitudes). */
+  /** OSM bbox prefilter strategy before key matching. */
+  bboxFilter: 'none' | 'official_bbox_overlap'
+  /** Pad official bbox in degrees (required when bboxFilter=official_bbox_overlap). */
   bboxBufferDegrees?: number
+  /** Geometric scope filter for OSM features after bbox prefilter. */
+  osmScopeFilter: 'none' | 'centroid_in_official_coverage'
 }
 
 export type OsmConfig = {
@@ -53,33 +55,61 @@ export type BoundaryConfig = {
     keyTransposition?: OfficialKeyTransposition
   }
   osm: OsmConfig
-  compare?: CompareConfig
+  compare: CompareConfig
   idNormalization: { preset: IdNormalizationPreset }
   metricsCrs: string
 }
 
-function parseCompareConfig(areaLabel: string, raw: unknown): CompareConfig | undefined {
-  if (raw === undefined || raw === null) return undefined
+function parseCompareConfig(areaLabel: string, raw: unknown): CompareConfig {
+  if (raw === undefined || raw === null) {
+    throw new Error(`${areaLabel}: compare must be configured explicitly`)
+  }
   if (typeof raw !== 'object' || Array.isArray(raw)) {
     throw new Error(`${areaLabel}: compare must be an object`)
   }
   const o = raw as Record<string, unknown>
-  const out: CompareConfig = {}
-  if (o.applyBboxFilter === true) out.applyBboxFilter = true
-  if (o.applyBboxFilter === false) out.applyBboxFilter = false
-  if (o.applyBboxFilter !== undefined && typeof o.applyBboxFilter !== 'boolean') {
-    throw new Error(`${areaLabel}: compare.applyBboxFilter must be a boolean`)
+  if (typeof o.bboxFilter !== 'string') {
+    throw new Error(`${areaLabel}: compare.bboxFilter must be "none" or "official_bbox_overlap"`)
   }
-  if (o.bboxBufferDegrees !== undefined) {
+  const bboxFilter = o.bboxFilter.trim()
+  if (bboxFilter !== 'none' && bboxFilter !== 'official_bbox_overlap') {
+    throw new Error(`${areaLabel}: compare.bboxFilter must be "none" or "official_bbox_overlap"`)
+  }
+
+  if (typeof o.osmScopeFilter !== 'string') {
+    throw new Error(
+      `${areaLabel}: compare.osmScopeFilter must be "none" or "centroid_in_official_coverage"`,
+    )
+  }
+  const scopeFilter = o.osmScopeFilter.trim()
+  if (scopeFilter !== 'none' && scopeFilter !== 'centroid_in_official_coverage') {
+    throw new Error(
+      `${areaLabel}: compare.osmScopeFilter must be "none" or "centroid_in_official_coverage"`,
+    )
+  }
+
+  let bboxBufferDegrees: number | undefined
+  if (bboxFilter === 'official_bbox_overlap') {
     if (typeof o.bboxBufferDegrees !== 'number' || !Number.isFinite(o.bboxBufferDegrees)) {
-      throw new Error(`${areaLabel}: compare.bboxBufferDegrees must be a finite number`)
+      throw new Error(
+        `${areaLabel}: compare.bboxBufferDegrees must be a finite number when compare.bboxFilter="official_bbox_overlap"`,
+      )
     }
     if (o.bboxBufferDegrees < 0) {
       throw new Error(`${areaLabel}: compare.bboxBufferDegrees must be >= 0`)
     }
-    out.bboxBufferDegrees = o.bboxBufferDegrees
+    bboxBufferDegrees = o.bboxBufferDegrees
+  } else if (o.bboxBufferDegrees !== undefined) {
+    throw new Error(
+      `${areaLabel}: compare.bboxBufferDegrees is only valid when compare.bboxFilter="official_bbox_overlap"`,
+    )
   }
-  return Object.keys(out).length > 0 ? out : undefined
+
+  return {
+    bboxFilter,
+    ...(bboxBufferDegrees !== undefined ? { bboxBufferDegrees } : {}),
+    osmScopeFilter: scopeFilter,
+  }
 }
 
 function parseOsmConfig(areaLabel: string, raw: unknown): OsmConfig {
@@ -182,7 +212,7 @@ export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryC
       ...(keyTransposition ? { keyTransposition } : {}),
     },
     osm,
-    ...(compare ? { compare } : {}),
+    compare,
     idNormalization: { preset: String(idNormalization.preset).trim() as IdNormalizationPreset },
     metricsCrs: String(c.metricsCrs).trim(),
   }

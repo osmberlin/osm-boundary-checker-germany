@@ -51,7 +51,7 @@ export const de = {
       'Die OSM-Geometrien werden aus einem Geofabrik-Länder-Extract gewonnen (üblicherweise Germany), lokal zwischengespeichert und anschließend gefiltert.',
     osmFilterTitle: 'Filterung (OSM)',
     osmFilterBody:
-      'Zuerst schränkt osmium tags-filter die PBF typischerweise auf administrative Grenz-Relationen und -Ways ein (Standard z. B. r/boundary=administrative und w/boundary=administrative). Danach wählt ogr2ogr auf dem GDAL-Layer multipolygons mit einer gebietsspezifischen Bedingung (ogrWhere oder -sql in config.jsonc) die Zielobjekte aus.',
+      'Zuerst schränkt osmium tags-filter die PBF typischerweise auf Grenzobjekte ein (z. B. administrative Grenzen oder PLZ-Grenzen). Danach wählt ogr2ogr auf dem GDAL-Layer multipolygons mit einer gebietsspezifischen Bedingung (ogrWhere oder -sql in config.jsonc) die Zielobjekte aus. Der Compare-Lauf nutzt danach pro Datensatz explizit konfigurierte Scope-Regeln (`compare.bboxFilter` und `compare.osmScopeFilter`). Dadurch zählen „Nur OSM“-Treffer nur dann, wenn sie im konfigurierten räumlichen Vergleichsbereich liegen.',
     osmFilterNoteTitle: 'Konkrete Zusammenfassung aus dem Build',
   },
 
@@ -155,7 +155,7 @@ export const de = {
     liveSourcesSectionAria: 'Live-Attribute von amtlichen Diensten und OSM',
     liveSourcesSectionTitle: 'Quellenattribute abfragen',
     liveSourcesSectionLead:
-      'WFS: konfigurierte amtliche Dienste für den Kartenausschnitt (Bounding Box aus dem Vergleich, leicht gepuffert). OSM: optionale Overpass-Abfrage für alle `boundary=administrative`-Relationen und -Ways in genau diesem Kasten — ohne weitere Tag-Filter, zum manuellen Abgleich.',
+      'WFS: konfigurierte amtliche Dienste für den Kartenausschnitt (Bounding Box aus dem Vergleich, leicht gepuffert). OSM: optionale Overpass-Abfrage für alle `boundary=*`-Relationen und -Ways passend zum Datensatz in genau diesem Kasten — ohne weitere Tag-Filter, zum manuellen Abgleich.',
     liveOfficialHeading: 'Amtliche Quelle (WFS)',
     liveOfficialLoad: 'Eigenschaften laden',
     liveOfficialLoading: 'Wird geladen …',
@@ -166,7 +166,7 @@ export const de = {
     liveOfficialFeatureTitle: (index1: number, id: string) =>
       `Datensatz ${index1}${id ? ` · ${id}` : ''}`,
     liveOsmHeading: 'OpenStreetMap (Overpass)',
-    liveOsmLoad: 'Verwaltungsgrenzen im Ausschnitt laden …',
+    liveOsmLoad: 'OSM-Grenzen im Ausschnitt laden …',
     liveOsmOverpassWarnTitle: 'Overpass-Anfrage',
     liveOsmOverpassWarnLead:
       'Es wird eine echte Anfrage an die öffentliche Overpass-API gesendet (Last für die Server, Timeout möglich).',
@@ -182,7 +182,7 @@ export const de = {
       'Server oder Abfrage anpassen und erneut senden — oder „Abbrechen“ und den Dialog schließen.',
     liveOsmAgain: 'Neue Overpass-Abfrage',
     liveOsmLoading: 'Overpass antwortet …',
-    liveOsmEmpty: 'Keine Treffer (`boundary=administrative` in diesem Kasten).',
+    liveOsmEmpty: 'Keine Treffer (`boundary=*` passend zum Datensatz in diesem Kasten).',
     liveOsmHitNoTags: '(keine Tags)',
     liveOsmInvalidJson: 'Unerwartete Overpass-Antwort.',
     liveOsmHttp: 'Overpass-Anfrage fehlgeschlagen:',

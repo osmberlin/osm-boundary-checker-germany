@@ -9,4 +9,4 @@ Official boundaries from Berlin **ALKIS Ortsteile** WFS, compared to OSM adminis
 
 ## Notes
 
-- `compare.applyBboxFilter` limits OSM features to a buffered bbox around official data (faster compare; same Schlüssel matching as elsewhere).
+- `compare.bboxFilter=official_bbox_overlap` limits OSM features to a buffered bbox around official data (faster compare; same Schlüssel matching as elsewhere).

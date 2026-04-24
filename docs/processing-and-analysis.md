@@ -77,8 +77,14 @@ Nightlies and one-shot runs are orchestrated from the workspace root (see [READM
 - Optional `**official.keyTransposition**`: when the official dataset has no compatible Schlüssel, map values from `**official.matchProperty**` to raw OSM Schlüssel strings, then normalize (`[scripts/compare/lib/officialKeyTransposition.ts](../scripts/compare/lib/officialKeyTransposition.ts)`).
 - Values are normalized with a **preset** (`berlin-bezirk-ags`, `amtlicher-8`, `regional-12`, `plz-5`) in `[scripts/compare/lib/normalizeGermanKey.ts](../scripts/compare/lib/normalizeGermanKey.ts)` so key formats align where intended.
 
-2b. **Optional bbox prefilter**  
- If `**compare.applyBboxFilter`** is true, compare derives a union bbox from official geometries, expands it by `**compare.bboxBufferDegrees`** (default `0.05`° when omitted), and drops OSM features whose bbox does not overlap before merge/metrics (`[scripts/compare/lib/compare.ts](../scripts/compare/lib/compare.ts)`).
+2b. **Explicit spatial scope (per dataset)**  
+ Compare reads explicit enum decisions from `compare`:
+
+- `compare.bboxFilter`: `none` or `official_bbox_overlap`
+- `compare.osmScopeFilter`: `none` or `centroid_in_official_coverage`
+- `compare.bboxBufferDegrees`: required when `bboxFilter=official_bbox_overlap`
+
+With `bboxFilter=official_bbox_overlap`, compare derives a union bbox from official geometries, expands it by `compare.bboxBufferDegrees`, and drops OSM features whose bbox does not overlap. With `osmScopeFilter=centroid_in_official_coverage`, compare additionally keeps only OSM features whose centroid lies inside official polygon coverage before merge/metrics (`[scripts/compare/lib/compare.ts](../scripts/compare/lib/compare.ts)`).
 
 1. **Geometry merge**
    Multiple official or OSM features sharing the same normalized key are **unioned** before metrics (`[scripts/compare/lib/geoMerge.ts](../scripts/compare/lib/geoMerge.ts)`).

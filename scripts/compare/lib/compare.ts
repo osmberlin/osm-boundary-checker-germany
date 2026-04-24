@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as turf from '@turf/turf'
-import type { BBox, Feature, Geometry } from 'geojson'
+import type { BBox, Feature, Geometry, MultiPolygon, Point, Polygon } from 'geojson'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
 import type { BoundaryConfig } from './config.ts'
 import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
@@ -34,9 +34,11 @@ export type UnmatchedOsmRow = {
   osmGeometryWgs84: Geometry | null
 }
 
-function pickOsmRelationId(featureIds: string[]): string {
+function pickOsmRelationId(featureIds: string[], props?: Record<string, unknown> | null): string {
   const rel = featureIds.find((id) => id.startsWith('relation/'))
   if (rel) return rel.replace('relation/', '')
+  const fallbackRel = resolveRelationId(props)
+  if (fallbackRel) return fallbackRel
   return featureIds[0] ?? ''
 }
 
@@ -83,13 +85,72 @@ function filterOsmByOfficialBbox(
   })
 }
 
-const DEFAULT_BBOX_BUFFER_DEG = 0.05
+function toPolygonFeature(feature: Feature): Feature<Polygon | MultiPolygon> | null {
+  const geometry = feature.geometry
+  if (!geometry) return null
+  if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') return null
+  return feature as Feature<Polygon | MultiPolygon>
+}
+
+function hasCentroidInOfficialCoverage(
+  osmFeature: Feature,
+  officialCoverage: Feature<Polygon | MultiPolygon>[],
+): boolean {
+  if (!osmFeature.geometry) return false
+  let centroid: Feature<Point>
+  try {
+    centroid = turf.centroid(osmFeature as Feature) as Feature<Point>
+  } catch {
+    return false
+  }
+  for (const official of officialCoverage) {
+    if (turf.booleanPointInPolygon(centroid, official)) return true
+  }
+  return false
+}
+
+function filterOsmByOfficialCoverageCentroid(
+  osmFeatures: Feature[],
+  officialFeatures: Feature[],
+): Feature[] {
+  const officialCoverage = officialFeatures
+    .map((feature) => toPolygonFeature(feature))
+    .filter((feature): feature is Feature<Polygon | MultiPolygon> => feature != null)
+  if (officialCoverage.length === 0) {
+    throw new Error(
+      'compare.osmScopeFilter=centroid_in_official_coverage requires official polygon geometries',
+    )
+  }
+  return osmFeatures.filter((feature) => hasCentroidInOfficialCoverage(feature, officialCoverage))
+}
 
 function parseRelationId(rawId: unknown): string | null {
   const id = typeof rawId === 'string' ? rawId.trim() : ''
-  if (!id.startsWith('relation/')) return null
-  const relId = id.slice('relation/'.length).trim()
-  return relId.length > 0 ? relId : null
+  if (id.length === 0) return null
+  if (/^\d+$/.test(id)) return id
+  const slash = id.lastIndexOf('/')
+  if (slash < 0) return null
+  const tail = id.slice(slash + 1).trim()
+  return /^\d+$/.test(tail) ? tail : null
+}
+
+function parseRelationIdFromOsmId(raw: unknown): string | null {
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    if (raw !== 0) return String(Math.trunc(Math.abs(raw)))
+    return null
+  }
+  if (typeof raw !== 'string') return null
+  const text = raw.trim()
+  if (text.length === 0) return null
+  const asNumber = Number(text)
+  if (!Number.isFinite(asNumber)) return null
+  if (asNumber !== 0) return String(Math.trunc(Math.abs(asNumber)))
+  return null
+}
+
+function resolveRelationId(props: Record<string, unknown> | null | undefined): string | null {
+  if (!props) return null
+  return parseRelationId(props['@id']) ?? parseRelationIdFromOsmId(props.osm_id)
 }
 
 export async function runCompare(
@@ -121,20 +182,31 @@ export async function runCompare(
 
   const officialFc = await loadFeatureCollection(officialPath)
   let osmFc = await loadFeatureCollection(osmPath)
+  const initialOsmFeatureCount = osmFc.features.length
+  let droppedByBbox = 0
+  let droppedByScope = 0
 
-  if (config.compare?.applyBboxFilter) {
+  if (config.compare.bboxFilter === 'official_bbox_overlap') {
     const ob = unionOfficialBbox(officialFc.features)
     if (!ob) {
       throw new Error(
-        `${areaFolder}: compare.applyBboxFilter is true but official features have no geometries to derive a bbox`,
+        `${areaFolder}: compare.bboxFilter="official_bbox_overlap" but official features have no geometries to derive a bbox`,
       )
     }
-    const buf =
-      config.compare.bboxBufferDegrees !== undefined
-        ? config.compare.bboxBufferDegrees
-        : DEFAULT_BBOX_BUFFER_DEG
+    const buf = config.compare.bboxBufferDegrees ?? 0
     const filtered = filterOsmByOfficialBbox(osmFc.features, ob, buf)
+    droppedByBbox = osmFc.features.length - filtered.length
     osmFc = { type: 'FeatureCollection', features: filtered }
+  }
+  if (config.compare.osmScopeFilter === 'centroid_in_official_coverage') {
+    const filtered = filterOsmByOfficialCoverageCentroid(osmFc.features, officialFc.features)
+    droppedByScope = osmFc.features.length - filtered.length
+    osmFc = { type: 'FeatureCollection', features: filtered }
+  }
+  if (droppedByBbox > 0 || droppedByScope > 0) {
+    console.log(
+      `${areaFolder}: OSM scope filtering kept ${osmFc.features.length}/${initialOsmFeatureCount} features (bbox dropped: ${droppedByBbox}, centroid scope dropped: ${droppedByScope})`,
+    )
   }
 
   const officialMap = unionFeaturesByKey(officialFc, (props) => {
@@ -152,7 +224,7 @@ export async function runCompare(
   const osmMap = unionFeaturesByKey(osmFc, (props) => {
     const p = props as Record<string, unknown>
     if (relationIdCriteria) {
-      const relId = parseRelationId(p?.['@id'])
+      const relId = resolveRelationId(p)
       if (!relId || !relationIdCriteria.has(relId)) return null
       return normalizeOsmValue('osm_relation_id', relId, preset).canonicalMatchKey
     }
@@ -166,7 +238,7 @@ export async function runCompare(
     const props = f.properties as Record<string, unknown>
     let canonicalKey: string | null = null
     if (relationIdCriteria) {
-      const relId = parseRelationId(props?.['@id'])
+      const relId = resolveRelationId(props)
       if (!relId || !relationIdCriteria.has(relId)) continue
       canonicalKey = normalizeOsmValue('osm_relation_id', relId, preset).canonicalMatchKey
     } else {
@@ -193,7 +265,9 @@ export async function runCompare(
 
     const category: CompareRow['category'] = officialGeom && osmGeom ? 'matched' : 'official_only'
 
-    const osmRelationId = osmGeom ? pickOsmRelationId(s?.featureIds ?? []) : ''
+    const osmRelationId = osmGeom
+      ? pickOsmRelationId(s?.featureIds ?? [], s?.properties ?? null)
+      : ''
 
     let metrics: MetricResult | null = null
     if (category === 'matched' && officialGeom && osmGeom) {
@@ -229,7 +303,7 @@ export async function runCompare(
     unmatchedOsm.push({
       canonicalMatchKey: key,
       nameLabel,
-      osmRelationId: pickOsmRelationId(s.featureIds),
+      osmRelationId: pickOsmRelationId(s.featureIds, props),
       adminLevel: readAdminLevel(props),
       osmGeometryWgs84: s.geometry ?? null,
     })

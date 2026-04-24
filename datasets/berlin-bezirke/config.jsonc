@@ -9,6 +9,12 @@
   },
   "metricsCrs": "EPSG:32633",
 
+  "compare": {
+    "bboxFilter": "official_bbox_overlap",
+    "bboxBufferDegrees": 0.05,
+    "osmScopeFilter": "centroid_in_official_coverage",
+  },
+
   // Machine-readable: `bun run download:official` fetches this URL and writes official.path as FGB
   "download": {
     "official": {

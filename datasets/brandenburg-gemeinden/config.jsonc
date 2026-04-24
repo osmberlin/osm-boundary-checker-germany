@@ -10,8 +10,9 @@
   "metricsCrs": "EPSG:25832",
 
   "compare": {
-    "applyBboxFilter": true,
+    "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
+    "osmScopeFilter": "centroid_in_official_coverage",
   },
 
   "download": {

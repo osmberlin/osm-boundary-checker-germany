@@ -8,4 +8,8 @@
     "preset": "regional-12",
   },
   "metricsCrs": "EPSG:25832",
+  "compare": {
+    "bboxFilter": "none",
+    "osmScopeFilter": "none",
+  },
 }

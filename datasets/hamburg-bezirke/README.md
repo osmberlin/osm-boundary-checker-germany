@@ -13,4 +13,4 @@ The `map` values are **placeholders** (sequential `020000000001` … `0200000000
 
 ## Performance
 
-`compare.applyBboxFilter` keeps OSM geometry work inside a buffered box around Hamburg official data.
+`compare.bboxFilter=official_bbox_overlap` keeps OSM geometry work inside a buffered box around Hamburg official data.
