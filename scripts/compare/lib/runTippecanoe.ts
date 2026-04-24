@@ -6,11 +6,13 @@ export const TIPPECANOE_LAYER = 'boundaries'
 /**
  * User-facing map policy:
  * - geometry may be simplified below z15
+ * - z10 should keep roughly sub-kilometer fidelity (target: ~500 m in Germany)
  * - z15 should preserve full geometry detail
  */
 const MAX_ZOOM = '15'
 const FULL_DETAIL_ZOOM = '15'
-const LOW_DETAIL_ZOOM = '9'
+const LOW_DETAIL_ZOOM = '11'
+const SIMPLIFICATION_FACTOR = '4'
 const TIPPECANOE_MAX_BUFFER_BYTES = 256 * 1024 * 1024
 
 /**
@@ -28,7 +30,9 @@ export function tippecanoeArgs(inputVectorPath: string, outputPmtilesPath: strin
     `--maximum-zoom=${MAX_ZOOM}`,
     `--full-detail=${FULL_DETAIL_ZOOM}`,
     `--low-detail=${LOW_DETAIL_ZOOM}`,
-    '--simplification=10',
+    `--simplification=${SIMPLIFICATION_FACTOR}`,
+    // Keep adjacent polygons aligned after simplification (fewer seams/gaps).
+    '--detect-shared-borders',
     '--drop-densest-as-needed',
     inputVectorPath,
   ]

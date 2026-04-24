@@ -153,8 +153,9 @@ Implemented in [`scripts/compare/lib/runTippecanoe.ts`](scripts/compare/lib/runT
 
 - `--maximum-zoom=15`
 - `--full-detail=15` (full detail at z15)
-- `--low-detail=9`
-- `--simplification=10`
+- `--low-detail=11` (more geometry kept around z10)
+- `--simplification=4` (reduced simplification strength; better ~500m-level fidelity at z10)
+- `--detect-shared-borders` (topology-aware simplification for adjacent polygons)
 - `--drop-densest-as-needed`
 
 Adjust there if you need a different detail zoom or trade-off vs. file size.
