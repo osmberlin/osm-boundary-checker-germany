@@ -6,7 +6,7 @@ import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { readAreaSourceMetadataFile, toComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 import { runCompare } from './lib/compare.ts'
-import { writeOutputs } from './lib/writeOutputs.ts'
+import { type OverpassBoundaryTag, writeOutputs } from './lib/writeOutputs.ts'
 
 function parseArgs(argv: string[]) {
   let area: string | null = null
@@ -24,6 +24,10 @@ function parseArgs(argv: string[]) {
 
 function getWorkspaceRoot(): string {
   return workspaceRootFromHere(import.meta.url)
+}
+
+function overpassBoundaryTagFromMatchProperty(matchProperty: string): OverpassBoundaryTag {
+  return matchProperty.trim().toLowerCase() === 'postal_code' ? 'postal_code' : 'administrative'
 }
 
 async function main() {
@@ -46,10 +50,20 @@ async function main() {
 
   console.log(`Comparing area: ${area}`)
   const areaPath = datasetFolderPath(runtimeRoot, area)
-  const { rows, unmatchedOsm, metricsCrs } = await runCompare(runtimeRoot, area, configRaw)
+  const { config, rows, unmatchedOsm, metricsCrs } = await runCompare(runtimeRoot, area, configRaw)
   const meta = toComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
   const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
-  writeOutputs(areaPath, area, rows, unmatchedOsm, metricsCrs, meta, ogcInspectSources)
+  const overpassBoundaryTag = overpassBoundaryTagFromMatchProperty(config.osm.matchProperty)
+  writeOutputs(
+    areaPath,
+    area,
+    rows,
+    unmatchedOsm,
+    metricsCrs,
+    overpassBoundaryTag,
+    meta,
+    ogcInspectSources,
+  )
   console.log(`Wrote output PMTiles + static report payloads under ${DATASETS_DIRECTORY}/${area}`)
 }
 

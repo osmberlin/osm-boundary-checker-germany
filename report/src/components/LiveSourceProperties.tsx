@@ -106,6 +106,7 @@ function withoutNameStarTags(tags: Record<string, string>): Record<string, strin
 export function LiveSourceProperties({ data, row }: { data: ComparisonForReport; row: ReportRow }) {
   const sources = data.ogcInspectSources ?? []
   const bbox = row.mapBbox ? padMapBbox(row.mapBbox) : null
+  const overpassBoundaryTag = data.overpassBoundaryTag ?? 'administrative'
 
   const [officialById, setOfficialById] = useState<Record<string, OfficialSlot>>({})
   const [osm, setOsm] = useState<OsmSlot>({ status: 'idle' })
@@ -241,7 +242,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
               onClick={() =>
                 setOsm({
                   status: 'confirm',
-                  queryDraft: buildOverpassBoundaryQuery(bbox),
+                  queryDraft: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
                   interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
                 })
               }
@@ -324,7 +325,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                   onClick={() =>
                     setOsm({
                       status: 'confirm',
-                      queryDraft: buildOverpassBoundaryQuery(bbox),
+                      queryDraft: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
                       interpreterUrl: osm.interpreterUrl,
                     })
                   }

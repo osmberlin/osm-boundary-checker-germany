@@ -6,10 +6,13 @@ import {
 const MAX_QUERY_LEN = 48_000
 
 /**
- * Overpass QL: administrative boundaries intersecting bbox (no extra tag filters).
+ * Overpass QL: `boundary=<tag>` relation/way features intersecting bbox (no extra tag filters).
  * Bbox: WGS84 [west, south, east, north] in degrees.
  */
-export function buildOverpassBoundaryQuery(bbox: [number, number, number, number]): string {
+export function buildOverpassBoundaryQuery(
+  bbox: [number, number, number, number],
+  boundaryTag: 'administrative' | 'postal_code' = 'administrative',
+): string {
   const [west, south, east, north] = bbox
   const s = south
   const w = west
@@ -17,8 +20,8 @@ export function buildOverpassBoundaryQuery(bbox: [number, number, number, number
   const e = east
   return `[out:json][timeout:90];
 (
-  relation["boundary"="administrative"](${s},${w},${n},${e});
-  way["boundary"="administrative"](${s},${w},${n},${e});
+  relation["boundary"="${boundaryTag}"](${s},${w},${n},${e});
+  way["boundary"="${boundaryTag}"](${s},${w},${n},${e});
 );
 out tags;`
 }
