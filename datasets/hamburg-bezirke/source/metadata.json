@@ -1,6 +1,6 @@
 {
   "official": {
-    "downloadedAt": "2026-04-22T19:08:41.828Z",
+    "downloadedAt": "2026-04-24T06:12:56.054Z",
     "provider": "HTTP",
     "dataset": "GeoJSON",
     "sourceUrl": "https://api.hamburg.de/datasets/v1/regionalstatistische_daten_bezirke/collections/regionalstatistische_daten_bezirke/items?f=json&filter=jahr%20%3D%20%272024%27&limit=20",
@@ -8,6 +8,7 @@
   },
   "osm": {
     "downloadedAt": "2026-04-21T20:20:22Z",
+    "sourceDateSource": "osm_pbf_header",
     "provider": "OpenStreetMap (Geofabrik Germany extract)",
     "dataset": "germany-latest.osm.pbf",
     "sourceUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf"

@@ -2,6 +2,7 @@
   "areas": [
     "berlin-bezirke",
     "berlin-ortsteile",
+    "berlin-plz",
     "brandenburg-berlin-plz",
     "brandenburg-gemeinden",
     "de-gemeinden",
@@ -18,28 +19,35 @@
       "displayName": "Berlin Bezirke",
       "matched": 12,
       "officialOnly": 0,
-      "unmatchedOsm": 12490
+      "unmatchedOsm": 2
     },
     {
       "area": "berlin-ortsteile",
       "displayName": "Berlin Ortsteile",
       "matched": 0,
       "officialOnly": 97,
-      "unmatchedOsm": 83
+      "unmatchedOsm": 14
+    },
+    {
+      "area": "berlin-plz",
+      "displayName": "Berlin PLZ",
+      "matched": 190,
+      "officialOnly": 3,
+      "unmatchedOsm": 0
     },
     {
       "area": "brandenburg-berlin-plz",
       "displayName": "Brandenburg Berlin PLZ",
-      "matched": 410,
-      "officialOnly": 0,
-      "unmatchedOsm": 322
+      "matched": 405,
+      "officialOnly": 5,
+      "unmatchedOsm": 1
     },
     {
       "area": "brandenburg-gemeinden",
       "displayName": "Brandenburg Gemeinden",
       "matched": 411,
       "officialOnly": 2,
-      "unmatchedOsm": 676
+      "unmatchedOsm": 100
     },
     {
       "area": "de-gemeinden",
@@ -72,8 +80,8 @@
     {
       "area": "de-staat",
       "displayName": "Deutschland Staat",
-      "matched": 0,
-      "officialOnly": 1,
+      "matched": 1,
+      "officialOnly": 0,
       "unmatchedOsm": 0
     },
     {
@@ -88,7 +96,7 @@
       "displayName": "Hamburg Bezirke",
       "matched": 0,
       "officialOnly": 7,
-      "unmatchedOsm": 485
+      "unmatchedOsm": 1
     }
   ],
   "geoDataSources": [
@@ -127,6 +135,10 @@
     {
       "name": "gdi.berlin.de (alkis_ortsteile:ortsteile)",
       "href": "https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326"
+    },
+    {
+      "name": "gdi.berlin.de (postleitzahlen:postleitzahlen)",
+      "href": "https://gdi.berlin.de/services/wfs/postleitzahlen?service=WFS&version=2.0.0&request=GetFeature&typeNames=postleitzahlen%3Apostleitzahlen&outputFormat=application%2Fjson&srsName=EPSG%3A4326&count=1000000"
     },
     {
       "name": "isk.geobasis-bb.de (app:Gemeinden)",
