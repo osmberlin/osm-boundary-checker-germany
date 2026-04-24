@@ -329,8 +329,14 @@ function main() {
   }
 
   const extractTargets: Record<ExtractKind, { basename: string; sql: string }> = {
-    admin: { basename: GERMANY_OSM_SHARED_FGB_BASENAME, sql: adminExtract!.sql },
+    admin: {
+      basename: GERMANY_OSM_SHARED_FGB_BASENAME,
+      sql: adminExtract?.sql ?? '',
+    },
     plz: { basename: GERMANY_OSM_SHARED_PLZ_FGB_BASENAME, sql: SHARED_OSM_PLZ_OGR_SQL },
+  }
+  if (kind === 'admin' && extractTargets.admin.sql === '') {
+    throw new Error('Missing shared admin extract SQL configuration')
   }
   const target = extractTargets[kind]
   const outFgb = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, target.basename)
