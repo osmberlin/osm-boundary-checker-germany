@@ -32,24 +32,13 @@ import {
   writeAreaSourceMetadataFile,
 } from '../shared/sourceMetadata.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
+import { loadSharedAdminOsmExtractConfig } from './loadOsmExtractConfig.ts'
 
 /** GDAL OSM driver config: promotes `de:regionalschluessel` etc. out of `other_tags`. */
 const GDAL_OSM_BOUNDARIES_INI = join(
   dirname(fileURLToPath(import.meta.url)),
   'gdal-osm-boundaries.ini',
 )
-
-/**
- * Broad extract: any administrative boundary with a non-empty
- * `de:regionalschluessel`.
- */
-const SHARED_OSM_OGR_SQL = `
-SELECT geometry, "de:regionalschluessel"
-FROM multipolygons
-WHERE boundary = 'administrative'
-  AND "de:regionalschluessel" IS NOT NULL
-  AND "de:regionalschluessel" <> ''
-`.trim()
 
 const SHARED_OSM_PLZ_OGR_SQL = `
 SELECT geometry, postal_code
@@ -60,6 +49,60 @@ WHERE boundary = 'postal_code'
 `.trim()
 
 type ExtractKind = 'admin' | 'plz'
+
+function quoteSqlIdentifier(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`
+}
+
+function parseRelationIdForSql(raw: string): number {
+  const text = raw.trim()
+  if (!/^\d+$/.test(text)) {
+    throw new Error(`Invalid relation ID "${raw}" in shared admin extract config`)
+  }
+  return Number.parseInt(text, 10)
+}
+
+function buildSharedAdminOgrSql(workspaceRoot: string): {
+  sql: string
+  tagsFilterExpressions: string[]
+} {
+  const cfg = loadSharedAdminOsmExtractConfig(workspaceRoot)
+  const propertyChecks = cfg.selectProperties.map((property) => {
+    const q = quoteSqlIdentifier(property)
+    return `(${q} IS NOT NULL AND ${q} <> '')`
+  })
+  const relationIds = cfg.includeRelationIds.map(parseRelationIdForSql)
+  const relationClause =
+    relationIds.length > 0 ? `(-osm_id IN (${relationIds.map(String).join(', ')}))` : null
+  const inclusionClauses = [...propertyChecks, ...(relationClause ? [relationClause] : [])]
+  if (inclusionClauses.length === 0) {
+    throw new Error('Shared admin extract SQL has no inclusion clauses')
+  }
+
+  const selectColumns = [
+    'geometry',
+    'osm_id',
+    `CASE
+      WHEN osm_id < 0 THEN 'relation/' || CAST(-osm_id AS TEXT)
+      WHEN osm_id > 0 THEN 'way/' || CAST(osm_id AS TEXT)
+      ELSE NULL
+    END AS "@id"`,
+    ...cfg.selectProperties.map((property) => quoteSqlIdentifier(property)),
+  ]
+
+  const whereClauses = [
+    `boundary = 'administrative'`,
+    `(${inclusionClauses.join(' OR ')})`,
+    ...cfg.additionalWhereClauses,
+  ]
+
+  const sql = `
+SELECT ${selectColumns.join(',\n       ')}
+FROM multipolygons
+WHERE ${whereClauses.join('\n  AND ')}
+`.trim()
+  return { sql, tagsFilterExpressions: cfg.tagsFilterExpressions }
+}
 
 function parseArgs(argv: string[]) {
   let pbf: string | null = null
@@ -213,6 +256,7 @@ function writeOsmSourceMetadataForAreas(
     const patch = {
       osm: {
         downloadedAt: downloadedAt ?? prevOsm.downloadedAt,
+        sourceDateSource: downloadedAt ? 'osm_pbf_header' : prevOsm.sourceDateSource,
         provider: prevOsm.provider ?? 'OpenStreetMap (Geofabrik Germany extract)',
         dataset: prevOsm.dataset ?? GERMANY_OSM_PBF_BASENAME,
         sourceUrl: prevOsm.sourceUrl ?? GERMANY_OSM_PBF_URL,
@@ -259,7 +303,11 @@ function main() {
   }
 
   const filteredPbf = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_FILTERED_BASENAME)
-  const expressions = [...DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS]
+  const adminExtract = kind === 'admin' ? buildSharedAdminOgrSql(workspaceRoot) : null
+  const expressions: string[] = [...DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS]
+  if (adminExtract) {
+    expressions.splice(0, expressions.length, ...adminExtract.tagsFilterExpressions)
+  }
   const osmHeaderTimestamp = readOsmPbfHeaderTimestamp(inputPbf, dryRun)
   writeOsmSourceMetadataForAreas(workspaceRoot, runtimeRoot, osmHeaderTimestamp, dryRun)
 
@@ -281,7 +329,7 @@ function main() {
   }
 
   const extractTargets: Record<ExtractKind, { basename: string; sql: string }> = {
-    admin: { basename: GERMANY_OSM_SHARED_FGB_BASENAME, sql: SHARED_OSM_OGR_SQL },
+    admin: { basename: GERMANY_OSM_SHARED_FGB_BASENAME, sql: adminExtract!.sql },
     plz: { basename: GERMANY_OSM_SHARED_PLZ_FGB_BASENAME, sql: SHARED_OSM_PLZ_OGR_SQL },
   }
   const target = extractTargets[kind]
