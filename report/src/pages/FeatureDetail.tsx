@@ -3,12 +3,7 @@ import { useParams } from '@tanstack/react-router'
 import { lazy, Suspense, useId } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
-import {
-  LayerToggleStatBlock,
-  StatBlock,
-  StatBlocksRow,
-  StatRowSpacer,
-} from '../components/FeatureStatBlocks'
+import { LayerToggleStatBlock, StatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
 import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
@@ -182,133 +177,136 @@ function StatsStrip({ row, mapLayers }: { row: ReportRow; mapLayers: MapLayerCon
   const d = mapLayerColors.diff
 
   return (
-    <section className="rounded border border-slate-700 bg-slate-900 p-4">
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <h1 className="text-lg font-semibold tracking-tight text-slate-100">{row.nameLabel}</h1>
-        <span className="text-slate-600" aria-hidden>
-          ·
-        </span>
-        <span className="font-mono text-sm text-slate-400">{row.canonicalMatchKey}</span>
-        <span className="text-slate-600" aria-hidden>
-          ·
-        </span>
-        <ReportCategoryPill category={row.category}>
-          {categoryLabelDe(row.category)}
-        </ReportCategoryPill>
-        {row.osmRelationId && (
-          <>
-            <span className="text-slate-600" aria-hidden>
-              ·
-            </span>
-            <a
-              className="text-sm text-sky-400 underline"
-              href={`https://www.openstreetmap.org/relation/${row.osmRelationId}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {de.feature.osmRelation} {row.osmRelationId}
-            </a>
-          </>
-        )}
+    <>
+      <div className="mb-6 flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+        <h1 className="min-w-0 text-2xl font-semibold tracking-tight text-slate-100">
+          {row.nameLabel}
+        </h1>
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-slate-500 sm:justify-end">
+          <span className="font-mono">{row.canonicalMatchKey}</span>
+          <span className="text-slate-600" aria-hidden>
+            ·
+          </span>
+          <span>{categoryLabelDe(row.category)}</span>
+          {row.osmRelationId && (
+            <>
+              <span className="text-slate-600" aria-hidden>
+                ·
+              </span>
+              <a
+                className="text-slate-400 underline decoration-slate-500/60 underline-offset-2 hover:text-slate-300"
+                href={`https://www.openstreetmap.org/relation/${row.osmRelationId}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {de.feature.osmRelation} {row.osmRelationId}
+              </a>
+            </>
+          )}
+        </div>
       </div>
 
-      {m && (
-        <>
-          <StatBlocksRow className="mt-6 sm:mt-8" aria-label={s.diffMetricsRowAria}>
-            <StatBlock
-              label={
-                <span className="inline-flex items-center gap-0.5">
-                  <span>{s.iou}</span>
-                  <IouInfoButton />
-                </span>
-              }
-              value={formatDeIou(m.iou)}
-            />
-            <StatBlock
-              label={
-                <span className="inline-flex items-center gap-0.5">
-                  <span>{s.areaDelta}</span>
-                  <AreaDeltaInfoButton />
-                </span>
-              }
-              value={formatDePercentPoints(m.areaDiffPct)}
-            />
-            <StatBlock
-              label={
-                <span className="inline-flex items-center gap-0.5">
-                  <span>{s.symDiff}</span>
-                  <SymDiffInfoButton />
-                </span>
-              }
-              value={formatDePercentPoints(m.symmetricDiffPct)}
-            />
-            <StatBlock
-              label={
-                <span className="inline-flex items-center gap-0.5">
-                  <span>{s.hausdorff}</span>
-                  <HausdorffInfoButton />
-                </span>
-              }
-              value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
-            />
-          </StatBlocksRow>
+      <section className="rounded border border-slate-700 bg-slate-900 p-4">
+        {m && (
+          <>
+            <StatBlocksRow
+              className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 lg:[&>*:first-child]:border-l-0 lg:[&>*:first-child]:pl-0 [&>*:nth-child(odd)]:border-l-0 [&>*:nth-child(odd)]:pl-0 lg:[&>*:nth-child(odd)]:border-l lg:[&>*:nth-child(odd)]:pl-6"
+              aria-label={s.diffMetricsRowAria}
+            >
+              <StatBlock
+                label={
+                  <span className="inline-flex items-center gap-0.5">
+                    <span>{s.iou}</span>
+                    <IouInfoButton />
+                  </span>
+                }
+                value={formatDeIou(m.iou)}
+              />
+              <StatBlock
+                label={
+                  <span className="inline-flex items-center gap-0.5">
+                    <span>{s.areaDelta}</span>
+                    <AreaDeltaInfoButton />
+                  </span>
+                }
+                value={formatDePercentPoints(m.areaDiffPct)}
+              />
+              <StatBlock
+                label={
+                  <span className="inline-flex items-center gap-0.5">
+                    <span>{s.symDiff}</span>
+                    <SymDiffInfoButton />
+                  </span>
+                }
+                value={formatDePercentPoints(m.symmetricDiffPct)}
+              />
+              <StatBlock
+                label={
+                  <span className="inline-flex items-center gap-0.5">
+                    <span>{s.hausdorff}</span>
+                    <HausdorffInfoButton />
+                  </span>
+                }
+                value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
+              />
+            </StatBlocksRow>
 
-          <StatBlocksRow className="mt-10 sm:mt-12 lg:mt-14" aria-label={s.layersRowAria}>
-            <LayerToggleStatBlock
-              inputId={`${layerId}-official`}
-              checked={mapLayers.showOfficial}
-              onChange={mapLayers.setShowOfficial}
-              label={s.areaOfficial}
-              value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
-              swatch={
-                <div
-                  className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid"
-                  style={{
-                    borderColor: o.line,
-                    backgroundColor: hexToRgba(o.fill, o.fillOpacity),
-                  }}
-                  aria-hidden
-                />
-              }
-            />
-            <LayerToggleStatBlock
-              inputId={`${layerId}-osm`}
-              checked={mapLayers.showOsm}
-              onChange={mapLayers.setShowOsm}
-              label={s.areaOsm}
-              value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
-              swatch={
-                <div
-                  className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid"
-                  style={{
-                    borderColor: osmC.line,
-                    backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
-                  }}
-                  aria-hidden
-                />
-              }
-            />
-            <LayerToggleStatBlock
-              inputId={`${layerId}-diff`}
-              checked={mapLayers.showDiff}
-              onChange={mapLayers.setShowDiff}
-              label={de.map.diff}
-              value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
-              swatch={
-                <div
-                  className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid border-slate-500"
-                  style={{
-                    background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
-                  }}
-                  aria-hidden
-                />
-              }
-            />
-            <StatRowSpacer />
-          </StatBlocksRow>
-        </>
-      )}
-      {!m && <p className="mt-4 text-sm text-amber-400">{de.feature.noMetrics}</p>}
-    </section>
+            <StatBlocksRow className="mt-10 sm:mt-12 lg:mt-14" aria-label={s.layersRowAria}>
+              <LayerToggleStatBlock
+                inputId={`${layerId}-official`}
+                checked={mapLayers.showOfficial}
+                onChange={mapLayers.setShowOfficial}
+                label={s.areaOfficial}
+                value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
+                swatch={
+                  <div
+                    className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid"
+                    style={{
+                      borderColor: o.line,
+                      backgroundColor: hexToRgba(o.fill, o.fillOpacity),
+                    }}
+                    aria-hidden
+                  />
+                }
+              />
+              <LayerToggleStatBlock
+                inputId={`${layerId}-osm`}
+                checked={mapLayers.showOsm}
+                onChange={mapLayers.setShowOsm}
+                label={s.areaOsm}
+                value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
+                swatch={
+                  <div
+                    className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid"
+                    style={{
+                      borderColor: osmC.line,
+                      backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
+                    }}
+                    aria-hidden
+                  />
+                }
+              />
+              <LayerToggleStatBlock
+                inputId={`${layerId}-diff`}
+                checked={mapLayers.showDiff}
+                onChange={mapLayers.setShowDiff}
+                label={de.map.diff}
+                value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
+                swatch={
+                  <div
+                    className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid border-slate-500"
+                    style={{
+                      background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
+                    }}
+                    aria-hidden
+                  />
+                }
+              />
+            </StatBlocksRow>
+          </>
+        )}
+        {!m && <p className="text-sm text-amber-400">{de.feature.noMetrics}</p>}
+      </section>
+    </>
   )
 }
