@@ -63,7 +63,7 @@ function createInternalPhaseLogger(
         kind: 'compare_phase',
         phase,
         durationMs,
-        ...(meta ?? {}),
+        ...meta,
       }),
     logRunStart: () => append({ kind: 'compare_run_start' }),
     logRunEnd: (status) => append({ kind: 'compare_run_end', status }),

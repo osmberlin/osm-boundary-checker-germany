@@ -1,8 +1,7 @@
 import { HeartIcon } from '@heroicons/react/20/solid'
-import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { type ReactNode } from 'react'
-import { areasIndexQueryOptions, type GeoDataSource } from '../data/areasIndexQuery'
+import { areasIndex, type GeoDataSource } from '../data/areasIndex'
 import { de } from '../i18n/de'
 
 const bodyFooterLinkClass =
@@ -38,13 +37,12 @@ function renderSourceList(items: GeoDataSource[]): ReactNode {
 
 export function AppFooter() {
   const f = de.footer
-  const areasIndexQuery = useQuery(areasIndexQueryOptions())
 
   const fallbackGeoSources: GeoDataSource[] = [
     { name: f.osmLinkLabel, href: f.osmLinkHref },
     { name: f.bkgLinkLabel, href: f.bkgLinkHref },
   ]
-  const geoSources = areasIndexQuery.data?.geoDataSources ?? []
+  const geoSources = areasIndex.geoDataSources
   const effectiveGeoSources = geoSources.length > 0 ? geoSources : fallbackGeoSources
 
   return (

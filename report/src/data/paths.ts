@@ -6,14 +6,8 @@ const DATASETS_DIRECTORY = 'datasets'
 
 /**
  * Static routes:
- * - `/areas.gen.json` for home summaries
  * - `/datasets/*` for PMTiles + generated API JSON payloads + official_for_edit artifacts
  */
-/** Runtime API endpoint for home area index and summaries. */
-export function areasIndexUrl(): string {
-  return withSiteBasePath('/areas.gen.json')
-}
-
 export function processingStateUrl(): string {
   return withSiteBasePath('/data/processing-state.json')
 }

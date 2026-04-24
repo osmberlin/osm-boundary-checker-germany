@@ -1,12 +1,12 @@
 # Report UI (Vite + React)
 
-The app is built with **Vite** and consumes static runtime artifacts from `datasets/`, `data/`, and `areas.gen.json`.
+The app is built with **Vite** and consumes static runtime artifacts from `datasets/` and `data/`.
 
 - **Dev**: `bun run dev` (Vite dev server).
 - **Dev (with Rust compare bootstrap)**: `bun run dev:with-rust`.
 - **Preview**: `bun run preview` (Vite preview for `dist/`).
-- **Sync runtime assets**: `bun run sync-runtime-assets` copies from `DATA_ROOT` (`datasets/`, `data/`) into `report/public` and regenerates repo-root `areas.gen.json`.
-- **Build app shell**: `bun run build` builds Vite output and bundles static assets from `report/public` + `areas.gen.json`.
+- **Sync runtime assets**: `bun run sync-runtime-assets` copies from `DATA_ROOT` (`datasets/`, `data/`) into `report/public` and regenerates `report/src/data/areasIndex.gen.ts`.
+- **Build app shell**: `bun run build` builds Vite output and bundles static assets from `report/public` while the app imports `areasIndex.gen.ts` directly.
 - **Build from runtime in one command**: `bun run build:with-runtime`.
 
 Runtime root resolution:

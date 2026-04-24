@@ -17,7 +17,6 @@ type Rule = {
   why: string
 }
 
-const AREAS_GEN_BASENAME = 'areas.gen.json'
 const OBSOLETE_OUTPUT_FILES = new Set([
   'output/comparison_for_report.json',
   'output/detailed_results.csv',
@@ -359,14 +358,6 @@ async function main() {
   )
   lines.push('')
 
-  const areasIndexPaths = [
-    join(workspaceRoot, AREAS_GEN_BASENAME),
-    join(reportPublicRoot, AREAS_GEN_BASENAME),
-    join(distRoot, AREAS_GEN_BASENAME),
-  ]
-  let areasIndexPath = areasIndexPaths.find((p) => existsSync(p)) ?? areasIndexPaths[0]
-  if (areasIndexPath == null) areasIndexPath = areasIndexPaths[0]
-  const areasIndexBytes = await safeStat(areasIndexPath)
   const statusStateBytes = await safeStat(join(publicDataRoot, 'processing-state.json'))
   const statusLogBytes = await safeStat(join(publicDataRoot, 'processing-log.jsonl'))
   const runtimeStateBytes = await safeStat(join(runtimeDataRoot, 'processing-state.json'))
@@ -376,13 +367,8 @@ async function main() {
   lines.push('')
   lines.push('#### `/`')
   lines.push('')
-  let routeRootTotal = 0
-  routeRootTotal += addSectionLine(
-    lines,
-    'areas index',
-    areasIndexBytes,
-    relative(workspaceRoot, areasIndexPath),
-  )
+  const routeRootTotal = 0
+  lines.push('- no additional route-specific static payload')
   lines.push(`- Route estimate total: **${formatMiB(routeRootTotal)} (${routeRootTotal} bytes)**`)
   lines.push('')
 
@@ -441,12 +427,6 @@ async function main() {
     let areaRouteTotal = 0
     areaRouteTotal += addSectionLine(
       lines,
-      'areas index',
-      areasIndexBytes,
-      relative(workspaceRoot, areasIndexPath),
-    )
-    areaRouteTotal += addSectionLine(
-      lines,
       'comparison table',
       areaComparisonBytes,
       relative(workspaceRoot, areaComparisonPath),
@@ -477,12 +457,6 @@ async function main() {
     let featureRouteLargestTotal = 0
     featureRouteLargestTotal += addSectionLine(
       lines,
-      'areas index',
-      areasIndexBytes,
-      relative(workspaceRoot, areasIndexPath),
-    )
-    featureRouteLargestTotal += addSectionLine(
-      lines,
       'largest feature shard',
       featureLargest?.bytes ?? null,
       featureLargest?.relPath ?? '(no feature shard found)',
@@ -499,12 +473,6 @@ async function main() {
     lines.push('')
 
     let featureRouteMedianTotal = 0
-    featureRouteMedianTotal += addSectionLine(
-      lines,
-      'areas index',
-      areasIndexBytes,
-      relative(workspaceRoot, areasIndexPath),
-    )
     featureRouteMedianTotal += addSectionLine(
       lines,
       'median feature shard',

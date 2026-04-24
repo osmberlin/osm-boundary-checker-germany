@@ -1,5 +1,4 @@
 import { hausdorffJstsDocDe, meanIouChartDe } from '@compare-metrics/modalCopyDe.ts'
-import { AREAS_GEN_BASENAME } from '../../generatedAssets.ts'
 import type { ReportRow } from '../types/report'
 
 /** UI copy (German). Metric modal copy lives in scripts/compare/lib/metrics/ (per-metric folder, de.ts). */
@@ -77,10 +76,8 @@ export const de = {
       'Die Auswertung zeigt, wo OSM-Objekte den amtlichen Referenzen zugeordnet werden können oder nicht — etwa wegen Tagging — und wo sich Grenzverläufe zwischen beiden Datensätzen unterscheiden, mit mehreren Kennzahlen dargestellt. So findest du Tagging- und geometrische Abweichungen. Schaltflächen zur Bearbeitung öffnen die Referenzgrenze, damit du die OSM-Daten manuell anpassen kannst.',
     leadBefore: 'Gebiet wählen. Die Auswertung wird aus dem Ordner',
     leadAfter: 'des jeweiligen Gebiets gelesen (zuerst den Vergleich ausführen).',
-    loadingAreas: 'Gebiete werden geladen …',
     noAreas:
       'Keine Gebiete mit output/comparison_table.json unter datasets/ gefunden. Vergleich ausführen (bun run compare).',
-    areasError: `Gebiete konnten nicht geladen werden (${AREAS_GEN_BASENAME} fehlt oder ist ungültig).`,
     /** Home list: per-area row of category counts. */
     categoryStatsAria: 'Zugeordnet, nur amtlich, OSM ohne Treffer in offiziellen Daten — Anzahl',
     unmatchedStat: 'Nur OSM',

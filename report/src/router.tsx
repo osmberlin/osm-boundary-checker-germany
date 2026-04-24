@@ -7,7 +7,6 @@ import {
   redirect,
 } from '@tanstack/react-router'
 import { ReportLayout } from './App'
-import { areasIndexQueryOptions } from './data/areasIndexQuery'
 import { comparisonQueryOptions, featureQueryOptions, snapshotsQueryOptions } from './data/load'
 import { routerBasePath } from './data/paths'
 import { stringifySearchPretty } from './lib/routerSearchStringify'
@@ -21,9 +20,6 @@ export type RouterContext = {
 }
 
 export const rootRoute = createRootRouteWithContext<RouterContext>()({
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(areasIndexQueryOptions())
-  },
   component: ReportLayout,
 })
 

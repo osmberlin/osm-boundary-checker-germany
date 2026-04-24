@@ -47,7 +47,7 @@ If compare fails:
 - **Quick test run without BKG download**: `CI=1 bun run download:official && bun run download:osm:extract && bun run compare -- --all`.
 - **Full refresh run**: `bun run pipeline:nightly`.
 - **Sync report inputs from runtime tree**: `bun run report:sync-runtime-assets`.
-- **Build static app shell only**: `bun run report:build:app` (expects synced `report/public/*` + `areas.gen.json`).
+- **Build static app shell only**: `bun run report:build:app` (expects synced `report/public/*` + generated `report/src/data/areasIndex.gen.ts`).
 - **Build full static bundle from runtime tree**: `bun run report:build`.
 
 Use the canonical `download:*` / `osm:*` / `bkg:*` command names.
@@ -185,13 +185,13 @@ docker compose run --rm pipeline bun run test
 
 ## Report UI
 
-Development (Vite dev server; static payloads from `/areas.gen.json` + `/datasets/*` + `/data/*`):
+Development (Vite dev server; static payloads from `/datasets/*` + `/data/*` and imported `areasIndex.gen.ts`):
 
 ```bash
 docker compose up web
 ```
 
-Open the printed URL (default port 3000). The home and detail pages load precomputed static JSON payloads (`areas.gen.json`, `datasets/<area>/output/*.json`), and the map loads `comparison.pmtiles` via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
+Open the printed URL (default port 3000). The home/detail pages load precomputed static payloads (`report/src/data/areasIndex.gen.ts`, `datasets/<area>/output/*.json`), and the map loads `comparison.pmtiles` via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
 
 Production build from the current runtime tree (`DATA_ROOT` or repo root):
 
@@ -209,11 +209,11 @@ Workspace scripts use Bun’s [`--filter`](https://bun.sh/docs/pm/filter) so you
 
 The basemap uses **[OpenFreeMap](https://openfreemap.org/)** Positron (vector tiles, no API key). Attribution is handled by MapLibre per [OpenFreeMap](https://openfreemap.org/).
 
-**Deploy:** Put the built app and data on the same static host. Serve `report/dist/*` including copied `datasets/`, `data/`, and `areas.gen.json` assets. Deterministic CI order should be:
+**Deploy:** Put the built app and data on the same static host. Serve `report/dist/*` including copied `datasets/` and `data/` assets. Deterministic CI order should be:
 
 1. restore/prepare runtime tree (`datasets/`, `data/`)
 2. `bun run report:sync-runtime-assets`
-3. verify `areas.gen.json` is non-empty
+3. verify `report/src/data/areasIndex.gen.ts` is non-empty
 4. `bun run report:build:app`
 5. deploy `report/dist`
 

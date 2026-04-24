@@ -1,7 +1,6 @@
 import { mkdir, readdir, stat, writeFile } from 'node:fs/promises'
 import { join, relative, resolve } from 'node:path'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
-import { AREAS_GEN_BASENAME } from './generatedAssets.ts'
 
 type SizedPath = { path: string; bytes: number }
 
@@ -91,7 +90,6 @@ async function main() {
   }
   lines.push('')
 
-  const areasIndexPath = join(repoRoot, AREAS_GEN_BASENAME)
   const areaList = await readdir(datasetsRoot, { withFileTypes: true })
   const firstArea = areaList.find(
     (entry) => entry.isDirectory() && !entry.name.startsWith('.'),
@@ -110,11 +108,11 @@ async function main() {
     const routes: Array<{ route: string; files: string[] }> = [
       {
         route: `/${firstArea}`,
-        files: [areasIndexPath, areaTable],
+        files: [areaTable],
       },
       {
         route: `/${firstArea}/feature/{featureKey}`,
-        files: [areasIndexPath, areaTable, firstFeature?.path ?? '(no feature shard found)'],
+        files: [areaTable, firstFeature?.path ?? '(no feature shard found)'],
       },
     ]
 

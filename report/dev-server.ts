@@ -1,12 +1,10 @@
 /**
  * Dev: Bun bundles React via HTML import + HMR.
- * Serves `/datasets/*`, `/data/*`, and generated areas index JSON from DATA_ROOT.
+ * Serves `/datasets/*` and `/data/*` from DATA_ROOT.
  * @see https://bun.sh/docs/bundler/fullstack
  */
 import { join, resolve } from 'node:path'
-import { AREAS_GEN_URL_PATH } from './generatedAssets.ts'
 import homepage from './index.html'
-import { listComparisonAreaSummaries } from './listComparisonAreas.ts'
 import { resolveRuntimeRoot } from './runtimeDataRoot.ts'
 import { repoDataFileResponse } from './serveRepoDataResponse.ts'
 
@@ -24,17 +22,6 @@ async function serveDatasets(req: Request): Promise<Response> {
   return repoDataFileResponse(req, filePath)
 }
 
-async function serveAreasJson(): Promise<Response> {
-  const summaries = listComparisonAreaSummaries(dataRoot)
-  const areas = summaries.map((s) => s.area)
-  return new Response(`${JSON.stringify({ areas, summaries }, null, 2)}\n`, {
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-    },
-  })
-}
-
 async function serveProcessingData(req: Request): Promise<Response> {
   const url = new URL(req.url)
   const rel = decodeURIComponent(url.pathname.slice('/data/'.length))
@@ -49,7 +36,6 @@ const server = Bun.serve({
   port: Number(process.env.PORT) || 3000,
   routes: {
     '/': homepage,
-    [AREAS_GEN_URL_PATH]: serveAreasJson,
     '/datasets/*': serveDatasets,
     '/data/*': serveProcessingData,
     '/*': homepage,

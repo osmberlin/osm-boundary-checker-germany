@@ -1,5 +1,4 @@
-import { queryOptions } from '@tanstack/react-query'
-import { areasIndexUrl } from './paths'
+import rawAreasIndex from './areasIndex.gen'
 
 export type AreaSummary = {
   area: string
@@ -101,37 +100,28 @@ function parseAreaLicenseSummary(raw: unknown): AreaLicenseSummary | null {
   }
 }
 
-export async function loadAreasIndex(): Promise<AreasIndexPayload> {
-  const response = await fetch(areasIndexUrl())
-  if (!response.ok) throw new Error(`Failed to load areas index: ${response.status}`)
-  const body = (await response.json()) as {
+function parseAreasIndex(raw: unknown): AreasIndexPayload {
+  const body = raw as {
     areas?: unknown
     summaries?: unknown
     geoDataSources?: unknown
     licenseSummaries?: unknown
   }
-
-  const areas = Array.isArray(body.areas)
+  const areas = Array.isArray(body?.areas)
     ? body.areas.filter((x): x is string => typeof x === 'string')
     : []
-  const summaries = Array.isArray(body.summaries)
+  const summaries = Array.isArray(body?.summaries)
     ? body.summaries.map(parseAreaSummary).filter((x): x is AreaSummary => x != null)
     : []
-  const geoDataSources = Array.isArray(body.geoDataSources)
+  const geoDataSources = Array.isArray(body?.geoDataSources)
     ? body.geoDataSources.map(parseGeoDataSource).filter((x): x is GeoDataSource => x != null)
     : []
-  const licenseSummaries = Array.isArray(body.licenseSummaries)
+  const licenseSummaries = Array.isArray(body?.licenseSummaries)
     ? body.licenseSummaries
         .map(parseAreaLicenseSummary)
         .filter((x): x is AreaLicenseSummary => x != null)
     : []
-
   return { areas, summaries, geoDataSources, licenseSummaries }
 }
 
-export function areasIndexQueryOptions() {
-  return queryOptions({
-    queryKey: ['areas-index'],
-    queryFn: loadAreasIndex,
-  })
-}
+export const areasIndex = parseAreasIndex(rawAreasIndex)

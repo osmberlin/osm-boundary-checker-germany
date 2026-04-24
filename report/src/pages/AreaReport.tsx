@@ -22,7 +22,7 @@ import {
 } from '../components/HausdorffInfoModal'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
-import { areasIndexQueryOptions } from '../data/areasIndexQuery'
+import { areasIndex } from '../data/areasIndex'
 import { comparisonQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
@@ -87,7 +87,6 @@ export function AreaReport() {
   const { areaId } = useParams({ strict: false })
   const areaKey = areaId ?? ''
   const navigate = useNavigate()
-  const areasIndexQuery = useQuery(areasIndexQueryOptions())
   const statsInputId = useId()
   const { enabledSet, enabledCategories, setCategoryEnabled, isCategoryEnabled } =
     useAreaReportCategoryFilter()
@@ -105,8 +104,7 @@ export function AreaReport() {
   const data: ComparisonForReport | null = comparisonQuery.data ?? null
   const snapIndex: SnapshotsJson | null = snapshotsQuery.data ?? null
   const areaDisplayName =
-    (areasIndexQuery.data?.summaries ?? []).find((summary) => summary.area === areaKey)
-      ?.displayName ??
+    areasIndex.summaries.find((summary) => summary.area === areaKey)?.displayName ??
     data?.area ??
     areaKey
   const pageSourceHref = data?.sourceMetadata?.official?.sourceUrl?.trim() || null

@@ -1,16 +1,14 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { StatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
 import { ReportCategoryPill, UnmatchedOsmStatPill } from '../components/reportCategoryStyles'
-import { areasIndexQueryOptions, type AreaLicenseSummary } from '../data/areasIndexQuery'
+import { areasIndex, type AreaLicenseSummary } from '../data/areasIndex'
 import { categoryLabelDe, de } from '../i18n/de'
 import { EM_DASH, formatDeInteger } from '../lib/formatDe'
 
 export function Home() {
-  const areasQuery = useQuery(areasIndexQueryOptions())
-  const areas = areasQuery.data?.areas ?? []
+  const areas = areasIndex.areas
   const summariesByArea = Object.fromEntries(
-    (areasQuery.data?.summaries ?? []).map((entry) => [entry.area, entry]),
+    areasIndex.summaries.map((entry) => [entry.area, entry]),
   )
 
   return (
@@ -22,11 +20,7 @@ export function Home() {
         <code className="rounded bg-slate-800 px-1 text-slate-200">output/</code>{' '}
         {de.home.leadAfter}
       </p>
-      {areasQuery.isPending ? (
-        <p className="text-slate-400">{de.home.loadingAreas}</p>
-      ) : areasQuery.isError ? (
-        <p className="text-amber-200">{de.home.areasError}</p>
-      ) : areas.length === 0 ? (
+      {areas.length === 0 ? (
         <p className="text-slate-400">{de.home.noAreas}</p>
       ) : (
         <>
@@ -84,10 +78,7 @@ export function Home() {
             })}
           </ul>
 
-          <HomeLicenseSection
-            licenseSummaries={areasQuery.data?.licenseSummaries ?? []}
-            areaOrder={areas}
-          />
+          <HomeLicenseSection licenseSummaries={areasIndex.licenseSummaries} areaOrder={areas} />
         </>
       )}
     </div>

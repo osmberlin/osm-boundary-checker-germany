@@ -1,7 +1,5 @@
-/** Serves `dist/` + `/datasets/*` + `/data/*` + generated areas index JSON from DATA_ROOT. */
+/** Serves `dist/` + `/datasets/*` + `/data/*` from DATA_ROOT. */
 import { join, resolve } from 'node:path'
-import { AREAS_GEN_URL_PATH } from './generatedAssets.ts'
-import { listComparisonAreaSummaries } from './listComparisonAreas.ts'
 import { resolveRuntimeRoot } from './runtimeDataRoot.ts'
 import { repoDataFileResponse } from './serveRepoDataResponse.ts'
 
@@ -14,16 +12,6 @@ const preview = Bun.serve({
   port: Number(process.env.PORT) || 4173,
   async fetch(req) {
     const url = new URL(req.url)
-    if (url.pathname === AREAS_GEN_URL_PATH) {
-      const summaries = listComparisonAreaSummaries(dataRoot)
-      const areas = summaries.map((s) => s.area)
-      return new Response(`${JSON.stringify({ areas, summaries }, null, 2)}\n`, {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'no-store',
-        },
-      })
-    }
     if (url.pathname.startsWith('/datasets/')) {
       const rel = decodeURIComponent(url.pathname.slice('/datasets/'.length))
       const filePath = resolve(join(datasetsRoot, rel))
