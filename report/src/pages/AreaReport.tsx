@@ -13,6 +13,7 @@ import {
 } from '../components/HausdorffInfoModal'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
+import { areasIndexQueryOptions } from '../data/areasIndexQuery'
 import { comparisonQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
@@ -76,6 +77,7 @@ export function AreaReport() {
   const { areaId } = useParams({ strict: false })
   const areaKey = areaId ?? ''
   const navigate = useNavigate()
+  const areasIndexQuery = useQuery(areasIndexQueryOptions())
   const statsInputId = useId()
   const { enabledSet, enabledCategories, setCategoryEnabled, isCategoryEnabled } =
     useAreaReportCategoryFilter()
@@ -92,6 +94,17 @@ export function AreaReport() {
   })
   const data: ComparisonForReport | null = comparisonQuery.data ?? null
   const snapIndex: SnapshotsJson | null = snapshotsQuery.data ?? null
+  const areaDisplayName =
+    (areasIndexQuery.data?.summaries ?? []).find((summary) => summary.area === areaKey)
+      ?.displayName ??
+    data?.area ??
+    areaKey
+  const pageSourceHref = data?.sourceMetadata?.official?.sourceUrl?.trim() || null
+  const pageSourceName = formatHeadlineSourceLabel(
+    pageSourceHref,
+    data?.sourceMetadata?.official?.layer?.trim() || null,
+    data?.sourceMetadata?.official?.dataset?.trim() || null,
+  )
 
   /** Main table rows from comparison payload. */
   const mainRows =
@@ -132,6 +145,13 @@ export function AreaReport() {
   if (comparisonQuery.isError) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
+        {areaDisplayName ? (
+          <AreaHeadlineRow
+            title={areaDisplayName}
+            sourceName={pageSourceName}
+            sourceHref={pageSourceHref}
+          />
+        ) : null}
         <div className="text-red-400">
           {String(comparisonQuery.error)}
           <p className="mt-2 text-sm text-slate-400">
@@ -146,6 +166,13 @@ export function AreaReport() {
   if (comparisonQuery.isPending || !data) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
+        {areaDisplayName ? (
+          <AreaHeadlineRow
+            title={areaDisplayName}
+            sourceName={pageSourceName}
+            sourceHref={pageSourceHref}
+          />
+        ) : null}
         <p className="text-slate-400">{de.areaReport.loading}</p>
       </div>
     )
@@ -170,11 +197,15 @@ export function AreaReport() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-4 text-left sm:px-6 lg:px-8">
-      <section
-        className="mb-6 rounded border border-slate-700 bg-slate-900 p-4"
-        aria-label={st.summaryRowAria}
-      >
-        <StatBlocksRow className="mt-0" aria-label={st.summaryStatRowAria}>
+      {areaDisplayName ? (
+        <AreaHeadlineRow
+          title={areaDisplayName}
+          sourceName={pageSourceName}
+          sourceHref={pageSourceHref}
+        />
+      ) : null}
+      <section className="mb-6" aria-label={st.summaryStatRowAria}>
+        <StatBlocksRow className="mt-0">
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingReport}
             relativeLine={reportFresh.relativeLine ?? EM_DASH}
@@ -191,8 +222,13 @@ export function AreaReport() {
             absoluteLine={osmFresh.absoluteLine}
           />
         </StatBlocksRow>
+      </section>
 
-        <StatBlocksRow className="mt-10 sm:mt-12 lg:mt-14" aria-label={st.summaryLegendRowAria}>
+      <section
+        className="mb-6 rounded border border-slate-700 bg-slate-900 p-4"
+        aria-label={st.summaryLegendRowAria}
+      >
+        <StatBlocksRow className="mt-0">
           <LayerToggleStatBlock
             inputId={`${statsInputId}-matched`}
             checked={catCounts.matched === 0 ? false : isCategoryEnabled('matched')}
@@ -442,8 +478,8 @@ function SummaryStatColumn({
 
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
-      <dt className="text-sm font-medium text-slate-300">{heading}</dt>
-      <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-slate-100 tabular-nums sm:text-3xl">
+      <dt className="text-sm font-medium text-slate-400">{heading}</dt>
+      <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-slate-400 tabular-nums sm:text-3xl">
         <span className="sm:hidden">{compactRelativeLine}</span>
         <span className="hidden sm:inline">{compactRelativeLine}</span>
       </dd>
@@ -479,6 +515,58 @@ function toNumericMonthAbsoluteDe(value: string): string {
   const month = monthName ? monthByName[monthName] : null
   if (!day || !month || !year || !time) return value
   return `${day}.${month}.${year} ${time}`
+}
+
+function formatHeadlineSourceLabel(
+  sourceUrl: string | null,
+  layer: string | null,
+  dataset: string | null,
+): string | null {
+  const suffix = layer || dataset
+  if (sourceUrl) {
+    try {
+      const host = new URL(sourceUrl).hostname
+      if (host) return suffix ? `${host} (${suffix})` : host
+    } catch {
+      // Fallback to original URL text below.
+    }
+    return suffix ? `${sourceUrl} (${suffix})` : sourceUrl
+  }
+  return suffix
+}
+
+function AreaHeadlineRow({
+  title,
+  sourceName,
+  sourceHref,
+}: {
+  title: string
+  sourceName: string | null
+  sourceHref: string | null
+}) {
+  return (
+    <div className="mb-6 flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+      <h1 className="min-w-0 text-2xl font-semibold text-slate-100">{title}</h1>
+      {sourceName ? (
+        <p className="text-xs text-slate-500 sm:text-right">
+          {de.footer.geoDataLine}
+          {sourceHref ? (
+            <a
+              href={sourceHref}
+              className="underline decoration-slate-500/60 underline-offset-2 transition-colors hover:text-slate-300"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {sourceName}
+            </a>
+          ) : (
+            sourceName
+          )}
+          {de.footer.geoDataSuffix}
+        </p>
+      ) : null}
+    </div>
+  )
 }
 
 function SortableTh({
