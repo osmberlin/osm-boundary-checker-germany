@@ -15,3 +15,6 @@ data/
 
 # TEMP until we figure out how to store them
 *.pmtiles
+
+# Rust sidecar build artifacts
+rust/**/target/
