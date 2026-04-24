@@ -5,7 +5,11 @@
 import { writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { AREAS_GEN_BASENAME } from './generatedAssets.ts'
-import { listComparisonAreaSummaries, listGeoDataSources } from './listComparisonAreas.ts'
+import {
+  listAreaLicenseSummaries,
+  listComparisonAreaSummaries,
+  listGeoDataSources,
+} from './listComparisonAreas.ts'
 import { resolveRuntimeRoot } from './runtimeDataRoot.ts'
 
 const repoRoot = resolve(import.meta.dir, '..')
@@ -13,7 +17,8 @@ const runtimeRoot = resolveRuntimeRoot()
 const summaries = listComparisonAreaSummaries(runtimeRoot)
 const areas = summaries.map((s) => s.area)
 const geoDataSources = listGeoDataSources(runtimeRoot)
-const payload = `${JSON.stringify({ areas, summaries, geoDataSources }, null, 2)}\n`
+const licenseSummaries = listAreaLicenseSummaries(runtimeRoot)
+const payload = `${JSON.stringify({ areas, summaries, geoDataSources, licenseSummaries }, null, 2)}\n`
 const repoOutPath = join(repoRoot, AREAS_GEN_BASENAME)
 const publicOutPath = join(import.meta.dir, 'public', AREAS_GEN_BASENAME)
 

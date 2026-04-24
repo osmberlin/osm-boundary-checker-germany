@@ -66,6 +66,23 @@ const sourceMetadataSideSchema = z.object({
   layer: z.string().optional(),
   sourceUrl: z.string().optional(),
   note: z.string().optional(),
+  licenseId: z
+    .enum([
+      'unknown',
+      'odbl_10',
+      'cc_by_30',
+      'cc_by_40',
+      'cc0_10',
+      'dl_de_by_20',
+      'dl_de_zero_20',
+      'custom',
+    ])
+    .optional(),
+  licenseLabel: z.string().optional(),
+  licenseSourceUrl: z.string().optional(),
+  osmCompatibility: z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver']).optional(),
+  osmCompatibilitySourceUrl: z.string().optional(),
+  osmCompatibilityComment: z.string().optional(),
   license: z.string().optional(),
 })
 

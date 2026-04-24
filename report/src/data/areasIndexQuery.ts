@@ -14,10 +14,21 @@ export type GeoDataSource = {
   href?: string
 }
 
+export type AreaLicenseSummary = {
+  area: string
+  displayName: string
+  officialLicenseLabel: string
+  officialLicenseSourceUrl?: string
+  officialOsmCompatibility: 'unknown' | 'no' | 'yes_licence' | 'yes_waiver'
+  officialOsmCompatibilitySourceUrl?: string
+  officialOsmCompatibilityComment?: string
+}
+
 export type AreasIndexPayload = {
   areas: string[]
   summaries: AreaSummary[]
   geoDataSources: GeoDataSource[]
+  licenseSummaries: AreaLicenseSummary[]
 }
 
 function parseAreaSummary(raw: unknown): AreaSummary | null {
@@ -46,6 +57,50 @@ function parseGeoDataSource(raw: unknown): GeoDataSource | null {
   return href ? { name, href } : { name }
 }
 
+function parseAreaLicenseSummary(raw: unknown): AreaLicenseSummary | null {
+  if (!raw || typeof raw !== 'object') return null
+  const rec = raw as Record<string, unknown>
+  const area = typeof rec.area === 'string' ? rec.area.trim() : ''
+  if (!area) return null
+  const displayName =
+    typeof rec.displayName === 'string' && rec.displayName.trim() !== ''
+      ? rec.displayName.trim()
+      : area
+  const officialLicenseLabel =
+    typeof rec.officialLicenseLabel === 'string' && rec.officialLicenseLabel.trim() !== ''
+      ? rec.officialLicenseLabel.trim()
+      : 'unknown'
+  const compatibility =
+    rec.officialOsmCompatibility === 'no' ||
+    rec.officialOsmCompatibility === 'yes_licence' ||
+    rec.officialOsmCompatibility === 'yes_waiver'
+      ? rec.officialOsmCompatibility
+      : 'unknown'
+  const officialLicenseSourceUrl =
+    typeof rec.officialLicenseSourceUrl === 'string' && rec.officialLicenseSourceUrl.trim() !== ''
+      ? rec.officialLicenseSourceUrl.trim()
+      : undefined
+  const officialOsmCompatibilitySourceUrl =
+    typeof rec.officialOsmCompatibilitySourceUrl === 'string' &&
+    rec.officialOsmCompatibilitySourceUrl.trim() !== ''
+      ? rec.officialOsmCompatibilitySourceUrl.trim()
+      : undefined
+  const officialOsmCompatibilityComment =
+    typeof rec.officialOsmCompatibilityComment === 'string' &&
+    rec.officialOsmCompatibilityComment.trim() !== ''
+      ? rec.officialOsmCompatibilityComment.trim()
+      : undefined
+  return {
+    area,
+    displayName,
+    officialLicenseLabel,
+    ...(officialLicenseSourceUrl ? { officialLicenseSourceUrl } : {}),
+    officialOsmCompatibility: compatibility,
+    ...(officialOsmCompatibilitySourceUrl ? { officialOsmCompatibilitySourceUrl } : {}),
+    ...(officialOsmCompatibilityComment ? { officialOsmCompatibilityComment } : {}),
+  }
+}
+
 export async function loadAreasIndex(): Promise<AreasIndexPayload> {
   const response = await fetch(areasIndexUrl())
   if (!response.ok) throw new Error(`Failed to load areas index: ${response.status}`)
@@ -53,6 +108,7 @@ export async function loadAreasIndex(): Promise<AreasIndexPayload> {
     areas?: unknown
     summaries?: unknown
     geoDataSources?: unknown
+    licenseSummaries?: unknown
   }
 
   const areas = Array.isArray(body.areas)
@@ -64,8 +120,13 @@ export async function loadAreasIndex(): Promise<AreasIndexPayload> {
   const geoDataSources = Array.isArray(body.geoDataSources)
     ? body.geoDataSources.map(parseGeoDataSource).filter((x): x is GeoDataSource => x != null)
     : []
+  const licenseSummaries = Array.isArray(body.licenseSummaries)
+    ? body.licenseSummaries
+        .map(parseAreaLicenseSummary)
+        .filter((x): x is AreaLicenseSummary => x != null)
+    : []
 
-  return { areas, summaries, geoDataSources }
+  return { areas, summaries, geoDataSources, licenseSummaries }
 }
 
 export function areasIndexQueryOptions() {

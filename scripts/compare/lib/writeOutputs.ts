@@ -36,6 +36,12 @@ function compactOfficialSource(
     'sourceUpdatedAt',
     'sourceDateSource',
     'downloadedAt',
+    'licenseId',
+    'licenseLabel',
+    'licenseSourceUrl',
+    'osmCompatibility',
+    'osmCompatibilitySourceUrl',
+    'osmCompatibilityComment',
     'note',
     'license',
   ] as const) {

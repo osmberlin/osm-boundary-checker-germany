@@ -9,6 +9,17 @@ export type ReportDataProvenanceFooterProps = {
   className?: string
 }
 
+function metadataOrUnknown(value: string | undefined): string {
+  const trimmed = value?.trim()
+  return trimmed && trimmed.length > 0 ? trimmed : de.provenance.unknown
+}
+
+function CompatibilityValue({ value }: { value: string | undefined }) {
+  const p = de.provenance
+  const key = (value?.trim() || 'unknown') as keyof typeof p.osmCompatibilityLabel
+  return p.osmCompatibilityLabel[key] ?? p.osmCompatibilityLabel.unknown
+}
+
 function DateLine({ label, abs, rel }: { label: string; abs: string; rel: string }) {
   const bothDash = abs === EM_DASH && rel === EM_DASH
   return (
@@ -140,6 +151,101 @@ export function ReportDataProvenanceFooter({
           {p.licenseLabel}: {osm.license.trim()}
         </p>
       ) : null}
+
+      <div className="mt-6 mb-4 rounded border border-slate-700/80 bg-slate-950/40 p-3">
+        <h4 className="mb-2 text-sm font-medium text-slate-200">{p.licenseSectionHeading}</h4>
+        <div className="grid gap-3 text-xs text-slate-300 sm:grid-cols-2">
+          <div className="space-y-1">
+            <p className="font-medium text-slate-200">{p.officialHeading}</p>
+            <p>
+              <span className="text-slate-500">{p.licenseShortNameLabel}: </span>
+              {metadataOrUnknown(off?.licenseLabel ?? off?.license)}
+            </p>
+            <p>
+              <span className="text-slate-500">{p.licenseSourceLabel}: </span>
+              {off?.licenseSourceUrl?.trim() ? (
+                <a
+                  className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+                  href={off.licenseSourceUrl.trim()}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {p.sourceLinkLabel}
+                </a>
+              ) : (
+                p.unknown
+              )}
+            </p>
+            <p>
+              <span className="text-slate-500">{p.osmCompatibilityLabelTitle}: </span>
+              <CompatibilityValue value={off?.osmCompatibility} />
+            </p>
+            <p>
+              <span className="text-slate-500">{p.osmCompatibilitySourceLabel}: </span>
+              {off?.osmCompatibilitySourceUrl?.trim() ? (
+                <a
+                  className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+                  href={off.osmCompatibilitySourceUrl.trim()}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {p.sourceLinkLabel}
+                </a>
+              ) : (
+                p.unknown
+              )}
+            </p>
+            {off?.osmCompatibilityComment?.trim() ? (
+              <p className="text-slate-400">{off.osmCompatibilityComment.trim()}</p>
+            ) : null}
+          </div>
+
+          <div className="space-y-1">
+            <p className="font-medium text-slate-200">{p.osmHeading}</p>
+            <p>
+              <span className="text-slate-500">{p.licenseShortNameLabel}: </span>
+              {metadataOrUnknown(osm?.licenseLabel ?? osm?.license)}
+            </p>
+            <p>
+              <span className="text-slate-500">{p.licenseSourceLabel}: </span>
+              {osm?.licenseSourceUrl?.trim() ? (
+                <a
+                  className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+                  href={osm.licenseSourceUrl.trim()}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {p.sourceLinkLabel}
+                </a>
+              ) : (
+                p.unknown
+              )}
+            </p>
+            <p>
+              <span className="text-slate-500">{p.osmCompatibilityLabelTitle}: </span>
+              <CompatibilityValue value={osm?.osmCompatibility} />
+            </p>
+            <p>
+              <span className="text-slate-500">{p.osmCompatibilitySourceLabel}: </span>
+              {osm?.osmCompatibilitySourceUrl?.trim() ? (
+                <a
+                  className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+                  href={osm.osmCompatibilitySourceUrl.trim()}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {p.sourceLinkLabel}
+                </a>
+              ) : (
+                p.unknown
+              )}
+            </p>
+            {osm?.osmCompatibilityComment?.trim() ? (
+              <p className="text-slate-400">{osm.osmCompatibilityComment.trim()}</p>
+            ) : null}
+          </div>
+        </div>
+      </div>
 
       <p className="mb-2 font-medium text-slate-300">{p.osmFilterTitle}</p>
       <p className="mb-4 text-pretty">{p.osmFilterBody}</p>

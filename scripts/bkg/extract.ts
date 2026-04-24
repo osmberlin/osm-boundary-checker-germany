@@ -256,6 +256,13 @@ async function main() {
         dataset: 'VG25',
         layer,
         sourceUrl: BKG_ZIP_URL,
+        licenseId: 'dl_de_by_20',
+        licenseLabel: 'DL-DE-BY-2.0',
+        licenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+        osmCompatibility: 'unknown',
+        osmCompatibilitySourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+        osmCompatibilityComment:
+          'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
       },
     }
     writeAreaSourceMetadataFile(areaPath, mergeAreaSourceMetadata(prev, patch))

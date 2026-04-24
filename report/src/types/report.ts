@@ -25,6 +25,20 @@ export type SourceMetadataSide = {
   layer?: string
   sourceUrl?: string
   note?: string
+  licenseId?:
+    | 'unknown'
+    | 'odbl_10'
+    | 'cc_by_30'
+    | 'cc_by_40'
+    | 'cc0_10'
+    | 'dl_de_by_20'
+    | 'dl_de_zero_20'
+    | 'custom'
+  licenseLabel?: string
+  licenseSourceUrl?: string
+  osmCompatibility?: 'unknown' | 'no' | 'yes_licence' | 'yes_waiver'
+  osmCompatibilitySourceUrl?: string
+  osmCompatibilityComment?: string
   license?: string
 }
 

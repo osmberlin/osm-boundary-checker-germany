@@ -27,6 +27,8 @@ import {
 } from '../shared/germanyOsmPbf.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
+  type AreaSourceMetadataFile,
+  type SourceMetadataSide,
   mergeAreaSourceMetadata,
   readAreaSourceMetadataFile,
   writeAreaSourceMetadataFile,
@@ -251,8 +253,8 @@ function writeOsmSourceMetadataForAreas(
 
   for (const area of areas) {
     const areaPath = datasetFolderPath(runtimeRoot, area)
-    const prev = readAreaSourceMetadataFile(areaPath) ?? {}
-    const prevOsm = prev.osm ?? {}
+    const prev: AreaSourceMetadataFile = readAreaSourceMetadataFile(areaPath) ?? {}
+    const prevOsm: Partial<SourceMetadataSide> = prev.osm ?? {}
     const patch = {
       osm: {
         downloadedAt: downloadedAt ?? prevOsm.downloadedAt,
@@ -260,6 +262,15 @@ function writeOsmSourceMetadataForAreas(
         provider: prevOsm.provider ?? 'OpenStreetMap (Geofabrik Germany extract)',
         dataset: prevOsm.dataset ?? GERMANY_OSM_PBF_BASENAME,
         sourceUrl: prevOsm.sourceUrl ?? GERMANY_OSM_PBF_URL,
+        licenseId: prevOsm.licenseId ?? 'odbl_10',
+        licenseLabel: prevOsm.licenseLabel ?? 'ODbL-1.0',
+        licenseSourceUrl: prevOsm.licenseSourceUrl ?? 'https://www.openstreetmap.org/copyright',
+        osmCompatibility: prevOsm.osmCompatibility ?? 'yes_licence',
+        osmCompatibilitySourceUrl:
+          prevOsm.osmCompatibilitySourceUrl ?? 'https://opendatacommons.org/licenses/odbl/1-0/',
+        osmCompatibilityComment:
+          prevOsm.osmCompatibilityComment ??
+          'OSM-Geometrien stammen aus OpenStreetMap unter ODbL-1.0.',
         note: prevOsm.note,
         license: prevOsm.license,
         layer: prevOsm.layer,

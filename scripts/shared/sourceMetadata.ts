@@ -10,6 +10,12 @@ const optionalTrimmedString = z.preprocess((value) => {
   return trimmed.length > 0 ? trimmed : undefined
 }, z.string().min(1).optional())
 
+const unknownDefaultString = z.preprocess((value) => {
+  if (typeof value !== 'string') return value
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}, z.string().min(1).default('unknown'))
+
 export const sourceDateSourceSchema = z
   .enum([
     'wfs_capabilities',
@@ -19,6 +25,19 @@ export const sourceDateSourceSchema = z
     'unknown',
   ])
   .optional()
+
+export const datasetLicenseIdSchema = z.enum([
+  'unknown',
+  'odbl_10',
+  'cc_by_30',
+  'cc_by_40',
+  'cc0_10',
+  'dl_de_by_20',
+  'dl_de_zero_20',
+  'custom',
+])
+
+export const osmLicenseCompatibilitySchema = z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver'])
 
 /** One side (BKG or OSM) in `source/metadata.json`. */
 export const sourceMetadataSideSchema = z.object({
@@ -31,6 +50,12 @@ export const sourceMetadataSideSchema = z.object({
   layer: optionalTrimmedString,
   sourceUrl: optionalTrimmedString,
   note: optionalTrimmedString,
+  licenseId: datasetLicenseIdSchema.default('unknown'),
+  licenseLabel: unknownDefaultString,
+  licenseSourceUrl: optionalTrimmedString,
+  osmCompatibility: osmLicenseCompatibilitySchema.default('unknown'),
+  osmCompatibilitySourceUrl: optionalTrimmedString,
+  osmCompatibilityComment: optionalTrimmedString,
   /** Optional licence or terms line for attribution (set in source/metadata.json when known). */
   license: optionalTrimmedString,
 })

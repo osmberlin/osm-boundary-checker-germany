@@ -1,9 +1,15 @@
 {
   "official": {
-    "downloadedAt": "2026-04-24T06:12:54.804Z",
+    "downloadedAt": "2026-04-24T07:00:25.328Z",
     "provider": "HTTP",
     "dataset": "WFS GML",
     "sourceUrl": "https://isk.geobasis-bb.de/ows/gazetteer_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3AGemeinden&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326",
+    "licenseId": "dl_de_by_20",
+    "licenseLabel": "DL-DE-BY-2.0",
+    "licenseSourceUrl": "https://www.govdata.de/dl-de/by-2-0",
+    "osmCompatibility": "yes_waiver",
+    "osmCompatibilitySourceUrl": "https://wiki.openstreetmap.org/wiki/Brandenburg/Geoportal#Rechtliche_Grundlagen",
+    "osmCompatibilityComment": "Brandenburg-Daten mit dokumentierter OSM-Freigabe laut OSM-Wiki.",
     "note": "Declared CRS: EPSG:4326"
   },
   "osm": {
@@ -11,6 +17,12 @@
     "sourceDateSource": "osm_pbf_header",
     "provider": "OpenStreetMap (Geofabrik Germany extract)",
     "dataset": "germany-latest.osm.pbf",
+    "licenseId": "odbl_10",
+    "licenseLabel": "ODbL-1.0",
+    "licenseSourceUrl": "https://www.openstreetmap.org/copyright",
+    "osmCompatibility": "yes_licence",
+    "osmCompatibilitySourceUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "osmCompatibilityComment": "OSM-Geometrien stammen aus OpenStreetMap unter ODbL-1.0.",
     "sourceUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf"
   }
 }

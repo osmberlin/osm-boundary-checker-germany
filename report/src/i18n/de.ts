@@ -48,6 +48,18 @@ export const de = {
     officialMetaPrefix: 'Hinterlegt',
     sourceLinkLabel: 'Quelle (extern)',
     licenseLabel: 'Lizenz',
+    licenseSectionHeading: 'Lizenz und OSM-Kompatibilitaet je Datensatz',
+    licenseShortNameLabel: 'Originale Lizenz (Kurzname)',
+    licenseSourceLabel: 'Lizenzquelle',
+    osmCompatibilityLabelTitle: 'OSM-kompatibel',
+    osmCompatibilitySourceLabel: 'Kompatibilitaetsnachweis',
+    unknown: 'Unbekannt',
+    osmCompatibilityLabel: {
+      unknown: 'Unbekannt',
+      no: 'Nein',
+      yes_licence: 'Ja (Lizenz oder Freigabe)',
+      yes_waiver: 'Ja (Lizenz oder Freigabe)',
+    },
     osmHeading: 'OpenStreetMap',
     osmLead:
       'Die OSM-Geometrien werden aus einem Geofabrik-Länder-Extract gewonnen (üblicherweise Germany), lokal zwischengespeichert und anschließend gefiltert.',

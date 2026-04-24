@@ -21,6 +21,17 @@ describe('areaSourceMetadataFileSchema', () => {
     expect(parsed.official?.sourcePublishedAt).toBe('2025-12-01')
   })
 
+  test('fills explicit unknown defaults for licence fields', () => {
+    const parsed = areaSourceMetadataFileSchema.parse({
+      official: {
+        downloadedAt: '2026-04-23T12:45:00.000Z',
+      },
+    })
+    expect(parsed.official?.licenseId).toBe('unknown')
+    expect(parsed.official?.licenseLabel).toBe('unknown')
+    expect(parsed.official?.osmCompatibility).toBe('unknown')
+  })
+
   test('rejects unknown sourceDateSource values', () => {
     expect(() =>
       areaSourceMetadataFileSchema.parse({

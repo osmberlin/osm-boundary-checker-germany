@@ -22,6 +22,16 @@ export type GeoDataSource = {
   href?: string
 }
 
+export type AreaLicenseSummary = {
+  area: string
+  displayName: string
+  officialLicenseLabel: string
+  officialLicenseSourceUrl?: string
+  officialOsmCompatibility: 'unknown' | 'no' | 'yes_licence' | 'yes_waiver'
+  officialOsmCompatibilitySourceUrl?: string
+  officialOsmCompatibilityComment?: string
+}
+
 function titleCaseFromSlug(area: string): string {
   const tokenMap: Record<string, string> = {
     de: 'Deutschland',
@@ -141,6 +151,70 @@ export function listGeoDataSources(runtimeRoot: string): GeoDataSource[] {
     }
   }
   return Array.from(byKey.values()).sort((a, b) => a.name.localeCompare(b.name, 'de'))
+}
+
+/** Per-area official licence summary from `source/metadata.json` for homepage rendering. */
+export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummary[] {
+  const datasetsRoot = join(runtimeRoot, DATASETS_DIRECTORY)
+  if (!existsSync(datasetsRoot)) return []
+  const out: AreaLicenseSummary[] = []
+  for (const entry of readdirSync(datasetsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    const area = entry.name
+    const tablePath = join(datasetsRoot, area, 'output', 'comparison_table.json')
+    if (!existsSync(tablePath)) continue
+    const metadataPath = join(datasetsRoot, area, 'source', 'metadata.json')
+    let official: Record<string, unknown> = {}
+    if (existsSync(metadataPath)) {
+      try {
+        const parsed = JSON.parse(readFileSync(metadataPath, 'utf-8')) as {
+          official?: Record<string, unknown>
+        }
+        official = parsed.official ?? {}
+      } catch {
+        official = {}
+      }
+    }
+    const officialLicenseLabelRaw =
+      typeof official.licenseLabel === 'string'
+        ? official.licenseLabel.trim()
+        : typeof official.license === 'string'
+          ? official.license.trim()
+          : ''
+    const officialLicenseSourceUrlRaw =
+      typeof official.licenseSourceUrl === 'string' ? official.licenseSourceUrl.trim() : ''
+    const officialOsmCompatibilityRaw =
+      typeof official.osmCompatibility === 'string' ? official.osmCompatibility.trim() : ''
+    const officialOsmCompatibilitySourceUrlRaw =
+      typeof official.osmCompatibilitySourceUrl === 'string'
+        ? official.osmCompatibilitySourceUrl.trim()
+        : ''
+    const officialOsmCompatibilityCommentRaw =
+      typeof official.osmCompatibilityComment === 'string'
+        ? official.osmCompatibilityComment.trim()
+        : ''
+    out.push({
+      area,
+      displayName: areaDisplayName(runtimeRoot, area),
+      officialLicenseLabel: officialLicenseLabelRaw || 'unknown',
+      ...(officialLicenseSourceUrlRaw
+        ? { officialLicenseSourceUrl: officialLicenseSourceUrlRaw }
+        : {}),
+      officialOsmCompatibility:
+        officialOsmCompatibilityRaw === 'no' ||
+        officialOsmCompatibilityRaw === 'yes_licence' ||
+        officialOsmCompatibilityRaw === 'yes_waiver'
+          ? officialOsmCompatibilityRaw
+          : 'unknown',
+      ...(officialOsmCompatibilitySourceUrlRaw
+        ? { officialOsmCompatibilitySourceUrl: officialOsmCompatibilitySourceUrlRaw }
+        : {}),
+      ...(officialOsmCompatibilityCommentRaw
+        ? { officialOsmCompatibilityComment: officialOsmCompatibilityCommentRaw }
+        : {}),
+    })
+  }
+  return out.sort((a, b) => a.area.localeCompare(b.area))
 }
 
 /** Home-card summary per area from runtime DB. */

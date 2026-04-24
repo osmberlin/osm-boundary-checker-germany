@@ -10,6 +10,7 @@ import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts
 import { parseDownloadOfficial } from '../shared/downloadOfficialConfig.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
+  type AreaSourceMetadataFile,
   type SourceMetadataSide,
   mergeAreaSourceMetadata,
   readAreaSourceMetadataFile,
@@ -72,6 +73,53 @@ function runOgr2ogrToFgb(sourcePathOrUrl: string, outFgb: string): void {
     const detail = (r.stderr ?? '').trim() || '(no stderr)'
     throw new Error(`ogr2ogr failed (exit ${r.status}): ${detail}`)
   }
+}
+
+function inferOfficialLicenseDefaults(sourceUrl: string): {
+  licenseId?:
+    | 'unknown'
+    | 'odbl_10'
+    | 'cc_by_30'
+    | 'cc_by_40'
+    | 'cc0_10'
+    | 'dl_de_by_20'
+    | 'dl_de_zero_20'
+    | 'custom'
+  licenseLabel?: string
+  licenseSourceUrl?: string
+  osmCompatibility?: 'unknown' | 'no' | 'yes_licence' | 'yes_waiver'
+  osmCompatibilitySourceUrl?: string
+} {
+  if (sourceUrl.includes('gdi.berlin.de') || sourceUrl.includes('daten.berlin.de')) {
+    return {
+      licenseId: 'dl_de_zero_20',
+      licenseLabel: 'DL-DE-ZERO-2.0',
+      licenseSourceUrl: 'https://www.govdata.de/dl-de/zero-2-0',
+      osmCompatibility: 'yes_waiver',
+      osmCompatibilitySourceUrl:
+        'https://wiki.openstreetmap.org/w/images/3/34/2019-06-03_Datenlizenz_Deutschland_Berlin_OSM.pdf',
+    }
+  }
+  if (sourceUrl.includes('geobasis-bb.de')) {
+    return {
+      licenseId: 'dl_de_by_20',
+      licenseLabel: 'DL-DE-BY-2.0',
+      licenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      osmCompatibility: 'yes_waiver',
+      osmCompatibilitySourceUrl:
+        'https://wiki.openstreetmap.org/wiki/Brandenburg/Geoportal#Rechtliche_Grundlagen',
+    }
+  }
+  if (sourceUrl.includes('api.hamburg.de')) {
+    return {
+      licenseId: 'dl_de_by_20',
+      licenseLabel: 'DL-DE-BY-2.0',
+      licenseSourceUrl: 'https://api.hamburg.de/datasets/v1/schulen',
+      osmCompatibility: 'no',
+      osmCompatibilitySourceUrl: 'https://api.hamburg.de/datasets/v1/schulen',
+    }
+  }
+  return {}
 }
 
 async function processArea(
@@ -159,7 +207,7 @@ async function processArea(
       runOgr2ogrToFgb(spec.url, outAbs)
     }
 
-    const prev = readAreaSourceMetadataFile(areaPath) ?? {}
+    const prev: AreaSourceMetadataFile = readAreaSourceMetadataFile(areaPath) ?? {}
     let extractedWfsDates: Awaited<ReturnType<typeof extractWfsDateMetadata>> = {}
     try {
       extractedWfsDates = await extractWfsDateMetadata(spec.url)
@@ -183,7 +231,8 @@ async function processArea(
       })
     }
     const downloadedAt = new Date().toISOString()
-    const prevOfficial: SourceMetadataSide = prev.official ?? {}
+    const prevOfficial: Partial<SourceMetadataSide> = prev.official ?? {}
+    const inferredLicense = inferOfficialLicenseDefaults(spec.url)
     const nextSourcePublishedAt =
       prevOfficial.sourcePublishedAt ?? extractedWfsDates.sourcePublishedAt
     const nextSourceUpdatedAt = prevOfficial.sourceUpdatedAt ?? extractedWfsDates.sourceUpdatedAt
@@ -201,6 +250,13 @@ async function processArea(
         sourcePublishedAt: nextSourcePublishedAt,
         sourceUpdatedAt: nextSourceUpdatedAt,
         sourceDateSource: nextSourceDateSource,
+        licenseId: prevOfficial.licenseId ?? inferredLicense.licenseId ?? 'unknown',
+        licenseLabel: prevOfficial.licenseLabel ?? inferredLicense.licenseLabel ?? 'unknown',
+        licenseSourceUrl: prevOfficial.licenseSourceUrl ?? inferredLicense.licenseSourceUrl,
+        osmCompatibility:
+          prevOfficial.osmCompatibility ?? inferredLicense.osmCompatibility ?? 'unknown',
+        osmCompatibilitySourceUrl:
+          prevOfficial.osmCompatibilitySourceUrl ?? inferredLicense.osmCompatibilitySourceUrl,
         ...(spec.crs ? { note: `Declared CRS: ${spec.crs}` } : {}),
       },
     }
