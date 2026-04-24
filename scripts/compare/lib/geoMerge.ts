@@ -7,6 +7,7 @@ import type {
   MultiPolygon,
   Polygon,
 } from 'geojson'
+import { unionByKeyWithRust } from './rustGeomSidecar.ts'
 
 export type KeyedGeometry = {
   key: string
@@ -64,6 +65,27 @@ export function unionFeaturesByKey(
       b.geoms.push(f.geometry)
       if (id && !b.featureIds.includes(id)) b.featureIds.push(id)
     }
+  }
+
+  const rustResults = unionByKeyWithRust(
+    Array.from(buckets.entries()).map(([key, { geoms, featureIds, properties }]) => ({
+      key,
+      geometries: geoms,
+      feature_ids: featureIds,
+      properties,
+    })),
+  )
+  if (rustResults) {
+    const rustOut = new Map<string, KeyedGeometry>()
+    for (const row of rustResults) {
+      rustOut.set(row.key, {
+        key: row.key,
+        geometry: row.geometry,
+        featureIds: row.feature_ids,
+        properties: row.properties,
+      })
+    }
+    return rustOut
   }
 
   const out = new Map<string, KeyedGeometry>()

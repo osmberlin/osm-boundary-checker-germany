@@ -11,6 +11,7 @@ import { calculateMetrics, type MetricResult } from './metrics.ts'
 import { normalizeOfficialValue, normalizeOsmValue } from './normalizeGermanKey.ts'
 import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
 import { projectGeometry } from './projectGeometry.ts'
+import { calculateMetricsBatchWithRust } from './rustGeomSidecar.ts'
 
 export type CompareRow = {
   canonicalMatchKey: string
@@ -255,6 +256,11 @@ export async function runCompare(
 
   const officialKeys = Array.from(officialMap.keys()).sort()
   const rows: CompareRow[] = []
+  const pendingMetrics: Array<{
+    rowIndex: number
+    officialProjected: Geometry
+    osmProjected: Geometry
+  }> = []
 
   for (const key of officialKeys) {
     const o = officialMap.get(key)
@@ -273,7 +279,11 @@ export async function runCompare(
     if (category === 'matched' && officialGeom && osmGeom) {
       const op = projectGeometry(officialGeom, metricsCrs)
       const sp = projectGeometry(osmGeom, metricsCrs)
-      metrics = calculateMetrics(op, sp)
+      pendingMetrics.push({
+        rowIndex: rows.length,
+        officialProjected: op,
+        osmProjected: sp,
+      })
     }
 
     rows.push({
@@ -287,6 +297,27 @@ export async function runCompare(
       officialProperties: o?.properties ?? null,
       osmProperties: s?.properties ?? null,
     })
+  }
+
+  if (pendingMetrics.length > 0) {
+    const rustMetrics = calculateMetricsBatchWithRust(
+      pendingMetrics.map((entry) => ({
+        officialProjected: entry.officialProjected,
+        osmProjected: entry.osmProjected,
+      })),
+    )
+    if (rustMetrics) {
+      for (let i = 0; i < pendingMetrics.length; i++) {
+        const row = rows[pendingMetrics[i]!.rowIndex]
+        if (row) row.metrics = rustMetrics[i] ?? null
+      }
+    } else {
+      for (const entry of pendingMetrics) {
+        const row = rows[entry.rowIndex]
+        if (!row) continue
+        row.metrics = calculateMetrics(entry.officialProjected, entry.osmProjected)
+      }
+    }
   }
 
   const officialKeySet = new Set(officialMap.keys())

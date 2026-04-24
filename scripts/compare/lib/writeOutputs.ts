@@ -12,6 +12,7 @@ import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/
 import type { CompareRow, UnmatchedOsmRow } from './compare.ts'
 import { computeMeanIou } from './metrics.ts'
 import { runTippecanoe, TIPPECANOE_LAYER } from './runTippecanoe.ts'
+import { calculateDiffBatchWithRust } from './rustGeomSidecar.ts'
 
 const TABLE_JSON = 'comparison_table.json'
 const PMTILES = 'comparison.pmtiles'
@@ -145,8 +146,37 @@ function pushDiffFeature(
   })
 }
 
-function appendDiffFeaturesForRow(features: Feature[], r: CompareRow) {
+function appendDiffFeaturesForRowWithPrecomputed(
+  features: Feature[],
+  r: CompareRow,
+  precomputed: {
+    externalDiff: Geometry | null
+    osmDiff: Geometry | null
+  } | null,
+) {
   const { category, canonicalMatchKey, officialGeometryWgs84, osmGeometryWgs84 } = r
+
+  if (precomputed) {
+    if (precomputed.externalDiff) {
+      const external = asPolygonFeature(precomputed.externalDiff)
+      if (external) {
+        pushDiffFeature(features, external, {
+          featureId: canonicalMatchKey,
+          boundarySource: 'external',
+        })
+      }
+    }
+    if (precomputed.osmDiff) {
+      const osm = asPolygonFeature(precomputed.osmDiff)
+      if (osm) {
+        pushDiffFeature(features, osm, {
+          featureId: canonicalMatchKey,
+          boundarySource: 'osm',
+        })
+      }
+    }
+    return
+  }
 
   if (category === 'matched' && officialGeometryWgs84 && osmGeometryWgs84) {
     const off = asPolygonFeature(officialGeometryWgs84)
@@ -181,6 +211,26 @@ function appendDiffFeaturesForRow(features: Feature[], r: CompareRow) {
 
 function buildGeometryFeatureCollection(rows: CompareRow[]): FeatureCollection {
   const features: Feature[] = []
+  const rustDiffRows = calculateDiffBatchWithRust(
+    rows.map((row) => ({
+      category: row.category,
+      canonicalMatchKey: row.canonicalMatchKey,
+      officialGeometryWgs84: row.officialGeometryWgs84,
+      osmGeometryWgs84: row.osmGeometryWgs84,
+    })),
+  )
+  const rustDiffByKey = rustDiffRows
+    ? new Map(
+        rustDiffRows.map((row) => [
+          row.canonicalMatchKey,
+          {
+            externalDiff: row.externalDiff,
+            osmDiff: row.osmDiff,
+          },
+        ]),
+      )
+    : null
+
   for (const r of rows) {
     if (r.officialGeometryWgs84) {
       features.push({
@@ -204,7 +254,11 @@ function buildGeometryFeatureCollection(rows: CompareRow[]): FeatureCollection {
         geometry: r.osmGeometryWgs84,
       })
     }
-    appendDiffFeaturesForRow(features, r)
+    appendDiffFeaturesForRowWithPrecomputed(
+      features,
+      r,
+      rustDiffByKey?.get(r.canonicalMatchKey) ?? null,
+    )
   }
   return { type: 'FeatureCollection', features }
 }
