@@ -40,7 +40,8 @@ import {
   formatDePercentPoints,
 } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
-import { sourceStatLines } from '../lib/reportFreshnessLines'
+import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
+import { selectSourceDateForFreshness } from '../lib/sourceFreshnessSelection'
 import type { AreaReportRow, ComparisonForReport, SnapshotsJson } from '../types/report'
 
 const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShell'))
@@ -201,7 +202,15 @@ export function AreaReport() {
   const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
   const officialRaw = data.sourceMetadata?.official?.downloadedAt
   const osmRaw = data.sourceMetadata?.osm?.downloadedAt
-  const officialFresh = sourceStatLines(officialRaw, data.sourceMetadata?.official != null)
+  const hasOfficialMetadata = data.sourceMetadata?.official != null
+  const officialDateChoice = selectSourceDateForFreshness(data.sourceMetadata?.official)
+  const officialUpdatedFresh = optionalSourceStatLines(officialDateChoice.primaryRaw)
+  const officialDownloadedFresh = sourceStatLines(officialRaw, hasOfficialMetadata)
+  const officialFresh = officialUpdatedFresh ?? officialDownloadedFresh
+  const officialSecondaryLine =
+    officialDateChoice.secondaryDownloadedRaw && hasOfficialMetadata
+      ? `${de.areaReport.freshnessSecondaryDownloadedPrefix}: ${officialDownloadedFresh.absoluteLine}`
+      : null
   const osmFresh = sourceStatLines(osmRaw, data.sourceMetadata?.osm != null)
   const iouMax = maxFiniteValue(sortedRows.map((row) => row.metrics?.iou))
   const areaDiffAbsMax = maxFiniteValue(
@@ -229,6 +238,7 @@ export function AreaReport() {
             heading={de.areaReport.freshnessHeadingOfficial}
             relativeLine={officialFresh.relativeLine}
             absoluteLine={officialFresh.absoluteLine}
+            detailLine={officialSecondaryLine}
           />
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingOsm}
@@ -536,10 +546,12 @@ function SummaryStatColumn({
   heading,
   relativeLine,
   absoluteLine,
+  detailLine,
 }: {
   heading: string
   relativeLine: string
   absoluteLine: string
+  detailLine?: string | null
 }) {
   const compactRelativeLine = relativeLine.replace(/\bStunden?\b/g, 'Std.')
   const mobileAbsoluteLine = toNumericMonthAbsoluteDe(absoluteLine)
@@ -555,6 +567,7 @@ function SummaryStatColumn({
         <span className="sm:hidden">{mobileAbsoluteLine}</span>
         <span className="hidden sm:inline">{absoluteLine}</span>
       </dd>
+      {detailLine ? <dd className="m-0 text-xs text-slate-500">{detailLine}</dd> : null}
     </div>
   )
 }

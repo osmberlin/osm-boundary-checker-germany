@@ -251,6 +251,7 @@ async function main() {
     const patch: AreaSourceMetadataFile = {
       official: {
         downloadedAt,
+        sourceDateSource: 'bkg_download_metadata',
         provider: 'BKG',
         dataset: 'VG25',
         layer,

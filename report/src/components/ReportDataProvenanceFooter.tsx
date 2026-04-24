@@ -1,7 +1,7 @@
 import { de } from '../i18n/de'
 import { EM_DASH } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
-import { sourceStatLines } from '../lib/reportFreshnessLines'
+import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
 import type { ComparisonForReport } from '../types/report'
 
 export type ReportDataProvenanceFooterProps = {
@@ -36,6 +36,12 @@ export function ReportDataProvenanceFooter({
     data.sourceMetadata?.official?.downloadedAt,
     data.sourceMetadata?.official != null,
   )
+  const officialUpdatedFresh = optionalSourceStatLines(
+    data.sourceMetadata?.official?.sourceUpdatedAt,
+  )
+  const officialPublishedFresh = optionalSourceStatLines(
+    data.sourceMetadata?.official?.sourcePublishedAt,
+  )
   const osmFresh = sourceStatLines(
     data.sourceMetadata?.osm?.downloadedAt,
     data.sourceMetadata?.osm != null,
@@ -61,6 +67,20 @@ export function ReportDataProvenanceFooter({
           abs={reportFresh.absoluteLine || EM_DASH}
           rel={reportFresh.relativeLine ?? EM_DASH}
         />
+        {officialUpdatedFresh ? (
+          <DateLine
+            label={p.officialSourceUpdatedLabel}
+            abs={officialUpdatedFresh.absoluteLine}
+            rel={officialUpdatedFresh.relativeLine}
+          />
+        ) : null}
+        {officialPublishedFresh ? (
+          <DateLine
+            label={p.officialSourcePublishedLabel}
+            abs={officialPublishedFresh.absoluteLine}
+            rel={officialPublishedFresh.relativeLine}
+          />
+        ) : null}
         <DateLine
           label={p.officialDownloadLabel}
           abs={officialFresh.absoluteLine}

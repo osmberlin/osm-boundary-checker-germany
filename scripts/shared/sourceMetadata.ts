@@ -1,36 +1,59 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { z } from 'zod'
 
 export const SOURCE_METADATA_FILE = 'metadata.json'
 
+const optionalTrimmedString = z.preprocess((value) => {
+  if (typeof value !== 'string') return value
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}, z.string().min(1).optional())
+
+export const sourceDateSourceSchema = z
+  .enum([
+    'wfs_capabilities',
+    'bkg_download_metadata',
+    'osm_pbf_header',
+    'manual_override',
+    'unknown',
+  ])
+  .optional()
+
 /** One side (BKG or OSM) in `source/metadata.json`. */
-export type SourceMetadataSide = {
-  downloadedAt?: string
-  provider?: string
-  dataset?: string
-  layer?: string
-  sourceUrl?: string
-  note?: string
+export const sourceMetadataSideSchema = z.object({
+  downloadedAt: optionalTrimmedString,
+  sourcePublishedAt: optionalTrimmedString,
+  sourceUpdatedAt: optionalTrimmedString,
+  sourceDateSource: sourceDateSourceSchema,
+  provider: optionalTrimmedString,
+  dataset: optionalTrimmedString,
+  layer: optionalTrimmedString,
+  sourceUrl: optionalTrimmedString,
+  note: optionalTrimmedString,
   /** Optional licence or terms line for attribution (set in source/metadata.json when known). */
-  license?: string
-}
+  license: optionalTrimmedString,
+})
+export type SourceMetadataSide = z.infer<typeof sourceMetadataSideSchema>
 
 /** On-disk shape for `<area>/source/metadata.json`. */
-export type AreaSourceMetadataFile = {
-  official?: SourceMetadataSide
-  osm?: SourceMetadataSide
-}
+export const areaSourceMetadataFileSchema = z.object({
+  official: sourceMetadataSideSchema.optional(),
+  osm: sourceMetadataSideSchema.optional(),
+})
+export type AreaSourceMetadataFile = z.infer<typeof areaSourceMetadataFileSchema>
 
 /** Embedded in `comparison_table.json` for the report UI. */
-export type ComparisonSourceMetadata = {
-  official: SourceMetadataSide | null
-  osm: SourceMetadataSide | null
-}
+export const comparisonSourceMetadataSchema = z.object({
+  official: sourceMetadataSideSchema.nullable(),
+  osm: sourceMetadataSideSchema.nullable(),
+})
+export type ComparisonSourceMetadata = z.infer<typeof comparisonSourceMetadataSchema>
 
 function readMetadataAt(path: string): AreaSourceMetadataFile | null {
   if (!existsSync(path)) return null
   try {
-    return JSON.parse(readFileSync(path, 'utf-8')) as AreaSourceMetadataFile
+    return areaSourceMetadataFileSchema.parse(JSON.parse(readFileSync(path, 'utf-8')) as unknown)
   } catch {
     return null
   }
@@ -67,7 +90,8 @@ export function writeAreaSourceMetadataFile(areaPath: string, data: AreaSourceMe
   const dir = join(areaPath, 'source')
   mkdirSync(dir, { recursive: true })
   const p = join(dir, SOURCE_METADATA_FILE)
-  writeFileSync(p, JSON.stringify(data, null, 2), 'utf-8')
+  const normalized = areaSourceMetadataFileSchema.parse(data)
+  writeFileSync(p, JSON.stringify(normalized, null, 2), 'utf-8')
 }
 
 export function mergeAreaSourceMetadata(

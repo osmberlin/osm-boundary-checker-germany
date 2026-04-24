@@ -8,9 +8,18 @@ export type ReportMetrics = {
 }
 
 export type ReportCategory = 'matched' | 'official_only' | 'unmatched_osm'
+export type OverpassBoundaryTag = 'administrative' | 'postal_code'
 
 export type SourceMetadataSide = {
   downloadedAt?: string
+  sourcePublishedAt?: string
+  sourceUpdatedAt?: string
+  sourceDateSource?:
+    | 'wfs_capabilities'
+    | 'bkg_download_metadata'
+    | 'osm_pbf_header'
+    | 'manual_override'
+    | 'unknown'
   provider?: string
   dataset?: string
   layer?: string
@@ -67,6 +76,8 @@ export type ComparisonForReport = {
   area: string
   generatedAt: string
   metricsCrs: string
+  /** Overpass `boundary=*` value for live OSM lookup; defaults to `administrative` when absent. */
+  overpassBoundaryTag?: OverpassBoundaryTag
   hasPmtiles: boolean
   /** PMTiles for `unmatchedOsm` geometries (`output/unmatched.pmtiles`), when non-empty. */
   hasUnmatchedPmtiles?: boolean

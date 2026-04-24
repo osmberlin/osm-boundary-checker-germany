@@ -10,10 +10,12 @@ import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts
 import { parseDownloadOfficial } from '../shared/downloadOfficialConfig.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
+  type SourceMetadataSide,
   mergeAreaSourceMetadata,
   readAreaSourceMetadataFile,
   writeAreaSourceMetadataFile,
 } from '../shared/sourceMetadata.ts'
+import { extractWfsDateMetadata } from '../shared/wfsSourceMetadata.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 function discoverAreas(repoRoot: string): string[] {
@@ -157,14 +159,48 @@ async function processArea(
       runOgr2ogrToFgb(spec.url, outAbs)
     }
 
-    const downloadedAt = new Date().toISOString()
     const prev = readAreaSourceMetadataFile(areaPath) ?? {}
+    let extractedWfsDates: Awaited<ReturnType<typeof extractWfsDateMetadata>> = {}
+    try {
+      extractedWfsDates = await extractWfsDateMetadata(spec.url)
+      if (extractedWfsDates.sourcePublishedAt || extractedWfsDates.sourceUpdatedAt) {
+        logLine({
+          area,
+          source: 'official',
+          status: 'info',
+          reason: 'wfs_dates_detected',
+          updatedAt: extractedWfsDates.sourceUpdatedAt,
+          publishedAt: extractedWfsDates.sourcePublishedAt,
+        })
+      }
+    } catch (error) {
+      logLine({
+        area,
+        source: 'official',
+        status: 'info',
+        reason: 'wfs_metadata_fetch_failed',
+        detail: String(error),
+      })
+    }
+    const downloadedAt = new Date().toISOString()
+    const prevOfficial: SourceMetadataSide = prev.official ?? {}
+    const nextSourcePublishedAt =
+      prevOfficial.sourcePublishedAt ?? extractedWfsDates.sourcePublishedAt
+    const nextSourceUpdatedAt = prevOfficial.sourceUpdatedAt ?? extractedWfsDates.sourceUpdatedAt
+    const nextSourceDateSource =
+      prevOfficial.sourceDateSource ??
+      (nextSourcePublishedAt || nextSourceUpdatedAt
+        ? extractedWfsDates.sourceDateSource
+        : undefined)
     const patch = {
       official: {
         downloadedAt,
         provider: 'HTTP',
         dataset: spec.format === 'geojson' ? 'GeoJSON' : 'WFS GML',
         sourceUrl: spec.url,
+        sourcePublishedAt: nextSourcePublishedAt,
+        sourceUpdatedAt: nextSourceUpdatedAt,
+        sourceDateSource: nextSourceDateSource,
         ...(spec.crs ? { note: `Declared CRS: ${spec.crs}` } : {}),
       },
     }

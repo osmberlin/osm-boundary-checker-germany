@@ -39,6 +39,8 @@ export const de = {
     title: 'Datenstand und Quellen',
     reportCreatedLabel: 'Auswertung erstellt',
     officialDownloadLabel: 'Amtliche Geometrien (Download/Stand)',
+    officialSourceUpdatedLabel: 'Amtliche Quelle aktualisiert',
+    officialSourcePublishedLabel: 'Amtliche Quelle veröffentlicht',
     osmDownloadLabel: 'OSM-Geometrien (Download/Stand)',
     officialHeading: 'Amtliche Daten',
     officialLead:
@@ -99,6 +101,7 @@ export const de = {
     freshnessHeadingReport: 'Auswertung',
     freshnessHeadingOfficial: 'Amtliche Daten',
     freshnessHeadingOsm: 'OSM Daten',
+    freshnessSecondaryDownloadedPrefix: 'Download',
     sourceDateUnknown: 'kein Datum hinterlegt',
     loading: 'Laden…',
     errorRunCompare: 'Vergleich im Projekt ausführen, damit',

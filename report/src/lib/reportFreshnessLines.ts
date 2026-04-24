@@ -23,3 +23,16 @@ export function sourceStatLines(
     absoluteLine: f.absoluteLine || EM_DASH,
   }
 }
+
+/** Optional line: returns null when no usable source date is available. */
+export function optionalSourceStatLines(
+  raw: string | undefined,
+): { relativeLine: string; absoluteLine: string } | null {
+  const trimmed = raw?.trim()
+  if (!trimmed) return null
+  const f = formatFreshnessDisplayDe(trimmed)
+  return {
+    relativeLine: f.relativeLine ?? EM_DASH,
+    absoluteLine: f.absoluteLine || EM_DASH,
+  }
+}

@@ -48,17 +48,39 @@ const ogcWfsInspectSourceSchema = z.object({
   maxFeatures: z.number().optional(),
 })
 
+const sourceMetadataSideSchema = z.object({
+  downloadedAt: z.string().optional(),
+  sourcePublishedAt: z.string().optional(),
+  sourceUpdatedAt: z.string().optional(),
+  sourceDateSource: z
+    .enum([
+      'wfs_capabilities',
+      'bkg_download_metadata',
+      'osm_pbf_header',
+      'manual_override',
+      'unknown',
+    ])
+    .optional(),
+  provider: z.string().optional(),
+  dataset: z.string().optional(),
+  layer: z.string().optional(),
+  sourceUrl: z.string().optional(),
+  note: z.string().optional(),
+  license: z.string().optional(),
+})
+
 const comparisonForReportSchema = z.object({
   area: z.string(),
   generatedAt: z.string(),
   metricsCrs: z.string(),
+  overpassBoundaryTag: z.enum(['administrative', 'postal_code']).optional(),
   hasPmtiles: z.boolean(),
   hasUnmatchedPmtiles: z.boolean().optional(),
   tippecanoeLayer: z.string(),
   sourceMetadata: z
     .object({
-      official: z.record(z.string(), z.unknown()).nullable(),
-      osm: z.record(z.string(), z.unknown()).nullable(),
+      official: sourceMetadataSideSchema.nullable(),
+      osm: sourceMetadataSideSchema.nullable(),
     })
     .optional(),
   ogcInspectSources: z.array(ogcWfsInspectSourceSchema).optional(),

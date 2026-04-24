@@ -20,6 +20,8 @@ const BUILD_DIR = '_build'
 const BUILD_FGB = 'geometries.fgb'
 const OFFICIAL_FOR_EDIT_DIR = 'official_for_edit'
 
+export type OverpassBoundaryTag = 'administrative' | 'postal_code'
+
 function compactOfficialSource(
   side: SourceMetadataSide | null | undefined,
 ): Record<string, string> | undefined {
@@ -30,6 +32,9 @@ function compactOfficialSource(
     'dataset',
     'layer',
     'sourceUrl',
+    'sourcePublishedAt',
+    'sourceUpdatedAt',
+    'sourceDateSource',
     'downloadedAt',
     'note',
     'license',
@@ -233,6 +238,7 @@ type StaticComparisonPayload = {
   area: string
   generatedAt: string
   metricsCrs: string
+  overpassBoundaryTag: OverpassBoundaryTag
   hasPmtiles: boolean
   hasUnmatchedPmtiles: boolean
   tippecanoeLayer: string
@@ -265,6 +271,7 @@ function buildStaticPayloadBase(
   areaFolder: string,
   generatedAt: string,
   metricsCrs: string,
+  overpassBoundaryTag: OverpassBoundaryTag,
   hasPmtiles: boolean,
   hasUnmatchedPmtiles: boolean,
   sourceMetadata: ComparisonSourceMetadata | null,
@@ -274,6 +281,7 @@ function buildStaticPayloadBase(
     area: areaFolder,
     generatedAt,
     metricsCrs,
+    overpassBoundaryTag,
     hasPmtiles,
     hasUnmatchedPmtiles,
     tippecanoeLayer: TIPPECANOE_LAYER,
@@ -379,6 +387,7 @@ export function writeOutputs(
   rows: CompareRow[],
   unmatchedOsm: UnmatchedOsmRow[],
   metricsCrs: string,
+  overpassBoundaryTag: OverpassBoundaryTag,
   sourceMetadata: ComparisonSourceMetadata | null = null,
   ogcInspectSources: OgcWfsInspectSource[] = [],
 ): { snapshotId: string } {
@@ -471,6 +480,7 @@ export function writeOutputs(
     areaFolder,
     generatedAt,
     metricsCrs,
+    overpassBoundaryTag,
     hasPmtiles,
     hasUnmatchedPmtiles,
     sourceMetadata,
