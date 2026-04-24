@@ -1,5 +1,6 @@
 import { HeartIcon } from '@heroicons/react/20/solid'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { type ReactNode } from 'react'
 import { areasIndexQueryOptions, type GeoDataSource } from '../data/areasIndexQuery'
 import { de } from '../i18n/de'
@@ -10,6 +11,11 @@ const bodyFooterLinkClass =
   'group-hover/footer:text-sky-300 group-hover/footer:decoration-sky-400/60 ' +
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ' +
   'focus-visible:outline-sky-500/50'
+
+const endFooterLinkClass =
+  'text-sky-300 underline decoration-slate-600 underline-offset-2 transition-[text-decoration-color] duration-150 ' +
+  'hover:decoration-sky-400 ' +
+  'group-hover/footer:decoration-sky-400'
 
 function renderSourceList(items: GeoDataSource[]): ReactNode {
   return items.map((item, i) => {
@@ -72,6 +78,12 @@ export function AppFooter() {
             ))}
             .
           </span>
+        </p>
+
+        <p>
+          <Link to="/status" className={endFooterLinkClass}>
+            {de.home.processingStatusLink}
+          </Link>
         </p>
       </div>
     </footer>

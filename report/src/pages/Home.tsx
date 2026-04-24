@@ -15,11 +15,6 @@ export function Home() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
-      <p className="mb-3">
-        <Link className="text-sky-400 underline hover:text-sky-300" to="/status">
-          {de.home.processingStatusLink}
-        </Link>
-      </p>
       <p className="mb-4 max-w-prose text-pretty text-slate-400">{de.home.introP1}</p>
       <p className="mb-6 max-w-prose text-pretty text-slate-400">{de.home.introP2}</p>
       <p className="mb-6 text-slate-400">
