@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { useMemo } from 'react'
 import { processingLogJsonlUrl, processingStateUrl } from '../data/paths'
 import { de } from '../i18n/de'
 import { formatDeInteger } from '../lib/formatDe'
@@ -153,8 +152,7 @@ export function ProcessingStatus() {
   const state = processingQuery.data?.state ?? null
   const events = processingQuery.data?.events ?? []
   const error = processingQuery.isError ? String(processingQuery.error) : null
-
-  const runs = useMemo(() => buildRuns(events), [events])
+  const runs = buildRuns(events)
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
