@@ -44,7 +44,11 @@ function normalizeUnmatchedRows(data: ComparisonForReport): ReportRow[] {
     mapBbox: row.mapBbox,
     officialForEditPath: null,
     officialProperties: null,
-    osmProperties: null,
+    osmProperties: {
+      name: row.nameLabel,
+      relation_id: row.osmRelationId,
+      ...(row.adminLevel ? { admin_level: row.adminLevel } : {}),
+    },
   }))
 }
 
