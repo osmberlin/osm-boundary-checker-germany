@@ -16,7 +16,7 @@
   },
 
   "osm": {
-    "ignoreRelationIds": ["62504"],
+    "ignoreRelationIds": ["62422", "62504"],
   },
 
   // Machine-readable: `bun run download:official` fetches this URL and writes official.path as FGB
