@@ -29,12 +29,48 @@ jobs:
           bun-version: latest
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.86.0
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
         env:
           HUSKY: '0'
+
+      - name: Download previous refresh artifact metadata
+        id: previous-refresh-artifact
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: data-refresh.yml
+          branch: main
+          name: ${{ env.DATASET_ARTIFACT_NAME }}
+          search_artifacts: true
+          path: .previous-artifact
+          if_no_artifact_found: fail
+
+      - name: Compute rust sidecar fingerprint
+        id: rust-fingerprint
+        run: bun run scripts/ci/rust-sidecar-fingerprint.ts
+
+      - name: Restore rust sidecar cache
+        id: rust-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/geom-sidecar/target
+          key: rust-sidecar-${{ runner.os }}-${{ steps.rust-fingerprint.outputs.rustc_version }}-${{ steps.rust-fingerprint.outputs.rust_sidecar_fingerprint }}
+          restore-keys: |
+            rust-sidecar-${{ runner.os }}-${{ steps.rust-fingerprint.outputs.rustc_version }}-
+            rust-sidecar-${{ runner.os }}-
+
+      - name: Report rust sidecar change status
+        id: rust-sidecar-change
+        run: bun run scripts/ci/report-rust-sidecar-change.ts
+        env:
+          PREVIOUS_RUST_METADATA_PATH: .previous-artifact/rust-sidecar-metadata.json
+          RUST_SIDECAR_CACHE_HIT: ${{ steps.rust-cache.outputs.cache-hit }}
 
       - name: Install system tools for pipeline
         run: |
@@ -42,7 +78,14 @@ jobs:
           sudo apt-get install -y osmium-tool gdal-bin tippecanoe unzip
 
       - name: Build rust geom sidecar
-        run: cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml
+        run: |
+          set -euo pipefail
+          start_epoch="$(date +%s)"
+          cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml
+          end_epoch="$(date +%s)"
+          build_seconds="$((end_epoch - start_epoch))"
+          echo "RUST_SIDECAR_BUILD_SECONDS=${build_seconds}" >> "$GITHUB_ENV"
+          echo "Rust sidecar build duration: ${build_seconds}s" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Run nightly pipeline
         run: bun run scripts/ci/run-nightly-pipeline-with-retry.ts
@@ -75,6 +118,10 @@ jobs:
 
       - name: Stage runtime artifact payload
         run: bun run scripts/ci/stage-runtime-artifact-payload.ts
+        env:
+          RUST_SIDECAR_CACHE_HIT: ${{ steps.rust-cache.outputs.cache-hit }}
+          RUST_SIDECAR_CHANGE_STATUS: ${{ steps.rust-sidecar-change.outputs.rust_sidecar_change_status }}
+          RUST_SIDECAR_PREVIOUS_FINGERPRINT: ${{ steps.rust-sidecar-change.outputs.rust_sidecar_previous_fingerprint }}
 
       - name: Upload reusable dataset artifact
         uses: actions/upload-artifact@v4
