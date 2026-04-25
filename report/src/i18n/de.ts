@@ -1,4 +1,4 @@
-import { hausdorffJstsDocDe, meanIouChartDe } from '@compare-metrics/modalCopyDe.ts'
+import { meanIouChartDe } from '@compare-metrics/modalCopyDe.ts'
 import type { ReportRow } from '../types/report'
 
 /** UI copy (German). Metric modal copy lives in scripts/compare/lib/metrics/ (per-metric folder, de.ts). */
@@ -154,11 +154,10 @@ export const de = {
       areaOsm: 'OSM-Fläche',
       diffMetricsRowAria: 'Differenz-Kennzahlen',
       layersRowAria: 'Flächen und Kartenebenen',
-      /** Below map: CRS line, middle dot, Hausdorff/JSTS doc link. */
+      /** Below map: CRS line for projected metrics. */
       footnote: {
         /** Shown below the feature map when metrics exist. */
         metricsCrsLine: (crs: string) => `Projiziertes Metrik-Koordinatensystem: ${crs}`,
-        hausdorffDoc: hausdorffJstsDocDe,
       },
     },
     noMetrics: 'Keine Überlappungsmetriken (auf einer Seite fehlt die Geometrie).',

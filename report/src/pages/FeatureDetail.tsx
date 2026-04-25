@@ -147,18 +147,6 @@ export function FeatureDetail() {
       {row.metrics && (
         <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-xs text-slate-400">
           <span>{de.feature.stats.footnote.metricsCrsLine(data.metricsCrs)}</span>
-          <span className="text-slate-600" aria-hidden>
-            ·
-          </span>
-          <a
-            className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
-            href={de.feature.stats.footnote.hausdorffDoc.href}
-            target="_blank"
-            rel="noreferrer"
-            title={de.feature.stats.footnote.hausdorffDoc.title}
-          >
-            {de.feature.stats.footnote.hausdorffDoc.label}
-          </a>
         </p>
       )}
 
