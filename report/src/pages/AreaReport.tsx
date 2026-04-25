@@ -1,4 +1,5 @@
 import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
+import { ChevronRightIcon } from '@heroicons/react/20/solid'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
@@ -445,55 +446,82 @@ export function AreaReport() {
                   <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
                 }
               />
-              <th className="px-3 py-2 text-left text-slate-100">{de.areaReport.table.map}</th>
+              <th
+                className="px-3 py-2 text-right text-slate-100"
+                aria-label={de.areaReport.table.view}
+              />
             </tr>
           </thead>
           <tbody>
-            {sortedRows.map((row) => (
-              <tr key={row.canonicalMatchKey} className="border-t border-slate-800">
-                <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
-                <td className="px-3 py-2 font-mono text-xs text-slate-100">
-                  {row.canonicalMatchKey}
-                </td>
-                <td className="px-3 py-2">
-                  <ReportCategoryPill category={row.category}>
-                    {categoryLabelDe(row.category)}
-                  </ReportCategoryPill>
-                </td>
-                <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                  <MetricCellBar
-                    ratio={normalizedRatio(row.metrics?.iou, iouMax)}
-                    value={row.metrics ? formatDeIou(row.metrics.iou) : EM_DASH}
-                  />
-                </td>
-                <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                  <MetricCellBar
-                    ratio={normalizedRatio(absOrNull(row.metrics?.areaDiffPct), areaDiffAbsMax)}
-                    value={row.metrics ? formatDePercentPoints(row.metrics.areaDiffPct) : EM_DASH}
-                  />
-                </td>
-                <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                  <MetricCellBar
-                    ratio={normalizedRatio(row.metrics?.hausdorffM, hausdorffMax)}
-                    value={
-                      row.metrics ? formatDeOrDash(row.metrics.hausdorffM, formatDeMeters) : EM_DASH
+            {sortedRows.map((row) => {
+              const detailParams = {
+                areaId: areaKey,
+                featureKey: row.canonicalMatchKey,
+              } as const
+              const navigateToFeature = () =>
+                navigate({
+                  to: '/$areaId/feature/$featureKey',
+                  params: detailParams,
+                })
+              return (
+                <tr
+                  key={row.canonicalMatchKey}
+                  className="group cursor-pointer border-t border-slate-800 transition-colors hover:bg-slate-800/55 focus-within:bg-slate-800/55"
+                  tabIndex={0}
+                  onClick={() => {
+                    void navigateToFeature()
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      void navigateToFeature()
                     }
-                  />
-                </td>
-                <td className="px-3 py-2">
-                  <Link
-                    className="text-sky-400 underline"
-                    to="/$areaId/feature/$featureKey"
-                    params={{
-                      areaId: areaKey,
-                      featureKey: row.canonicalMatchKey,
-                    }}
-                  >
-                    {de.areaReport.table.view}
-                  </Link>
-                </td>
-              </tr>
-            ))}
+                  }}
+                >
+                  <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-slate-100">
+                    {row.canonicalMatchKey}
+                  </td>
+                  <td className="px-3 py-2">
+                    <ReportCategoryPill category={row.category}>
+                      {categoryLabelDe(row.category)}
+                    </ReportCategoryPill>
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
+                    <MetricCellBar
+                      ratio={normalizedRatio(row.metrics?.iou, iouMax)}
+                      value={row.metrics ? formatDeIou(row.metrics.iou) : EM_DASH}
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
+                    <MetricCellBar
+                      ratio={normalizedRatio(absOrNull(row.metrics?.areaDiffPct), areaDiffAbsMax)}
+                      value={row.metrics ? formatDePercentPoints(row.metrics.areaDiffPct) : EM_DASH}
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
+                    <MetricCellBar
+                      ratio={normalizedRatio(row.metrics?.hausdorffM, hausdorffMax)}
+                      value={
+                        row.metrics ? formatDeOrDash(row.metrics.hausdorffM, formatDeMeters) : EM_DASH
+                      }
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <Link
+                      className="inline-flex items-center text-slate-500 transition-colors group-hover:text-sky-300 focus-visible:text-sky-300"
+                      to="/$areaId/feature/$featureKey"
+                      params={detailParams}
+                      onClick={(event) => event.stopPropagation()}
+                      aria-label={`${de.areaReport.table.view}: ${row.nameLabel}`}
+                    >
+                      <span className="sr-only">{de.areaReport.table.view}</span>
+                      <ChevronRightIcon aria-hidden className="size-5" />
+                    </Link>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
