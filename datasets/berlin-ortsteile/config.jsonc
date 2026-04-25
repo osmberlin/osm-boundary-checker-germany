@@ -26,7 +26,7 @@
 
   "sources": {
     "official": {
-      "sourceUrl": "https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
+      "sourceUrl": "https://daten.berlin.de/datensaetze/alkis-berlin-ortsteile-wfs-61bd3084",
     },
   },
 

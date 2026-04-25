@@ -48,43 +48,60 @@ const ogcWfsInspectSourceSchema = z.object({
   maxFeatures: z.number().optional(),
 })
 
-const sourceMetadataSideSchema = z.object({
-  downloadedAt: z.string().optional(),
-  sourcePublishedAt: z.string().optional(),
-  sourceUpdatedAt: z.string().optional(),
-  sourceDateSource: z
-    .enum([
-      'wfs_capabilities',
-      'bkg_download_metadata',
-      'osm_pbf_header',
-      'manual_override',
-      'unknown',
-    ])
-    .optional(),
-  provider: z.string().optional(),
-  dataset: z.string().optional(),
-  layer: z.string().optional(),
-  sourceUrl: z.string().optional(),
-  note: z.string().optional(),
-  licenseId: z
-    .enum([
-      'unknown',
-      'odbl_10',
-      'cc_by_30',
-      'cc_by_40',
-      'cc0_10',
-      'dl_de_by_20',
-      'dl_de_zero_20',
-      'custom',
-    ])
-    .optional(),
-  licenseLabel: z.string().optional(),
-  licenseSourceUrl: z.string().optional(),
-  osmCompatibility: z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver']).optional(),
-  osmCompatibilitySourceUrl: z.string().optional(),
-  osmCompatibilityComment: z.string().optional(),
-  license: z.string().optional(),
-})
+const sourceMetadataSideSchema = z.preprocess(
+  (raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
+    const rec = raw as Record<string, unknown>
+    const sourceDownloadUrl =
+      typeof rec.sourceDownloadUrl === 'string' && rec.sourceDownloadUrl.trim() !== ''
+        ? rec.sourceDownloadUrl
+        : typeof rec.sourceUrl === 'string' && rec.sourceUrl.trim() !== ''
+          ? rec.sourceUrl
+          : undefined
+    return {
+      ...rec,
+      ...(sourceDownloadUrl ? { sourceDownloadUrl } : {}),
+    }
+  },
+  z.object({
+    downloadedAt: z.string().optional(),
+    sourcePublishedAt: z.string().optional(),
+    sourceUpdatedAt: z.string().optional(),
+    sourceDateSource: z
+      .enum([
+        'wfs_capabilities',
+        'bkg_download_metadata',
+        'osm_pbf_header',
+        'manual_override',
+        'unknown',
+      ])
+      .optional(),
+    provider: z.string().optional(),
+    dataset: z.string().optional(),
+    layer: z.string().optional(),
+    sourcePublicUrl: z.string().optional(),
+    sourceDownloadUrl: z.string().optional(),
+    note: z.string().optional(),
+    licenseId: z
+      .enum([
+        'unknown',
+        'odbl_10',
+        'cc_by_30',
+        'cc_by_40',
+        'cc0_10',
+        'dl_de_by_20',
+        'dl_de_zero_20',
+        'custom',
+      ])
+      .optional(),
+    licenseLabel: z.string().optional(),
+    licenseSourceUrl: z.string().optional(),
+    osmCompatibility: z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver']).optional(),
+    osmCompatibilitySourceUrl: z.string().optional(),
+    osmCompatibilityComment: z.string().optional(),
+    license: z.string().optional(),
+  }),
+)
 
 const comparisonForReportSchema = z.object({
   area: z.string(),

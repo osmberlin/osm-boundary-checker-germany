@@ -122,6 +122,19 @@ function inferOfficialLicenseDefaults(sourceUrl: string): {
   return {}
 }
 
+function inferOfficialPublicSourceUrl(rawConfig: unknown, downloadUrl: string): string | undefined {
+  const doc = rawConfig as Record<string, unknown>
+  const sources = doc.sources as Record<string, unknown> | undefined
+  const officialSources = sources?.official as Record<string, unknown> | undefined
+  const explicit =
+    typeof officialSources?.sourceUrl === 'string' ? officialSources.sourceUrl.trim() : ''
+  if (explicit) return explicit
+  if (downloadUrl.includes('gdi.berlin.de')) return 'https://daten.berlin.de/'
+  if (downloadUrl.includes('geobasis-bb.de')) return 'https://geoportal.brandenburg.de/'
+  if (downloadUrl.includes('api.hamburg.de')) return 'https://suche.transparenz.hamburg.de/'
+  return undefined
+}
+
 async function processArea(
   configRoot: string,
   runtimeRoot: string,
@@ -233,6 +246,7 @@ async function processArea(
     const downloadedAt = new Date().toISOString()
     const prevOfficial: Partial<SourceMetadataSide> = prev.official ?? {}
     const inferredLicense = inferOfficialLicenseDefaults(spec.url)
+    const publicSourceUrl = inferOfficialPublicSourceUrl(raw, spec.url)
     const nextSourcePublishedAt =
       prevOfficial.sourcePublishedAt ?? extractedWfsDates.sourcePublishedAt
     const nextSourceUpdatedAt = prevOfficial.sourceUpdatedAt ?? extractedWfsDates.sourceUpdatedAt
@@ -246,7 +260,8 @@ async function processArea(
         downloadedAt,
         provider: 'HTTP',
         dataset: spec.format === 'geojson' ? 'GeoJSON' : 'WFS GML',
-        sourceUrl: spec.url,
+        sourcePublicUrl: prevOfficial.sourcePublicUrl ?? publicSourceUrl,
+        sourceDownloadUrl: prevOfficial.sourceDownloadUrl ?? spec.url,
         sourcePublishedAt: nextSourcePublishedAt,
         sourceUpdatedAt: nextSourceUpdatedAt,
         sourceDateSource: nextSourceDateSource,

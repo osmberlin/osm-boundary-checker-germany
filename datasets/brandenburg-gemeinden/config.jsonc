@@ -26,7 +26,7 @@
 
   "sources": {
     "official": {
-      "sourceUrl": "https://isk.geobasis-bb.de/ows/vg_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3Agem&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326",
+      "sourceUrl": "https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Ded6ab7a1-7a64-4ceb-8d37-2e156b7f4546",
       "attribution": "© GeoBasis-DE/LGB, dl-de/by-2-0",
     },
   },

@@ -261,7 +261,9 @@ function writeOsmSourceMetadataForAreas(
         sourceDateSource: downloadedAt ? 'osm_pbf_header' : prevOsm.sourceDateSource,
         provider: prevOsm.provider ?? 'OpenStreetMap (Geofabrik Germany extract)',
         dataset: prevOsm.dataset ?? GERMANY_OSM_PBF_BASENAME,
-        sourceUrl: prevOsm.sourceUrl ?? GERMANY_OSM_PBF_URL,
+        sourcePublicUrl:
+          prevOsm.sourcePublicUrl ?? 'https://download.geofabrik.de/europe/germany.html',
+        sourceDownloadUrl: prevOsm.sourceDownloadUrl ?? GERMANY_OSM_PBF_URL,
         licenseId: prevOsm.licenseId ?? 'odbl_10',
         licenseLabel: prevOsm.licenseLabel ?? 'ODbL-1.0',
         licenseSourceUrl: prevOsm.licenseSourceUrl ?? 'https://www.openstreetmap.org/copyright',

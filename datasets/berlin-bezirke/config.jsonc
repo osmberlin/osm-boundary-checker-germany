@@ -32,7 +32,7 @@
   // Optional: official dataset reference (human documentation)
   "sources": {
     "official": {
-      "sourceUrl": "https://gdi.berlin.de/services/wfs/alkis_bezirke?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_bezirke%3Abezirksgrenzen&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
+      "sourceUrl": "https://daten.berlin.de/datensaetze/alkis-berlin-bezirke-wfs-ced31d7d",
     },
   },
 

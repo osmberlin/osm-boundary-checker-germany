@@ -23,7 +23,8 @@ export type SourceMetadataSide = {
   provider?: string
   dataset?: string
   layer?: string
-  sourceUrl?: string
+  sourcePublicUrl?: string
+  sourceDownloadUrl?: string
   note?: string
   licenseId?:
     | 'unknown'

@@ -107,9 +107,13 @@ export function AreaReport() {
     areasIndex.summaries.find((summary) => summary.area === areaKey)?.displayName ??
     data?.area ??
     areaKey
-  const pageSourceHref = data?.sourceMetadata?.official?.sourceUrl?.trim() || null
+  const pageSourceExternalUrl =
+    data?.sourceMetadata?.official?.sourcePublicUrl?.trim() ||
+    data?.sourceMetadata?.official?.sourceDownloadUrl?.trim() ||
+    null
+  const pageSourceHref = pageSourceExternalUrl ? '#report-licence-section' : null
   const pageSourceName = formatHeadlineSourceLabel(
-    pageSourceHref,
+    pageSourceExternalUrl,
     data?.sourceMetadata?.official?.layer?.trim() || null,
     data?.sourceMetadata?.official?.dataset?.trim() || null,
   )
@@ -494,7 +498,7 @@ export function AreaReport() {
         </table>
       </div>
 
-      <ReportDataProvenanceFooter data={data} />
+      <ReportDataProvenanceFooter data={data} hideFreshnessSection />
     </div>
   )
 }
@@ -623,6 +627,7 @@ function AreaHeadlineRow({
   sourceName: string | null
   sourceHref: string | null
 }) {
+  const isHashLink = sourceHref != null && sourceHref.startsWith('#')
   return (
     <div className="mb-6 flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
       <h1 className="min-w-0 text-2xl font-semibold text-slate-100">{title}</h1>
@@ -633,8 +638,7 @@ function AreaHeadlineRow({
             <a
               href={sourceHref}
               className="underline decoration-slate-500/60 underline-offset-2 transition-colors hover:text-slate-300"
-              target="_blank"
-              rel="noreferrer"
+              {...(isHashLink ? {} : { target: '_blank', rel: 'noreferrer' })}
             >
               {sourceName}
             </a>

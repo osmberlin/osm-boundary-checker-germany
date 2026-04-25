@@ -20,7 +20,7 @@ const areasIndex = {
       displayName: 'Berlin Bezirke',
       matched: 12,
       officialOnly: 0,
-      unmatchedOsm: 2,
+      unmatchedOsm: 0,
     },
     {
       area: 'berlin-ortsteile',
@@ -102,56 +102,48 @@ const areasIndex = {
   ],
   geoDataSources: [
     {
-      name: 'api.hamburg.de (regionalstatistische_daten_bezirke)',
-      href: 'https://api.hamburg.de/datasets/v1/regionalstatistische_daten_bezirke/collections/regionalstatistische_daten_bezirke/items?f=json&filter=jahr%20%3D%20%272024%27&limit=20',
-    },
-    {
       name: 'BKG (VG25, vg25_gem)',
-      href: 'https://daten.gdz.bkg.bund.de/produkte/vg/vg25_ebenen/aktuell/vg25.utm32s.gpkg.zip',
+      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
     },
     {
       name: 'BKG (VG25, vg25_krs)',
-      href: 'https://daten.gdz.bkg.bund.de/produkte/vg/vg25_ebenen/aktuell/vg25.utm32s.gpkg.zip',
+      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
     },
     {
       name: 'BKG (VG25, vg25_lan)',
-      href: 'https://daten.gdz.bkg.bund.de/produkte/vg/vg25_ebenen/aktuell/vg25.utm32s.gpkg.zip',
+      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
     },
     {
       name: 'BKG (VG25, vg25_rbz)',
-      href: 'https://daten.gdz.bkg.bund.de/produkte/vg/vg25_ebenen/aktuell/vg25.utm32s.gpkg.zip',
+      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
     },
     {
       name: 'BKG (VG25, vg25_sta)',
-      href: 'https://daten.gdz.bkg.bund.de/produkte/vg/vg25_ebenen/aktuell/vg25.utm32s.gpkg.zip',
+      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
     },
     {
       name: 'BKG (VG25, vg25_vwg)',
-      href: 'https://daten.gdz.bkg.bund.de/produkte/vg/vg25_ebenen/aktuell/vg25.utm32s.gpkg.zip',
+      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
     },
     {
-      name: 'gdi.berlin.de (alkis_bezirke:bezirksgrenzen)',
-      href: 'https://gdi.berlin.de/services/wfs/alkis_bezirke?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_bezirke%3Abezirksgrenzen&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326',
+      name: 'daten.berlin.de',
+      href: 'https://daten.berlin.de/',
     },
     {
-      name: 'gdi.berlin.de (alkis_ortsteile:ortsteile)',
-      href: 'https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326',
+      name: 'daten.berlin.de',
+      href: 'https://daten.berlin.de/datensaetze/postleitzahlen-wfs-ac0f18fd',
     },
     {
-      name: 'gdi.berlin.de (postleitzahlen:postleitzahlen)',
-      href: 'https://gdi.berlin.de/services/wfs/postleitzahlen?service=WFS&version=2.0.0&request=GetFeature&typeNames=postleitzahlen%3Apostleitzahlen&outputFormat=application%2Fjson&srsName=EPSG%3A4326&count=1000000',
-    },
-    {
-      name: 'isk.geobasis-bb.de (app:gem)',
-      href: 'https://isk.geobasis-bb.de/ows/vg_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3Agem&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326',
-    },
-    {
-      name: 'ogc-api.geobasis-bb.de (plz_bebb)',
-      href: 'https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json',
+      name: 'geoportal.brandenburg.de',
+      href: 'https://geoportal.brandenburg.de/',
     },
     {
       name: 'OpenStreetMap (Geofabrik Germany extract) (germany-latest.osm.pbf)',
-      href: 'https://download.geofabrik.de/europe/germany-latest.osm.pbf',
+      href: 'https://download.geofabrik.de/europe/germany.html',
+    },
+    {
+      name: 'suche.transparenz.hamburg.de',
+      href: 'https://suche.transparenz.hamburg.de/dataset/regionalstatistische-daten-der-bezirke-hamburgs-und-hamburg-insgesamt20',
     },
   ],
   licenseSummaries: [

@@ -40,25 +40,44 @@ export const datasetLicenseIdSchema = z.enum([
 export const osmLicenseCompatibilitySchema = z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver'])
 
 /** One side (BKG or OSM) in `source/metadata.json`. */
-export const sourceMetadataSideSchema = z.object({
-  downloadedAt: optionalTrimmedString,
-  sourcePublishedAt: optionalTrimmedString,
-  sourceUpdatedAt: optionalTrimmedString,
-  sourceDateSource: sourceDateSourceSchema,
-  provider: optionalTrimmedString,
-  dataset: optionalTrimmedString,
-  layer: optionalTrimmedString,
-  sourceUrl: optionalTrimmedString,
-  note: optionalTrimmedString,
-  licenseId: datasetLicenseIdSchema.default('unknown'),
-  licenseLabel: unknownDefaultString,
-  licenseSourceUrl: optionalTrimmedString,
-  osmCompatibility: osmLicenseCompatibilitySchema.default('unknown'),
-  osmCompatibilitySourceUrl: optionalTrimmedString,
-  osmCompatibilityComment: optionalTrimmedString,
-  /** Optional licence or terms line for attribution (set in source/metadata.json when known). */
-  license: optionalTrimmedString,
-})
+export const sourceMetadataSideSchema = z.preprocess(
+  (raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
+    const rec = raw as Record<string, unknown>
+    const sourceDownloadUrl =
+      typeof rec.sourceDownloadUrl === 'string' && rec.sourceDownloadUrl.trim() !== ''
+        ? rec.sourceDownloadUrl
+        : typeof rec.sourceUrl === 'string' && rec.sourceUrl.trim() !== ''
+          ? rec.sourceUrl
+          : undefined
+    return {
+      ...rec,
+      ...(sourceDownloadUrl ? { sourceDownloadUrl } : {}),
+    }
+  },
+  z.object({
+    downloadedAt: optionalTrimmedString,
+    sourcePublishedAt: optionalTrimmedString,
+    sourceUpdatedAt: optionalTrimmedString,
+    sourceDateSource: sourceDateSourceSchema,
+    provider: optionalTrimmedString,
+    dataset: optionalTrimmedString,
+    layer: optionalTrimmedString,
+    /** Public dataset page where download/API links are documented. */
+    sourcePublicUrl: optionalTrimmedString,
+    /** Direct machine-readable download/API URL used by the pipeline. */
+    sourceDownloadUrl: optionalTrimmedString,
+    note: optionalTrimmedString,
+    licenseId: datasetLicenseIdSchema.default('unknown'),
+    licenseLabel: unknownDefaultString,
+    licenseSourceUrl: optionalTrimmedString,
+    osmCompatibility: osmLicenseCompatibilitySchema.default('unknown'),
+    osmCompatibilitySourceUrl: optionalTrimmedString,
+    osmCompatibilityComment: optionalTrimmedString,
+    /** Optional licence or terms line for attribution (set in source/metadata.json when known). */
+    license: optionalTrimmedString,
+  }),
+)
 export type SourceMetadataSide = z.infer<typeof sourceMetadataSideSchema>
 
 /** On-disk shape for `<area>/source/metadata.json`. */

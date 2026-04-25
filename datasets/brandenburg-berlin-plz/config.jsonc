@@ -30,7 +30,7 @@
 
   "sources": {
     "official": {
-      "sourceUrl": "https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json",
+      "sourceUrl": "https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Db90acca9-e512-4c6c-a45e-ecc04a1e580c",
     },
   },
 }

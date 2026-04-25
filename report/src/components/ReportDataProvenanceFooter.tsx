@@ -7,6 +7,7 @@ import type { ComparisonForReport } from '../types/report'
 export type ReportDataProvenanceFooterProps = {
   data: ComparisonForReport
   className?: string
+  hideFreshnessSection?: boolean
 }
 
 function metadataOrUnknown(value: string | undefined): string {
@@ -18,6 +19,44 @@ function CompatibilityValue({ value }: { value: string | undefined }) {
   const p = de.provenance
   const key = (value?.trim() || 'unknown') as keyof typeof p.osmCompatibilityLabel
   return p.osmCompatibilityLabel[key] ?? p.osmCompatibilityLabel.unknown
+}
+
+function SourceLinks({
+  publicUrl,
+  downloadUrl,
+}: {
+  publicUrl: string | undefined
+  downloadUrl: string | undefined
+}) {
+  const p = de.provenance
+  const publicHref = publicUrl?.trim() || undefined
+  const downloadHref = downloadUrl?.trim() || undefined
+  if (!publicHref && !downloadHref) return null
+
+  return (
+    <p className="mb-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+      {publicHref ? (
+        <a
+          className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+          href={publicHref}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {p.sourcePublicLinkLabel}
+        </a>
+      ) : null}
+      {downloadHref ? (
+        <a
+          className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+          href={downloadHref}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {p.sourceDownloadLinkLabel}
+        </a>
+      ) : null}
+    </p>
+  )
 }
 
 function DateLine({ label, abs, rel }: { label: string; abs: string; rel: string }) {
@@ -40,6 +79,7 @@ function DateLine({ label, abs, rel }: { label: string; abs: string; rel: string
 export function ReportDataProvenanceFooter({
   data,
   className = '',
+  hideFreshnessSection = false,
 }: ReportDataProvenanceFooterProps) {
   const p = de.provenance
   const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
@@ -71,37 +111,39 @@ export function ReportDataProvenanceFooter({
     >
       <h2 className="mb-4 text-base font-semibold text-slate-100">{p.title}</h2>
 
-      <div className="mb-6 space-y-1 border-b border-slate-700 pb-4">
-        <DateLine
-          label={p.reportCreatedLabel}
-          abs={reportFresh.absoluteLine || EM_DASH}
-          rel={reportFresh.relativeLine ?? EM_DASH}
-        />
-        {officialUpdatedFresh ? (
+      {!hideFreshnessSection ? (
+        <div className="mb-6 space-y-1 border-b border-slate-700 pb-4">
           <DateLine
-            label={p.officialSourceUpdatedLabel}
-            abs={officialUpdatedFresh.absoluteLine}
-            rel={officialUpdatedFresh.relativeLine}
+            label={p.reportCreatedLabel}
+            abs={reportFresh.absoluteLine || EM_DASH}
+            rel={reportFresh.relativeLine ?? EM_DASH}
           />
-        ) : null}
-        {officialPublishedFresh ? (
+          {officialUpdatedFresh ? (
+            <DateLine
+              label={p.officialSourceUpdatedLabel}
+              abs={officialUpdatedFresh.absoluteLine}
+              rel={officialUpdatedFresh.relativeLine}
+            />
+          ) : null}
+          {officialPublishedFresh ? (
+            <DateLine
+              label={p.officialSourcePublishedLabel}
+              abs={officialPublishedFresh.absoluteLine}
+              rel={officialPublishedFresh.relativeLine}
+            />
+          ) : null}
           <DateLine
-            label={p.officialSourcePublishedLabel}
-            abs={officialPublishedFresh.absoluteLine}
-            rel={officialPublishedFresh.relativeLine}
+            label={p.officialDownloadLabel}
+            abs={officialFresh.absoluteLine}
+            rel={officialFresh.relativeLine}
           />
-        ) : null}
-        <DateLine
-          label={p.officialDownloadLabel}
-          abs={officialFresh.absoluteLine}
-          rel={officialFresh.relativeLine}
-        />
-        <DateLine
-          label={p.osmDownloadLabel}
-          abs={osmFresh.absoluteLine}
-          rel={osmFresh.relativeLine}
-        />
-      </div>
+          <DateLine
+            label={p.osmDownloadLabel}
+            abs={osmFresh.absoluteLine}
+            rel={osmFresh.relativeLine}
+          />
+        </div>
+      ) : null}
 
       <h3 className="mb-2 font-medium text-slate-200">{p.officialHeading}</h3>
       <p className="mb-2 text-pretty">{p.officialLead}</p>
@@ -110,18 +152,7 @@ export function ReportDataProvenanceFooter({
           {p.officialMetaPrefix}: {officialMeta}
         </p>
       ) : null}
-      {off?.sourceUrl?.trim() ? (
-        <p className="mb-2">
-          <a
-            className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
-            href={off.sourceUrl.trim()}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {p.sourceLinkLabel}
-          </a>
-        </p>
-      ) : null}
+      <SourceLinks publicUrl={off?.sourcePublicUrl} downloadUrl={off?.sourceDownloadUrl} />
       {off?.license?.trim() ? (
         <p className="mb-4 text-xs text-slate-500">
           {p.licenseLabel}: {off.license.trim()}
@@ -132,20 +163,12 @@ export function ReportDataProvenanceFooter({
 
       <h3 className="mb-2 font-medium text-slate-200">{p.osmHeading}</h3>
       <p className="mb-2 text-pretty">{p.osmLead}</p>
-      {osm?.sourceUrl?.trim() ? (
-        <p className="mb-2">
-          <a
-            className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
-            href={osm.sourceUrl.trim()}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {p.sourceLinkLabel}
-          </a>
-        </p>
-      ) : null}
+      <SourceLinks publicUrl={osm?.sourcePublicUrl} downloadUrl={osm?.sourceDownloadUrl} />
 
-      <div className="mt-6 mb-4 rounded border border-slate-700/80 bg-slate-950/40 p-3">
+      <div
+        id="report-licence-section"
+        className="mt-6 mb-4 rounded border border-slate-700/80 bg-slate-950/40 p-3"
+      >
         <h4 className="mb-2 text-sm font-medium text-slate-200">{p.licenseSectionHeading}</h4>
         <div className="space-y-1 text-xs text-slate-300">
           <div className="space-y-1">

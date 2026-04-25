@@ -46,6 +46,8 @@ export const de = {
       'Die Vergleichsgeometrie auf der amtlichen Seite stammt aus den je nach Gebiet konfigurierten Quellen — z. B. BKG VG25 (Skript bkg:extract) oder ein Landes-WFS. Steht eine URL in den Metadaten, ist sie unten verlinkt.',
     officialMetaPrefix: 'Hinterlegt',
     sourceLinkLabel: 'Quelle (extern)',
+    sourcePublicLinkLabel: 'Link (Webseite)',
+    sourceDownloadLinkLabel: 'Link (Download)',
     licenseLabel: 'Lizenz',
     licenseSectionHeading: 'Lizenz und OSM-Kompatibilitaet der amtlichen Quelle',
     licenseShortNameLabel: 'Originale Lizenz (Kurzname)',

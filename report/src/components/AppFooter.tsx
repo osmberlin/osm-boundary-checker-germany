@@ -52,7 +52,12 @@ export function AppFooter() {
           <HeartIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-inherit" />
           <span>
             {f.geoDataLine}
-            <a href={f.osmLinkHref} className={bodyFooterLinkClass} target="_blank" rel="noreferrer">
+            <a
+              href={f.osmLinkHref}
+              className={bodyFooterLinkClass}
+              target="_blank"
+              rel="noreferrer"
+            >
               {f.osmLinkLabel}
             </a>
             {effectiveGeoSources.length > 0 ? f.geoDataBetween : null}
