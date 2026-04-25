@@ -7,7 +7,7 @@ on:
     - cron: '0 3 * * 0,3,5,6'
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 env:
@@ -55,6 +55,23 @@ jobs:
 
       - name: Validate snapshot output
         run: bun run scripts/ci/validate-refresh-snapshot.ts
+
+      - name: Persist snapshots history to main
+        if: github.ref_name == 'main'
+        env:
+          COMMIT_MSG: 'chore(data): refresh snapshots history'
+        run: |
+          set -euo pipefail
+          git switch -c snapshots-history
+          git add ':(glob)datasets/*/snapshots.json'
+          if git diff --cached --quiet; then
+            echo "No snapshot history changes to commit."
+            exit 0
+          fi
+
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "$COMMIT_MSG"
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
 
       - name: Stage runtime artifact payload
         run: bun run scripts/ci/stage-runtime-artifact-payload.ts
