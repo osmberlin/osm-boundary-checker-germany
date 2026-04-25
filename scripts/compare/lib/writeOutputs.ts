@@ -337,6 +337,10 @@ function writeStaticJson(path: string, body: unknown): void {
   writeFileSync(path, `${JSON.stringify(body)}\n`, 'utf-8')
 }
 
+function writePrettyJson(path: string, body: unknown): void {
+  writeFileSync(path, `${JSON.stringify(body, null, 2)}\n`, 'utf-8')
+}
+
 function updateSnapshotsFile(
   areaPath: string,
   snapshotId: string,
@@ -381,7 +385,7 @@ function updateSnapshotsFile(
   nextRuns.push(runSummary)
   nextRuns.sort((a, b) => a.id.localeCompare(b.id))
   snapshots.runs = nextRuns
-  writeStaticJson(snapshotsPath, snapshots)
+  writePrettyJson(snapshotsPath, snapshots)
 }
 
 export function writeOutputs(
