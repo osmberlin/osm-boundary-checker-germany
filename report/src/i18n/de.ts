@@ -47,7 +47,7 @@ export const de = {
     officialMetaPrefix: 'Hinterlegt',
     sourceLinkLabel: 'Quelle (extern)',
     licenseLabel: 'Lizenz',
-    licenseSectionHeading: 'Lizenz und OSM-Kompatibilitaet je Datensatz',
+    licenseSectionHeading: 'Lizenz und OSM-Kompatibilitaet der amtlichen Quelle',
     licenseShortNameLabel: 'Originale Lizenz (Kurzname)',
     licenseSourceLabel: 'Lizenzquelle',
     osmCompatibilityLabelTitle: 'OSM-kompatibel',

@@ -38,12 +38,12 @@ function renderSourceList(items: GeoDataSource[]): ReactNode {
 export function AppFooter() {
   const f = de.footer
 
-  const fallbackGeoSources: GeoDataSource[] = [
-    { name: f.osmLinkLabel, href: f.osmLinkHref },
-    { name: f.bkgLinkLabel, href: f.bkgLinkHref },
-  ]
+  const fallbackGeoSources: GeoDataSource[] = [{ name: f.bkgLinkLabel, href: f.bkgLinkHref }]
   const geoSources = areasIndex.geoDataSources
-  const effectiveGeoSources = geoSources.length > 0 ? geoSources : fallbackGeoSources
+  const dynamicOrFallbackGeoSources = geoSources.length > 0 ? geoSources : fallbackGeoSources
+  const effectiveGeoSources = dynamicOrFallbackGeoSources.filter(
+    (source) => !source.name.toLowerCase().includes('openstreetmap'),
+  )
 
   return (
     <footer className="group/footer border-t border-slate-700 bg-slate-900/50 py-8 text-xs text-slate-400 transition-colors hover:text-slate-300">
@@ -52,6 +52,10 @@ export function AppFooter() {
           <HeartIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-inherit" />
           <span>
             {f.geoDataLine}
+            <a href={f.osmLinkHref} className={bodyFooterLinkClass} target="_blank" rel="noreferrer">
+              {f.osmLinkLabel}
+            </a>
+            {effectiveGeoSources.length > 0 ? f.geoDataBetween : null}
             {renderSourceList(effectiveGeoSources)}
             {f.geoDataSuffix}
           </span>

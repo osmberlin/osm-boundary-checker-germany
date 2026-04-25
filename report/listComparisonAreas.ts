@@ -185,18 +185,17 @@ export function listGeoDataSources(runtimeRoot: string): GeoDataSource[] {
       const parsed = areaMetadataSchema.parse(
         JSON.parse(readFileSync(metadataPath, 'utf-8')) as unknown,
       )
-      for (const side of [parsed.official, parsed.osm]) {
-        if (!side) continue
-        const name = sourceDisplayName(side)
-        if (!name) continue
-        const hrefPublic = side.sourcePublicUrl ?? ''
-        const hrefDownload = side.sourceDownloadUrl ?? ''
-        const href = hrefPublic || hrefDownload
-        const key = name + '||' + href
-        if (!byKey.has(key)) {
-          const source: GeoDataSource = href ? { name, href } : { name }
-          byKey.set(key, source)
-        }
+      const side = parsed.official
+      if (!side) continue
+      const name = sourceDisplayName(side)
+      if (!name) continue
+      const hrefPublic = side.sourcePublicUrl ?? ''
+      const hrefDownload = side.sourceDownloadUrl ?? ''
+      const href = hrefPublic || hrefDownload
+      const key = name + '||' + href
+      if (!byKey.has(key)) {
+        const source: GeoDataSource = href ? { name, href } : { name }
+        byKey.set(key, source)
       }
     } catch {
       // ignore malformed metadata for this area
