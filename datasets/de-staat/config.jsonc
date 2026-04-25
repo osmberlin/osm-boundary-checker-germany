@@ -1,11 +1,9 @@
 {
+  "displayName": "Deutschland Staat",
+  "officialProfile": "bkg_vg25_sta",
+  "osmProfile": "admin_rs",
+
   // National border: match BKG national geometry to Germany relation ID (relation/51477).
-  "official": {
-    "path": "source/official.fgb",
-    "matchProperty": "ARS",
-    // Ignore ARS-specific quirks and force a stable cross-source key for this dataset.
-    "constantMatchKey": "51477",
-  },
   "osm": {
     "matchCriteria": {
       "kind": "relation_id",
@@ -17,6 +15,7 @@
   },
   "metricsCrs": "EPSG:25832",
   "compare": {
+    "officialMatchProperty": "ARS",
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },

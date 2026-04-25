@@ -2,23 +2,23 @@ import { describe, expect, test } from 'bun:test'
 import { parseDownloadOfficial } from './downloadOfficialConfig.ts'
 
 describe('parseDownloadOfficial', () => {
-  test('returns null when download.official missing', () => {
+  test('returns null when official.download missing', () => {
     expect(parseDownloadOfficial({ official: { path: 'x' } })).toBeNull()
-    expect(parseDownloadOfficial({ download: {} })).toBeNull()
+    expect(parseDownloadOfficial({ official: {} })).toBeNull()
   })
 
   test('parses http geojson with defaults', () => {
     const u = 'https://example.com/wfs?request=GetFeature'
     const o = parseDownloadOfficial({
-      download: { official: { url: u } },
+      official: { download: { url: u } },
     })
     expect(o).toEqual({ kind: 'http', url: u, format: 'geojson', crs: undefined })
   })
 
   test('parses crs and explicit format', () => {
     const o = parseDownloadOfficial({
-      download: {
-        official: {
+      official: {
+        download: {
           kind: 'http',
           url: ' https://x ',
           format: 'GeoJSON',
@@ -36,8 +36,8 @@ describe('parseDownloadOfficial', () => {
 
   test('parses gml format', () => {
     const o = parseDownloadOfficial({
-      download: {
-        official: {
+      official: {
+        download: {
           url: 'https://example.com/wfs?request=GetFeature',
           format: 'GML',
         },
@@ -54,17 +54,17 @@ describe('parseDownloadOfficial', () => {
   test('rejects unsupported kind or format', () => {
     expect(() =>
       parseDownloadOfficial({
-        download: { official: { url: 'https://x', kind: 'ftp' } },
+        official: { download: { url: 'https://x', kind: 'ftp' } },
       }),
     ).toThrow(/kind/)
     expect(() =>
       parseDownloadOfficial({
-        download: { official: { url: 'https://x', format: 'gml' } },
+        official: { download: { url: 'https://x', format: 'gml' } },
       }),
     ).not.toThrow()
     expect(() =>
       parseDownloadOfficial({
-        download: { official: { url: 'https://x', format: 'zip' } },
+        official: { download: { url: 'https://x', format: 'zip' } },
       }),
     ).toThrow(/format/)
   })

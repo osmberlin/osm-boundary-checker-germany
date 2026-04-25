@@ -4,21 +4,15 @@
   "runs": [
     {
       "id": "2026-04-22",
-      "summary": {
-        "totalRows": 97,
-        "meanIou": 0,
-        "matched": 0,
-        "unmatchedOsm": 83
-      }
+      "summary": { "totalRows": 97, "meanIou": 0, "matched": 0, "unmatchedOsm": 83 }
     },
     {
       "id": "2026-04-24",
-      "summary": {
-        "totalRows": 97,
-        "meanIou": 0,
-        "matched": 0,
-        "unmatchedOsm": 14
-      }
+      "summary": { "totalRows": 97, "meanIou": 0, "matched": 0, "unmatchedOsm": 14 }
+    },
+    {
+      "id": "2026-04-25",
+      "summary": { "totalRows": 97, "meanIou": 0, "matched": 0, "unmatchedOsm": 14 }
     }
   ]
 }

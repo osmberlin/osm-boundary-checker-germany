@@ -103,11 +103,11 @@ This is a **`package.json` chain** (not a monolithic script): `download:bkg && d
 | `download`                                    | Full chain above                                                                                                  |
 | `download:bkg`                                | `bkg:download` then `bkg:extract` (ZIP → `.cache`, per-area `source/official.fgb` from VG25)                      |
 | `download:bkg:fetch` / `download:bkg:extract` | BKG download or extract only                                                                                      |
-| `download:official`                           | Areas with `config.jsonc` → `download.official` (HTTP GeoJSON) → `official.path` as FlatGeobuf; others log `skip` |
+| `download:official`                           | Areas with `config.jsonc` → `official.download` (HTTP GeoJSON) → `official.path` as FlatGeobuf; others log `skip` |
 | `download:osm`                                | `osm:download` then `osm:extract`                                                                                 |
 | `download:osm:fetch` / `download:osm:extract` | OSM steps only                                                                                                    |
 
-**`download.official` in `config.jsonc`:** `kind` (`http`), `url`, `format` (`geojson` only for now), optional `crs` (for documentation / logs). WFS URLs should set the desired CRS with `srsName` / `SRSNAME` in the query string. Other WFS output formats (GML, Shapefile ZIP, etc.) are service-specific—check the service **GetCapabilities** if you need something other than GeoJSON.
+**`official.download` in `config.jsonc`:** `kind` (`http`), `url`, `format` (`geojson` or `gml`), optional `crs` (for documentation / logs). WFS URLs should set the desired CRS with `srsName` / `SRSNAME` in the query string. Other WFS output formats are service-specific—check the service **GetCapabilities**.
 
 **`download:official` flags:** `--area <folder>` for one dataset; `--force` to re-fetch even when the output `.fgb` already exists.
 
@@ -122,9 +122,11 @@ This is a **`package.json` chain** (not a monolithic script): `download:bkg && d
 
 ### Source data (FlatGeobuf)
 
-Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Compare payloads are written as static JSON under `datasets/<slug>/output/` plus `snapshots.json`, while map artifacts stay file-based in `datasets/<slug>/output/*.pmtiles`. **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input defaults to shared FlatGeobufs under **`.cache/osm/`** produced by **`bun run osm:extract`** (admin: `germany-admin-boundaries-rs.fgb`, plz: `germany-postal-code-boundaries.fgb`), and can be overridden per area via `osm.path` or `osm.sharedFgbBasename`. Optional **`source/metadata.json`** records when data was fetched and is embedded into compare payload provenance.
+Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Compare payloads are written as static JSON under `datasets/<slug>/output/` plus `snapshots.json`, while map artifacts stay file-based in `datasets/<slug>/output/*.pmtiles`. **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input uses top-level `osmProfile` (shared registries under `.cache/osm/`: `admin_rs` → `germany-admin-boundaries-rs.fgb`, `postal_code` → `germany-postal-code-boundaries.fgb`). Optional **`source/metadata.json`** records when data was fetched and is embedded into compare payload provenance.
 
-**`config.jsonc`** holds **`official.path`**, **`official.matchProperty`**, optional **`official.constantMatchKey`**, optional **`official.keyTransposition`** (map official IDs to raw OSM-style keys when the source has no compatible Schlüssel), **`osm.matchProperty`**, optional **`osm.matchCriteria`** (for example `relation_id` selectors), optional **`osm.ignoreRelationIds`** (numeric relation ID strings to exclude from compare, for example `"62504"`), optional **`osm.path`** / **`osm.sharedFgbBasename`**, **`idNormalization`**, **`metricsCrs`**, required **`compare.bboxFilter`** (`none` or `official_bbox_overlap`), optional **`compare.bboxBufferDegrees`** (required when bboxFilter is `official_bbox_overlap`), required **`compare.osmScopeFilter`** (`none` or `centroid_in_official_coverage`), optional **`download.official`** (for `download:official`), and optional **`ogcInspectSources`** / **`sources`** (documentation). Legacy per-area `osmExtract` blocks are no longer used by compare.
+**`config.jsonc`** is the only human-authored per-area setup file. It holds **`displayName`**, top-level **`osmProfile`**, optional top-level **`officialProfile`** (profile-driven BKG mode), or an **`official`** block for direct HTTP mode with **`official.path`**, optional **`official.extractLayer`**, optional **`official.download`**, optional **`official.source`**, optional **`official.constantMatchKey`**, and optional **`official.keyTransposition`** (map official IDs to raw OSM-style keys when the source has no compatible Schlüssel). Compare settings live under **`compare`** with required **`compare.officialMatchProperty`**, required **`compare.bboxFilter`**, optional **`compare.bboxBufferDegrees`**, and required **`compare.osmScopeFilter`**. Optional **`osm`** contains `matchCriteria`, `ignoreRelationIds`, and `extract` overrides. Optional **`ogcInspectSources`** configures live WFS lookups in report feature detail.
+
+**Clean-state rule:** legacy keys **`sources`** and **`osmExtract`** are no longer supported.
 
 Convert from GeoJSON (or GPKG, etc.) with GDAL:
 
@@ -146,7 +148,7 @@ docker compose run --rm pipeline bun run bkg:extract
 
 See [docs/vg25-bkg.md](docs/vg25-bkg.md) for URLs, `ogrinfo`, and layer notes.
 
-**OSM PBF → shared OSM FlatGeobuf:** one **`ogr2ogr`** pass writes **`.cache/osm/germany-admin-boundaries-rs.fgb`** (default `--kind admin`). It includes administrative boundaries with a non-empty **`de:regionalschluessel`** only. For `de-staat`, matching is configured via Germany relation identity (`relation/51477`) instead of synthetic RS injection. Per-area `admin_level` filtering was removed so mismatched keys stay visible in **`unmatchedOsm`**.
+**OSM PBF → shared OSM FlatGeobuf:** one **`ogr2ogr`** pass writes **`.cache/osm/germany-admin-boundaries-rs.fgb`** (default `--kind admin`). It includes administrative boundaries with a non-empty **`de:regionalschluessel`** only. Geofabrik source/provider/licence defaults are centralized in `scripts/shared/germanyOsmPbf.ts` (not duplicated in per-area configs). For `de-staat`, matching is configured via Germany relation identity (`relation/51477`) instead of synthetic RS injection. Per-area `admin_level` filtering was removed so mismatched keys stay visible in **`unmatchedOsm`**.
 
 ```bash
 docker compose run --rm pipeline bun run osm:download              # → .cache/osm/germany-latest.osm.pbf

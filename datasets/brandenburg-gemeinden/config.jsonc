@@ -1,8 +1,21 @@
 {
+  "displayName": "Brandenburg Gemeinden",
+
   // Compare: LGB Verwaltungsgrenzen Gemeinden `ags` ↔ OSM `de:regionalschluessel` (BB-specific key reduction).
+  "osmProfile": "admin_rs",
   "official": {
     "path": "source/official.fgb",
-    "matchProperty": "ags",
+    "extractLayer": "app:gem",
+    "download": {
+      "kind": "http",
+      "url": "https://isk.geobasis-bb.de/ows/vg_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3Agem&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326",
+      "format": "gml",
+      "crs": "EPSG:4326",
+    },
+    "source": {
+      "sourcePublicUrl": "https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Ded6ab7a1-7a64-4ceb-8d37-2e156b7f4546",
+      "note": "© GeoBasis-DE/LGB, dl-de/by-2-0",
+    },
   },
   "idNormalization": {
     "preset": "brandenburg-gemeinden-8",
@@ -10,25 +23,10 @@
   "metricsCrs": "EPSG:25832",
 
   "compare": {
+    "officialMatchProperty": "ags",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
     "osmScopeFilter": "centroid_in_official_coverage",
-  },
-
-  "download": {
-    "official": {
-      "kind": "http",
-      "url": "https://isk.geobasis-bb.de/ows/vg_wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=app%3Agem&outputFormat=application%2Fgml%2Bxml%3B%20version%3D3.2&srsName=urn%3Aogc%3Adef%3Acrs%3AEPSG%3A%3A4326",
-      "format": "gml",
-      "crs": "EPSG:4326",
-    },
-  },
-
-  "sources": {
-    "official": {
-      "sourceUrl": "https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Ded6ab7a1-7a64-4ceb-8d37-2e156b7f4546",
-      "attribution": "© GeoBasis-DE/LGB, dl-de/by-2-0",
-    },
   },
 
   "ogcInspectSources": [

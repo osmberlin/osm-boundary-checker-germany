@@ -10,6 +10,11 @@ const optionalTrimmedString = z.preprocess((value) => {
   return trimmed.length > 0 ? trimmed : undefined
 }, z.string().min(1).optional())
 
+const requiredTrimmedString = z.preprocess((value) => {
+  if (typeof value !== 'string') return value
+  return value.trim()
+}, z.string().min(1))
+
 const unknownDefaultString = z.preprocess((value) => {
   if (typeof value !== 'string') return value
   const trimmed = value.trim()
@@ -36,61 +41,66 @@ export const datasetLicenseIdSchema = z.enum([
   'dl_de_zero_20',
   'custom',
 ])
+export type DatasetLicenseId = z.infer<typeof datasetLicenseIdSchema>
+
+export const DATASET_LICENSE_LABELS: Record<DatasetLicenseId, string> = {
+  unknown: 'unknown',
+  odbl_10: 'ODbL-1.0',
+  cc_by_30: 'CC-BY-3.0',
+  cc_by_40: 'CC-BY-4.0',
+  cc0_10: 'CC0-1.0',
+  dl_de_by_20: 'DL-DE-BY-2.0',
+  dl_de_zero_20: 'DL-DE-ZERO-2.0',
+  custom: 'custom',
+}
+
+export function datasetLicenseLabelForId(id: DatasetLicenseId): string {
+  return DATASET_LICENSE_LABELS[id]
+}
 
 export const osmLicenseCompatibilitySchema = z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver'])
 
-/** One side (BKG or OSM) in `source/metadata.json`. */
-export const sourceMetadataSideSchema = z.preprocess(
-  (raw) => {
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
-    const rec = raw as Record<string, unknown>
-    const sourceDownloadUrl =
-      typeof rec.sourceDownloadUrl === 'string' && rec.sourceDownloadUrl.trim() !== ''
-        ? rec.sourceDownloadUrl
-        : typeof rec.sourceUrl === 'string' && rec.sourceUrl.trim() !== ''
-          ? rec.sourceUrl
-          : undefined
-    return {
-      ...rec,
-      ...(sourceDownloadUrl ? { sourceDownloadUrl } : {}),
-    }
-  },
-  z.object({
-    downloadedAt: optionalTrimmedString,
-    sourcePublishedAt: optionalTrimmedString,
-    sourceUpdatedAt: optionalTrimmedString,
-    sourceDateSource: sourceDateSourceSchema,
-    provider: optionalTrimmedString,
-    dataset: optionalTrimmedString,
-    layer: optionalTrimmedString,
-    /** Public dataset page where download/API links are documented. */
-    sourcePublicUrl: optionalTrimmedString,
-    /** Direct machine-readable download/API URL used by the pipeline. */
-    sourceDownloadUrl: optionalTrimmedString,
-    note: optionalTrimmedString,
-    licenseId: datasetLicenseIdSchema.default('unknown'),
-    licenseLabel: unknownDefaultString,
-    licenseSourceUrl: optionalTrimmedString,
-    osmCompatibility: osmLicenseCompatibilitySchema.default('unknown'),
-    osmCompatibilitySourceUrl: optionalTrimmedString,
-    osmCompatibilityComment: optionalTrimmedString,
-    /** Optional licence or terms line for attribution (set in source/metadata.json when known). */
-    license: optionalTrimmedString,
-  }),
-)
+const sourceMetadataCommonSideSchema = z.object({
+  downloadedAt: optionalTrimmedString,
+  sourcePublishedAt: optionalTrimmedString,
+  sourceUpdatedAt: optionalTrimmedString,
+  sourceDateSource: sourceDateSourceSchema,
+  provider: optionalTrimmedString,
+  dataset: optionalTrimmedString,
+  layer: optionalTrimmedString,
+  /** Public dataset page where download/API links are documented. */
+  sourcePublicUrl: requiredTrimmedString,
+  /** Direct machine-readable download/API URL used by the pipeline. */
+  sourceDownloadUrl: requiredTrimmedString,
+  note: optionalTrimmedString,
+  licenseId: datasetLicenseIdSchema.default('unknown'),
+  licenseLabel: unknownDefaultString,
+  licenseSourceUrl: optionalTrimmedString,
+  /** Optional licence or terms line for attribution (set in source/metadata.json when known). */
+  license: optionalTrimmedString,
+})
+/** One official-data side in `source/metadata.json` (includes OSM-compatibility assessment). */
+export const sourceMetadataSideSchema = sourceMetadataCommonSideSchema.extend({
+  osmCompatibility: osmLicenseCompatibilitySchema.default('unknown'),
+  osmCompatibilitySourceUrl: optionalTrimmedString,
+  osmCompatibilityComment: optionalTrimmedString,
+})
 export type SourceMetadataSide = z.infer<typeof sourceMetadataSideSchema>
+/** One OSM side in `source/metadata.json` (no self-compatibility fields). */
+export const osmSourceMetadataSideSchema = sourceMetadataCommonSideSchema
+export type OsmSourceMetadataSide = z.infer<typeof osmSourceMetadataSideSchema>
 
 /** On-disk shape for `<area>/source/metadata.json`. */
 export const areaSourceMetadataFileSchema = z.object({
   official: sourceMetadataSideSchema.optional(),
-  osm: sourceMetadataSideSchema.optional(),
+  osm: osmSourceMetadataSideSchema.optional(),
 })
 export type AreaSourceMetadataFile = z.infer<typeof areaSourceMetadataFileSchema>
 
 /** Embedded in `comparison_table.json` for the report UI. */
 export const comparisonSourceMetadataSchema = z.object({
   official: sourceMetadataSideSchema.nullable(),
-  osm: sourceMetadataSideSchema.nullable(),
+  osm: osmSourceMetadataSideSchema.nullable(),
 })
 export type ComparisonSourceMetadata = z.infer<typeof comparisonSourceMetadataSchema>
 
@@ -109,7 +119,7 @@ export function readAreaSourceMetadataFile(areaPath: string): AreaSourceMetadata
   return readMetadataAt(primary)
 }
 
-function sideHasValues(s: SourceMetadataSide | undefined): boolean {
+function sideHasValues(s: Record<string, unknown> | undefined): boolean {
   if (!s) return false
   for (const v of Object.values(s)) {
     if (v == null) continue

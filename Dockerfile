@@ -23,7 +23,7 @@ COPY rust ./rust
 COPY report ./report
 COPY datasets ./datasets
 RUN mkdir -p /opt/seed && cp -R ./datasets /opt/seed/datasets
-COPY bkg.config.json oxfmt.config.ts oxlint.config.ts .gitignore ./
+COPY oxfmt.config.ts oxlint.config.ts .gitignore ./
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/entrypoint.sh

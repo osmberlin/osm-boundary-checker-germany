@@ -1,14 +1,15 @@
 {
+  "displayName": "Deutschland Länder",
+  "officialProfile": "bkg_vg25_lan",
+  "osmProfile": "admin_rs",
+
   // BKG VG25 Länder ↔ OSM (shared extract; match by de:regionalschluessel)
-  "official": {
-    "path": "source/official.fgb",
-    "matchProperty": "ARS",
-  },
   "idNormalization": {
     "preset": "regional-12",
   },
   "metricsCrs": "EPSG:25832",
   "compare": {
+    "officialMatchProperty": "ARS",
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },

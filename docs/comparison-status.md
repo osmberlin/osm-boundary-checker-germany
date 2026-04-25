@@ -42,7 +42,7 @@ Source: `ogrinfo … -so` on `datasets/<area>/source/official.fgb` (BKG layer) a
 
 **de-landkreise — remaining `official_only` ARS (no OSM polygon in extract):** `079320000000`, `079350000000`, `109420000000` (mapping / mergers / dissolved units — not Stadtstaaten).
 
-## Residual gaps (not fixed by `osmExtract` alone)
+## Residual gaps (not fixed by `osm.extract` alone)
 
 - **de-verwaltungsgemeinschaften** — Most rows stay `official_only` because many BKG units have no corresponding `admin_level=7` boundary with `de:regionalschluessel` in OSM under the current extract. Widening `ogrWhere` risks pulling wrong admin polygons; the productive next steps are OSM mapping coverage checks or a deliberately narrower official subset for QA.
 

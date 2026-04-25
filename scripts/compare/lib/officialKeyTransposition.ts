@@ -3,7 +3,7 @@ import { normalizeOfficialValue } from './normalizeGermanKey.ts'
 
 /** Maps official dataset IDs to OSM `de:regionalschluessel` values before normalization. */
 export type OfficialKeyTransposition = {
-  /** Must match `official.matchProperty` when set (same field used for lookup). */
+  /** Must match `compare.officialMatchProperty` when set (same field used for lookup). */
   sourceProperty?: string
   /** Only `de:regionalschluessel` is supported for compare today. */
   targetKey: 'de:regionalschluessel'
@@ -36,7 +36,7 @@ export function parseOfficialKeyTransposition(
       : undefined
   if (sourceProp !== undefined && sourceProp !== officialMatchProperty) {
     throw new Error(
-      `${areaLabel}: official.keyTransposition.sourceProperty ("${sourceProp}") must equal official.matchProperty ("${officialMatchProperty}")`,
+      `${areaLabel}: official.keyTransposition.sourceProperty ("${sourceProp}") must equal compare.officialMatchProperty ("${officialMatchProperty}")`,
     )
   }
 
@@ -74,7 +74,7 @@ export function parseOfficialKeyTransposition(
 }
 
 /**
- * Reads the official id from `official.matchProperty`, optionally maps it to an OSM Schlüssel,
+ * Reads the official id from `compare.officialMatchProperty`, optionally maps it to an OSM Schlüssel,
  * then returns the normalized canonical match key.
  */
 export function officialPropertyToMatchKey(

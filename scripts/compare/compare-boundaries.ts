@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { areaConfigPathForDisplay, loadAreaConfig } from '../shared/areaConfig.ts'
+import { parseAreaDisplayName } from '../shared/areaConfigMetadata.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
@@ -106,9 +107,11 @@ async function main() {
     const meta = toComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
     const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
     const overpassBoundaryTag = overpassBoundaryTagFromMatchProperty(config.osm.matchProperty)
+    const displayName = parseAreaDisplayName(area, configRaw)
     writeOutputs(
       areaPath,
       area,
+      displayName,
       rows,
       unmatchedOsm,
       metricsCrs,

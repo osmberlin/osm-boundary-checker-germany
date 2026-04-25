@@ -57,7 +57,13 @@ flowchart LR
   JSON --> SNAP
 ```
 
-Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `download` (BKG + optional HTTP official + OSM PBF/extract) then `compare` per `datasets/<area>/config.jsonc`. The scheduled `**pipeline:nightly**` now refreshes BKG, all `download.official` areas, and OSM on every scheduled run.
+Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `download` (BKG + optional HTTP official + OSM PBF/extract) then `compare` per `datasets/<area>/config.jsonc`. The scheduled `**pipeline:nightly**` now refreshes BKG, all `official.download` areas, and OSM on every scheduled run.
+
+Config ownership is explicit:
+
+- `datasets/<area>/config.jsonc` = human-authored setup (compare, profiles, optional direct official download/source facts).
+- `datasets/<area>/source/metadata.json` = runtime provenance written by pipeline scripts.
+- Legacy config keys `sources` and `osmExtract` are not supported.
 
 ---
 
@@ -66,15 +72,15 @@ Nightlies and one-shot runs are orchestrated from the workspace root (see [READM
 1. **Inputs**
 
 - **Official:** one FlatGeobuf per area at `datasets/<area>/<official.path>` (typically `source/official.fgb`).
-- **OSM:** a shared FlatGeobuf selected per area via `osm.path` or `osm.sharedFgbBasename` (defaults to `.cache/osm/germany-admin-boundaries-rs.fgb`), built from the Germany extract.
+- **OSM:** a shared FlatGeobuf selected by top-level `osmProfile` (`admin_rs` or `postal_code`), built from the Germany extract.
 
 2. **Matching key**
 
-- OSM side uses `**osm.matchProperty**` from that area’s `config.jsonc` (default `de:regionalschluessel`; PLZ compare uses `postal_code`).
+- OSM side uses `osmProfile`-derived `matchProperty` (`de:regionalschluessel` for `admin_rs`, `postal_code` for `postal_code`).
 - Optional `**osm.matchCriteria**` supports identity matching (for example `relation_id` for Germany relation `51477` in `de-staat`) when tag-based joins are not reliable.
-- Official side uses the property named in `**official.matchProperty`\*\* in that area’s `config.jsonc` (e.g. BKG ARS column, Berlin Bezirke `name`, Berlin Ortsteile `sch`).
+- Official side uses `**compare.officialMatchProperty**` in that area’s `config.jsonc` (e.g. BKG ARS column, Berlin Bezirke `name`, Berlin Ortsteile `sch`).
 - Optional `**official.constantMatchKey**` can pin a dataset to one stable join key regardless of source column quirks (used by `de-staat`).
-- Optional `**official.keyTransposition**`: when the official dataset has no compatible Schlüssel, map values from `**official.matchProperty**` to raw OSM Schlüssel strings, then normalize (`[scripts/compare/lib/officialKeyTransposition.ts](../scripts/compare/lib/officialKeyTransposition.ts)`).
+- Optional `**official.keyTransposition**`: when the official dataset has no compatible Schlüssel, map values from `**compare.officialMatchProperty**` to raw OSM Schlüssel strings, then normalize (`[scripts/compare/lib/officialKeyTransposition.ts](../scripts/compare/lib/officialKeyTransposition.ts)`).
 - Values are normalized with a **preset** (`berlin-bezirk-ags`, `amtlicher-8`, `regional-12`, `plz-5`) in `[scripts/compare/lib/normalizeGermanKey.ts](../scripts/compare/lib/normalizeGermanKey.ts)` so key formats align where intended.
 
 2b. **Explicit spatial scope (per dataset)**  
@@ -103,16 +109,18 @@ With `bboxFilter=official_bbox_overlap`, compare derives a union bbox from offic
 - **Product:** BKG **VG25** (Verwaltungsgebiete 1:25 000), distributed as a GeoPackage inside a ZIP.
 - **Commands:** `bun run bkg:download`, `bun run bkg:extract` (or combined `bun run bkg`).
 - **Details:** URLs, layer names (`vg25_gem`, `vg25_krs`, …), and `matchProperty` / preset hints: [vg25-bkg.md](./vg25-bkg.md).
-- **Per-area configs:** under `datasets/de-*/config.jsonc` — each points `official.path` at the extracted `source/official.fgb` and sets `matchProperty` + `idNormalization.preset` + `metricsCrs`.
+- **Per-area configs:** under `datasets/de-*/config.jsonc` — each uses `officialProfile` (for example `bkg_vg25_gem`) + `compare.officialMatchProperty` + `idNormalization.preset` + `metricsCrs`.
+- **BKG layer mapping:** resolved from shared `officialProfile` definitions (no per-area layer duplication).
 
 ---
 
 ## Berlin data (Bezirke example)
 
 - **Official:** Berlin ALKIS Bezirke via WFS GeoJSON, fetched by `download:official` into `datasets/berlin-bezirke/source/official.fgb` (see `[datasets/berlin-bezirke/config.jsonc](../datasets/berlin-bezirke/config.jsonc)` and `[datasets/berlin-bezirke/README.md](../datasets/berlin-bezirke/README.md)`).
-- **Matching:** `official.matchProperty` is `name` with preset `**berlin-bezirk-ags`\*\* so Berlin district names align with `de:regionalschluessel` on OSM.
+- **Matching:** `compare.officialMatchProperty` is `name` with preset `**berlin-bezirk-ags`\*\* so Berlin district names align with `de:regionalschluessel` on OSM.
 - **Metrics CRS:** `EPSG:32633` (UTM zone 33N), chosen for that dataset.
 - **OSM input:** still the **shared** Germany admin-boundaries FlatGeobuf — there is no separate per-area OSM file in the compare step.
+- **OSM provenance defaults:** Geofabrik provider/licence metadata is centralized in `scripts/shared/germanyOsmPbf.ts`.
 
 ---
 

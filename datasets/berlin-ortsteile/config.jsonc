@@ -1,8 +1,20 @@
 {
+  "displayName": "Berlin Ortsteile",
+  "osmProfile": "admin_rs",
+
   // Compare: ALKIS Ortsteile `sch` ↔ OSM `de:regionalschluessel` (12-digit regional)
   "official": {
     "path": "source/official.fgb",
-    "matchProperty": "sch",
+    "extractLayer": "alkis_ortsteile:ortsteile",
+    "download": {
+      "kind": "http",
+      "url": "https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+    },
+    "source": {
+      "sourcePublicUrl": "https://daten.berlin.de/datensaetze/alkis-berlin-ortsteile-wfs-61bd3084",
+    },
   },
   "idNormalization": {
     "preset": "regional-12",
@@ -10,24 +22,10 @@
   "metricsCrs": "EPSG:32633",
 
   "compare": {
+    "officialMatchProperty": "sch",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
     "osmScopeFilter": "centroid_in_official_coverage",
-  },
-
-  "download": {
-    "official": {
-      "kind": "http",
-      "url": "https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
-      "format": "geojson",
-      "crs": "EPSG:4326",
-    },
-  },
-
-  "sources": {
-    "official": {
-      "sourceUrl": "https://daten.berlin.de/datensaetze/alkis-berlin-ortsteile-wfs-61bd3084",
-    },
   },
 
   "ogcInspectSources": [

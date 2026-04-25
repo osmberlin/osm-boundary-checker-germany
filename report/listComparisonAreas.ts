@@ -1,7 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
+import { comparisonForReportSchema } from '../scripts/shared/comparisonPayload.ts'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
+import { sourceMetadataSideSchema } from '../scripts/shared/sourceMetadata.ts'
 
 /** Dataset slugs under `datasets/` that contain `output/comparison_table.json`. */
 export function listComparisonAreas(runtimeRoot: string): string[] {
@@ -9,12 +11,6 @@ export function listComparisonAreas(runtimeRoot: string): string[] {
     .map((s) => s.area)
     .sort((a, b) => a.localeCompare(b))
 }
-
-const trimmedOptionalString = z.preprocess((value) => {
-  if (typeof value !== 'string') return value
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : undefined
-}, z.string().optional())
 
 const geoDataSourceSchema = z.object({
   name: z.string().min(1),
@@ -41,79 +37,6 @@ const areaLicenseSummarySchema = z.object({
   officialOsmCompatibilityComment: z.string().optional(),
 })
 export type AreaLicenseSummary = z.infer<typeof areaLicenseSummarySchema>
-
-const sourceMetadataSideSchema = z.object({
-  provider: trimmedOptionalString,
-  dataset: trimmedOptionalString,
-  layer: trimmedOptionalString,
-  sourcePublicUrl: trimmedOptionalString,
-  sourceDownloadUrl: trimmedOptionalString,
-})
-
-const areaMetadataSchema = z.object({
-  official: sourceMetadataSideSchema.optional(),
-  osm: sourceMetadataSideSchema.optional(),
-})
-
-const officialLicenseMetadataSchema = z.object({
-  licenseLabel: trimmedOptionalString,
-  license: trimmedOptionalString,
-  licenseSourceUrl: trimmedOptionalString,
-  osmCompatibility: z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver']).optional(),
-  osmCompatibilitySourceUrl: trimmedOptionalString,
-  osmCompatibilityComment: trimmedOptionalString,
-})
-
-const comparisonSummarySchema = z.object({
-  rows: z
-    .array(
-      z.object({
-        category: z.enum(['matched', 'official_only']),
-      }),
-    )
-    .optional(),
-  unmatchedOsm: z
-    .array(
-      z.object({
-        canonicalMatchKey: z.string(),
-        nameLabel: z.string(),
-        osmRelationId: z.string(),
-        adminLevel: z.string().nullable(),
-        mapBbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).nullable(),
-      }),
-    )
-    .optional(),
-})
-
-function titleCaseFromSlug(area: string): string {
-  const tokenMap: Record<string, string> = {
-    de: 'Deutschland',
-    plz: 'PLZ',
-    laender: 'Länder',
-  }
-  return area
-    .split('-')
-    .filter((part) => part.length > 0)
-    .map((part) => {
-      const mapped = tokenMap[part]
-      if (mapped) return mapped
-      return part.charAt(0).toUpperCase() + part.slice(1)
-    })
-    .join(' ')
-}
-
-function areaDisplayName(runtimeRoot: string, area: string): string {
-  const fallback = titleCaseFromSlug(area)
-  const configPath = join(runtimeRoot, DATASETS_DIRECTORY, area, 'config.jsonc')
-  if (!existsSync(configPath)) return fallback
-  try {
-    const parsed = Bun.JSONC.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>
-    const name = typeof parsed.displayName === 'string' ? parsed.displayName.trim() : ''
-    return name || fallback
-  } catch {
-    return fallback
-  }
-}
 
 function sourceDisplayName(part: z.infer<typeof sourceMetadataSideSchema>): string | null {
   const provider = part.provider ?? ''
@@ -172,20 +95,20 @@ function httpSourceDisplayName(sourceUrl: string, dataset: string): string | nul
   }
 }
 
-/** Distinct geodata sources aggregated from area `source/metadata.json` files. */
+/** Distinct geodata sources aggregated from area `output/comparison_table.json` payloads. */
 export function listGeoDataSources(runtimeRoot: string): GeoDataSource[] {
   const datasetsRoot = join(runtimeRoot, DATASETS_DIRECTORY)
   if (!existsSync(datasetsRoot)) return []
   const byKey = new Map<string, GeoDataSource>()
   for (const entry of readdirSync(datasetsRoot, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.name.startsWith('.')) continue
-    const metadataPath = join(datasetsRoot, entry.name, 'source', 'metadata.json')
-    if (!existsSync(metadataPath)) continue
+    const tablePath = join(datasetsRoot, entry.name, 'output', 'comparison_table.json')
+    if (!existsSync(tablePath)) continue
     try {
-      const parsed = areaMetadataSchema.parse(
-        JSON.parse(readFileSync(metadataPath, 'utf-8')) as unknown,
+      const parsed = comparisonForReportSchema.parse(
+        JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown,
       )
-      const side = parsed.official
+      const side = parsed.sourceMetadata?.official ?? null
       if (!side) continue
       const name = sourceDisplayName(side)
       if (!name) continue
@@ -205,7 +128,7 @@ export function listGeoDataSources(runtimeRoot: string): GeoDataSource[] {
   return z.array(geoDataSourceSchema).parse(sorted)
 }
 
-/** Per-area official licence summary from `source/metadata.json` for homepage rendering. */
+/** Per-area official licence summary from `output/comparison_table.json` for homepage rendering. */
 export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummary[] {
   const datasetsRoot = join(runtimeRoot, DATASETS_DIRECTORY)
   if (!existsSync(datasetsRoot)) return []
@@ -215,26 +138,23 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
     const area = entry.name
     const tablePath = join(datasetsRoot, area, 'output', 'comparison_table.json')
     if (!existsSync(tablePath)) continue
-    const metadataPath = join(datasetsRoot, area, 'source', 'metadata.json')
-    let official: z.infer<typeof officialLicenseMetadataSchema> = {}
-    if (existsSync(metadataPath)) {
-      try {
-        const parsed = JSON.parse(readFileSync(metadataPath, 'utf-8')) as {
-          official?: unknown
-        }
-        official = officialLicenseMetadataSchema.parse(parsed.official ?? {})
-      } catch {
-        official = {}
-      }
+    let parsedTable: z.infer<typeof comparisonForReportSchema> | null = null
+    try {
+      parsedTable = comparisonForReportSchema.parse(
+        JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown,
+      )
+    } catch {
+      continue
     }
-    const officialLicenseLabelRaw = official.licenseLabel ?? official.license ?? ''
-    const officialLicenseSourceUrlRaw = official.licenseSourceUrl ?? ''
-    const officialOsmCompatibilityRaw = official.osmCompatibility ?? 'unknown'
-    const officialOsmCompatibilitySourceUrlRaw = official.osmCompatibilitySourceUrl ?? ''
-    const officialOsmCompatibilityCommentRaw = official.osmCompatibilityComment ?? ''
+    const official = parsedTable.sourceMetadata?.official ?? null
+    const officialLicenseLabelRaw = official?.licenseLabel ?? official?.license ?? ''
+    const officialLicenseSourceUrlRaw = official?.licenseSourceUrl ?? ''
+    const officialOsmCompatibilityRaw = official?.osmCompatibility ?? 'unknown'
+    const officialOsmCompatibilitySourceUrlRaw = official?.osmCompatibilitySourceUrl ?? ''
+    const officialOsmCompatibilityCommentRaw = official?.osmCompatibilityComment ?? ''
     const summary: AreaLicenseSummary = {
       area,
-      displayName: areaDisplayName(runtimeRoot, area),
+      displayName: parsedTable.displayName,
       officialLicenseLabel: officialLicenseLabelRaw || 'unknown',
       ...(officialLicenseSourceUrlRaw
         ? { officialLicenseSourceUrl: officialLicenseSourceUrlRaw }
@@ -269,7 +189,7 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
     const tablePath = join(datasetsRoot, area, 'output', 'comparison_table.json')
     if (!existsSync(tablePath)) continue
     try {
-      const parsed = comparisonSummarySchema.parse(
+      const parsed = comparisonForReportSchema.parse(
         JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown,
       )
       const rows = parsed.rows ?? []
@@ -283,7 +203,7 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
       const unmatched = parsed.unmatchedOsm?.length ?? 0
       const summary: AreaHomeSummary = {
         area,
-        displayName: areaDisplayName(runtimeRoot, area),
+        displayName: parsed.displayName,
         matched,
         officialOnly,
         unmatchedOsm: unmatched,

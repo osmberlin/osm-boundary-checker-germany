@@ -13,7 +13,7 @@ function parseArgs(argv: string[]) {
 async function run() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const { force } = parseArgs(process.argv.slice(2))
-  // Refresh all datasets that define `download.official` in config.jsonc (Berlin, Hamburg, …).
+  // Refresh all datasets that define `official.download` in config.jsonc (Berlin, Hamburg, …).
   const args = ['run', 'download:official', '--']
   if (force) args.push('--force')
 

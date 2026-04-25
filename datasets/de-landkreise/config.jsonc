@@ -1,13 +1,14 @@
 {
-  "official": {
-    "path": "source/official.fgb",
-    "matchProperty": "ARS",
-  },
+  "displayName": "Deutschland Landkreise",
+  "officialProfile": "bkg_vg25_krs",
+  "osmProfile": "admin_rs",
+
   "idNormalization": {
     "preset": "regional-12",
   },
   "metricsCrs": "EPSG:25832",
   "compare": {
+    "officialMatchProperty": "ARS",
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },

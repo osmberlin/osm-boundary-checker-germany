@@ -6,11 +6,13 @@ import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from 'n
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
+import { parseAreaOfficialSourceFacts } from '../shared/areaConfigMetadata.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseDownloadOfficial } from '../shared/downloadOfficialConfig.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
   type AreaSourceMetadataFile,
+  datasetLicenseLabelForId,
   type SourceMetadataSide,
   mergeAreaSourceMetadata,
   readAreaSourceMetadataFile,
@@ -93,7 +95,7 @@ function inferOfficialLicenseDefaults(sourceUrl: string): {
   if (sourceUrl.includes('gdi.berlin.de') || sourceUrl.includes('daten.berlin.de')) {
     return {
       licenseId: 'dl_de_zero_20',
-      licenseLabel: 'DL-DE-ZERO-2.0',
+      licenseLabel: datasetLicenseLabelForId('dl_de_zero_20'),
       licenseSourceUrl: 'https://www.govdata.de/dl-de/zero-2-0',
       osmCompatibility: 'yes_waiver',
       osmCompatibilitySourceUrl:
@@ -103,7 +105,7 @@ function inferOfficialLicenseDefaults(sourceUrl: string): {
   if (sourceUrl.includes('geobasis-bb.de')) {
     return {
       licenseId: 'dl_de_by_20',
-      licenseLabel: 'DL-DE-BY-2.0',
+      licenseLabel: datasetLicenseLabelForId('dl_de_by_20'),
       licenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
       osmCompatibility: 'yes_waiver',
       osmCompatibilitySourceUrl:
@@ -113,26 +115,13 @@ function inferOfficialLicenseDefaults(sourceUrl: string): {
   if (sourceUrl.includes('api.hamburg.de')) {
     return {
       licenseId: 'dl_de_by_20',
-      licenseLabel: 'DL-DE-BY-2.0',
+      licenseLabel: datasetLicenseLabelForId('dl_de_by_20'),
       licenseSourceUrl: 'https://api.hamburg.de/datasets/v1/schulen',
       osmCompatibility: 'no',
       osmCompatibilitySourceUrl: 'https://api.hamburg.de/datasets/v1/schulen',
     }
   }
   return {}
-}
-
-function inferOfficialPublicSourceUrl(rawConfig: unknown, downloadUrl: string): string | undefined {
-  const doc = rawConfig as Record<string, unknown>
-  const sources = doc.sources as Record<string, unknown> | undefined
-  const officialSources = sources?.official as Record<string, unknown> | undefined
-  const explicit =
-    typeof officialSources?.sourceUrl === 'string' ? officialSources.sourceUrl.trim() : ''
-  if (explicit) return explicit
-  if (downloadUrl.includes('gdi.berlin.de')) return 'https://daten.berlin.de/'
-  if (downloadUrl.includes('geobasis-bb.de')) return 'https://geoportal.brandenburg.de/'
-  if (downloadUrl.includes('api.hamburg.de')) return 'https://suche.transparenz.hamburg.de/'
-  return undefined
 }
 
 async function processArea(
@@ -246,7 +235,19 @@ async function processArea(
     const downloadedAt = new Date().toISOString()
     const prevOfficial: Partial<SourceMetadataSide> = prev.official ?? {}
     const inferredLicense = inferOfficialLicenseDefaults(spec.url)
-    const publicSourceUrl = inferOfficialPublicSourceUrl(raw, spec.url)
+    const defaults = parseAreaOfficialSourceFacts(area, raw) ?? {}
+    const sourcePublicUrl = prevOfficial.sourcePublicUrl ?? defaults.sourcePublicUrl
+    if (!sourcePublicUrl) {
+      logLine({
+        area,
+        source: 'official',
+        status: 'fail',
+        reason: 'missing_source_public_url',
+        detail:
+          'Set official.sourcePublicUrl in source/metadata.json (or official.source.sourcePublicUrl).',
+      })
+      return 'fail'
+    }
     const nextSourcePublishedAt =
       prevOfficial.sourcePublishedAt ?? extractedWfsDates.sourcePublishedAt
     const nextSourceUpdatedAt = prevOfficial.sourceUpdatedAt ?? extractedWfsDates.sourceUpdatedAt
@@ -258,21 +259,43 @@ async function processArea(
     const patch = {
       official: {
         downloadedAt,
-        provider: 'HTTP',
-        dataset: spec.format === 'geojson' ? 'GeoJSON' : 'WFS GML',
-        sourcePublicUrl: prevOfficial.sourcePublicUrl ?? publicSourceUrl,
-        sourceDownloadUrl: prevOfficial.sourceDownloadUrl ?? spec.url,
+        provider: prevOfficial.provider ?? defaults.provider ?? 'HTTP',
+        dataset:
+          prevOfficial.dataset ??
+          defaults.dataset ??
+          (spec.format === 'geojson' ? 'GeoJSON' : 'WFS GML'),
+        sourcePublicUrl,
+        sourceDownloadUrl: prevOfficial.sourceDownloadUrl ?? defaults.sourceDownloadUrl ?? spec.url,
         sourcePublishedAt: nextSourcePublishedAt,
         sourceUpdatedAt: nextSourceUpdatedAt,
         sourceDateSource: nextSourceDateSource,
-        licenseId: prevOfficial.licenseId ?? inferredLicense.licenseId ?? 'unknown',
-        licenseLabel: prevOfficial.licenseLabel ?? inferredLicense.licenseLabel ?? 'unknown',
-        licenseSourceUrl: prevOfficial.licenseSourceUrl ?? inferredLicense.licenseSourceUrl,
+        licenseId:
+          prevOfficial.licenseId ?? defaults.licenseId ?? inferredLicense.licenseId ?? 'unknown',
+        licenseLabel:
+          prevOfficial.licenseLabel ??
+          defaults.licenseLabel ??
+          inferredLicense.licenseLabel ??
+          'unknown',
+        licenseSourceUrl:
+          prevOfficial.licenseSourceUrl ??
+          defaults.licenseSourceUrl ??
+          inferredLicense.licenseSourceUrl,
         osmCompatibility:
-          prevOfficial.osmCompatibility ?? inferredLicense.osmCompatibility ?? 'unknown',
+          prevOfficial.osmCompatibility ??
+          defaults.osmCompatibility ??
+          inferredLicense.osmCompatibility ??
+          'unknown',
         osmCompatibilitySourceUrl:
-          prevOfficial.osmCompatibilitySourceUrl ?? inferredLicense.osmCompatibilitySourceUrl,
-        ...(spec.crs ? { note: `Declared CRS: ${spec.crs}` } : {}),
+          prevOfficial.osmCompatibilitySourceUrl ??
+          defaults.osmCompatibilitySourceUrl ??
+          inferredLicense.osmCompatibilitySourceUrl,
+        osmCompatibilityComment:
+          prevOfficial.osmCompatibilityComment ?? defaults.osmCompatibilityComment,
+        note:
+          prevOfficial.note ??
+          defaults.note ??
+          (spec.crs ? `Declared CRS: ${spec.crs}` : undefined),
+        license: prevOfficial.license ?? defaults.license,
       },
     }
     writeAreaSourceMetadataFile(areaPath, mergeAreaSourceMetadata(prev, patch))

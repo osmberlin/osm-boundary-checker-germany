@@ -4,10 +4,7 @@ import { z } from 'zod'
 import { loadBoundaryConfig } from '../compare/lib/config.ts'
 import { loadAreaConfig } from '../shared/areaConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
-import {
-  DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS,
-  GERMANY_OSM_SHARED_FGB_BASENAME,
-} from '../shared/germanyOsmPbf.ts'
+import { DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS } from '../shared/germanyOsmPbf.ts'
 
 export type OsmExtractOverrideConfig = {
   selectProperties?: string[]
@@ -69,11 +66,6 @@ function parseAreaExtractOverride(
   area: string,
   rawDoc: Record<string, unknown>,
 ): OsmExtractOverrideConfig {
-  if (rawDoc.osmExtract !== undefined) {
-    throw new Error(
-      `${area}: legacy "osmExtract" is no longer supported; use "osm.extract" instead`,
-    )
-  }
   const osm = rawDoc.osm
   if (osm === undefined) return {}
   const osmObj = parseWithSchema(area, OsmObjectSchema, osm, 'osm')
@@ -95,10 +87,7 @@ export function loadSharedAdminOsmExtractConfig(
   for (const area of discoverAreaFolders(workspaceRoot)) {
     const rawDoc = loadAreaConfig(workspaceRoot, area) as Record<string, unknown>
     const boundary = loadBoundaryConfig(rawDoc, area)
-    const usesSharedAdminFgb =
-      !boundary.osm.path &&
-      (boundary.osm.sharedFgbBasename ?? GERMANY_OSM_SHARED_FGB_BASENAME) ===
-        GERMANY_OSM_SHARED_FGB_BASENAME
+    const usesSharedAdminFgb = boundary.osm.profileId === 'admin_rs'
     if (!usesSharedAdminFgb) continue
 
     if (boundary.osm.matchCriteria?.kind !== 'relation_id') {

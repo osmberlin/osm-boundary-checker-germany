@@ -1,8 +1,7 @@
-import { isAbsolute, join } from 'node:path'
-import {
-  GERMANY_OSM_CACHE_DIR,
-  GERMANY_OSM_SHARED_FGB_BASENAME,
-} from '../../shared/germanyOsmPbf.ts'
+import { join } from 'node:path'
+import { GERMANY_OSM_CACHE_DIR } from '../../shared/germanyOsmPbf.ts'
+import { officialProfileIdSchema, resolveOfficialProfile } from '../../shared/officialProfiles.ts'
+import { osmProfileIdSchema, resolveOsmProfile } from '../../shared/osmProfiles.ts'
 import {
   type OfficialKeyTransposition,
   parseOfficialKeyTransposition,
@@ -15,8 +14,6 @@ export type IdNormalizationPreset =
   | 'brandenburg-gemeinden-8'
   | 'plz-5'
 
-export const DEFAULT_OSM_MATCH_PROPERTY = 'de:regionalschluessel'
-
 /** Optional compare tuning (bbox prefilter, etc.). */
 export type CompareConfig = {
   /** OSM bbox prefilter strategy before key matching. */
@@ -28,6 +25,7 @@ export type CompareConfig = {
 }
 
 export type OsmConfig = {
+  profileId: string
   /** Property on OSM features used as matching key (for example `de:regionalschluessel`, `postal_code`). */
   matchProperty: string
   /**
@@ -38,13 +36,8 @@ export type OsmConfig = {
   matchCriteria?: { kind: 'property' } | { kind: 'relation_id'; relationIds: string[] }
   /** Optional OSM relation IDs (numeric strings) to exclude from compare. */
   ignoreRelationIds?: string[]
-  /**
-   * Optional runtime-root relative or absolute path to the OSM FlatGeobuf.
-   * If omitted, sharedFgbBasename under `.cache/osm` is used.
-   */
-  path?: string
-  /** Optional basename under `.cache/osm` when `path` is not provided. */
-  sharedFgbBasename?: string
+  /** Basename under `.cache/osm` resolved from `osmProfile`. */
+  sharedFgbBasename: string
 }
 
 function parseNumericIdStringArray(
@@ -137,34 +130,15 @@ function parseCompareConfig(areaLabel: string, raw: unknown): CompareConfig {
 }
 
 function parseOsmConfig(areaLabel: string, raw: unknown): OsmConfig {
-  if (raw === undefined || raw === null) {
-    return {
-      matchProperty: DEFAULT_OSM_MATCH_PROPERTY,
-      sharedFgbBasename: GERMANY_OSM_SHARED_FGB_BASENAME,
-    }
-  }
-  if (typeof raw !== 'object' || Array.isArray(raw)) {
-    throw new Error(`${areaLabel}: osm must be an object`)
-  }
-  const o = raw as Record<string, unknown>
-  const matchPropertyRaw = typeof o.matchProperty === 'string' ? o.matchProperty.trim() : ''
-  const matchProperty = matchPropertyRaw || DEFAULT_OSM_MATCH_PROPERTY
-
-  const pathRaw = typeof o.path === 'string' ? o.path.trim() : ''
-  const sharedRaw =
-    typeof o.sharedFgbBasename === 'string'
-      ? o.sharedFgbBasename.trim()
-      : GERMANY_OSM_SHARED_FGB_BASENAME
-
-  if (!matchProperty) {
-    throw new Error(`${areaLabel}: osm.matchProperty is empty`)
-  }
-  if (pathRaw && sharedRaw && sharedRaw !== GERMANY_OSM_SHARED_FGB_BASENAME) {
-    throw new Error(`${areaLabel}: set only one of osm.path or osm.sharedFgbBasename`)
-  }
-  if (!pathRaw && !sharedRaw) {
-    throw new Error(`${areaLabel}: osm.path or osm.sharedFgbBasename must be provided`)
-  }
+  const c = raw as Record<string, unknown>
+  const profileId = typeof c.osmProfile === 'string' ? c.osmProfile.trim() : ''
+  if (!profileId) throw new Error(`${areaLabel}: osmProfile is required`)
+  const profile = resolveOsmProfile(osmProfileIdSchema.parse(profileId))
+  const osmRaw = c.osm
+  const o =
+    osmRaw && typeof osmRaw === 'object' && !Array.isArray(osmRaw)
+      ? (osmRaw as Record<string, unknown>)
+      : {}
 
   const matchCriteriaRaw = o.matchCriteria
   let matchCriteria: OsmConfig['matchCriteria'] | undefined
@@ -199,51 +173,59 @@ function parseOsmConfig(areaLabel: string, raw: unknown): OsmConfig {
     'osm.ignoreRelationIds',
   )
 
-  if (pathRaw) {
-    return {
-      matchProperty,
-      ...(matchCriteria ? { matchCriteria } : {}),
-      ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
-      path: pathRaw,
-    }
-  }
   return {
-    matchProperty,
+    profileId,
+    matchProperty: profile.matchProperty,
     ...(matchCriteria ? { matchCriteria } : {}),
     ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
-    sharedFgbBasename: sharedRaw,
+    sharedFgbBasename: profile.sharedFgbBasename,
   }
 }
 
 export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryConfig {
   const c = json as Record<string, unknown>
+  const compareRaw = c.compare as Record<string, unknown> | undefined
+  const compareOfficialMatchProperty =
+    typeof compareRaw?.officialMatchProperty === 'string'
+      ? compareRaw.officialMatchProperty.trim()
+      : ''
+  if (!compareOfficialMatchProperty) {
+    throw new Error('Invalid area config: missing compare.officialMatchProperty')
+  }
+  const officialProfileRaw =
+    typeof c.officialProfile === 'string' ? c.officialProfile.trim() : undefined
   const official = c.official as Record<string, unknown> | undefined
-  if (!official?.path || !official?.matchProperty) {
-    throw new Error('Invalid area config: missing official.path or official.matchProperty')
+  const hasOfficialProfile = officialProfileRaw !== undefined && officialProfileRaw !== ''
+  if (hasOfficialProfile && official !== undefined) {
+    throw new Error('Invalid area config: official must be omitted when officialProfile is set')
+  }
+  if (!hasOfficialProfile && !official?.path) {
+    throw new Error('Invalid area config: missing official.path')
   }
   const idNormalization = c.idNormalization as Record<string, unknown> | undefined
   if (!idNormalization?.preset || !c?.metricsCrs) {
     throw new Error('Invalid area config: missing idNormalization.preset or metricsCrs')
   }
-  const matchProperty = String(official.matchProperty).trim()
-  if (!matchProperty) {
-    throw new Error('Invalid area config: official.matchProperty is empty')
-  }
+  const matchProperty = compareOfficialMatchProperty
 
   const keyTransposition = parseOfficialKeyTransposition(
     areaLabel,
     matchProperty,
-    official.keyTransposition,
+    official?.keyTransposition,
   )
 
   const compare = parseCompareConfig(areaLabel, c.compare)
-  const osm = parseOsmConfig(areaLabel, c.osm)
+  const osm = parseOsmConfig(areaLabel, c)
+  const officialProfile = hasOfficialProfile
+    ? resolveOfficialProfile(officialProfileIdSchema.parse(officialProfileRaw))
+    : null
 
   return {
     official: {
-      path: String(official.path).trim(),
+      path: officialProfile ? 'source/official.fgb' : String(official?.path).trim(),
       matchProperty,
-      ...(typeof official.constantMatchKey === 'string' && official.constantMatchKey.trim() !== ''
+      ...(officialProfile?.extractLayer === 'vg25_sta' ? { constantMatchKey: '51477' } : {}),
+      ...(typeof official?.constantMatchKey === 'string' && official.constantMatchKey.trim() !== ''
         ? { constantMatchKey: official.constantMatchKey.trim() }
         : {}),
       ...(keyTransposition ? { keyTransposition } : {}),
@@ -257,12 +239,5 @@ export function loadBoundaryConfig(json: unknown, areaLabel = 'area'): BoundaryC
 
 /** Runtime-root path for configured OSM FlatGeobuf. */
 export function osmFgbPathFromConfig(runtimeRoot: string, osm: OsmConfig): string {
-  if (osm.path) {
-    return isAbsolute(osm.path) ? osm.path : join(runtimeRoot, osm.path)
-  }
-  return join(
-    runtimeRoot,
-    GERMANY_OSM_CACHE_DIR,
-    osm.sharedFgbBasename ?? GERMANY_OSM_SHARED_FGB_BASENAME,
-  )
+  return join(runtimeRoot, GERMANY_OSM_CACHE_DIR, osm.sharedFgbBasename)
 }

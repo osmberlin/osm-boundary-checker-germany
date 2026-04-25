@@ -1,12 +1,19 @@
 {
+  "displayName": "Brandenburg Berlin PLZ",
+  "osmProfile": "postal_code",
+
   // Compare official Brandenburg + Berlin postal code polygons to OSM `boundary=postal_code` features.
   "official": {
     "path": "source/official.fgb",
-    "matchProperty": "plz",
-  },
-  "osm": {
-    "matchProperty": "postal_code",
-    "sharedFgbBasename": "germany-postal-code-boundaries.fgb",
+    "download": {
+      "kind": "http",
+      "url": "https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+    },
+    "source": {
+      "sourcePublicUrl": "https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Db90acca9-e512-4c6c-a45e-ecc04a1e580c",
+    },
   },
   "idNormalization": {
     "preset": "plz-5",
@@ -14,23 +21,9 @@
   "metricsCrs": "EPSG:25832",
 
   "compare": {
+    "officialMatchProperty": "plz",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
     "osmScopeFilter": "centroid_in_official_coverage",
-  },
-
-  "download": {
-    "official": {
-      "kind": "http",
-      "url": "https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json",
-      "format": "geojson",
-      "crs": "EPSG:4326",
-    },
-  },
-
-  "sources": {
-    "official": {
-      "sourceUrl": "https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Db90acca9-e512-4c6c-a45e-ecc04a1e580c",
-    },
   },
 }

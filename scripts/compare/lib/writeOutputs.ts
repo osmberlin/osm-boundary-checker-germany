@@ -3,6 +3,12 @@ import { join } from 'node:path'
 import { area, bbox, featureCollection } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
+import type {
+  ComparisonForReport,
+  FeatureDetailShard,
+  ReportRow as StaticReportRow,
+  UnmatchedOsmReportRow as StaticUnmatchedOsmRow,
+} from '../../shared/comparisonPayload.ts'
 import {
   assignOfficialForEditStems,
   officialForEditGeojsonBasename,
@@ -264,49 +270,9 @@ function removeObsoleteOutputFiles(outDir: string) {
   }
 }
 
-type StaticComparisonPayload = {
-  area: string
-  generatedAt: string
-  metricsCrs: string
-  overpassBoundaryTag: OverpassBoundaryTag
-  hasPmtiles: boolean
-  hasUnmatchedPmtiles: boolean
-  tippecanoeLayer: string
-  sourceMetadata?: {
-    official: SourceMetadataSide | null
-    osm: SourceMetadataSide | null
-  }
-  ogcInspectSources?: OgcWfsInspectSource[]
-  rows: StaticReportRow[]
-  unmatchedOsm: StaticUnmatchedOsmRow[]
-}
-
-type StaticReportRow = {
-  canonicalMatchKey: string
-  nameLabel: string
-  category: 'matched' | 'official_only'
-  osmRelationId: string
-  metrics: CompareRow['metrics']
-  mapBbox: [number, number, number, number] | null
-  officialForEditPath: string | null
-  officialProperties: Record<string, unknown> | null
-  osmProperties: Record<string, unknown> | null
-}
-
-type StaticUnmatchedOsmRow = {
-  canonicalMatchKey: string
-  nameLabel: string
-  osmRelationId: string
-  adminLevel: string | null
-  mapBbox: [number, number, number, number] | null
-}
-
-type StaticFeatureShardPayload = {
-  row: StaticReportRow
-}
-
 function buildStaticPayloadBase(
   areaFolder: string,
+  displayName: string,
   generatedAt: string,
   metricsCrs: string,
   overpassBoundaryTag: OverpassBoundaryTag,
@@ -314,9 +280,10 @@ function buildStaticPayloadBase(
   hasUnmatchedPmtiles: boolean,
   sourceMetadata: ComparisonSourceMetadata | null,
   ogcInspectSources: OgcWfsInspectSource[],
-): Omit<StaticComparisonPayload, 'rows' | 'unmatchedOsm'> {
-  const out: Omit<StaticComparisonPayload, 'rows' | 'unmatchedOsm'> = {
+): Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> {
+  const out: Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> = {
     area: areaFolder,
+    displayName,
     generatedAt,
     metricsCrs,
     overpassBoundaryTag,
@@ -420,6 +387,7 @@ function updateSnapshotsFile(
 export function writeOutputs(
   areaPath: string,
   areaFolder: string,
+  displayName: string,
   rows: CompareRow[],
   unmatchedOsm: UnmatchedOsmRow[],
   metricsCrs: string,
@@ -523,6 +491,7 @@ export function writeOutputs(
 
   const base = buildStaticPayloadBase(
     areaFolder,
+    displayName,
     generatedAt,
     metricsCrs,
     overpassBoundaryTag,
@@ -539,7 +508,7 @@ export function writeOutputs(
     ...base,
     rows: payloadRows,
     unmatchedOsm: payloadUnmatched,
-  } satisfies StaticComparisonPayload)
+  } satisfies ComparisonForReport)
 
   const featureDir = join(outDir, 'features')
   rmSync(featureDir, { recursive: true, force: true })
@@ -549,7 +518,7 @@ export function writeOutputs(
     featureShardCount++
     writeStaticJson(join(featureDir, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
       row,
-    } satisfies StaticFeatureShardPayload)
+    } satisfies FeatureDetailShard)
   }
 
   updateSnapshotsFile(

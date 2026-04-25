@@ -20,7 +20,7 @@ docker compose run --rm pipeline ogr2ogr -f FlatGeobuf datasets/berlin-bezirke/s
 
 - https://wfsexplorer.odis-berlin.de/?wfs=https%3A%2F%2Fgdi.berlin.de%2Fservices%2Fwfs%2Falkis_bezirke
 - https://daten.berlin.de/datensaetze/alkis-berlin-bezirke-wfs-ced31d7d
-- WFS GeoJSON URL is in **`download.official`** (and duplicated under **`sources.official.sourceUrl`** for docs) in [config.jsonc](./config.jsonc). Run **`docker compose run --rm pipeline bun run download:official -- --area berlin-bezirke`**, **`bun run berlin:download`** (all HTTP-official areas), or **`docker compose run --rm pipeline bun run pipeline:nightly`** (scheduled runs refresh BKG + all `download.official` datasets) to fetch and build **`source/official.fgb`**.
+- WFS GeoJSON URL is in **`official.download`**, and static official source metadata defaults live in **`official.source`** inside [config.jsonc](./config.jsonc). Run **`docker compose run --rm pipeline bun run download:official -- --area berlin-bezirke`**, **`bun run berlin:download`** (all HTTP-official areas), or **`docker compose run --rm pipeline bun run pipeline:nightly`** (scheduled runs refresh BKG + all `official.download` datasets) to fetch and build **`source/official.fgb`**.
 
 ## OSM
 

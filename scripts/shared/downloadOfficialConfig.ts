@@ -1,5 +1,5 @@
 /**
- * Machine-readable `download.official` in area `config.jsonc`.
+ * Machine-readable `official.download` in area `config.jsonc`.
  */
 
 export type DownloadOfficialHttp = {
@@ -13,28 +13,28 @@ export type DownloadOfficialHttp = {
 export function parseDownloadOfficial(doc: unknown): DownloadOfficialHttp | null {
   if (!doc || typeof doc !== 'object') return null
   const root = doc as Record<string, unknown>
-  const download = root.download
-  if (!download || typeof download !== 'object') return null
-  const d = download as Record<string, unknown>
-  const official = d.official
+  const official = root.official
   if (!official || typeof official !== 'object') return null
   const o = official as Record<string, unknown>
+  const download = o.download
+  if (!download || typeof download !== 'object') return null
+  const d = download as Record<string, unknown>
 
-  const url = typeof o.url === 'string' ? o.url.trim() : ''
+  const url = typeof d.url === 'string' ? d.url.trim() : ''
   if (!url) return null
 
-  const kind = typeof o.kind === 'string' ? o.kind.trim().toLowerCase() : 'http'
+  const kind = typeof d.kind === 'string' ? d.kind.trim().toLowerCase() : 'http'
   if (kind !== 'http') {
-    throw new Error(`Unsupported download.official.kind: "${kind}" (only "http" is supported)`)
+    throw new Error(`Unsupported official.download.kind: "${kind}" (only "http" is supported)`)
   }
 
-  const formatRaw = typeof o.format === 'string' ? o.format.trim().toLowerCase() : 'geojson'
+  const formatRaw = typeof d.format === 'string' ? d.format.trim().toLowerCase() : 'geojson'
   if (formatRaw !== 'geojson' && formatRaw !== 'gml') {
     throw new Error(
-      `Unsupported download.official.format: "${formatRaw}" (only "geojson" or "gml" is supported)`,
+      `Unsupported official.download.format: "${formatRaw}" (only "geojson" or "gml" is supported)`,
     )
   }
 
-  const crs = typeof o.crs === 'string' ? o.crs.trim() : undefined
+  const crs = typeof d.crs === 'string' ? d.crs.trim() : undefined
   return { kind: 'http', url, format: formatRaw, crs }
 }

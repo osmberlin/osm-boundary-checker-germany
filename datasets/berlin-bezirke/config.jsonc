@@ -1,8 +1,20 @@
 {
+  "displayName": "Berlin Bezirke",
+  "osmProfile": "admin_rs",
+
   // Compare: FlatGeobuf inputs and id matching (see scripts/compare/lib/normalizeGermanKey.ts)
   "official": {
     "path": "source/official.fgb",
-    "matchProperty": "name",
+    "extractLayer": "alkis_bezirke:bezirksgrenzen",
+    "download": {
+      "kind": "http",
+      "url": "https://gdi.berlin.de/services/wfs/alkis_bezirke?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_bezirke%3Abezirksgrenzen&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+    },
+    "source": {
+      "sourcePublicUrl": "https://daten.berlin.de/datensaetze/alkis-berlin-bezirke-wfs-ced31d7d",
+    },
   },
   "idNormalization": {
     "preset": "berlin-bezirk-ags",
@@ -10,6 +22,7 @@
   "metricsCrs": "EPSG:32633",
 
   "compare": {
+    "officialMatchProperty": "name",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
     "osmScopeFilter": "centroid_in_official_coverage",
@@ -17,23 +30,6 @@
 
   "osm": {
     "ignoreRelationIds": ["62422", "62504"],
-  },
-
-  // Machine-readable: `bun run download:official` fetches this URL and writes official.path as FGB
-  "download": {
-    "official": {
-      "kind": "http",
-      "url": "https://gdi.berlin.de/services/wfs/alkis_bezirke?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_bezirke%3Abezirksgrenzen&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
-      "format": "geojson",
-      "crs": "EPSG:4326",
-    },
-  },
-
-  // Optional: official dataset reference (human documentation)
-  "sources": {
-    "official": {
-      "sourceUrl": "https://daten.berlin.de/datensaetze/alkis-berlin-bezirke-wfs-ced31d7d",
-    },
   },
 
   "ogcInspectSources": [

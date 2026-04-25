@@ -1,8 +1,19 @@
 {
+  "displayName": "Hamburg Bezirke",
+  "osmProfile": "admin_rs",
+
   // Hamburg statistical Bezirke (OGC API) — no RS in source; map BezirkNr → OSM Schlüssel.
   "official": {
     "path": "source/official.fgb",
-    "matchProperty": "bezirk_nr",
+    "download": {
+      "kind": "http",
+      "url": "https://api.hamburg.de/datasets/v1/regionalstatistische_daten_bezirke/collections/regionalstatistische_daten_bezirke/items?f=json&filter=jahr%20%3D%20%272024%27&limit=20",
+      "format": "geojson",
+      "crs": "EPSG:4326",
+    },
+    "source": {
+      "sourcePublicUrl": "https://suche.transparenz.hamburg.de/dataset/regionalstatistische-daten-der-bezirke-hamburgs-und-hamburg-insgesamt17",
+    },
     "keyTransposition": {
       "targetKey": "de:regionalschluessel",
       // Placeholder 12-digit keys — align with OSM once admin_level=9 relations carry `de:regionalschluessel`.
@@ -23,23 +34,9 @@
   "metricsCrs": "EPSG:25832",
 
   "compare": {
+    "officialMatchProperty": "bezirk_nr",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
     "osmScopeFilter": "centroid_in_official_coverage",
-  },
-
-  "download": {
-    "official": {
-      "kind": "http",
-      "url": "https://api.hamburg.de/datasets/v1/regionalstatistische_daten_bezirke/collections/regionalstatistische_daten_bezirke/items?f=json&filter=jahr%20%3D%20%272024%27&limit=20",
-      "format": "geojson",
-      "crs": "EPSG:4326",
-    },
-  },
-
-  "sources": {
-    "official": {
-      "sourceUrl": "https://suche.transparenz.hamburg.de/dataset/regionalstatistische-daten-der-bezirke-hamburgs-und-hamburg-insgesamt17",
-    },
   },
 }

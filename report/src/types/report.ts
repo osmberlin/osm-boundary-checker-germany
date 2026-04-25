@@ -1,3 +1,6 @@
+export type ReportCategory = 'matched' | 'official_only' | 'unmatched_osm'
+export type OverpassBoundaryTag = 'administrative' | 'postal_code'
+
 export type ReportMetrics = {
   iou: number
   areaDiffPct: number
@@ -6,9 +9,6 @@ export type ReportMetrics = {
   officialAreaM2: number
   osmAreaM2: number
 }
-
-export type ReportCategory = 'matched' | 'official_only' | 'unmatched_osm'
-export type OverpassBoundaryTag = 'administrative' | 'postal_code'
 
 export type SourceMetadataSide = {
   downloadedAt?: string
@@ -23,8 +23,8 @@ export type SourceMetadataSide = {
   provider?: string
   dataset?: string
   layer?: string
-  sourcePublicUrl?: string
-  sourceDownloadUrl?: string
+  sourcePublicUrl: string
+  sourceDownloadUrl: string
   note?: string
   licenseId?:
     | 'unknown'
@@ -89,6 +89,7 @@ export type AreaReportRow = ReportRow
 /** Slim compare result JSON (`output/comparison_table.json`). */
 export type ComparisonForReport = {
   area: string
+  displayName: string
   generatedAt: string
   metricsCrs: string
   /** Overpass `boundary=*` value for live OSM lookup; defaults to `administrative` when absent. */

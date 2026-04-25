@@ -23,12 +23,12 @@ import {
   GERMANY_OSM_PBF_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
-  GERMANY_OSM_PBF_URL,
+  GERMANY_OSM_SOURCE_DEFAULTS,
 } from '../shared/germanyOsmPbf.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
   type AreaSourceMetadataFile,
-  type SourceMetadataSide,
+  datasetLicenseLabelForId,
   mergeAreaSourceMetadata,
   readAreaSourceMetadataFile,
   writeAreaSourceMetadataFile,
@@ -254,33 +254,22 @@ function writeOsmSourceMetadataForAreas(
   for (const area of areas) {
     const areaPath = datasetFolderPath(runtimeRoot, area)
     const prev: AreaSourceMetadataFile = readAreaSourceMetadataFile(areaPath) ?? {}
-    const prevOsm: Partial<SourceMetadataSide> = prev.osm ?? {}
-    const patch = {
+    const patch: AreaSourceMetadataFile = {
       osm: {
-        downloadedAt: downloadedAt ?? prevOsm.downloadedAt,
-        sourceDateSource: downloadedAt ? 'osm_pbf_header' : prevOsm.sourceDateSource,
-        provider: prevOsm.provider ?? 'OpenStreetMap (Geofabrik Germany extract)',
-        dataset: prevOsm.dataset ?? GERMANY_OSM_PBF_BASENAME,
-        sourcePublicUrl:
-          prevOsm.sourcePublicUrl ?? 'https://download.geofabrik.de/europe/germany.html',
-        sourceDownloadUrl: prevOsm.sourceDownloadUrl ?? GERMANY_OSM_PBF_URL,
-        licenseId: prevOsm.licenseId ?? 'odbl_10',
-        licenseLabel: prevOsm.licenseLabel ?? 'ODbL-1.0',
-        licenseSourceUrl: prevOsm.licenseSourceUrl ?? 'https://www.openstreetmap.org/copyright',
-        osmCompatibility: prevOsm.osmCompatibility ?? 'yes_licence',
-        osmCompatibilitySourceUrl:
-          prevOsm.osmCompatibilitySourceUrl ?? 'https://opendatacommons.org/licenses/odbl/1-0/',
-        osmCompatibilityComment:
-          prevOsm.osmCompatibilityComment ??
-          'OSM-Geometrien stammen aus OpenStreetMap unter ODbL-1.0.',
-        note: prevOsm.note,
-        license: prevOsm.license,
-        layer: prevOsm.layer,
+        downloadedAt: downloadedAt ?? prev.osm?.downloadedAt,
+        sourceDateSource: downloadedAt ? 'osm_pbf_header' : prev.osm?.sourceDateSource,
+        provider: GERMANY_OSM_SOURCE_DEFAULTS.provider,
+        dataset: GERMANY_OSM_SOURCE_DEFAULTS.dataset,
+        sourcePublicUrl: GERMANY_OSM_SOURCE_DEFAULTS.sourcePublicUrl,
+        sourceDownloadUrl: GERMANY_OSM_SOURCE_DEFAULTS.sourceDownloadUrl,
+        licenseId: GERMANY_OSM_SOURCE_DEFAULTS.licenseId,
+        licenseLabel: datasetLicenseLabelForId(GERMANY_OSM_SOURCE_DEFAULTS.licenseId),
+        licenseSourceUrl: GERMANY_OSM_SOURCE_DEFAULTS.licenseSourceUrl,
       },
     }
     if (dryRun) {
       console.log(
-        `[dry-run] update ${DATASETS_DIRECTORY}/${area}/source/metadata.json (osm.downloadedAt=${patch.osm.downloadedAt ?? 'unchanged'})`,
+        `[dry-run] update ${DATASETS_DIRECTORY}/${area}/source/metadata.json (osm.downloadedAt=${patch.osm?.downloadedAt ?? 'unchanged'})`,
       )
       continue
     }

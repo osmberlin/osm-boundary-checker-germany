@@ -7,6 +7,8 @@ describe('selectSourceDateForFreshness', () => {
       selectSourceDateForFreshness({
         sourceUpdatedAt: '2026-01-03T10:00:00Z',
         downloadedAt: '2026-01-05T12:00:00Z',
+        sourcePublicUrl: 'https://example.test/source-page',
+        sourceDownloadUrl: 'https://example.test/download',
       }),
     ).toEqual({
       primaryRaw: '2026-01-03T10:00:00Z',
@@ -18,6 +20,8 @@ describe('selectSourceDateForFreshness', () => {
     expect(
       selectSourceDateForFreshness({
         downloadedAt: '2026-01-05T12:00:00Z',
+        sourcePublicUrl: 'https://example.test/source-page',
+        sourceDownloadUrl: 'https://example.test/download',
       }),
     ).toEqual({
       primaryRaw: '2026-01-05T12:00:00Z',

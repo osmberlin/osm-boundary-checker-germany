@@ -8,7 +8,7 @@
 
 The unzipped product contains **`DE_VG25.gpkg`** (not `DE_VG250`). Polygon layers use the prefix **`vg25_`** (e.g. `vg25_gem`, `vg25_krs`).
 
-Older products such as **VG250** (e.g. `DE_VG250.gpkg` under `vg250_ebenen_…`) use layers **`vg250_*`**. If you point `--gpkg` at such a file, change the layer names in [`bkg.config.json`](../bkg.config.json) accordingly (`vg250_sta`, …).
+Older products such as **VG250** (e.g. `DE_VG250.gpkg` under `vg250_ebenen_…`) use layers **`vg250_*`**. If you point `--gpkg` at such a file, update shared official profile mappings in `scripts/shared/officialProfiles.ts` accordingly.
 
 ## Workspace commands (Docker)
 
@@ -26,7 +26,7 @@ docker compose run --rm pipeline bun run bkg:download -- --force
 ```
 
 ```bash
-# GPKG → source/official.fgb for **all** areas in bkg.config.json (default; no flags)
+# GPKG → source/official.fgb for all areas that define `officialProfile` (default; no flags)
 docker compose run --rm pipeline bun run bkg:extract
 
 # Single area
@@ -80,6 +80,6 @@ Match keys for OSM often use **ARS** (12-digit) or **AGS** (8-digit); confirm co
 | `vg25_sta`           | Staatsgebiet | (Landesgrenze)          | `regional-12`           | `2` (see `datasets/de-staat/config.jsonc` for relation-based matching via OSM `relation/51477`)                          |
 | `vg25_vwg`           | VWG          | (variiert)              | `regional-12`           | often `7`; OSM coverage can be much lower than BKG — review OSM tagging coverage and compare matching config when needed |
 
-Workspace area `config.jsonc` files can tune compare-side OSM matching via `osm.*` settings (for example `matchProperty`, `matchCriteria`, `path` / `sharedFgbBasename`). The shared extract itself is built by `bun run osm:extract`.
+Workspace area `config.jsonc` files can tune compare-side OSM matching via `osm.*` settings (`matchCriteria`, `ignoreRelationIds`, `extract`) plus top-level `osmProfile`. The shared extract itself is built by `bun run osm:extract`.
 
 Source SRS is usually **EPSG:25832**; extracts are reprojected to **WGS84** for `.fgb` inputs.

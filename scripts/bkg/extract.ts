@@ -2,29 +2,30 @@
 import { spawnSync } from 'node:child_process'
 /**
  * Read BKG GeoPackage (default: `.cache/bkg/...` from `bun run bkg:download`) and write
- * `source/official.fgb` (WGS84 FlatGeobuf) per area using `bkg.config.json`.
+ * `source/official.fgb` (WGS84 FlatGeobuf) per area using per-dataset `config.jsonc`.
  *
  * With no flags: extracts **all** areas from the config (same as `compare` defaulting to full runs in CI).
  * Use `--area <folder>` for a single area. Interactive Clack prompts appear when the GPKG is missing (non-CI).
  */
-import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import * as p from '@clack/prompts'
+import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
 import { BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA, BKG_ZIP_URL } from '../shared/bkg.ts'
-import { datasetFolderPath } from '../shared/datasetPaths.ts'
+import { parseDatasetConfig } from '../shared/datasetConfig.ts'
+import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
+import { officialProfileIdSchema, resolveOfficialProfile } from '../shared/officialProfiles.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
   type AreaSourceMetadataFile,
+  datasetLicenseLabelForId,
   mergeAreaSourceMetadata,
   readAreaSourceMetadataFile,
   writeAreaSourceMetadataFile,
 } from '../shared/sourceMetadata.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
-type ExtractConfig = {
-  gpkgPath?: string | null
-  areas: Record<string, string>
-}
+type AreaLayerSpec = { area: string; profileId: string; layer: string }
 
 function isCi(): boolean {
   return process.env.CI === '1' || process.env.CI === 'true'
@@ -55,27 +56,43 @@ function parseArgs(argv: string[]) {
   return { area, gpkg }
 }
 
-function loadConfig(workspaceRoot: string): ExtractConfig {
-  const path = join(workspaceRoot, 'bkg.config.json')
-  if (!existsSync(path)) {
-    throw new Error(`Missing ${path}`)
-  }
-  return JSON.parse(readFileSync(path, 'utf-8')) as ExtractConfig
-}
-
-function resolveGpkgPath(runtimeRoot: string, cfg: ExtractConfig, cliGpkg: string | null): string {
+function resolveGpkgPath(runtimeRoot: string, cliGpkg: string | null): string {
   if (cliGpkg) return resolve(process.cwd(), cliGpkg)
-  if (cfg.gpkgPath) return resolve(runtimeRoot, cfg.gpkgPath)
   const metaPath = join(runtimeRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
   if (!existsSync(metaPath)) {
-    throw new Error(
-      `No gpkgPath in config and missing ${metaPath}. Run bun run bkg:download first.`,
-    )
+    throw new Error(`Missing ${metaPath}. Run bun run bkg:download first.`)
   }
   const meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as {
     gpkgRelativePath: string
   }
   return resolve(runtimeRoot, meta.gpkgRelativePath)
+}
+
+function readBkgLayerForArea(
+  workspaceRoot: string,
+  area: string,
+): { profileId: string; layer: string } | null {
+  const doc = loadAreaConfig(workspaceRoot, area) as Record<string, unknown>
+  const parsed = parseDatasetConfig(area, doc)
+  if (parsed.officialMode !== 'profile') return null
+  const profileId = parsed.officialProfile
+  const layer = resolveOfficialProfile(profileId).extractLayer
+  return { profileId, layer }
+}
+
+function discoverBkgAreaSpecs(workspaceRoot: string): AreaLayerSpec[] {
+  const datasetsRoot = join(workspaceRoot, DATASETS_DIRECTORY)
+  if (!existsSync(datasetsRoot)) return []
+  const out: AreaLayerSpec[] = []
+  for (const entry of readdirSync(datasetsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    const area = entry.name
+    if (!areaHasCompareConfig(workspaceRoot, area)) continue
+    const profile = readBkgLayerForArea(workspaceRoot, area)
+    if (!profile) continue
+    out.push({ area, profileId: profile.profileId, layer: profile.layer })
+  }
+  return out.sort((a, b) => a.area.localeCompare(b.area))
 }
 
 function downloadScript(workspaceRoot: string): string {
@@ -86,7 +103,6 @@ function downloadScript(workspaceRoot: string): string {
 async function ensureGpkgPath(
   workspaceRoot: string,
   runtimeRoot: string,
-  cfg: ExtractConfig,
   initialCliGpkg: string | null,
 ): Promise<string> {
   let cliGpkg = initialCliGpkg
@@ -94,7 +110,7 @@ async function ensureGpkgPath(
   for (;;) {
     let candidate: string
     try {
-      candidate = resolveGpkgPath(runtimeRoot, cfg, cliGpkg)
+      candidate = resolveGpkgPath(runtimeRoot, cliGpkg)
     } catch (err) {
       if (isCi()) {
         console.error(String(err))
@@ -207,11 +223,10 @@ async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { area, gpkg: cliGpkg } = parseArgs(process.argv.slice(2))
-  const cfg = loadConfig(workspaceRoot)
   if (!isCi()) {
     p.intro('VG25 → FlatGeobuf')
   }
-  const gpkgAbs = await ensureGpkgPath(workspaceRoot, runtimeRoot, cfg, cliGpkg)
+  const gpkgAbs = await ensureGpkgPath(workspaceRoot, runtimeRoot, cliGpkg)
 
   let downloadedAt: string | undefined
   const metaPath = join(runtimeRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
@@ -224,11 +239,22 @@ async function main() {
     }
   }
 
-  const entries = Object.entries(cfg.areas)
-  const selected = area ? entries.filter(([name]) => name === area) : entries
-
+  const specs = discoverBkgAreaSpecs(workspaceRoot)
+  if (specs.length === 0) {
+    console.error(
+      `No datasets with officialProfile configured under ${DATASETS_DIRECTORY}/<area>/config.jsonc`,
+    )
+    process.exit(1)
+  }
+  const selected = area ? specs.filter((spec) => spec.area === area) : specs
   if (area && selected.length === 0) {
-    console.error(`Unknown area "${area}" in bkg.config.json`)
+    if (areaHasCompareConfig(workspaceRoot, area)) {
+      console.error(
+        `Area "${area}" has compare config but no officialProfile in ${DATASETS_DIRECTORY}/${area}/config.jsonc`,
+      )
+    } else {
+      console.error(`Unknown area "${area}"`)
+    }
     process.exit(1)
   }
 
@@ -239,7 +265,7 @@ async function main() {
     )
   }
 
-  for (const [areaFolder, layer] of selected) {
+  for (const { area: areaFolder, profileId, layer } of selected) {
     const areaPath = datasetFolderPath(runtimeRoot, areaFolder)
     const outDir = join(areaPath, 'source')
     const outFgb = join(outDir, 'official.fgb')
@@ -247,24 +273,23 @@ async function main() {
     console.log(`${areaFolder}: ${layer} → ${outFgb}`)
     runOgr2ogr(gpkgAbs, layer, outFgb)
 
+    const profile = resolveOfficialProfile(officialProfileIdSchema.parse(profileId))
     const prev = readAreaSourceMetadataFile(areaPath) ?? {}
     const patch: AreaSourceMetadataFile = {
       official: {
         downloadedAt,
         sourceDateSource: 'bkg_download_metadata',
-        provider: 'BKG',
-        dataset: 'VG25',
+        provider: profile.provider,
+        dataset: profile.dataset,
         layer,
-        sourcePublicUrl:
-          'https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-25-000-stand-31-12-vg25.html',
-        sourceDownloadUrl: BKG_ZIP_URL,
-        licenseId: 'cc_by_40',
-        licenseLabel: 'CC-BY-4.0',
-        licenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-        osmCompatibility: 'unknown',
-        osmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-        osmCompatibilityComment:
-          'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        sourcePublicUrl: profile.sourcePublicUrl,
+        sourceDownloadUrl: profile.sourceDownloadUrl || BKG_ZIP_URL,
+        licenseId: profile.licenseId,
+        licenseLabel: datasetLicenseLabelForId(profile.licenseId),
+        licenseSourceUrl: profile.licenseSourceUrl,
+        osmCompatibility: profile.osmCompatibility,
+        osmCompatibilitySourceUrl: profile.osmCompatibilitySourceUrl,
+        osmCompatibilityComment: profile.osmCompatibilityComment,
       },
     }
     writeAreaSourceMetadataFile(areaPath, mergeAreaSourceMetadata(prev, patch))

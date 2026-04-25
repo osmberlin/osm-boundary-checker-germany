@@ -5,7 +5,7 @@ Official boundaries from Berlin **ALKIS Ortsteile** WFS, compared to OSM adminis
 ## References
 
 - WFS Explorer: [ALKIS Ortsteile](https://wfsexplorer.odis-berlin.de/?wfs=https%3A%2F%2Fgdi.berlin.de%2Fservices%2Fwfs%2Falkis_ortsteile)
-- `download.official` GeoJSON URL is in [`config.jsonc`](./config.jsonc). Run `docker compose run --rm pipeline bun run download:official -- --area berlin-ortsteile` to build `source/official.fgb`.
+- `official.download` GeoJSON URL is in [`config.jsonc`](./config.jsonc). Run `docker compose run --rm pipeline bun run download:official -- --area berlin-ortsteile` to build `source/official.fgb`.
 
 ## Notes
 
