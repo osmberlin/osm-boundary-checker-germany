@@ -15,9 +15,11 @@ import {
   datasetLicenseLabelForId,
   type SourceMetadataSide,
   mergeAreaSourceMetadata,
+} from '../shared/sourceMetadata.ts'
+import {
   readAreaSourceMetadataFile,
   writeAreaSourceMetadataFile,
-} from '../shared/sourceMetadata.ts'
+} from '../shared/sourceMetadataIo.ts'
 import { extractWfsDateMetadata } from '../shared/wfsSourceMetadata.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 

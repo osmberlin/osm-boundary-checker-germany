@@ -20,9 +20,11 @@ import {
   type AreaSourceMetadataFile,
   datasetLicenseLabelForId,
   mergeAreaSourceMetadata,
+} from '../shared/sourceMetadata.ts'
+import {
   readAreaSourceMetadataFile,
   writeAreaSourceMetadataFile,
-} from '../shared/sourceMetadata.ts'
+} from '../shared/sourceMetadataIo.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 type AreaLayerSpec = { area: string; profileId: string; layer: string }
