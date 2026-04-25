@@ -49,7 +49,7 @@ bun run compare:boundaries -- --area hamburg-bezirke
 
 - `data/internal-compare-timing.jsonl` has `compare_run_start`, `compare_phase`, `compare_run_end`.
 - Slow phases are usually `load_osm`, `tippecanoe_main`, or `metrics` for larger datasets.
-- For non-Berlin datasets, `output/features/` should be absent (or empty) because `output.perFeatureJson=false`.
+- `output/features/` should contain per-feature detail shards for each dataset.
 
 ## Fast troubleshooting
 

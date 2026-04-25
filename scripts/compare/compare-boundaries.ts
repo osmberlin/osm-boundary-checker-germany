@@ -115,7 +115,6 @@ async function main() {
       overpassBoundaryTag,
       meta,
       ogcInspectSources,
-      config.output.perFeatureJson,
       phaseLogger,
     )
     console.log(`Wrote output PMTiles + static report payloads under ${DATASETS_DIRECTORY}/${area}`)

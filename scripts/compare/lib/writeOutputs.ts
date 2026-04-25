@@ -425,7 +425,6 @@ export function writeOutputs(
   overpassBoundaryTag: OverpassBoundaryTag,
   sourceMetadata: ComparisonSourceMetadata | null = null,
   ogcInspectSources: OgcWfsInspectSource[] = [],
-  perFeatureJson = false,
   phaseLogger?: ComparePhaseLogger,
 ): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
@@ -544,14 +543,12 @@ export function writeOutputs(
   const featureDir = join(outDir, 'features')
   rmSync(featureDir, { recursive: true, force: true })
   let featureShardCount = 0
-  if (perFeatureJson) {
-    mkdirSync(featureDir, { recursive: true })
-    for (const row of payloadRows) {
-      featureShardCount++
-      writeStaticJson(join(featureDir, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
-        row,
-      } satisfies StaticFeatureShardPayload)
-    }
+  mkdirSync(featureDir, { recursive: true })
+  for (const row of payloadRows) {
+    featureShardCount++
+    writeStaticJson(join(featureDir, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
+      row,
+    } satisfies StaticFeatureShardPayload)
   }
 
   updateSnapshotsFile(
@@ -567,7 +564,6 @@ export function writeOutputs(
     rows: payloadRows.length,
     unmatched: payloadUnmatched.length,
     featureShards: featureShardCount,
-    perFeatureJson,
   })
 
   return { snapshotId }

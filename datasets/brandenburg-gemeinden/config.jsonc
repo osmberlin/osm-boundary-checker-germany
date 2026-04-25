@@ -14,9 +14,6 @@
     "bboxBufferDegrees": 0.05,
     "osmScopeFilter": "centroid_in_official_coverage",
   },
-  "output": {
-    "perFeatureJson": false,
-  },
 
   "download": {
     "official": {
