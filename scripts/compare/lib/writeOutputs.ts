@@ -79,7 +79,7 @@ function writeOfficialForEditGeojson(
       geometry: geom,
     }
     const fileName = officialForEditGeojsonBasename(stem)
-    writeFileSync(join(dir, fileName), `${JSON.stringify(feature, null, 2)}\n`, 'utf-8')
+    writeFileSync(join(dir, fileName), `${JSON.stringify(feature)}\n`, 'utf-8')
   }
 }
 
