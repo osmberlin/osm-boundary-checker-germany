@@ -36,6 +36,8 @@ export type OsmConfig = {
    * - `relation_id`: match only selected relation IDs using `@id` (for example `relation/51477`).
    */
   matchCriteria?: { kind: 'property' } | { kind: 'relation_id'; relationIds: string[] }
+  /** Optional OSM relation IDs (numeric strings) to exclude from compare. */
+  ignoreRelationIds?: string[]
   /**
    * Optional runtime-root relative or absolute path to the OSM FlatGeobuf.
    * If omitted, sharedFgbBasename under `.cache/osm` is used.
@@ -43,6 +45,28 @@ export type OsmConfig = {
   path?: string
   /** Optional basename under `.cache/osm` when `path` is not provided. */
   sharedFgbBasename?: string
+}
+
+function parseNumericIdStringArray(
+  areaLabel: string,
+  raw: unknown,
+  fieldPath: string,
+): string[] | undefined {
+  if (raw === undefined) return undefined
+  if (!Array.isArray(raw)) {
+    throw new Error(`${areaLabel}: ${fieldPath} must be an array`)
+  }
+  const values = raw.map((value) => String(value).trim()).filter((value) => value.length > 0)
+  if (values.length === 0) {
+    throw new Error(`${areaLabel}: ${fieldPath} must contain non-empty values`)
+  }
+  const invalid = values.find((value) => !/^\d+$/.test(value))
+  if (invalid) {
+    throw new Error(
+      `${areaLabel}: ${fieldPath} must contain numeric relation ID strings (invalid: "${invalid}")`,
+    )
+  }
+  return values
 }
 
 /** Paths under the area folder for official input; OSM path/key are configurable. */
@@ -169,11 +193,24 @@ function parseOsmConfig(areaLabel: string, raw: unknown): OsmConfig {
       throw new Error(`${areaLabel}: osm.matchCriteria.kind must be "property" or "relation_id"`)
     }
   }
+  const ignoreRelationIds = parseNumericIdStringArray(
+    areaLabel,
+    o.ignoreRelationIds,
+    'osm.ignoreRelationIds',
+  )
 
-  if (pathRaw) return { matchProperty, ...(matchCriteria ? { matchCriteria } : {}), path: pathRaw }
+  if (pathRaw) {
+    return {
+      matchProperty,
+      ...(matchCriteria ? { matchCriteria } : {}),
+      ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
+      path: pathRaw,
+    }
+  }
   return {
     matchProperty,
     ...(matchCriteria ? { matchCriteria } : {}),
+    ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
     sharedFgbBasename: sharedRaw,
   }
 }

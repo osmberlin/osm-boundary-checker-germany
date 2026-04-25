@@ -131,6 +131,17 @@ function filterOsmByOfficialCoverageCentroid(
   return osmFeatures.filter((feature) => hasCentroidInOfficialCoverage(feature, officialCoverage))
 }
 
+function filterOsmByIgnoredRelationIds(
+  osmFeatures: Feature[],
+  ignoredRelationIds: Set<string>,
+): Feature[] {
+  return osmFeatures.filter((feature) => {
+    const props = feature.properties as Record<string, unknown> | null | undefined
+    const relId = resolveRelationId(props)
+    return !relId || !ignoredRelationIds.has(relId)
+  })
+}
+
 function parseRelationId(rawId: unknown): string | null {
   const id = typeof rawId === 'string' ? rawId.trim() : ''
   if (id.length === 0) return null
@@ -201,6 +212,7 @@ export async function runCompare(
   const initialOsmFeatureCount = osmFc.features.length
   let droppedByBbox = 0
   let droppedByScope = 0
+  let droppedByIgnore = 0
 
   if (config.compare.bboxFilter === 'official_bbox_overlap') {
     const tFilterBbox = Date.now()
@@ -229,9 +241,21 @@ export async function runCompare(
       remaining: osmFc.features.length,
     })
   }
-  if (droppedByBbox > 0 || droppedByScope > 0) {
+  if ((config.osm.ignoreRelationIds?.length ?? 0) > 0) {
+    const tIgnoreFilter = Date.now()
+    const ignoredRelationIds = new Set(config.osm.ignoreRelationIds)
+    const filtered = filterOsmByIgnoredRelationIds(osmFc.features, ignoredRelationIds)
+    droppedByIgnore = osmFc.features.length - filtered.length
+    osmFc = { type: 'FeatureCollection', features: filtered }
+    phaseLogger?.('filter_ignore_relations', Date.now() - tIgnoreFilter, {
+      dropped: droppedByIgnore,
+      remaining: osmFc.features.length,
+      configuredIgnoreRelationIds: ignoredRelationIds.size,
+    })
+  }
+  if (droppedByBbox > 0 || droppedByScope > 0 || droppedByIgnore > 0) {
     console.log(
-      `${areaFolder}: OSM scope filtering kept ${osmFc.features.length}/${initialOsmFeatureCount} features (bbox dropped: ${droppedByBbox}, centroid scope dropped: ${droppedByScope})`,
+      `${areaFolder}: OSM scope filtering kept ${osmFc.features.length}/${initialOsmFeatureCount} features (bbox dropped: ${droppedByBbox}, centroid scope dropped: ${droppedByScope}, ignore dropped: ${droppedByIgnore})`,
     )
   }
 

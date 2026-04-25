@@ -15,6 +15,10 @@
     "osmScopeFilter": "centroid_in_official_coverage",
   },
 
+  "osm": {
+    "ignoreRelationIds": ["62504"],
+  },
+
   // Machine-readable: `bun run download:official` fetches this URL and writes official.path as FGB
   "download": {
     "official": {
