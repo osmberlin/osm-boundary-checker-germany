@@ -1,4 +1,4 @@
-/** Writes generated areas index module consumed by report runtime imports. */
+import { spawnSync } from 'node:child_process'
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
@@ -8,6 +8,7 @@ import {
 } from './listComparisonAreas.ts'
 import { resolveRuntimeRoot } from './runtimeDataRoot.ts'
 
+/** Writes generated areas index module consumed by report runtime imports. */
 const runtimeRoot = resolveRuntimeRoot()
 const summaries = listComparisonAreaSummaries(runtimeRoot)
 const areas = summaries.map((s) => s.area)
@@ -22,4 +23,12 @@ export default areasIndex
 `
 
 writeFileSync(outPath, moduleSource, 'utf8')
+const formatResult = spawnSync('bun', ['x', 'oxfmt', '--write', outPath], {
+  stdio: 'inherit',
+})
+
+if (formatResult.status !== 0) {
+  throw new Error(`Failed to format ${outPath}`)
+}
+
 console.log(`Wrote ${outPath} (${areas.length} areas, DATA_ROOT=${runtimeRoot})`)
