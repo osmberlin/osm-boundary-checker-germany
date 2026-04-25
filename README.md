@@ -114,7 +114,6 @@ This is a **`package.json` chain** (not a monolithic script): `download:bkg && d
 ### Outputs per area (web UI)
 
 - **`output/comparison_table.json`** — Full latest comparison payload used by the area report.
-- **`output/unmatched.json`** — Latest unmatched-only payload for the unmatched route.
 - **`output/features/*.json`** — Feature detail payload shards for `/feature/<key>` (written only when `output.perFeatureJson=true`).
 - **`snapshots.json`** — Historic run summary index per area.
 - **`output/comparison.pmtiles`** — Vector tiles for main compare (official + OSM overlays and diff patches for matched/official-only rows).

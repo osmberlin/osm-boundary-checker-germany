@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { textPreview } from '../lib/textPreview'
-import type { ComparisonForReport, SnapshotsJson } from '../types/report'
+import type { ComparisonForReport, FeatureDetailShard, SnapshotsJson } from '../types/report'
 import { comparisonApiUrl, featureApiUrl, snapshotsUrl } from './paths'
 
 const reportMetricsSchema = z.object({
@@ -105,6 +105,10 @@ const comparisonForReportSchema = z.object({
   unmatchedOsm: z.array(unmatchedSchema),
 })
 
+const featureDetailShardSchema = z.object({
+  row: reportRowSchema,
+})
+
 const snapshotsSchema = z.object({
   area: z.string(),
   metricsCrs: z.string(),
@@ -149,11 +153,14 @@ export async function loadComparison(area: string): Promise<ComparisonForReport>
   return comparisonForReportSchema.parse(await readJsonStrict(url, r))
 }
 
-export async function loadFeature(area: string, featureKey: string): Promise<ComparisonForReport> {
+export async function loadFeatureShard(
+  area: string,
+  featureKey: string,
+): Promise<FeatureDetailShard> {
   const url = featureApiUrl(area, featureKey)
   const r = await fetch(url)
   if (!r.ok) throw new Error(`Failed to load ${url}: ${r.status}`)
-  return comparisonForReportSchema.parse(await readJsonStrict(url, r))
+  return featureDetailShardSchema.parse(await readJsonStrict(url, r))
 }
 
 export async function loadSnapshots(area: string): Promise<SnapshotsJson | null> {
@@ -167,21 +174,26 @@ export async function loadFeatureOrFallback(
   area: string,
   featureKey: string,
 ): Promise<ComparisonForReport> {
+  const comparison = await loadComparison(area)
   try {
-    return await loadFeature(area, featureKey)
-  } catch (error) {
-    const fallback = await loadComparison(area)
-    const matchedRow = fallback.rows.find((row) => row.canonicalMatchKey === featureKey)
+    const shard = await loadFeatureShard(area, featureKey)
+    return {
+      ...comparison,
+      rows: [shard.row],
+      unmatchedOsm: [],
+    }
+  } catch (shardError) {
+    const matchedRow = comparison.rows.find((row) => row.canonicalMatchKey === featureKey)
     if (matchedRow) {
       return {
-        ...fallback,
+        ...comparison,
         rows: [matchedRow],
         unmatchedOsm: [],
       }
     }
-    const hasUnmatched = fallback.unmatchedOsm.some((row) => row.canonicalMatchKey === featureKey)
-    if (hasUnmatched) return fallback
-    throw error
+    const hasUnmatched = comparison.unmatchedOsm.some((row) => row.canonicalMatchKey === featureKey)
+    if (hasUnmatched) return comparison
+    throw shardError
   }
 }
 

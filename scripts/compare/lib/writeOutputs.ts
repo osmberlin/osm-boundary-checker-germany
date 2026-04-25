@@ -276,24 +276,32 @@ type StaticComparisonPayload = {
     osm: SourceMetadataSide | null
   }
   ogcInspectSources?: OgcWfsInspectSource[]
-  rows: Array<{
-    canonicalMatchKey: string
-    nameLabel: string
-    category: 'matched' | 'official_only'
-    osmRelationId: string
-    metrics: CompareRow['metrics']
-    mapBbox: [number, number, number, number] | null
-    officialForEditPath: string | null
-    officialProperties: Record<string, unknown> | null
-    osmProperties: Record<string, unknown> | null
-  }>
-  unmatchedOsm: Array<{
-    canonicalMatchKey: string
-    nameLabel: string
-    osmRelationId: string
-    adminLevel: string | null
-    mapBbox: [number, number, number, number] | null
-  }>
+  rows: StaticReportRow[]
+  unmatchedOsm: StaticUnmatchedOsmRow[]
+}
+
+type StaticReportRow = {
+  canonicalMatchKey: string
+  nameLabel: string
+  category: 'matched' | 'official_only'
+  osmRelationId: string
+  metrics: CompareRow['metrics']
+  mapBbox: [number, number, number, number] | null
+  officialForEditPath: string | null
+  officialProperties: Record<string, unknown> | null
+  osmProperties: Record<string, unknown> | null
+}
+
+type StaticUnmatchedOsmRow = {
+  canonicalMatchKey: string
+  nameLabel: string
+  osmRelationId: string
+  adminLevel: string | null
+  mapBbox: [number, number, number, number] | null
+}
+
+type StaticFeatureShardPayload = {
+  row: StaticReportRow
 }
 
 function buildStaticPayloadBase(
@@ -328,7 +336,7 @@ function buildStaticPayloadBase(
 function comparisonRowToPayload(
   row: CompareRow,
   stemByKeyForOfficial: Map<string, string> | null,
-): StaticComparisonPayload['rows'][number] {
+): StaticReportRow {
   const editStem = stemByKeyForOfficial?.get(row.canonicalMatchKey)
   const officialForEditPath =
     row.officialGeometryWgs84 && editStem != null
@@ -347,9 +355,7 @@ function comparisonRowToPayload(
   }
 }
 
-function unmatchedRowToPayload(
-  row: UnmatchedOsmRow,
-): StaticComparisonPayload['unmatchedOsm'][number] {
+function unmatchedRowToPayload(row: UnmatchedOsmRow): StaticUnmatchedOsmRow {
   return {
     canonicalMatchKey: row.canonicalMatchKey,
     nameLabel: row.nameLabel,
@@ -360,7 +366,7 @@ function unmatchedRowToPayload(
 }
 
 function writeStaticJson(path: string, body: unknown): void {
-  writeFileSync(path, `${JSON.stringify(body, null, 2)}\n`, 'utf-8')
+  writeFileSync(path, `${JSON.stringify(body)}\n`, 'utf-8')
 }
 
 function updateSnapshotsFile(
@@ -535,12 +541,6 @@ export function writeOutputs(
     unmatchedOsm: payloadUnmatched,
   } satisfies StaticComparisonPayload)
 
-  writeStaticJson(join(outDir, 'unmatched.json'), {
-    ...base,
-    rows: [],
-    unmatchedOsm: payloadUnmatched,
-  } satisfies StaticComparisonPayload)
-
   const featureDir = join(outDir, 'features')
   rmSync(featureDir, { recursive: true, force: true })
   let featureShardCount = 0
@@ -549,10 +549,8 @@ export function writeOutputs(
     for (const row of payloadRows) {
       featureShardCount++
       writeStaticJson(join(featureDir, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
-        ...base,
-        rows: [row],
-        unmatchedOsm: [],
-      } satisfies StaticComparisonPayload)
+        row,
+      } satisfies StaticFeatureShardPayload)
     }
   }
 

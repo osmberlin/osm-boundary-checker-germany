@@ -43,7 +43,6 @@ function isUserFacing(pathAbs: string): boolean {
     pathAbs.includes('/output/comparison.pmtiles') ||
     pathAbs.includes('/output/unmatched.pmtiles') ||
     pathAbs.includes('/output/comparison_table.json') ||
-    pathAbs.includes('/output/unmatched.json') ||
     pathAbs.includes('/output/features/') ||
     pathAbs.includes('/output/official_for_edit/') ||
     pathAbs.endsWith('/snapshots.json')

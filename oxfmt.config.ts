@@ -18,6 +18,7 @@ export default defineConfig({
     '**/dist/**',
     '**/node_modules/**',
     'datasets/**/output/**',
+    'report/public/datasets/**/output/**',
     '**/*.pmtiles',
   ],
   sortImports: {

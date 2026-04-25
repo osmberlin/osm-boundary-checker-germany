@@ -121,3 +121,8 @@ export type SnapshotsJson = {
     }
   }[]
 }
+
+/** Slim per-feature shard at `output/features/<featureKey>.json`. */
+export type FeatureDetailShard = {
+  row: ReportRow
+}

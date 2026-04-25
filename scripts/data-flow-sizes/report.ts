@@ -35,11 +35,6 @@ const WRITE_OUTPUTS_RULES: Rule[] = [
     why: 'main area payload consumed by report area page',
   },
   {
-    pattern: 'output/unmatched.json',
-    behavior: 'preserved',
-    why: 'unmatched OSM payload consumed by report',
-  },
-  {
     pattern: 'output/features/*.json',
     behavior: 'preserved',
     why: 'feature-level API shards for detail route',
@@ -113,11 +108,6 @@ const PREPARE_SNAPSHOT_RULES: Rule[] = [
     why: 'primary area payload fetched by report',
   },
   {
-    pattern: 'output/unmatched.json',
-    behavior: 'copied_to_public',
-    why: 'unmatched payload fetched by report',
-  },
-  {
     pattern: 'output/features/',
     behavior: 'copied_to_public',
     why: 'feature route payload shards',
@@ -168,7 +158,6 @@ function classifyRuntimeDatasetPath(relPath: string): string {
   if (!area || !areaRel) return 'other'
   if (areaRel === 'snapshots.json') return 'snapshots'
   if (areaRel === 'output/comparison_table.json') return 'comparison_table_json'
-  if (areaRel === 'output/unmatched.json') return 'unmatched_json'
   if (areaRel === 'output/comparison.pmtiles') return 'comparison_pmtiles'
   if (areaRel === 'output/unmatched.pmtiles') return 'unmatched_pmtiles'
   if (areaRel.startsWith('output/features/')) return 'feature_shards'

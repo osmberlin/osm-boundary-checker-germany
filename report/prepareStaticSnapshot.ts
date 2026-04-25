@@ -54,10 +54,6 @@ async function main() {
     ) {
       comparisonTableCount += 1
     }
-    await copyIfExists(
-      join(areaSrc, 'output', 'unmatched.json'),
-      join(areaDest, 'output', 'unmatched.json'),
-    )
     await copyIfExists(join(areaSrc, 'output', 'features'), join(areaDest, 'output', 'features'))
     await copyIfExists(
       join(areaSrc, 'output', 'official_for_edit'),
