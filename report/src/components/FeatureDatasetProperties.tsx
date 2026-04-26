@@ -46,6 +46,11 @@ function DatasetPropertyCard({ properties }: { properties: Record<string, unknow
 export function FeatureDatasetProperties({ row }: { row: ReportRow }) {
   const official = forDisplay(row.officialProperties)
   const osm = forDisplay(row.osmProperties)
+  const osmRelationId = row.osmRelationId.trim()
+  const osmHistoryUrl =
+    osmRelationId === '' ? null : `https://www.openstreetmap.org/relation/${osmRelationId}/history`
+  const compactButtonClass =
+    'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap shadow-sm ring-1 ring-inset transition-colors bg-slate-100 text-slate-900 ring-slate-300 hover:bg-slate-200'
 
   return (
     <section
@@ -71,8 +76,20 @@ export function FeatureDatasetProperties({ row }: { row: ReportRow }) {
             </dd>
           </div>
           <div className="bg-red-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt className="text-sm/6 font-medium text-slate-200">
-              {de.feature.datasetOsmCardTitle}
+            <dt className="flex items-center justify-between gap-3">
+              <h3 className="text-sm/6 font-medium text-slate-200">
+                {de.feature.datasetOsmCardTitle}
+              </h3>
+              {osmHistoryUrl && (
+                <a
+                  href={osmHistoryUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className={compactButtonClass}
+                >
+                  {de.feature.datasetOsmOpenHistory}
+                </a>
+              )}
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <DatasetPropertyCard properties={osm} />

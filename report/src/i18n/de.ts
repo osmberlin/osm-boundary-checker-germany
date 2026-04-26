@@ -207,6 +207,7 @@ export const de = {
       'Eigenschaften der zusammengeführten GeoJSON-Objekte zum Zeitpunkt des letzten Vergleichs — ohne Live-Abfrage.',
     datasetOfficialCardTitle: 'Amtliche Daten',
     datasetOsmCardTitle: 'OSM-Daten',
+    datasetOsmOpenHistory: 'Auf osm.org anzeigen',
     datasetPropertiesEmpty: '—',
     datasetPropertiesLegacySnapshot:
       'Für diesen Snapshot sind keine gespeicherten Attribute verfügbar — Vergleich erneut ausführen.',
