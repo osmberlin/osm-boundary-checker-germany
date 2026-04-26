@@ -111,9 +111,11 @@ async function runCommand(
   command: string,
   args: string[],
   cwd: string,
+  step: string,
   extraEnv?: Record<string, string>,
 ): Promise<number> {
   return await new Promise<number>((resolve) => {
+    const startedAt = Date.now()
     const child = spawn(command, args, {
       cwd,
       stdio: 'inherit',
@@ -122,8 +124,23 @@ async function runCommand(
         ...extraEnv,
       },
     })
-    child.on('close', (code) => resolve(code ?? 1))
-    child.on('error', () => resolve(1))
+    // Keep long-running CI steps chatty so they are easier to debug and less likely to look stuck.
+    const heartbeat = setInterval(() => {
+      const elapsed = formatDuration(Date.now() - startedAt)
+      console.log(`[pipeline] ${step} still running (${elapsed})`)
+    }, 60_000)
+
+    child.on('close', (code, signal) => {
+      clearInterval(heartbeat)
+      if (signal) {
+        console.warn(`[pipeline] ${step} terminated by signal ${signal}`)
+      }
+      resolve(code ?? 1)
+    })
+    child.on('error', () => {
+      clearInterval(heartbeat)
+      resolve(1)
+    })
   })
 }
 
@@ -142,7 +159,7 @@ async function runStep(
   console.log(`[pipeline] starting ${step}`)
   appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step })
   writeState(statePath, { ...state, phase: step, updatedAt: nowIso() })
-  const exitCode = await runCommand(command, args, cwd, extraEnv)
+  const exitCode = await runCommand(command, args, cwd, step, extraEnv)
   const status: StepStatus = exitCode === 0 ? 'ok' : 'fail'
   const durationMs = Date.now() - t0
   appendJsonl(logPath, {
@@ -246,6 +263,7 @@ async function main() {
         'bun',
         ['run', 'compare:boundaries', '--', '--area', area],
         workspaceRoot,
+        stepName,
         { CI: '1' },
       )
       const durationMs = Date.now() - t0

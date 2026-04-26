@@ -21,6 +21,7 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
@@ -88,6 +89,7 @@ jobs:
           echo "Rust sidecar build duration: ${build_seconds}s" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Run nightly pipeline
+        timeout-minutes: 330
         run: bun run scripts/ci/run-nightly-pipeline-with-retry.ts
         env:
           CI: '1'
