@@ -12,6 +12,29 @@ import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { InfoNotice } from '../InfoNotice'
 
 const ComparisonMapShell = lazy(() => import('../map/ComparisonMapShell'))
+const DETAIL_MAP_MAX_BOUNDS_SCALE = 4
+
+function toDetailMapMaxBounds(
+  bbox: [number, number, number, number] | null,
+): [[number, number], [number, number]] | undefined {
+  if (!bbox) return undefined
+  const [west, south, east, north] = bbox
+  if (!(west < east && south < north)) return undefined
+
+  const paddingRatio = (DETAIL_MAP_MAX_BOUNDS_SCALE - 1) / 2
+  const lonPad = (east - west) * paddingRatio
+  const latPad = (north - south) * paddingRatio
+  const clampedWest = Math.max(-180, west - lonPad)
+  const clampedSouth = Math.max(-85, south - latPad)
+  const clampedEast = Math.min(180, east + lonPad)
+  const clampedNorth = Math.min(85, north + latPad)
+  if (!(clampedWest < clampedEast && clampedSouth < clampedNorth)) return undefined
+
+  return [
+    [clampedWest, clampedSouth],
+    [clampedEast, clampedNorth],
+  ]
+}
 
 type MapLayerControls = {
   showOfficial: boolean
@@ -44,6 +67,7 @@ export function FeatureDetailMapSection({
 }) {
   const hasRowMapTiles =
     row.category === 'unmatched_osm' ? data.hasUnmatchedPmtiles === true : data.hasPmtiles
+  const detailMaxBounds = toDetailMapMaxBounds(row.mapBbox)
 
   if (!hasRowMapTiles) {
     return <InfoNotice className="mt-4">{de.feature.noPmtiles}</InfoNotice>
@@ -77,6 +101,7 @@ export function FeatureDetailMapSection({
               view={{
                 featureId: row.canonicalMatchKey,
                 mapBbox: row.mapBbox,
+                maxBounds: detailMaxBounds,
                 urlMapView: mapView.mapView,
                 onMoveEndCommitUrl: mapView.commitMapViewFromMap,
               }}

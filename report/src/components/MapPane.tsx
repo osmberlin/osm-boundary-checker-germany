@@ -42,6 +42,8 @@ type MapPaneView = {
   /** Single-feature view; use `null` to show all features (overview). */
   featureId: string | null
   mapBbox: [number, number, number, number] | null
+  /** Optional camera clamp as [[west,south],[east,north]] in WGS84. */
+  maxBounds?: [[number, number], [number, number]]
   urlMapView: MapViewQueryValue | null
   onMoveEndCommitUrl: (viewState: ViewState) => void
 }
@@ -106,7 +108,7 @@ export default function MapPane({
   const skipNextMoveEndCommitRef = useRef(false)
   const onFeatureClick = interaction?.onFeatureClick
   const { primary, unmatched } = sources
-  const { featureId, mapBbox, urlMapView, onMoveEndCommitUrl } = view
+  const { featureId, mapBbox, maxBounds, urlMapView, onMoveEndCommitUrl } = view
   const { showOfficial, showOsm, showDiff } = layers
   const overpassGeojson = overlays?.overpassGeojson ?? null
   const wfsGeojson = overlays?.wfsGeojson ?? null
@@ -231,6 +233,7 @@ export default function MapPane({
         cursor: onFeatureClick ? 'pointer' : undefined,
       }}
       mapStyle={COMPARISON_BASEMAP_STYLE}
+      maxBounds={maxBounds}
       onLoad={onLoad}
       onMoveEnd={onMoveEnd}
       onClick={onFeatureClick ? onMapClick : undefined}
