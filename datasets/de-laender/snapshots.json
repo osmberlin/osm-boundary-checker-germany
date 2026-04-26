@@ -1,42 +1,5 @@
 {
   "area": "de-laender",
   "metricsCrs": "EPSG:25832",
-  "runs": [
-    {
-      "id": "2026-04-22",
-      "summary": {
-        "totalRows": 16,
-        "meanIou": 0.9994304117714004,
-        "matched": 16,
-        "unmatchedOsm": 12486
-      }
-    },
-    {
-      "id": "2026-04-24",
-      "summary": {
-        "totalRows": 16,
-        "meanIou": 0.9994872762144855,
-        "matched": 16,
-        "unmatchedOsm": 12486
-      }
-    },
-    {
-      "id": "2026-04-25",
-      "summary": {
-        "totalRows": 16,
-        "meanIou": 0.9994872762144855,
-        "matched": 16,
-        "unmatchedOsm": 12486
-      }
-    },
-    {
-      "id": "2026-04-26",
-      "summary": {
-        "totalRows": 16,
-        "meanIou": 0.9994872762144855,
-        "matched": 16,
-        "unmatchedOsm": 0
-      }
-    }
-  ]
+  "runs": []
 }

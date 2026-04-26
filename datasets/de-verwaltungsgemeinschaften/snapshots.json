@@ -1,42 +1,5 @@
 {
   "area": "de-verwaltungsgemeinschaften",
   "metricsCrs": "EPSG:25832",
-  "runs": [
-    {
-      "id": "2026-04-22",
-      "summary": {
-        "totalRows": 4599,
-        "meanIou": 0.9908049549784499,
-        "matched": 1291,
-        "unmatchedOsm": 11211
-      }
-    },
-    {
-      "id": "2026-04-24",
-      "summary": {
-        "totalRows": 4599,
-        "meanIou": 0.9909074274419779,
-        "matched": 1291,
-        "unmatchedOsm": 11211
-      }
-    },
-    {
-      "id": "2026-04-25",
-      "summary": {
-        "totalRows": 4599,
-        "meanIou": 0.9909074274419779,
-        "matched": 1291,
-        "unmatchedOsm": 11211
-      }
-    },
-    {
-      "id": "2026-04-26",
-      "summary": {
-        "totalRows": 4599,
-        "meanIou": 0.9905471185312779,
-        "matched": 1185,
-        "unmatchedOsm": 12
-      }
-    }
-  ]
+  "runs": []
 }

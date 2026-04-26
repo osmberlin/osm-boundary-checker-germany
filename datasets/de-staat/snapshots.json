@@ -1,42 +1,5 @@
 {
   "area": "de-staat",
   "metricsCrs": "EPSG:25832",
-  "runs": [
-    {
-      "id": "2026-04-22",
-      "summary": {
-        "totalRows": 1,
-        "meanIou": 0,
-        "matched": 0,
-        "unmatchedOsm": 0
-      }
-    },
-    {
-      "id": "2026-04-24",
-      "summary": {
-        "totalRows": 1,
-        "meanIou": 0.9992766417339967,
-        "matched": 1,
-        "unmatchedOsm": 0
-      }
-    },
-    {
-      "id": "2026-04-25",
-      "summary": {
-        "totalRows": 1,
-        "meanIou": 0.9992766417339967,
-        "matched": 1,
-        "unmatchedOsm": 0
-      }
-    },
-    {
-      "id": "2026-04-26",
-      "summary": {
-        "totalRows": 1,
-        "meanIou": 0.9992766417339967,
-        "matched": 1,
-        "unmatchedOsm": 0
-      }
-    }
-  ]
+  "runs": []
 }
