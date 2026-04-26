@@ -14,4 +14,8 @@
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },
+  "osm": {
+    // Limit Länder matching to OSM state-level boundaries.
+    "adminLevels": ["4"],
+  },
 }

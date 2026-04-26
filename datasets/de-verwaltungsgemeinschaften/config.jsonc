@@ -13,4 +13,8 @@
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },
+  "osm": {
+    // Verwaltungsgemeinschaften in OSM are expected at admin_level=7.
+    "adminLevels": ["7"],
+  },
 }

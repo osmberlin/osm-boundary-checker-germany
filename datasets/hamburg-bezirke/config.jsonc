@@ -1,9 +1,9 @@
 {
   "displayName": "Hamburg Bezirke",
   "titlePrefix": "Bezirk",
-  "osmProfile": "admin_rs",
+  "osmProfile": "admin_name",
 
-  // Hamburg statistical Bezirke (OGC API) — no RS in source; map BezirkNr → OSM Schlüssel.
+  // Hamburg statistical Bezirke (OGC API) — compare by Bezirk name to OSM admin_level=9 names.
   "official": {
     "path": "source/official.fgb",
     "download": {
@@ -15,29 +15,20 @@
     "source": {
       "sourcePublicUrl": "https://suche.transparenz.hamburg.de/dataset/regionalstatistische-daten-der-bezirke-hamburgs-und-hamburg-insgesamt17",
     },
-    "keyTransposition": {
-      "targetKey": "de:regionalschluessel",
-      // Placeholder 12-digit keys — align with OSM once admin_level=9 relations carry `de:regionalschluessel`.
-      "map": {
-        "1": "020000000001",
-        "2": "020000000002",
-        "3": "020000000003",
-        "4": "020000000004",
-        "5": "020000000005",
-        "6": "020000000006",
-        "7": "020000000007",
-      },
-    },
   },
   "idNormalization": {
-    "preset": "regional-12",
+    "preset": "text",
   },
   "metricsCrs": "EPSG:25832",
 
   "compare": {
-    "officialMatchProperty": "bezirk_nr",
+    "officialMatchProperty": "bezirk",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
     "osmScopeFilter": "centroid_in_official_coverage",
+  },
+  "osm": {
+    // Hamburg Bezirke are expected at admin_level=9.
+    "adminLevels": ["9"],
   },
 }

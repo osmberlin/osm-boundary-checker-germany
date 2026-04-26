@@ -112,7 +112,11 @@ function parseOsmConfig(areaLabel: string, config: DatasetConfig): OsmConfig {
     osmConfig?.ignoreRelationIds,
     'osm.ignoreRelationIds',
   )
-  const adminLevels = parseNumericIdStringArray(areaLabel, osmConfig?.adminLevels, 'osm.adminLevels')
+  const adminLevels = parseNumericIdStringArray(
+    areaLabel,
+    osmConfig?.adminLevels,
+    'osm.adminLevels',
+  )
 
   return {
     profileId: config.osmProfile,

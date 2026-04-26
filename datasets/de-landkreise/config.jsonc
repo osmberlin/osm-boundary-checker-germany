@@ -13,6 +13,28 @@
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },
+  "osm": {
+    // Kreise are typically admin_level=6; include 4 for Stadtstaaten handling.
+    "adminLevels": ["6", "4"],
+    // Exclude non-city-state Länder polygons at admin_level=4.
+    // Keep Berlin (62422) and Hamburg (62782) because they map to Kreis-like RS keys.
+    "ignoreRelationIds": [
+      "51529",
+      "62771",
+      "62718",
+      "62761",
+      "62650",
+      "62341",
+      "62611",
+      "2145268",
+      "62372",
+      "62504",
+      "28322",
+      "62467",
+      "62607",
+      "62366",
+    ],
+  },
 
   "ogcInspectSources": [
     {

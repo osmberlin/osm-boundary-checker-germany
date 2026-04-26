@@ -13,4 +13,8 @@
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },
+  "osm": {
+    // Regierungsbezirke in OSM are expected at admin_level=5.
+    "adminLevels": ["5"],
+  },
 }
