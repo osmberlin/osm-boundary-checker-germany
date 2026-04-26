@@ -97,7 +97,7 @@ export function useFeatureDetailWfs(featureKey: string) {
           id: feature.id,
           geometry: feature.geometry,
           properties: {
-            ...(feature.properties ?? {}),
+            ...feature.properties,
             __wfsLabel: label,
           },
         })
