@@ -4,11 +4,12 @@ import { appendFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { areaConfigPathForDisplay, loadAreaConfig } from '../shared/areaConfig.ts'
 import { parseAreaDisplayName } from '../shared/areaConfigMetadata.ts'
+import type { ComparisonFilterConfigSummary } from '../shared/comparisonPayload.ts'
 import type { DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
-import { toComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
+import { requireComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
 import { readAreaSourceMetadataFile } from '../shared/sourceMetadataIo.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 import { type ComparePhaseLogger, runCompare } from './lib/compare.ts'
@@ -38,6 +39,23 @@ function overpassBoundaryTagFromMatchProperty(matchProperty: string): OverpassBo
 
 function nowIso(): string {
   return new Date().toISOString()
+}
+
+function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfigSummary {
+  return {
+    officialMatchProperty: configRaw.compare.officialMatchProperty,
+    bboxFilter: configRaw.compare.bboxFilter,
+    ...(configRaw.compare.bboxBufferDegrees !== undefined
+      ? { bboxBufferDegrees: configRaw.compare.bboxBufferDegrees }
+      : {}),
+    osmScopeFilter: configRaw.compare.osmScopeFilter,
+    ...(configRaw.osm?.ignoreRelationIds?.length
+      ? { ignoreRelationIds: [...configRaw.osm.ignoreRelationIds] }
+      : {}),
+    ...(configRaw.officialMode === 'direct' && configRaw.official.extractLayer?.trim()
+      ? { officialExtractLayer: configRaw.official.extractLayer.trim() }
+      : {}),
+  }
 }
 
 function createInternalPhaseLogger(
@@ -106,7 +124,8 @@ async function main() {
       configRaw,
       phaseLogger,
     )
-    const meta = toComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
+    const meta = requireComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
+    const filterConfigSummary = toFilterConfigSummary(configRaw)
     const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
     const overpassBoundaryTag = overpassBoundaryTagFromMatchProperty(config.osm.matchProperty)
     const displayName = parseAreaDisplayName(area, configRaw)
@@ -120,6 +139,7 @@ async function main() {
       metricsCrs,
       overpassBoundaryTag,
       meta,
+      filterConfigSummary,
       ogcInspectSources,
       phaseLogger,
     )

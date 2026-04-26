@@ -2,22 +2,20 @@ import { z } from 'zod'
 
 export const SOURCE_METADATA_FILE = 'metadata.json'
 
-const optionalTrimmedString = z.preprocess((value) => {
-  if (typeof value !== 'string') return value
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : undefined
-}, z.string().min(1).optional())
+const requiredTrimmedString = z.string().trim().min(1)
+const requiredTrimmedUrl = z.string().trim().pipe(z.url())
 
-const requiredTrimmedString = z.preprocess((value) => {
-  if (typeof value !== 'string') return value
-  return value.trim()
-}, z.string().min(1))
+const emptyStringToUndefined = z
+  .string()
+  .trim()
+  .length(0)
+  .transform(() => undefined)
 
-const unknownDefaultString = z.preprocess((value) => {
-  if (typeof value !== 'string') return value
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : undefined
-}, z.string().min(1).default('unknown'))
+const optionalTrimmedString = z.union([requiredTrimmedString, emptyStringToUndefined]).optional()
+
+const optionalTrimmedUrl = z.union([requiredTrimmedUrl, emptyStringToUndefined]).optional()
+
+const unknownDefaultString = optionalTrimmedString.transform((value) => value ?? 'unknown')
 
 export const sourceDateSourceSchema = z
   .enum([
@@ -67,20 +65,20 @@ const sourceMetadataCommonSideSchema = z.object({
   dataset: optionalTrimmedString,
   layer: optionalTrimmedString,
   /** Public dataset page where download/API links are documented. */
-  sourcePublicUrl: requiredTrimmedString,
+  sourcePublicUrl: requiredTrimmedUrl,
   /** Direct machine-readable download/API URL used by the pipeline. */
-  sourceDownloadUrl: requiredTrimmedString,
+  sourceDownloadUrl: requiredTrimmedUrl,
   note: optionalTrimmedString,
   licenseId: datasetLicenseIdSchema.default('unknown'),
   licenseLabel: unknownDefaultString,
-  licenseSourceUrl: optionalTrimmedString,
+  licenseSourceUrl: optionalTrimmedUrl,
   /** Optional licence or terms line for attribution (set in source/metadata.json when known). */
   license: optionalTrimmedString,
 })
 /** One official-data side in `source/metadata.json` (includes OSM-compatibility assessment). */
 export const sourceMetadataSideSchema = sourceMetadataCommonSideSchema.extend({
   osmCompatibility: osmLicenseCompatibilitySchema.default('unknown'),
-  osmCompatibilitySourceUrl: optionalTrimmedString,
+  osmCompatibilitySourceUrl: optionalTrimmedUrl,
   osmCompatibilityComment: optionalTrimmedString,
 })
 export type SourceMetadataSide = z.infer<typeof sourceMetadataSideSchema>
@@ -97,30 +95,25 @@ export type AreaSourceMetadataFile = z.infer<typeof areaSourceMetadataFileSchema
 
 /** Embedded in `comparison_table.json` for the report UI. */
 export const comparisonSourceMetadataSchema = z.object({
-  official: sourceMetadataSideSchema.nullable(),
-  osm: osmSourceMetadataSideSchema.nullable(),
+  official: sourceMetadataSideSchema,
+  osm: osmSourceMetadataSideSchema,
 })
 export type ComparisonSourceMetadata = z.infer<typeof comparisonSourceMetadataSchema>
 
-function sideHasValues(s: Record<string, unknown> | undefined): boolean {
-  if (!s) return false
-  for (const v of Object.values(s)) {
-    if (v == null) continue
-    if (String(v).trim() !== '') return true
+export function requireComparisonSourceMetadata(
+  file: AreaSourceMetadataFile | null,
+): ComparisonSourceMetadata {
+  if (!file?.official || !file?.osm) {
+    throw new Error('source/metadata.json must contain both `official` and `osm` sections')
   }
-  return false
+  return {
+    official: file.official,
+    osm: file.osm,
+  }
 }
 
-export function toComparisonSourceMetadata(
-  file: AreaSourceMetadataFile | null,
-): ComparisonSourceMetadata | null {
-  if (!file) return null
-  const officialSide = file.official
-  const osmSide = file.osm
-  const official = officialSide !== undefined && sideHasValues(officialSide) ? officialSide : null
-  const osm = osmSide !== undefined && sideHasValues(osmSide) ? osmSide : null
-  if (!official && !osm) return null
-  return { official, osm }
+export function toComparisonSourceMetadata(file: AreaSourceMetadataFile): ComparisonSourceMetadata {
+  return requireComparisonSourceMetadata(file)
 }
 
 export function mergeAreaSourceMetadata(

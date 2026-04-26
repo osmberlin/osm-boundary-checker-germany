@@ -34,8 +34,17 @@ export const unmatchedOsmRowSchema = z.object({
 })
 
 export const comparisonSourceMetadataEmbeddedSchema = z.object({
-  official: sourceMetadataSideSchema.nullable(),
-  osm: osmSourceMetadataSideSchema.nullable(),
+  official: sourceMetadataSideSchema,
+  osm: osmSourceMetadataSideSchema,
+})
+
+export const comparisonFilterConfigSummarySchema = z.object({
+  officialMatchProperty: z.string().trim().min(1),
+  bboxFilter: z.enum(['none', 'official_bbox_overlap']),
+  bboxBufferDegrees: z.number().finite().nonnegative().optional(),
+  osmScopeFilter: z.enum(['none', 'centroid_in_official_coverage']),
+  ignoreRelationIds: z.array(z.string().trim().min(1)).optional(),
+  officialExtractLayer: z.string().trim().min(1).optional(),
 })
 
 export const comparisonForReportSchema = z.object({
@@ -48,7 +57,8 @@ export const comparisonForReportSchema = z.object({
   hasPmtiles: z.boolean(),
   hasUnmatchedPmtiles: z.boolean().optional(),
   tippecanoeLayer: z.string(),
-  sourceMetadata: comparisonSourceMetadataEmbeddedSchema.optional(),
+  sourceMetadata: comparisonSourceMetadataEmbeddedSchema,
+  filterConfigSummary: comparisonFilterConfigSummarySchema.optional(),
   ogcInspectSources: z.array(ogcWfsInspectSourceSchema).optional(),
   rows: z.array(reportRowSchema),
   unmatchedOsm: z.array(unmatchedOsmRowSchema),
@@ -78,5 +88,6 @@ export type ReportMetrics = z.infer<typeof reportMetricsSchema>
 export type ReportRow = z.infer<typeof reportRowSchema>
 export type UnmatchedOsmReportRow = z.infer<typeof unmatchedOsmRowSchema>
 export type ComparisonForReport = z.infer<typeof comparisonForReportSchema>
+export type ComparisonFilterConfigSummary = z.infer<typeof comparisonFilterConfigSummarySchema>
 export type FeatureDetailShard = z.infer<typeof featureDetailShardSchema>
 export type SnapshotsJson = z.infer<typeof snapshotsSchema>

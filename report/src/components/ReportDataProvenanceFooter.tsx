@@ -2,7 +2,7 @@ import { de } from '../i18n/de'
 import { EM_DASH } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
-import type { ComparisonForReport } from '../types/report'
+import type { ComparisonFilterConfigSummary, ComparisonForReport } from '../types/report'
 
 export type ReportDataProvenanceFooterProps = {
   data: ComparisonForReport
@@ -10,42 +10,182 @@ export type ReportDataProvenanceFooterProps = {
   hideFreshnessSection?: boolean
 }
 
-function SourceLinks({
-  publicUrl,
-  downloadUrl,
+function hostFromHref(url: string): string {
+  const host = new URL(url).host.trim().toLowerCase()
+  return host.startsWith('www.') ? host.slice(4) : host
+}
+
+function datasetFromDownloadUrl(url: string): string | undefined {
+  const candidate = new URL(url).pathname.split('/').filter(Boolean).at(-1)?.trim()
+  return candidate && candidate.length > 0 ? candidate : undefined
+}
+
+function deriveDownloadDetails(
+  url: string,
+  dataset: string | undefined,
+  layer: string | undefined,
+): string[] {
+  const p = de.provenance
+  const details: string[] = []
+  const parsed = new URL(url)
+  const params = parsed.searchParams
+  const service = params.get('service')?.trim().toUpperCase()
+  const request = params.get('request')?.trim().toUpperCase()
+  const typeNames = params.get('typeNames')?.trim()
+  const outputFormat = params.get('outputFormat')?.trim().toLowerCase()
+  const pathLc = parsed.pathname.toLowerCase()
+  const isWfs =
+    service === 'WFS' || request === 'GETFEATURE' || Boolean(typeNames) || pathLc.includes('/wfs')
+  if (isWfs) details.push(p.directDownloadDetails.wfs)
+  if (outputFormat?.includes('json')) details.push(p.directDownloadDetails.geojson)
+  if (outputFormat?.includes('gml')) details.push(p.directDownloadDetails.gml)
+  if (pathLc.endsWith('.pbf') || (dataset ?? '').toLowerCase().includes('.osm.pbf')) {
+    details.push(p.directDownloadDetails.pbf)
+  }
+
+  if (dataset?.trim()) details.push(dataset.trim())
+  if (layer?.trim()) details.push(`layer=${layer.trim()}`)
+  return Array.from(new Set(details))
+}
+
+function DataLinkItem({ label, url, details }: { label: string; url: string; details?: string[] }) {
+  return (
+    <li>
+      <a
+        className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+      >
+        ${label}: ${hostFromHref(url)}
+      </a>
+      {details?.length ? <span className="text-slate-500"> ({details.join(', ')})</span> : null}
+    </li>
+  )
+}
+
+function SourceLinksList({
+  sourcePublicUrl,
+  sourceDownloadUrl,
+  sourceDownloadDetails,
 }: {
-  publicUrl: string | undefined
-  downloadUrl: string | undefined
+  sourcePublicUrl: string | undefined
+  sourceDownloadUrl: string | undefined
+  sourceDownloadDetails: string[]
 }) {
   const p = de.provenance
-  const publicHref = publicUrl?.trim() || undefined
-  const downloadHref = downloadUrl?.trim() || undefined
-  if (!publicHref && !downloadHref) return null
-
+  if (!sourcePublicUrl && !sourceDownloadUrl) {
+    return <li className="text-slate-500">{p.noSourceData}</li>
+  }
   return (
-    <p className="mb-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-      {publicHref ? (
-        <a
-          className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
-          href={publicHref}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {p.sourcePublicLinkLabel}
-        </a>
+    <>
+      {sourcePublicUrl ? <DataLinkItem label={p.dataSourceLabel} url={sourcePublicUrl} /> : null}
+      {sourceDownloadUrl ? (
+        <DataLinkItem
+          label={p.directDownloadLabel}
+          url={sourceDownloadUrl}
+          details={sourceDownloadDetails}
+        />
       ) : null}
-      {downloadHref ? (
-        <a
-          className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
-          href={downloadHref}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {p.sourceDownloadLinkLabel}
-        </a>
-      ) : null}
-    </p>
+    </>
   )
+}
+
+function FilterItem({ code, description }: { code: string; description: string }) {
+  return (
+    <li>
+      <span className="block">
+        <code className="break-all text-slate-500">{code}</code>
+        <span className="text-slate-500">:</span>
+      </span>
+      <span className="block">{description}</span>
+    </li>
+  )
+}
+
+function officialFilterItems(filter: ComparisonFilterConfigSummary | undefined) {
+  const p = de.provenance
+  if (!filter) {
+    return [
+      <li key="no-config" className="text-slate-500">
+        {p.noFilterConfig}
+      </li>,
+    ]
+  }
+  const items = [
+    <FilterItem
+      key="official-match-property"
+      code={`officialMatchProperty=${filter.officialMatchProperty}`}
+      description={p.filterDescriptions.officialMatchProperty(filter.officialMatchProperty)}
+    />,
+    <FilterItem
+      key="bbox-filter"
+      code={`bboxFilter=${filter.bboxFilter}`}
+      description={p.filterDescriptions.bboxFilter[filter.bboxFilter]}
+    />,
+  ]
+  if (filter.bboxBufferDegrees !== undefined) {
+    items.push(
+      <FilterItem
+        key="bbox-buffer"
+        code={`bboxBufferDegrees=${filter.bboxBufferDegrees}`}
+        description={p.filterDescriptions.bboxBufferDegrees(filter.bboxBufferDegrees)}
+      />,
+    )
+  }
+  if (filter.officialExtractLayer?.trim()) {
+    items.push(
+      <FilterItem
+        key="official-extract-layer"
+        code={`officialExtractLayer=${filter.officialExtractLayer.trim()}`}
+        description="Dieser GDAL/WFS-Layer wird aus der amtlichen Quelle extrahiert."
+      />,
+    )
+  }
+  return items
+}
+
+function osmFilterItems(
+  filter: ComparisonFilterConfigSummary | undefined,
+  osmNote: string | undefined,
+) {
+  const p = de.provenance
+  if (!filter && !osmNote?.trim()) {
+    return [
+      <li key="no-config" className="text-slate-500">
+        {p.noFilterConfig}
+      </li>,
+    ]
+  }
+  const items = []
+  if (filter) {
+    items.push(
+      <FilterItem
+        key="osm-scope-filter"
+        code={`osmScopeFilter=${filter.osmScopeFilter}`}
+        description={p.filterDescriptions.osmScopeFilter[filter.osmScopeFilter]}
+      />,
+    )
+    if ((filter.ignoreRelationIds?.length ?? 0) > 0) {
+      const ids = filter.ignoreRelationIds!.join(',')
+      items.push(
+        <FilterItem
+          key="ignore-relations"
+          code={`ignoreRelationIds=${ids}`}
+          description={p.filterDescriptions.ignoreRelationIds}
+        />,
+      )
+    }
+  }
+  if (osmNote?.trim()) {
+    items.push(
+      <li key="osm-note">
+        <span className="text-slate-500">{p.osmFilterNoteTitle}: </span>
+        <span>{osmNote.trim()}</span>
+      </li>,
+    )
+  }
+  return items
 }
 
 function DateLine({ label, abs, rel }: { label: string; abs: string; rel: string }) {
@@ -71,25 +211,25 @@ export function ReportDataProvenanceFooter({
   hideFreshnessSection = false,
 }: ReportDataProvenanceFooterProps) {
   const p = de.provenance
-  const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
-  const officialFresh = sourceStatLines(
-    data.sourceMetadata?.official?.downloadedAt,
-    data.sourceMetadata?.official != null,
-  )
-  const officialUpdatedFresh = optionalSourceStatLines(
-    data.sourceMetadata?.official?.sourceUpdatedAt,
-  )
-  const officialPublishedFresh = optionalSourceStatLines(
-    data.sourceMetadata?.official?.sourcePublishedAt,
-  )
-  const osmFresh = sourceStatLines(
-    data.sourceMetadata?.osm?.downloadedAt,
-    data.sourceMetadata?.osm != null,
-  )
+  const { official, osm } = data.sourceMetadata
+  const filter = data.filterConfigSummary
 
-  const off = data.sourceMetadata?.official
-  const osm = data.sourceMetadata?.osm
-  const officialMeta = [off?.provider, off?.dataset, off?.layer].filter(Boolean).join(' · ')
+  const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
+  const officialFresh = sourceStatLines(official.downloadedAt, true)
+  const officialUpdatedFresh = optionalSourceStatLines(official.sourceUpdatedAt)
+  const officialPublishedFresh = optionalSourceStatLines(official.sourcePublishedAt)
+  const osmFresh = sourceStatLines(osm.downloadedAt, true)
+
+  const officialDownloadDetails = deriveDownloadDetails(
+    official.sourceDownloadUrl,
+    official.dataset,
+    filter?.officialExtractLayer ?? official.layer,
+  )
+  const osmDownloadDetails = deriveDownloadDetails(
+    osm.sourceDownloadUrl,
+    osm.dataset ?? datasetFromDownloadUrl(osm.sourceDownloadUrl),
+    undefined,
+  )
 
   return (
     <section
@@ -101,7 +241,7 @@ export function ReportDataProvenanceFooter({
       </div>
 
       {!hideFreshnessSection ? (
-        <div className="space-y-1 border-t border-b border-slate-700 px-4 py-6 sm:px-6">
+        <div className="space-y-3 border-t border-b border-slate-700 px-4 py-6 sm:px-6">
           <DateLine
             label={p.reportCreatedLabel}
             abs={reportFresh.absoluteLine || EM_DASH}
@@ -140,21 +280,25 @@ export function ReportDataProvenanceFooter({
             <dt>
               <h3 className="text-sm/6 font-medium text-slate-200">{p.officialHeading}</h3>
             </dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <p className="mb-2 text-pretty">{p.officialLead}</p>
-              {officialMeta ? (
-                <p className="mb-2 text-slate-500">
-                  {p.officialMetaPrefix}: {officialMeta}
-                </p>
-              ) : null}
-              <SourceLinks publicUrl={off?.sourcePublicUrl} downloadUrl={off?.sourceDownloadUrl} />
-              {off?.license?.trim() ? (
-                <p className="mb-4 text-xs text-slate-500">
-                  {p.licenseLabel}: {off.license.trim()}
-                </p>
-              ) : (
-                <div className="mb-4" />
-              )}
+            <dd className="mt-3 md:col-span-2 md:mt-0">
+              <ul className="list-disc space-y-2 pl-5 text-slate-300 marker:text-slate-500">
+                <SourceLinksList
+                  sourcePublicUrl={official.sourcePublicUrl}
+                  sourceDownloadUrl={official.sourceDownloadUrl}
+                  sourceDownloadDetails={officialDownloadDetails}
+                />
+              </ul>
+            </dd>
+          </div>
+
+          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <dt>
+              <h3 className="text-sm/6 font-medium text-slate-200">{p.officialFilterHeading}</h3>
+            </dt>
+            <dd className="mt-3 md:col-span-2 md:mt-0">
+              <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+                {officialFilterItems(filter)}
+              </ul>
             </dd>
           </div>
 
@@ -162,25 +306,25 @@ export function ReportDataProvenanceFooter({
             <dt>
               <h3 className="text-sm/6 font-medium text-slate-200">{p.osmHeading}</h3>
             </dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <p className="mb-2 text-pretty">{p.osmLead}</p>
-              <SourceLinks publicUrl={osm?.sourcePublicUrl} downloadUrl={osm?.sourceDownloadUrl} />
+            <dd className="mt-3 md:col-span-2 md:mt-0">
+              <ul className="list-disc space-y-2 pl-5 text-slate-300 marker:text-slate-500">
+                <SourceLinksList
+                  sourcePublicUrl={osm.sourcePublicUrl}
+                  sourceDownloadUrl={osm.sourceDownloadUrl}
+                  sourceDownloadDetails={osmDownloadDetails}
+                />
+              </ul>
             </dd>
           </div>
+
           <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
             <dt>
-              <h3 className="text-sm/6 font-medium text-slate-200">{p.osmFilterTitle}</h3>
+              <h3 className="text-sm/6 font-medium text-slate-200">{p.osmFilterHeading}</h3>
             </dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <p className="text-pretty">{p.osmFilterBody}</p>
-              {osm?.note?.trim() ? (
-                <>
-                  <p className="mt-4 mb-1 font-medium text-slate-300">{p.osmFilterNoteTitle}</p>
-                  <pre className="mb-0 overflow-x-auto rounded border border-slate-800 bg-slate-950 p-3 font-mono text-xs break-words whitespace-pre-wrap text-slate-300">
-                    {osm.note.trim()}
-                  </pre>
-                </>
-              ) : null}
+            <dd className="mt-3 md:col-span-2 md:mt-0">
+              <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+                {osmFilterItems(filter, osm.note)}
+              </ul>
             </dd>
           </div>
         </dl>

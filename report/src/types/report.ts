@@ -43,6 +43,15 @@ export type SourceMetadataSide = {
   license?: string
 }
 
+export type ComparisonFilterConfigSummary = {
+  officialMatchProperty: string
+  bboxFilter: 'none' | 'official_bbox_overlap'
+  bboxBufferDegrees?: number
+  osmScopeFilter: 'none' | 'centroid_in_official_coverage'
+  ignoreRelationIds?: string[]
+  officialExtractLayer?: string
+}
+
 /** WFS source for live property loading (mirrors `ogcInspectSources` in area config). */
 export type OgcWfsInspectSource = {
   id: string
@@ -100,11 +109,13 @@ export type ComparisonForReport = {
   hasUnmatchedPmtiles?: boolean
   /** MapLibre `source-layer` name (matches tippecanoe `-l`). */
   tippecanoeLayer: string
-  /** Present when `<area>/source/metadata.json` was read at compare time. */
-  sourceMetadata?: {
-    official: SourceMetadataSide | null
-    osm: SourceMetadataSide | null
+  /** Always embedded from `<area>/source/metadata.json` at compare time. */
+  sourceMetadata: {
+    official: SourceMetadataSide
+    osm: SourceMetadataSide
   }
+  /** Optional compact compare filter summary from `<area>/config.jsonc`. */
+  filterConfigSummary?: ComparisonFilterConfigSummary
   /** From optional `ogcInspectSources` in area config (compare embeds a copy). */
   ogcInspectSources?: OgcWfsInspectSource[]
   rows: ReportRow[]

@@ -1,11 +1,13 @@
 import { z } from 'zod'
 import { datasetLicenseIdSchema, osmLicenseCompatibilitySchema } from './sourceMetadata.ts'
 
-const trimmedOptionalString = z.preprocess((value) => {
-  if (typeof value !== 'string') return value
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : undefined
-}, z.string().optional())
+const trimmedNonEmptyString = z.string().trim().min(1)
+const emptyStringToUndefined = z
+  .string()
+  .trim()
+  .length(0)
+  .transform(() => undefined)
+const trimmedOptionalString = z.union([trimmedNonEmptyString, emptyStringToUndefined]).optional()
 
 const officialSourceFactsSchema = z
   .object({

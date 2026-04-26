@@ -3,11 +3,13 @@
  */
 import { z } from 'zod'
 
-const trimmedOptionalString = z.preprocess((value) => {
-  if (typeof value !== 'string') return value
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : undefined
-}, z.string().optional())
+const trimmedNonEmptyString = z.string().trim().min(1)
+const emptyStringToUndefined = z
+  .string()
+  .trim()
+  .length(0)
+  .transform(() => undefined)
+const trimmedOptionalString = z.union([trimmedNonEmptyString, emptyStringToUndefined]).optional()
 
 export const ogcWfsInspectSourceSchema = z.object({
   id: z.string().trim().min(1),

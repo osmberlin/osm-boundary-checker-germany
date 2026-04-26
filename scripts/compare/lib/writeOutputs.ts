@@ -4,6 +4,7 @@ import { area, bbox, featureCollection } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
 import type {
+  ComparisonFilterConfigSummary,
   ComparisonForReport,
   FeatureDetailShard,
   ReportRow as StaticReportRow,
@@ -62,13 +63,13 @@ function compactOfficialSource(
 function writeOfficialForEditGeojson(
   outDir: string,
   rows: CompareRow[],
-  sourceMetadata: ComparisonSourceMetadata | null,
+  sourceMetadata: ComparisonSourceMetadata,
   stemByKey: Map<string, string> | null,
 ) {
   const dir = join(outDir, OFFICIAL_FOR_EDIT_DIR)
   rmSync(dir, { recursive: true, force: true })
   if (stemByKey == null || stemByKey.size === 0) return
-  const officialMeta = compactOfficialSource(sourceMetadata?.official ?? null)
+  const officialMeta = compactOfficialSource(sourceMetadata.official)
   mkdirSync(dir, { recursive: true })
   for (const r of rows) {
     const geom = r.officialGeometryWgs84
@@ -279,7 +280,8 @@ function buildStaticPayloadBase(
   overpassBoundaryTag: OverpassBoundaryTag,
   hasPmtiles: boolean,
   hasUnmatchedPmtiles: boolean,
-  sourceMetadata: ComparisonSourceMetadata | null,
+  sourceMetadata: ComparisonSourceMetadata,
+  filterConfigSummary: ComparisonFilterConfigSummary | null,
   ogcInspectSources: OgcWfsInspectSource[],
 ): Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> {
   const out: Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> = {
@@ -292,13 +294,12 @@ function buildStaticPayloadBase(
     hasPmtiles,
     hasUnmatchedPmtiles,
     tippecanoeLayer: TIPPECANOE_LAYER,
+    sourceMetadata: {
+      official: sourceMetadata.official,
+      osm: sourceMetadata.osm,
+    },
   }
-  if (sourceMetadata != null) {
-    out.sourceMetadata = {
-      official: sourceMetadata.official ?? null,
-      osm: sourceMetadata.osm ?? null,
-    }
-  }
+  if (filterConfigSummary != null) out.filterConfigSummary = filterConfigSummary
   if (ogcInspectSources.length > 0) out.ogcInspectSources = ogcInspectSources
   return out
 }
@@ -399,7 +400,8 @@ export function writeOutputs(
   unmatchedOsm: UnmatchedOsmRow[],
   metricsCrs: string,
   overpassBoundaryTag: OverpassBoundaryTag,
-  sourceMetadata: ComparisonSourceMetadata | null = null,
+  sourceMetadata: ComparisonSourceMetadata,
+  filterConfigSummary: ComparisonFilterConfigSummary | null = null,
   ogcInspectSources: OgcWfsInspectSource[] = [],
   phaseLogger?: ComparePhaseLogger,
 ): { snapshotId: string } {
@@ -506,6 +508,7 @@ export function writeOutputs(
     hasPmtiles,
     hasUnmatchedPmtiles,
     sourceMetadata,
+    filterConfigSummary,
     ogcInspectSources,
   )
   const payloadRows = rows.map((row) => comparisonRowToPayload(row, stemByKeyForOfficial))

@@ -34,20 +34,22 @@ export const de = {
 
   /** In-page block: data freshness, source URLs, OSM pipeline (not the global AppFooter). */
   provenance: {
-    sectionAria: 'Datenstand, Quellen und Filterung',
-    title: 'Datenstand und Quellen',
+    sectionAria: 'Datenquellen und Filterung',
+    title: 'Datenquellen',
     reportCreatedLabel: 'Auswertung erstellt',
     officialDownloadLabel: 'Amtliche Geometrien (Download/Stand)',
     officialSourceUpdatedLabel: 'Amtliche Quelle aktualisiert',
     officialSourcePublishedLabel: 'Amtliche Quelle veröffentlicht',
     osmDownloadLabel: 'OSM-Geometrien (Download/Stand)',
     officialHeading: 'Amtliche Daten',
-    officialLead:
-      'Die Vergleichsgeometrie auf der amtlichen Seite stammt aus den je nach Gebiet konfigurierten Quellen — z. B. BKG VG25 (Skript bkg:extract) oder ein Landes-WFS. Steht eine URL in den Metadaten, ist sie unten verlinkt.',
+    officialFilterHeading: 'Amtliche Daten Filterung',
     officialMetaPrefix: 'Hinterlegt',
     sourceLinkLabel: 'Quelle (extern)',
     sourcePublicLinkLabel: 'Link (Webseite)',
     sourceDownloadLinkLabel: 'Link (Download)',
+    dataSourceLabel: 'Datenquelle',
+    directDownloadLabel: 'Direktdownload',
+    filterLabel: 'Filter',
     licenseLabel: 'Lizenz',
     licenseSectionHeading: 'Lizenz und OSM-Kompatibilitaet der amtlichen Quelle',
     licenseShortNameLabel: 'Originale Lizenz (Kurzname)',
@@ -61,13 +63,34 @@ export const de = {
       yes_licence: 'Ja (Lizenz oder Freigabe)',
       yes_waiver: 'Ja (Lizenz oder Freigabe)',
     },
-    osmHeading: 'OpenStreetMap',
-    osmLead:
-      'Die OSM-Geometrien werden aus einem Geofabrik-Länder-Extract gewonnen (üblicherweise Germany), lokal zwischengespeichert und anschließend gefiltert.',
-    osmFilterTitle: 'Filterung (OSM)',
-    osmFilterBody:
-      'Zuerst schränkt osmium tags-filter die PBF typischerweise auf Grenzobjekte ein (z. B. administrative Grenzen oder PLZ-Grenzen). Danach wählt ogr2ogr auf dem GDAL-Layer multipolygons mit einer gebietsspezifischen Bedingung (ogrWhere oder -sql in config.jsonc) die Zielobjekte aus. Der Compare-Lauf nutzt danach pro Datensatz explizit konfigurierte Scope-Regeln (`compare.bboxFilter` und `compare.osmScopeFilter`). Dadurch zählen „Nur OSM“-Treffer nur dann, wenn sie im konfigurierten räumlichen Vergleichsbereich liegen.',
-    osmFilterNoteTitle: 'Konkrete Zusammenfassung aus dem Build',
+    osmHeading: 'OpenStreetMap Daten',
+    osmFilterHeading: 'OpenStreetMap Daten Filterung',
+    directDownloadDetails: {
+      wfs: 'WFS',
+      pbf: 'PBF',
+      geojson: 'GeoJSON',
+      gml: 'GML',
+    },
+    filterDescriptions: {
+      officialMatchProperty: (value: string) =>
+        `Das Feld \`${value}\` aus den amtlichen Features wird als Match-Schlüssel mit OSM verwendet.`,
+      bboxFilter: {
+        none: 'Es wird kein Bounding-Box-Filter vor dem Matching angewendet.',
+        official_bbox_overlap:
+          'OSM-Kandidaten werden räumlich auf den Bereich begrenzt, der die amtliche Abdeckung (plus Puffer) überlappt.',
+      },
+      bboxBufferDegrees: (value: number) =>
+        `Erweitert den amtlichen Bounding-Box-Filter um ${value} Grad als Sicherheitsrand gegen Randabschneidungen.`,
+      osmScopeFilter: {
+        none: 'Es wird kein zusätzlicher räumlicher Scope-Filter auf OSM-Features angewendet.',
+        centroid_in_official_coverage:
+          'Ein OSM-Objekt zählt nur dann, wenn sein Schwerpunkt innerhalb der amtlichen Vergleichsabdeckung liegt.',
+      },
+      ignoreRelationIds: 'Diese OSM-Relationen werden vor dem Matching explizit ausgeschlossen.',
+    },
+    noFilterConfig: 'Keine konkrete Filterkonfiguration im Report enthalten.',
+    noSourceData: 'Keine Quellenangaben im Report enthalten.',
+    osmFilterNoteTitle: 'Zusatzhinweis aus dem Build',
   },
 
   home: {
