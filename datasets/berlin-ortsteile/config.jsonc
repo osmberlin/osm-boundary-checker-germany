@@ -1,9 +1,9 @@
 {
   "displayName": "Berlin Ortsteile",
   "titlePrefix": "Ortsteil",
-  "osmProfile": "admin_rs",
+  "osmProfile": "admin_name",
 
-  // Compare: ALKIS Ortsteile `sch` ↔ OSM `de:regionalschluessel` (12-digit regional)
+  // Compare: ALKIS Ortsteile `nam` ↔ OSM `name` (admin-level-10 via ignored district relations)
   "official": {
     "path": "source/official.fgb",
     "extractLayer": "alkis_ortsteile:ortsteile",
@@ -17,20 +17,40 @@
       "sourcePublicUrl": "https://daten.berlin.de/datensaetze/alkis-berlin-ortsteile-wfs-61bd3084",
     },
   },
-  "idNormalization": {
-    "preset": "regional-12",
-  },
+  "idNormalization": { "preset": "text" },
   "metricsCrs": "EPSG:32633",
 
   "compare": {
-    "officialMatchProperty": "sch",
+    "officialMatchProperty": "nam",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
     "osmScopeFilter": "centroid_in_official_coverage",
   },
 
   "osm": {
-    "ignoreRelationIds": ["62504", "62422"],
+    "ignoreRelationIds": [
+      // Group: state-level boundaries (Berlin + Brandenburg).
+      // Reason: this dataset compares Ortsteile (sub-city units), so higher-level
+      // relations must be excluded to avoid false name-based matches.
+      "62504",
+      "62422",
+
+      // Group: Berlin Bezirke (admin_level=9) boundary relations.
+      // Reason: Bezirke aggregate multiple Ortsteile (e.g. Friedrichshain-Kreuzberg),
+      // and would otherwise match against Ortsteil names in the same area.
+      "55754",
+      "164712",
+      "404554",
+      "164723",
+      "16347",
+      "55764",
+      "162902",
+      "158437",
+      "16343",
+      "404538",
+      "55734",
+      "16334",
+    ],
   },
 
   "ogcInspectSources": [

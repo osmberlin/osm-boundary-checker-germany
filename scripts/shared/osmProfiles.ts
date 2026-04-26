@@ -4,7 +4,7 @@ import {
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
 } from './germanyOsmPbf.ts'
 
-export const osmProfileIdSchema = z.enum(['admin_rs', 'postal_code'])
+export const osmProfileIdSchema = z.enum(['admin_rs', 'admin_name', 'postal_code'])
 export type OsmProfileId = z.infer<typeof osmProfileIdSchema>
 
 const osmProfileSchema = z.object({
@@ -18,6 +18,10 @@ export const OSM_PROFILES: Record<OsmProfileId, OsmProfile> = {
   admin_rs: {
     sharedFgbBasename: GERMANY_OSM_SHARED_FGB_BASENAME,
     matchProperty: 'de:regionalschluessel',
+  },
+  admin_name: {
+    sharedFgbBasename: GERMANY_OSM_SHARED_FGB_BASENAME,
+    matchProperty: 'name',
   },
   postal_code: {
     sharedFgbBasename: GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,

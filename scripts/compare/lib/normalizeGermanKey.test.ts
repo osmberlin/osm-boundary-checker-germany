@@ -75,3 +75,11 @@ describe('normalizeOsmValue plz-5', () => {
     expect(truncated.notes.some((x) => x.includes('truncated'))).toBe(true)
   })
 })
+
+describe('normalize text keys', () => {
+  test('normalizes official and OSM text values case-insensitively', () => {
+    expect(normalizeOfficialValue(' Friedrichshain ', 'text')).toBe('friedrichshain')
+    const n = normalizeOsmValue('name', 'FRIEDRICHSHAIN', 'text')
+    expect(n.canonicalMatchKey).toBe('friedrichshain')
+  })
+})

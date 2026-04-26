@@ -1,6 +1,6 @@
 # Berlin Ortsteile (ALKIS)
 
-Official boundaries from Berlin **ALKIS Ortsteile** WFS, compared to OSM administrative polygons via `de:regionalschluessel` (12-digit keys on feature `sch`).
+Official boundaries from Berlin **ALKIS Ortsteile** WFS, compared to OSM administrative polygons via Ortsteil `name` (`official.nam` ↔ OSM `name`).
 
 ## References
 

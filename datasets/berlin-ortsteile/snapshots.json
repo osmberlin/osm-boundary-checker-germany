@@ -33,9 +33,9 @@
       "id": "2026-04-26",
       "summary": {
         "totalRows": 97,
-        "meanIou": 0,
-        "matched": 0,
-        "unmatchedOsm": 12
+        "meanIou": 0.996400379547998,
+        "matched": 97,
+        "unmatchedOsm": 6
       }
     }
   ]

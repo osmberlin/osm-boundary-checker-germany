@@ -77,6 +77,10 @@ function normalizePlz5Digits(digits: string): string {
   return digits.padStart(5, '0')
 }
 
+function normalizeTextKey(raw: string): string {
+  return raw.trim().replace(/\s+/g, ' ').toLocaleLowerCase('de-DE')
+}
+
 export function normalizeOsmValue(
   sourceKey: string,
   rawValue: string | undefined | null,
@@ -139,6 +143,9 @@ export function normalizeOsmValue(
     if (digits.length > 5) notes.push('plz-5-truncated')
     if (digits.length > 0 && digits.length < 5) notes.push('plz-5-left-padded')
     presetLabel = 'plz-5'
+  } else if (preset === 'text') {
+    canonicalMatchKey = normalizeTextKey(raw)
+    presetLabel = 'text'
   }
 
   return {
@@ -163,6 +170,9 @@ export function normalizeOfficialValue(
   }
   if (preset === 'plz-5') {
     return normalizePlz5Digits(digits)
+  }
+  if (preset === 'text') {
+    return normalizeTextKey(raw)
   }
   if (preset === 'regional-12' && digits.length > 0) {
     if (digits.length >= 12) return digits.slice(0, 12)

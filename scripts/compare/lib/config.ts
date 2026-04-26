@@ -14,6 +14,7 @@ export type IdNormalizationPreset =
   | 'regional-12'
   | 'brandenburg-gemeinden-8'
   | 'plz-5'
+  | 'text'
 
 /** Optional compare tuning (bbox prefilter, etc.). */
 export type CompareConfig = {

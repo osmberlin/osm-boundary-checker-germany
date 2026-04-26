@@ -25,9 +25,9 @@ const areasIndex = {
     {
       area: 'berlin-ortsteile',
       displayName: 'Berlin Ortsteile',
-      matched: 0,
-      officialOnly: 97,
-      unmatchedOsm: 12,
+      matched: 97,
+      officialOnly: 0,
+      unmatchedOsm: 6,
     },
     {
       area: 'berlin-plz',
