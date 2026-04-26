@@ -238,6 +238,7 @@ export function ReportDataProvenanceFooter({
     >
       <div className="px-4 py-6 sm:px-6">
         <h2 className="text-base font-semibold text-slate-100">{p.title}</h2>
+        <p className="mt-1 text-xs text-slate-400">{p.leadWithMetricsCrs(data.metricsCrs)}</p>
       </div>
 
       {!hideFreshnessSection ? (

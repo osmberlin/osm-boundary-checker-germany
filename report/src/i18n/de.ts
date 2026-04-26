@@ -36,6 +36,8 @@ export const de = {
   provenance: {
     sectionAria: 'Datenquellen und Filterung',
     title: 'Datenquellen',
+    leadWithMetricsCrs: (crs: string) =>
+      `Verlinkt die Datenquellen und beschreibt die angewendeten Filter. Der Vergleich findet in Projektion ${crs} statt.`,
     reportCreatedLabel: 'Auswertung erstellt',
     officialDownloadLabel: 'Amtliche Geometrien (Download/Stand)',
     officialSourceUpdatedLabel: 'Amtliche Quelle aktualisiert',
@@ -240,23 +242,18 @@ export const de = {
     updateMap: {
       title: 'Daten in OSM bearbeiten',
       lead: 'Amtliche Referenzgeometrie als GeoJSON sowie Direktlinks zu iD und JOSM — für Abgleich und Korrektur der OSM-Grenze.',
-      idHeading: 'iD (im Browser)',
+      downloadOfficialHeading: 'Amtliches GeoJSON',
+      idHeading: 'iD-Editor',
       josmHeading: 'JOSM (Remote Control)',
       downloadOfficial: 'Amtliches Polygon laden (GeoJSON)',
       downloadOfficialDisabledHint:
-        'Kein amtlicher GeoJSON-Export für diese Zeile (z. B. nur OSM, keine amtliche Geometrie oder Snapshot ohne Dateien).',
+        'Für diese Detailansicht gibt es keine amtliche Geometrie.',
       downloadOfficialHint:
         'Datei enthält u. a. Namen, Schlüssel und `officialSource` (Anbieter, Datensatz, URL, …), sofern beim Vergleich hinterlegt.',
       opensInNewWindowTitle: 'Öffnet in einem neuen Browser-Tab',
       openId: 'In iD öffnen',
-      openIdWithOverlay:
-        'Referenz als Hintergrund-Track, zugleich viele Kartendetails ausgeblendet (Grenzen, Wasser, Hauptstraßen sichtbar)',
-      openIdRelationOnly:
-        'Kartenausschnitt und Relation; ohne Referenz-Overlay (kein amtliches Polygon in dieser Zeile / kein Export)',
       idDisableFeaturesHint:
-        'In iD werden u. a. Gebäude, Wege und Bahn usw. ausgeblendet; Grenzen, Gewässer und übergeordnete Straßen bleiben sichtbar.',
-      corsNote:
-        'Hinweis: iD lädt die GeoJSON-URL von dieser Website. Die muss Cross-Origin-Anfragen von www.openstreetmap.org erlauben (CORS). Sonst die GeoJSON-Datei herunterladen und in iD unter „Eigene Daten“ öffnen.',
+        'Hinweis: In iD werden u. a. Gebäude, Wege und Bahn usw. ausgeblendet; Grenzen, Gewässer und übergeordnete Straßen bleiben sichtbar.',
       josmRemoteLead:
         'Remote Control in den JOSM-Einstellungen aktivieren. Links rufen JOSM lokal auf (Port 8111).',
       josmLoadObject: 'Relation inkl. Mitglieder laden (load_object)',
@@ -269,8 +266,6 @@ export const de = {
         'Keine OSM-Relation-ID in dieser Zeile — nur amtliche Geometrie oder Datenlücke; Relation zuerst in OSM anlegen bzw. zuordnen.',
       josmImportFallback:
         'Falls Import per URL fehlschlägt: GeoJSON herunterladen und in JOSM über Datei öffnen.',
-      josmMixedContent:
-        'Von HTTPS-Seiten aus kann der Browser lokale http://127.0.0.1-Links blockieren — ggf. Link kopieren oder Lesezeichen nutzen.',
       tableHint:
         'Diese comparison_table.json enthält noch kein Feld officialForEditPath — bitte den Vergleich erneut ausführen, um die GeoJSON-Exports zu erzeugen.',
     },

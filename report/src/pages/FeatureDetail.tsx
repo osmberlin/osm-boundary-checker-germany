@@ -78,12 +78,6 @@ export function FeatureDetail() {
 
       <UpdateMapInstructions areaId={areaKey} row={row} />
 
-      {row.metrics && (
-        <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-xs text-slate-400">
-          <span>{de.feature.stats.footnote.metricsCrsLine(data.metricsCrs)}</span>
-        </p>
-      )}
-
       <ReportLicenseCompatibilitySection data={data} />
       <ReportDataProvenanceFooter data={data} hideFreshnessSection />
     </div>

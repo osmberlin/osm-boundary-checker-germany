@@ -42,25 +42,43 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
         <dl className="divide-y divide-slate-700/80">
           <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
             <dt>
+              <h3 className="text-sm/6 font-medium text-slate-200">{u.downloadOfficialHeading}</h3>
+            </dt>
+            <dd className="mt-2 md:col-span-2 md:mt-0">
+              <div className="flex flex-col gap-2">
+                {canDownloadOfficial ? (
+                  <>
+                    <button
+                      type="button"
+                      className={sharedButtonClass}
+                      onClick={() => officialHref != null && triggerGeojsonDownload(officialHref)}
+                    >
+                      {u.downloadOfficial}
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      disabled
+                      title={u.downloadOfficialDisabledHint}
+                      className={sharedButtonClass}
+                    >
+                      {u.downloadOfficial}
+                    </button>
+                    <p className="text-xs text-slate-500">{u.downloadOfficialDisabledHint}</p>
+                  </div>
+                )}
+              </div>
+            </dd>
+          </div>
+
+          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <dt>
               <h3 className="text-sm/6 font-medium text-slate-200">{u.idHeading}</h3>
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  disabled={!canDownloadOfficial}
-                  title={canDownloadOfficial ? undefined : u.downloadOfficialDisabledHint}
-                  className={sharedButtonClass}
-                  onClick={() => officialHref != null && triggerGeojsonDownload(officialHref)}
-                >
-                  {u.downloadOfficial}
-                </button>
-                {!canDownloadOfficial && (
-                  <p className="text-xs text-slate-500">{u.downloadOfficialDisabledHint}</p>
-                )}
-                {canDownloadOfficial && (
-                  <p className="text-xs text-slate-500">{u.downloadOfficialHint}</p>
-                )}
                 <button
                   type="button"
                   title={`${u.openId} — ${u.opensInNewWindowTitle}`}
@@ -69,12 +87,8 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
                 >
                   {u.openId}
                 </button>
-                <p className="text-xs text-slate-500">
-                  {officialAbsolute ? u.openIdWithOverlay : u.openIdRelationOnly}
-                </p>
               </div>
               <p className="mt-3 text-xs text-slate-500">{u.idDisableFeaturesHint}</p>
-              <p className="mt-2 text-xs text-amber-300/90">{u.corsNote}</p>
             </dd>
           </div>
 
@@ -83,8 +97,7 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
               <h3 className="text-sm/6 font-medium text-slate-200">{u.josmHeading}</h3>
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
-              <p className="text-sm text-slate-400">{u.josmRemoteLead}</p>
-              <div className="mt-3 flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
                 <button
                   type="button"
                   disabled={josm.loadObject == null}
@@ -111,9 +124,6 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
                 >
                   {u.josmImport}
                 </button>
-                {josm.importGeojson == null && (
-                  <p className="text-xs text-slate-500">{u.josmImportDisabledHint}</p>
-                )}
                 <button
                   type="button"
                   disabled={josm.loadAndZoom == null}
@@ -136,10 +146,6 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
                   <p className="text-xs text-slate-500">{u.josmNoRelation}</p>
                 )}
               </div>
-              {officialHref && (
-                <p className="mt-3 text-xs text-slate-500">{u.josmImportFallback}</p>
-              )}
-              <p className="mt-2 text-xs text-slate-500">{u.josmMixedContent}</p>
             </dd>
           </div>
         </dl>
