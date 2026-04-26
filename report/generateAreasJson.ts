@@ -28,7 +28,9 @@ const formatResult = spawnSync('bun', ['x', 'oxfmt', '--write', outPath], {
 })
 
 if (formatResult.status !== 0) {
-  throw new Error(`Failed to format ${outPath}`)
+  // Formatting failures should not block snapshot generation in CI.
+  // The repository-level format/check step still enforces style separately.
+  console.warn(`Warning: failed to format ${outPath}, keeping generated source as-is.`)
 }
 
 console.log(`Wrote ${outPath} (${areas.length} areas, DATA_ROOT=${runtimeRoot})`)
