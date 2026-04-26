@@ -57,7 +57,7 @@ flowchart LR
   JSON --> SNAP
 ```
 
-Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `download` (BKG + optional HTTP official + OSM PBF/extract) then `compare` per `datasets/<area>/config.jsonc`. The scheduled `**pipeline:nightly**` now refreshes BKG, all `official.download` areas, and OSM on every scheduled run.
+Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `download` (BKG + optional HTTP official + OSM PBF/extract) then `compare` per `datasets/<area>/config.jsonc`. `**pipeline:nightly**` applies a daily refresh window policy per source: cache is reused within the same local refresh window, and re-download is allowed once per day after 01:00 (Europe/Berlin by default).
 
 Config ownership is explicit:
 

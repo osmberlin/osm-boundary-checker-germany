@@ -103,13 +103,13 @@ This is a **`package.json` chain** (not a monolithic script): `download:bkg && d
 | `download`                                    | Full chain above                                                                                                  |
 | `download:bkg`                                | `bkg:download` then `bkg:extract` (ZIP → `.cache`, per-area `source/official.fgb` from VG25)                      |
 | `download:bkg:fetch` / `download:bkg:extract` | BKG download or extract only                                                                                      |
-| `download:official`                           | Areas with `config.jsonc` → `official.download` (HTTP GeoJSON) → `official.path` as FlatGeobuf; others log `skip` |
+| `download:official`                           | Areas with `config.jsonc` → `official.download` (HTTP GeoJSON) → `official.path` as FlatGeobuf; cache-aware daily refresh window logs explicit skip/download reasons |
 | `download:osm`                                | `osm:download` then `osm:extract`                                                                                 |
 | `download:osm:fetch` / `download:osm:extract` | OSM steps only                                                                                                    |
 
 **`official.download` in `config.jsonc`:** `kind` (`http`), `url`, `format` (`geojson` or `gml`), optional `crs` (for documentation / logs). WFS URLs should set the desired CRS with `srsName` / `SRSNAME` in the query string. Other WFS output formats are service-specific—check the service **GetCapabilities**.
 
-**`download:official` flags:** `--area <folder>` for one dataset; `--force` to re-fetch even when the output `.fgb` already exists.
+**`download:official` flags:** `--area <folder>` for one dataset; `--force` to re-fetch even when cache would otherwise be reused. Default policy refreshes at most once per day, only after 01:00 local time (timezone from `DOWNLOAD_REFRESH_TIMEZONE`, then `PIPELINE_TIMEZONE`, then `TZ`, fallback `Europe/Berlin`).
 
 ### Outputs per area (web UI)
 

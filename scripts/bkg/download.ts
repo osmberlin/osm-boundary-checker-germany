@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
  * Download BKG VG25 utm32s GeoPackage (ZIP) into `.cache/bkg/`, unzip, record `downloadedAt`.
  * Requires `unzip` on PATH (macOS/Linux). Use `--zip /path/to/vg25.utm32s.gpkg.zip` to seed from a local file instead of HTTP.
  */
-import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import {
   BKG_CACHE_DIR,
@@ -13,6 +13,7 @@ import {
   BKG_ZIP_NAME,
   BKG_ZIP_URL,
 } from '../shared/bkg.ts'
+import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
@@ -68,13 +69,39 @@ async function main() {
   const cacheDir = join(runtimeRoot, BKG_CACHE_DIR)
   const zipDest = join(cacheDir, BKG_ZIP_NAME)
   const extractDir = join(cacheDir, BKG_EXTRACT_SUBDIR)
+  const timezone = resolveRefreshTimezone()
 
   mkdirSync(cacheDir, { recursive: true })
 
-  if (existsSync(zipDest) && !force && !localZip) {
-    console.log(
-      `Download skipped (cache used because zip_exists; use --force to re-download): ${zipDest}`,
-    )
+  if (!localZip) {
+    const cacheExists = existsSync(zipDest)
+    const cachedAt = cacheExists ? statSync(zipDest).mtime.toISOString() : undefined
+    const decision = decideDailyRefresh({
+      force,
+      cacheExists,
+      cachedAt,
+      timezone,
+    })
+    if (!decision.shouldDownload) {
+      console.log(
+        `Download skipped (cache used because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey ?? 'unknown'}; use --force to re-download): ${zipDest}`,
+      )
+    } else {
+      if (decision.reason === 'cache_stale_previous_window') {
+        console.log(
+          `Download required (because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey})`,
+        )
+      }
+      console.log(`Fetching ${BKG_ZIP_URL}`)
+      const res = await fetch(BKG_ZIP_URL)
+      if (!res.ok) {
+        console.error(`HTTP ${res.status} ${res.statusText}`)
+        process.exit(1)
+      }
+      const buf = Buffer.from(await res.arrayBuffer())
+      writeFileSync(zipDest, buf)
+      console.log(`Wrote ${zipDest} (${buf.length} bytes)`)
+    }
   } else if (localZip) {
     const absZip = resolve(process.cwd(), localZip)
     if (!existsSync(absZip)) {
@@ -83,16 +110,6 @@ async function main() {
     }
     copyFileSync(absZip, zipDest)
     console.log(`Copied local ZIP to ${zipDest}`)
-  } else {
-    console.log(`Fetching ${BKG_ZIP_URL}`)
-    const res = await fetch(BKG_ZIP_URL)
-    if (!res.ok) {
-      console.error(`HTTP ${res.status} ${res.statusText}`)
-      process.exit(1)
-    }
-    const buf = Buffer.from(await res.arrayBuffer())
-    writeFileSync(zipDest, buf)
-    console.log(`Wrote ${zipDest} (${buf.length} bytes)`)
   }
 
   // Keep only the latest extracted dataset to avoid stale archive leftovers.

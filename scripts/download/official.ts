@@ -2,13 +2,14 @@
 // Config-driven HTTP official boundaries (WFS GeoJSON / GML) → official.path FlatGeobuf. Requires ogr2ogr.
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
 import { parseAreaOfficialSourceFacts } from '../shared/areaConfigMetadata.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseDownloadOfficial } from '../shared/downloadOfficialConfig.ts'
+import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
   type AreaSourceMetadataFile,
@@ -131,6 +132,7 @@ async function processArea(
   runtimeRoot: string,
   area: string,
   force: boolean,
+  timezone: string,
 ): Promise<'ok' | 'skip' | 'fail'> {
   const areaPath = datasetFolderPath(runtimeRoot, area)
   let raw: unknown
@@ -175,15 +177,38 @@ async function processArea(
   }
 
   const outAbs = join(areaPath, relPath)
-  if (existsSync(outAbs) && !force) {
+  const cacheExists = existsSync(outAbs)
+  const cachedAt = cacheExists ? statSync(outAbs).mtime.toISOString() : undefined
+  const decision = decideDailyRefresh({
+    force,
+    cacheExists,
+    cachedAt,
+    timezone,
+  })
+  if (!decision.shouldDownload) {
     logLine({
       area,
       source: 'official',
       status: 'skip',
       reason: 'cache_used',
-      detail: 'output_exists',
+      detail: decision.because,
+      timezone: decision.timezone,
+      currentWindow: decision.currentWindowKey,
+      cachedWindow: decision.cachedWindowKey,
     })
     return 'skip'
+  }
+  if (decision.reason === 'cache_stale_previous_window') {
+    logLine({
+      area,
+      source: 'official',
+      status: 'info',
+      reason: 'download_required',
+      detail: decision.because,
+      timezone: decision.timezone,
+      currentWindow: decision.currentWindowKey,
+      cachedWindow: decision.cachedWindowKey,
+    })
   }
 
   const t0 = Date.now()
@@ -332,6 +357,7 @@ async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { area: onlyArea, force } = parseArgs(process.argv.slice(2))
+  const timezone = resolveRefreshTimezone()
   const areas = discoverAreas(workspaceRoot)
   if (areas.length === 0) {
     console.error(`No areas with compare config under ${DATASETS_DIRECTORY}/`)
@@ -346,7 +372,7 @@ async function main() {
 
   let code = 0
   for (const a of selected) {
-    const r = await processArea(workspaceRoot, runtimeRoot, a, force)
+    const r = await processArea(workspaceRoot, runtimeRoot, a, force, timezone)
     if (r === 'fail') code = 1
   }
   process.exit(code)

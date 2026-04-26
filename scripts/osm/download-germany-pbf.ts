@@ -4,8 +4,9 @@ import { spawnSync } from 'node:child_process'
  * Download Geofabrik `germany-latest.osm.pbf` into `.cache/osm/` (gitignored).
  * Uses `curl` on PATH. Override URL with `--url` or `GERMANY_OSM_PBF_URL`.
  */
-import { existsSync, mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
 import {
   GERMANY_OSM_CACHE_DIR,
   GERMANY_OSM_PBF_BASENAME,
@@ -39,14 +40,28 @@ function main() {
 
   const dir = join(runtimeRoot, GERMANY_OSM_CACHE_DIR)
   const dest = join(dir, GERMANY_OSM_PBF_BASENAME)
+  const timezone = resolveRefreshTimezone()
 
   mkdirSync(dir, { recursive: true })
 
-  if (existsSync(dest) && !force) {
+  const cacheExists = existsSync(dest)
+  const cachedAt = cacheExists ? statSync(dest).mtime.toISOString() : undefined
+  const decision = decideDailyRefresh({
+    force,
+    cacheExists,
+    cachedAt,
+    timezone,
+  })
+  if (!decision.shouldDownload) {
     console.log(
-      `Download skipped (cache used because output_exists; use --force to re-download):\n  ${dest}`,
+      `Download skipped (cache used because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey ?? 'unknown'}; use --force to re-download):\n  ${dest}`,
     )
     return
+  }
+  if (decision.reason === 'cache_stale_previous_window') {
+    console.log(
+      `Download required (because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey})`,
+    )
   }
 
   console.log(`Downloading:\n  ${downloadUrl}\n→ ${dest}`)

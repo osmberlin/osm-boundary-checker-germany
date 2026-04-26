@@ -57,7 +57,7 @@ Current behavior already helps:
 
 Current behavior that still drives long runtime:
 
-- OSM download and OSM extract run every nightly run.
+- OSM extract and per-area compares still dominate runtime; OSM/BKG/official downloads now follow a daily refresh window and reuse cache within the same window.
 - Area compares run sequentially.
 
 ## No-cost optimization playbook (stay on GitHub, no paid tools)

@@ -203,10 +203,10 @@ async function main() {
 
   try {
     const preparationSteps: Array<{ step: string; args: string[] }> = [
-      { step: 'bkg:download', args: ['run', 'bkg:download', '--', '--force'] },
+      { step: 'bkg:download', args: ['run', 'bkg:download'] },
       { step: 'bkg:extract', args: ['run', 'bkg:extract'] },
-      { step: 'download:official', args: ['run', 'download:official', '--', '--force'] },
-      { step: 'osm:download', args: ['run', 'osm:download', '--', '--force'] },
+      { step: 'download:official', args: ['run', 'download:official'] },
+      { step: 'osm:download', args: ['run', 'osm:download'] },
       { step: 'osm:extract', args: ['run', 'osm:extract'] },
       // `brandenburg-berlin-plz` uses `.cache/osm/germany-postal-code-boundaries.fgb` from the same filtered PBF.
       { step: 'osm:extract:plz', args: ['run', 'osm:extract', '--', '--kind', 'plz'] },
