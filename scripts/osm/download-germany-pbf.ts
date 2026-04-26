@@ -89,7 +89,7 @@ function main() {
 
   const r = spawnSync(
     'curl',
-    ['-fL', '--retry', '3', '--retry-delay', '2', '-o', dest, downloadUrl],
+    ['-fL', '--no-progress-meter', '--retry', '3', '--retry-delay', '2', '-o', dest, downloadUrl],
     { stdio: 'inherit' },
   )
 
