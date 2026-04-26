@@ -128,6 +128,11 @@ Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. 
 
 **Clean-state rule:** legacy keys **`sources`** and **`osmExtract`** are no longer supported.
 
+### Requesting a new dataset
+
+Open a GitHub issue using the **Dataset request** form under `.github/ISSUE_TEMPLATE/dataset-request.yml`.
+The form captures required provenance and license fields used for source metadata, plus optional API and OSM compatibility details that help setup.
+
 Convert from GeoJSON (or GPKG, etc.) with GDAL:
 
 ```bash

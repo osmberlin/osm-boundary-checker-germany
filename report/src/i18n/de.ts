@@ -97,6 +97,8 @@ export const de = {
 
   home: {
     processingStatusLink: 'Verarbeitungsstatus öffnen',
+    githubCodeLinkLabel: 'Code auf GitHub',
+    githubIssuesLinkLabel: 'Issue melden',
     introP1:
       'Diese Anwendung vergleicht amtliche Grenzdaten mit OpenStreetMap (OSM). Ein nächtlicher Lauf (einmal pro Tag) bezieht die OSM-Daten des Vortags und stellt sie den jeweiligen amtlichen Geometrien gegenüber.',
     introP2:

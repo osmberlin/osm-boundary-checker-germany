@@ -5,6 +5,12 @@ import { areasIndex, type AreaLicenseSummary } from '../data/areasIndex'
 import { categoryLabelDe, de } from '../i18n/de'
 import { EM_DASH, formatDeInteger } from '../lib/formatDe'
 
+const GITHUB_REPO_ROOT = 'https://github.com/osmberlin/osm-boundary-checker-germany'
+const GITHUB_ISSUES_NEW_URL = `${GITHUB_REPO_ROOT}/issues/new`
+
+const homeLinkClass =
+  'font-medium text-sky-400 underline decoration-sky-400/30 underline-offset-2 hover:text-sky-300 hover:decoration-sky-300/40'
+
 export function Home() {
   const areas = areasIndex.areas
   const summariesByArea = Object.fromEntries(
@@ -19,6 +25,17 @@ export function Home() {
         {de.home.leadBefore}{' '}
         <code className="rounded bg-slate-800 px-1 text-slate-200">output/</code>{' '}
         {de.home.leadAfter}
+      </p>
+      <p className="mb-6 text-slate-400">
+        <a href={GITHUB_REPO_ROOT} className={homeLinkClass} target="_blank" rel="noreferrer">
+          {de.home.githubCodeLinkLabel}
+        </a>
+        <span aria-hidden className="mx-1.5 text-slate-500">
+          ·
+        </span>
+        <a href={GITHUB_ISSUES_NEW_URL} className={homeLinkClass} target="_blank" rel="noreferrer">
+          {de.home.githubIssuesLinkLabel}
+        </a>
       </p>
       {areas.length === 0 ? (
         <p className="text-slate-400">{de.home.noAreas}</p>

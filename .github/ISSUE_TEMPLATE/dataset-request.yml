@@ -1,0 +1,153 @@
+name: Dataset request
+description: Request adding a new official dataset for boundary comparison.
+title: '[Dataset Request]: '
+labels:
+  - dataset-request
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provide the dataset details below. This form is designed so maintainers can later create dataset config and source metadata without extra back-and-forth.
+
+        Example values:
+        - Dataset name: `Stadtbezirke Muenchen`
+        - Source website URL: `https://geoportal.muenchen.de/stadtbezirke`
+        - Official data access URL: `https://geoportal.muenchen.de/wfs?service=WFS&request=GetFeature&typeName=stadtbezirke`
+        - License: `Datenlizenz Deutschland – Namensnennung – Version 2.0`
+        - License URL: `https://www.govdata.de/dl-de/by-2-0`
+        - Optional OSM compatibility: `yes_licence`
+        - Optional OSM compatibility source URL: `https://example.org/osm-compatibility-note`
+
+  - type: input
+    id: dataset_name
+    attributes:
+      label: Dataset name
+      description: Human-friendly dataset name.
+      placeholder: 'Example: Stadtbezirke Muenchen'
+    validations:
+      required: true
+
+  - type: input
+    id: source_public_url
+    attributes:
+      label: Source website URL
+      description: Public webpage documenting the dataset.
+      placeholder: 'https://example.org/dataset-page'
+    validations:
+      required: true
+
+  - type: input
+    id: source_download_url
+    attributes:
+      label: Official data access URL
+      description: Direct download or API endpoint URL used to fetch the official data.
+      placeholder: 'https://example.org/wfs?service=WFS&request=GetFeature&typeName=...'
+    validations:
+      required: true
+
+  - type: input
+    id: license_label
+    attributes:
+      label: License
+      description: License name or short identifier.
+      placeholder: 'Example: Datenlizenz Deutschland – Namensnennung – Version 2.0'
+    validations:
+      required: true
+
+  - type: input
+    id: license_url
+    attributes:
+      label: License URL
+      description: Link to license text or terms page.
+      placeholder: 'https://example.org/license'
+    validations:
+      required: true
+
+  - type: textarea
+    id: wfs_or_api_details
+    attributes:
+      label: Optional download/API details
+      description: |
+        Optional details such as WFS version, GetCapabilities URL, typeName, output format, or required query parameters.
+      placeholder: |
+        - WFS version: 2.0.0
+        - GetCapabilities: https://example.org/wfs?service=WFS&request=GetCapabilities
+        - typeName: namespace:layer_name
+        - outputFormat: application/json
+    validations:
+      required: false
+
+  - type: textarea
+    id: download_format_crs
+    attributes:
+      label: Optional format and CRS details
+      description: Add known format and CRS hints, if available.
+      placeholder: |
+        - Format: gml
+        - CRS: EPSG:25832
+    validations:
+      required: false
+
+  - type: dropdown
+    id: osm_compatibility
+    attributes:
+      label: Optional OSM compatibility
+      description: Known license compatibility with OSM (if already assessed).
+      options:
+        - unknown
+        - no
+        - yes_licence
+        - yes_waiver
+    validations:
+      required: false
+
+  - type: input
+    id: osm_compatibility_source_url
+    attributes:
+      label: Optional OSM compatibility source URL
+      description: URL proving or discussing OSM compatibility.
+      placeholder: 'https://example.org/osm-compatibility'
+    validations:
+      required: false
+
+  - type: textarea
+    id: osm_compatibility_comment
+    attributes:
+      label: Optional OSM compatibility comment
+      description: Extra notes on compatibility decision.
+      placeholder: 'Any additional context about compatibility'
+    validations:
+      required: false
+
+  - type: textarea
+    id: osm_side_hints
+    attributes:
+      label: Optional OSM side hints
+      description: Optional hints like osmProfile, tags, admin levels, or relation IDs.
+      placeholder: |
+        - osmProfile hint: admin_rs
+        - Relevant tags: boundary=administrative
+        - admin_level values: 6, 8
+    validations:
+      required: false
+
+  - type: textarea
+    id: update_cadence_dates
+    attributes:
+      label: Optional update cadence and source dates
+      description: Any known publication/update cadence, and current source date values.
+      placeholder: |
+        - Update cadence: monthly
+        - Source published at: 2026-03-01
+        - Source updated at: 2026-04-15
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional_notes
+    attributes:
+      label: Additional notes
+      description: Any context that could help ingestion.
+      placeholder: 'Optional'
+    validations:
+      required: false
