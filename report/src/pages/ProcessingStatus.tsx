@@ -69,6 +69,12 @@ function fmtMs(v?: number): string {
   return `${(v / 1000).toFixed(1)} s`
 }
 
+function fmtStepReason(status: 'ok' | 'fail' | 'skipped', reason?: string): string {
+  if (!reason) return ''
+  if (status === 'skipped') return ` (cache used because ${reason})`
+  return ` (${reason})`
+}
+
 function parseJsonl(text: string): LogEvent[] {
   const out: LogEvent[] = []
   const lines = text.split('\n')
@@ -206,7 +212,7 @@ export function ProcessingStatus() {
                   {run.stepSummaries.map((s) => (
                     <li key={`${run.runId}-step-${s.id}`}>
                       {s.id} — {s.status} — {fmtMs(s.durationMs)}
-                      {s.reason ? ` (${s.reason})` : ''}
+                      {fmtStepReason(s.status, s.reason)}
                     </li>
                   ))}
                 </ul>

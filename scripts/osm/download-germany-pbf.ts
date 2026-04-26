@@ -43,7 +43,9 @@ function main() {
   mkdirSync(dir, { recursive: true })
 
   if (existsSync(dest) && !force) {
-    console.log(`PBF already exists (use --force to re-download):\n  ${dest}`)
+    console.log(
+      `Download skipped (cache used because output_exists; use --force to re-download):\n  ${dest}`,
+    )
     return
   }
 

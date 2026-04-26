@@ -72,7 +72,9 @@ async function main() {
   mkdirSync(cacheDir, { recursive: true })
 
   if (existsSync(zipDest) && !force && !localZip) {
-    console.log(`ZIP exists (use --force to re-download): ${zipDest}`)
+    console.log(
+      `Download skipped (cache used because zip_exists; use --force to re-download): ${zipDest}`,
+    )
   } else if (localZip) {
     const absZip = resolve(process.cwd(), localZip)
     if (!existsSync(absZip)) {

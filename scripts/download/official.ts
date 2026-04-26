@@ -176,7 +176,13 @@ async function processArea(
 
   const outAbs = join(areaPath, relPath)
   if (existsSync(outAbs) && !force) {
-    logLine({ area, source: 'official', status: 'skip', reason: 'output_exists' })
+    logLine({
+      area,
+      source: 'official',
+      status: 'skip',
+      reason: 'cache_used',
+      detail: 'output_exists',
+    })
     return 'skip'
   }
 
