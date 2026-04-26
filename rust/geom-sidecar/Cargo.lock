@@ -203,15 +203,15 @@ dependencies = [
 
 [[package]]
 name = "geojson"
-version = "1.0.0"
-source = "git+https://github.com/georust/geojson#d201ab62a70a5f7bc6115226c526a010f2eef8ac"
+version = "0.24.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e26f3c45b36fccc9cf2805e61d4da6bc4bbd5a3a9589b01afa3a40eff703bd79"
 dependencies = [
  "geo-types",
  "log",
  "serde",
  "serde_json",
  "thiserror",
- "tinyvec",
 ]
 
 [[package]]
@@ -693,22 +693,6 @@ dependencies = [
  "quote",
  "syn",
 ]
-
-[[package]]
-name = "tinyvec"
-version = "1.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e61e67053d25a4e82c844e8424039d9745781b3fc4f32b8d55ed50f5f667ef3"
-dependencies = [
- "serde_core",
- "tinyvec_macros",
-]
-
-[[package]]
-name = "tinyvec_macros"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "typenum"
