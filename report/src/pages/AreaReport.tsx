@@ -23,6 +23,7 @@ import {
 } from '../components/HausdorffInfoModal'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
+import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { areasIndex } from '../data/areasIndex'
 import { comparisonQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
@@ -252,7 +253,7 @@ export function AreaReport() {
       </section>
 
       <section
-        className="mb-6 rounded border border-slate-700 bg-slate-900 p-4"
+        className="mb-6 rounded border border-slate-700 bg-slate-900 p-4 transition-colors hover:bg-slate-800/40"
         aria-label={st.summaryLegendRowAria}
       >
         <StatBlocksRow className="mt-0">
@@ -352,9 +353,11 @@ export function AreaReport() {
       </div>
 
       <div className="mb-8 flex h-64 min-w-0 flex-col rounded border border-slate-700 bg-slate-900 p-2">
-        <h2 className="mb-2 flex flex-wrap items-center gap-1 text-sm font-medium text-slate-300">
-          <span>{de.areaReport.chartTitle}</span>
-          <MeanIouInfoButton className="-ml-0.5" iconClassName="size-[0.95rem]" />
+        <h2 className="mb-3 border-b border-slate-700/80 pb-3 text-base font-semibold text-slate-100">
+          <span className="inline-flex flex-wrap items-center gap-1">
+            <span>{de.areaReport.chartTitle}</span>
+            <MeanIouInfoButton className="-ml-0.5" iconClassName="size-[0.95rem]" />
+          </span>
         </h2>
         <div ref={chartRef} className="min-h-0 min-w-0 flex-1">
           {chartIsReady ? (
@@ -466,7 +469,7 @@ export function AreaReport() {
               return (
                 <tr
                   key={row.canonicalMatchKey}
-                  className="group cursor-pointer border-t border-slate-800 transition-colors hover:bg-slate-800/55 focus-within:bg-slate-800/55"
+                  className="group cursor-pointer border-t border-slate-800 transition-colors focus-within:bg-slate-800/55 hover:bg-slate-800/55"
                   tabIndex={0}
                   onClick={() => {
                     void navigateToFeature()
@@ -503,7 +506,9 @@ export function AreaReport() {
                     <MetricCellBar
                       ratio={normalizedRatio(row.metrics?.hausdorffM, hausdorffMax)}
                       value={
-                        row.metrics ? formatDeOrDash(row.metrics.hausdorffM, formatDeMeters) : EM_DASH
+                        row.metrics
+                          ? formatDeOrDash(row.metrics.hausdorffM, formatDeMeters)
+                          : EM_DASH
                       }
                     />
                   </td>
@@ -526,6 +531,7 @@ export function AreaReport() {
         </table>
       </div>
 
+      <ReportLicenseCompatibilitySection data={data} />
       <ReportDataProvenanceFooter data={data} hideFreshnessSection />
     </div>
   )

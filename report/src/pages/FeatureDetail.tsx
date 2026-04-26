@@ -15,12 +15,14 @@ import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { mapLayerColors } from '../components/mapLayerColors'
 import { hexToRgba } from '../components/MapLegend'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
+import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
 import { featureQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { categoryLabelDe, de } from '../i18n/de'
+import { useDocumentMeta } from '../lib/documentMeta'
 import {
   EM_DASH,
   formatDeIou,
@@ -75,6 +77,8 @@ export function FeatureDetail() {
   const data: ComparisonForReport | null = featureQuery.data ?? null
 
   const row = !data || !featureKey ? null : findRow(data, featureKey)
+  const pageTitle = row ? `${row.nameLabel} | ${de.appTitle}` : de.appTitle
+  useDocumentMeta({ title: pageTitle })
   if (featureQuery.isError) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
@@ -154,6 +158,7 @@ export function FeatureDetail() {
         </p>
       )}
 
+      <ReportLicenseCompatibilitySection data={data} />
       <ReportDataProvenanceFooter data={data} hideFreshnessSection />
     </div>
   )

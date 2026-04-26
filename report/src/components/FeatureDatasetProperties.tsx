@@ -24,36 +24,22 @@ function forDisplay(props: Record<string, unknown> | null | undefined): Record<s
   return out
 }
 
-function DatasetPropertyCard({
-  title,
-  properties,
-  variant,
-}: {
-  title: string
-  properties: Record<string, unknown>
-  variant: 'official' | 'osm'
-}) {
+function DatasetPropertyCard({ properties }: { properties: Record<string, unknown> }) {
   const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
-  const shell =
-    variant === 'official' ? 'border-blue-900/50 bg-blue-950/18' : 'border-red-900/45 bg-red-950/18'
-  const bar = variant === 'official' ? 'border-l-blue-400/45' : 'border-l-red-400/45'
+
+  if (entries.length === 0) {
+    return <p className="text-sm text-slate-400">{de.feature.datasetPropertiesEmpty}</p>
+  }
 
   return (
-    <article className={`rounded-lg border border-l-[3px] ${bar} ${shell} p-3 shadow-sm`}>
-      <h3 className="mb-2 text-sm font-medium text-slate-100">{title}</h3>
-      {entries.length === 0 ? (
-        <p className="text-sm text-slate-400">{de.feature.datasetPropertiesEmpty}</p>
-      ) : (
-        <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-          {entries.map(([k, v]) => (
-            <div key={k} className="contents">
-              <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
-              <dd className="break-words text-slate-100">{formatPropertyValue(v)}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-    </article>
+    <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      {entries.map(([k, v]) => (
+        <div key={k} className="contents">
+          <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
+          <dd className="break-words text-slate-100">{formatPropertyValue(v)}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
@@ -63,24 +49,36 @@ export function FeatureDatasetProperties({ row }: { row: ReportRow }) {
 
   return (
     <section
-      className="mt-6 rounded-lg border border-slate-700 bg-slate-900/50 p-4"
+      className="mt-10 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm"
       aria-label={de.feature.datasetPropertiesSectionAria}
     >
-      <h2 className="text-sm font-semibold text-slate-100">
-        {de.feature.datasetPropertiesSectionTitle}
-      </h2>
-      <p className="mt-1 text-xs text-slate-400">{de.feature.datasetPropertiesSectionLead}</p>
-      <div className="mt-4 space-y-4">
-        <DatasetPropertyCard
-          title={de.feature.datasetOfficialCardTitle}
-          properties={official}
-          variant="official"
-        />
-        <DatasetPropertyCard
-          title={de.feature.datasetOsmCardTitle}
-          properties={osm}
-          variant="osm"
-        />
+      <div className="px-4 py-6 sm:px-6">
+        <h2 className="text-base font-semibold text-slate-100">
+          {de.feature.datasetPropertiesSectionTitle}
+        </h2>
+        <p className="mt-2 max-w-4xl text-sm text-slate-400">
+          {de.feature.datasetPropertiesSectionLead}
+        </p>
+      </div>
+      <div className="border-t border-slate-700">
+        <dl className="divide-y divide-slate-700/80">
+          <div className="bg-blue-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <dt className="text-sm/6 font-medium text-slate-200">
+              {de.feature.datasetOfficialCardTitle}
+            </dt>
+            <dd className="mt-2 md:col-span-2 md:mt-0">
+              <DatasetPropertyCard properties={official} />
+            </dd>
+          </div>
+          <div className="bg-red-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <dt className="text-sm/6 font-medium text-slate-200">
+              {de.feature.datasetOsmCardTitle}
+            </dt>
+            <dd className="mt-2 md:col-span-2 md:mt-0">
+              <DatasetPropertyCard properties={osm} />
+            </dd>
+          </div>
+        </dl>
       </div>
     </section>
   )

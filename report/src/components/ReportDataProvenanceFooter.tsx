@@ -10,17 +10,6 @@ export type ReportDataProvenanceFooterProps = {
   hideFreshnessSection?: boolean
 }
 
-function metadataOrUnknown(value: string | undefined): string {
-  const trimmed = value?.trim()
-  return trimmed && trimmed.length > 0 ? trimmed : de.provenance.unknown
-}
-
-function CompatibilityValue({ value }: { value: string | undefined }) {
-  const p = de.provenance
-  const key = (value?.trim() || 'unknown') as keyof typeof p.osmCompatibilityLabel
-  return p.osmCompatibilityLabel[key] ?? p.osmCompatibilityLabel.unknown
-}
-
 function SourceLinks({
   publicUrl,
   downloadUrl,
@@ -102,17 +91,17 @@ export function ReportDataProvenanceFooter({
   const osm = data.sourceMetadata?.osm
   const officialMeta = [off?.provider, off?.dataset, off?.layer].filter(Boolean).join(' · ')
 
-  const wrap = className ? className : ''
-
   return (
     <section
-      className={`mt-10 rounded border border-slate-700 bg-slate-900/50 p-4 text-sm text-slate-400 ${wrap}`.trim()}
+      className={`mt-14 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 text-sm text-slate-400 shadow-sm ${className}`.trim()}
       aria-label={p.sectionAria}
     >
-      <h2 className="mb-4 text-base font-semibold text-slate-100">{p.title}</h2>
+      <div className="px-4 py-6 sm:px-6">
+        <h2 className="text-base font-semibold text-slate-100">{p.title}</h2>
+      </div>
 
       {!hideFreshnessSection ? (
-        <div className="mb-6 space-y-1 border-b border-slate-700 pb-4">
+        <div className="space-y-1 border-t border-b border-slate-700 px-4 py-6 sm:px-6">
           <DateLine
             label={p.reportCreatedLabel}
             abs={reportFresh.absoluteLine || EM_DASH}
@@ -145,90 +134,57 @@ export function ReportDataProvenanceFooter({
         </div>
       ) : null}
 
-      <h3 className="mb-2 font-medium text-slate-200">{p.officialHeading}</h3>
-      <p className="mb-2 text-pretty">{p.officialLead}</p>
-      {officialMeta ? (
-        <p className="mb-2 text-slate-500">
-          {p.officialMetaPrefix}: {officialMeta}
-        </p>
-      ) : null}
-      <SourceLinks publicUrl={off?.sourcePublicUrl} downloadUrl={off?.sourceDownloadUrl} />
-      {off?.license?.trim() ? (
-        <p className="mb-4 text-xs text-slate-500">
-          {p.licenseLabel}: {off.license.trim()}
-        </p>
-      ) : (
-        <div className="mb-4" />
-      )}
-
-      <h3 className="mb-2 font-medium text-slate-200">{p.osmHeading}</h3>
-      <p className="mb-2 text-pretty">{p.osmLead}</p>
-      <SourceLinks publicUrl={osm?.sourcePublicUrl} downloadUrl={osm?.sourceDownloadUrl} />
-
-      <div
-        id="report-licence-section"
-        className="mt-6 mb-4 rounded border border-slate-700/80 bg-slate-950/40 p-3"
-      >
-        <h4 className="mb-2 text-sm font-medium text-slate-200">{p.licenseSectionHeading}</h4>
-        <div className="space-y-1 text-xs text-slate-300">
-          <div className="space-y-1">
-            <p className="font-medium text-slate-200">{p.officialHeading}</p>
-            <p>
-              <span className="text-slate-500">{p.licenseShortNameLabel}: </span>
-              {metadataOrUnknown(off?.licenseLabel ?? off?.license)}
-            </p>
-            <p>
-              <span className="text-slate-500">{p.licenseSourceLabel}: </span>
-              {off?.licenseSourceUrl?.trim() ? (
-                <a
-                  className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
-                  href={off.licenseSourceUrl.trim()}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {p.sourceLinkLabel}
-                </a>
+      <div className="border-t border-slate-700">
+        <dl className="divide-y divide-slate-700/80">
+          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <dt>
+              <h3 className="text-sm/6 font-medium text-slate-200">{p.officialHeading}</h3>
+            </dt>
+            <dd className="mt-2 md:col-span-2 md:mt-0">
+              <p className="mb-2 text-pretty">{p.officialLead}</p>
+              {officialMeta ? (
+                <p className="mb-2 text-slate-500">
+                  {p.officialMetaPrefix}: {officialMeta}
+                </p>
+              ) : null}
+              <SourceLinks publicUrl={off?.sourcePublicUrl} downloadUrl={off?.sourceDownloadUrl} />
+              {off?.license?.trim() ? (
+                <p className="mb-4 text-xs text-slate-500">
+                  {p.licenseLabel}: {off.license.trim()}
+                </p>
               ) : (
-                p.unknown
+                <div className="mb-4" />
               )}
-            </p>
-            <p>
-              <span className="text-slate-500">{p.osmCompatibilityLabelTitle}: </span>
-              <CompatibilityValue value={off?.osmCompatibility} />
-            </p>
-            <p>
-              <span className="text-slate-500">{p.osmCompatibilitySourceLabel}: </span>
-              {off?.osmCompatibilitySourceUrl?.trim() ? (
-                <a
-                  className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
-                  href={off.osmCompatibilitySourceUrl.trim()}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {p.sourceLinkLabel}
-                </a>
-              ) : (
-                p.unknown
-              )}
-            </p>
-            {off?.osmCompatibilityComment?.trim() ? (
-              <p className="text-slate-400">{off.osmCompatibilityComment.trim()}</p>
-            ) : null}
+            </dd>
           </div>
-        </div>
+
+          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <dt>
+              <h3 className="text-sm/6 font-medium text-slate-200">{p.osmHeading}</h3>
+            </dt>
+            <dd className="mt-2 md:col-span-2 md:mt-0">
+              <p className="mb-2 text-pretty">{p.osmLead}</p>
+              <SourceLinks publicUrl={osm?.sourcePublicUrl} downloadUrl={osm?.sourceDownloadUrl} />
+            </dd>
+          </div>
+          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <dt>
+              <h3 className="text-sm/6 font-medium text-slate-200">{p.osmFilterTitle}</h3>
+            </dt>
+            <dd className="mt-2 md:col-span-2 md:mt-0">
+              <p className="text-pretty">{p.osmFilterBody}</p>
+              {osm?.note?.trim() ? (
+                <>
+                  <p className="mt-4 mb-1 font-medium text-slate-300">{p.osmFilterNoteTitle}</p>
+                  <pre className="mb-0 overflow-x-auto rounded border border-slate-800 bg-slate-950 p-3 font-mono text-xs break-words whitespace-pre-wrap text-slate-300">
+                    {osm.note.trim()}
+                  </pre>
+                </>
+              ) : null}
+            </dd>
+          </div>
+        </dl>
       </div>
-
-      <p className="mb-2 font-medium text-slate-300">{p.osmFilterTitle}</p>
-      <p className="mb-4 text-pretty">{p.osmFilterBody}</p>
-
-      {osm?.note?.trim() ? (
-        <>
-          <p className="mb-1 font-medium text-slate-300">{p.osmFilterNoteTitle}</p>
-          <pre className="mb-4 overflow-x-auto rounded border border-slate-800 bg-slate-950 p-3 font-mono text-xs break-words whitespace-pre-wrap text-slate-300">
-            {osm.note.trim()}
-          </pre>
-        </>
-      ) : null}
     </section>
   )
 }
