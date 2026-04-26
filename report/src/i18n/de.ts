@@ -191,13 +191,15 @@ export const de = {
     liveSourcesSectionAria: 'Live-Attribute von amtlichen Diensten und OSM',
     liveSourcesSectionTitle: 'Quellenattribute abfragen',
     liveSourcesSectionLead:
-      'WFS: konfigurierte amtliche Dienste für den Kartenausschnitt (Bounding Box aus dem Vergleich, leicht gepuffert). OSM: optionale Overpass-Abfrage für alle `boundary=*`-Relationen und -Ways passend zum Datensatz in genau diesem Kasten — ohne weitere Tag-Filter, zum manuellen Abgleich.',
+      'Du kannst dir Rohdaten in der Bounding Box um das aktuelle Feature anzeigen lassen, um ganz aktuelle Daten mit dem zu vergleichen, was die App gerade anzeigt.',
     liveOfficialHeading: 'Amtliche Quelle (WFS)',
     liveOfficialLoad: 'Eigenschaften laden',
     liveOfficialLoading: 'Wird geladen …',
     liveOfficialNoBbox: 'Kein Kartenausschnitt — für dieses Objekt liegt keine Geometrie vor.',
     liveOfficialEmpty: 'Keine Treffer im Ausschnitt.',
     liveOfficialInvalidJson: 'Unerwartete WFS-Antwort (kein FeatureCollection).',
+    liveOfficialUnsupportedFormat:
+      'Diese WFS-Quelle liefert kein GeoJSON. Bitte ohne JSON-Format anfragen oder ein WFS/GML-Format nutzen.',
     liveOfficialHttp: 'WFS-Anfrage fehlgeschlagen:',
     liveOfficialFeatureTitle: (index1: number, id: string) =>
       `Datensatz ${index1}${id ? ` · ${id}` : ''}`,

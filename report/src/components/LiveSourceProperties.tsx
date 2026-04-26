@@ -1,38 +1,23 @@
 import { useCallback, useState } from 'react'
 import { de } from '../i18n/de'
-import {
-  buildOverpassBoundaryQuery,
-  fetchOverpassQuery,
-  type OverpassBoundaryHit,
-  parseOverpassBoundaryElements,
-} from '../lib/overpassBbox'
+import { buildOverpassBoundaryQuery, type OverpassBoundaryHit } from '../lib/overpassBbox'
 import { DEFAULT_OVERPASS_INTERPRETER_URL, OVERPASS_INSTANCES } from '../lib/overpassServers'
-import { buildWfsGetFeatureUrl, fetchWfsGetFeature, padMapBbox } from '../lib/wfsGetFeature'
+import { padMapBbox, type WfsFeature } from '../lib/wfsGetFeature'
 import type { ComparisonForReport, OgcWfsInspectSource, ReportRow } from '../types/report'
+import { mapLayerColors } from './mapLayerColors'
 import { sharedButtonClass } from './sharedButtonStyles'
-
-type GeoJsonFeature = {
-  type: 'Feature'
-  id?: string | number
-  properties: Record<string, unknown> | null
-}
-
-type GeoJsonFc = {
-  type?: string
-  features?: GeoJsonFeature[]
-}
 
 type OfficialSlot =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'done'; features: GeoJsonFeature[] }
+  | { status: 'done'; features: WfsFeature[] }
 
 type OsmSlot =
   | { status: 'idle' }
   | { status: 'confirm'; queryDraft: string; interpreterUrl: string; lastError?: string }
   | { status: 'loading' }
-  | { status: 'done'; hits: OverpassBoundaryHit[] }
+  | { status: 'done' }
 
 function formatPropertyValue(value: unknown): string {
   if (value === null || value === undefined) return '—'
@@ -46,14 +31,6 @@ function formatPropertyValue(value: unknown): string {
   return String(value)
 }
 
-function parseFeatureCollection(text: string): GeoJsonFeature[] {
-  const data = JSON.parse(text) as GeoJsonFc
-  if (!data || !Array.isArray(data.features)) {
-    throw new Error(de.feature.liveOfficialInvalidJson)
-  }
-  return data.features.filter((f) => f?.type === 'Feature')
-}
-
 function PropertyCard({
   title,
   properties,
@@ -64,12 +41,19 @@ function PropertyCard({
   variant: 'official' | 'osm'
 }) {
   const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
-  const shell =
-    variant === 'official' ? 'border-blue-900/50 bg-blue-950/18' : 'border-red-900/45 bg-red-950/18'
-  const bar = variant === 'official' ? 'border-l-blue-400/45' : 'border-l-red-400/45'
+  const color = variant === 'official' ? mapLayerColors.wfs : mapLayerColors.overpass
+  const keyText = variant === 'official' ? 'text-slate-400' : 'text-violet-200/75'
+  const valueText = variant === 'official' ? 'text-slate-100' : 'text-violet-100'
+  const cardStyle = {
+    borderColor: color.line,
+    backgroundColor:
+      variant === 'official'
+        ? `rgb(76 29 149 / ${mapLayerColors.wfs.fillOpacity})`
+        : `rgb(112 26 117 / ${mapLayerColors.overpass.fillOpacity})`,
+  } satisfies React.CSSProperties
 
   return (
-    <article className={`rounded-lg border border-l-[3px] ${bar} ${shell} p-3 shadow-sm`}>
+    <article className="rounded-lg border p-3 shadow-sm" style={cardStyle}>
       <h3 className="mb-2 text-sm/6 font-medium text-slate-100">{title}</h3>
       {entries.length === 0 ? (
         <p className="text-sm text-slate-400">{de.feature.liveOsmHitNoTags}</p>
@@ -77,21 +61,14 @@ function PropertyCard({
         <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           {entries.map(([k, v]) => (
             <div key={k} className="contents">
-              <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
-              <dd className="break-words text-slate-100">{formatPropertyValue(v)}</dd>
+              <dt className={`font-mono text-xs break-words ${keyText}`}>{k}</dt>
+              <dd className={`break-words ${valueText}`}>{formatPropertyValue(v)}</dd>
             </div>
           ))}
         </dl>
       )}
     </article>
   )
-}
-
-function sortOverpassHits(a: OverpassBoundaryHit, b: OverpassBoundaryHit): number {
-  const o = (t: string) => (t === 'relation' ? 0 : t === 'way' ? 1 : 2)
-  const c = o(a.type) - o(b.type)
-  if (c !== 0) return c
-  return a.id - b.id
 }
 
 /** Drop `name:de`, `name:en`, … from Overpass tag listings (noise for matching keys). */
@@ -104,73 +81,64 @@ function withoutNameStarTags(tags: Record<string, string>): Record<string, strin
   return out
 }
 
-export function LiveSourceProperties({ data, row }: { data: ComparisonForReport; row: ReportRow }) {
+export function LiveSourceProperties({
+  data,
+  row,
+  wfs,
+  overpass,
+}: {
+  data: ComparisonForReport
+  row: ReportRow
+  wfs: {
+    load: (source: OgcWfsInspectSource, bbox: [number, number, number, number]) => Promise<void>
+    getStatus: (sourceId: string) => OfficialSlot
+  }
+  overpass: {
+    hits: OverpassBoundaryHit[]
+    run: (query: string, interpreterUrl: string) => Promise<void>
+    reset: () => void
+  }
+}) {
   const sources = data.ogcInspectSources ?? []
   const bbox = row.mapBbox ? padMapBbox(row.mapBbox) : null
   const overpassBoundaryTag = data.overpassBoundaryTag ?? 'administrative'
 
-  const [officialById, setOfficialById] = useState<Record<string, OfficialSlot>>({})
   const [osm, setOsm] = useState<OsmSlot>({ status: 'idle' })
+  const osmHits = overpass.hits
 
   const loadOfficial = useCallback(
     async (src: OgcWfsInspectSource) => {
       if (!bbox) return
-      setOfficialById((prev) => ({ ...prev, [src.id]: { status: 'loading' } }))
-      try {
-        const url = buildWfsGetFeatureUrl(src, bbox)
-        const res = await fetchWfsGetFeature(url)
-        const text = await res.text()
-        if (!res.ok) {
-          throw new Error(`${de.feature.liveOfficialHttp} ${res.status}`)
-        }
-        const features = parseFeatureCollection(text)
-        setOfficialById((prev) => ({
-          ...prev,
-          [src.id]: { status: 'done', features },
-        }))
-      } catch (e) {
-        setOfficialById((prev) => ({
-          ...prev,
-          [src.id]: {
-            status: 'error',
-            message: e instanceof Error ? e.message : String(e),
-          },
-        }))
-      }
+      await wfs.load(src, bbox)
     },
-    [bbox],
+    [bbox, wfs],
   )
 
-  const runOverpass = useCallback(async (query: string, interpreterUrl: string) => {
-    const q = query.trim()
-    setOsm({ status: 'loading' })
-    try {
-      const res = await fetchOverpassQuery(q, interpreterUrl)
-      const text = await res.text()
-      if (!res.ok) {
-        throw new Error(`${de.feature.liveOsmHttp} ${res.status}`)
-      }
-      let hits: OverpassBoundaryHit[]
+  const runOverpass = useCallback(
+    async (query: string, interpreterUrl: string) => {
+      const q = query.trim()
+      setOsm({ status: 'loading' })
       try {
-        hits = parseOverpassBoundaryElements(text)
+        await overpass.run(q, interpreterUrl)
+        setOsm({ status: 'done' })
       } catch (e) {
-        if (e instanceof Error && e.message === 'INVALID_OVERPASS_JSON') {
-          throw new Error(de.feature.liveOsmInvalidJson)
-        }
-        throw e
+        const rawMessage = e instanceof Error ? e.message : String(e)
+        const message =
+          rawMessage === 'INVALID_OVERPASS_JSON'
+            ? de.feature.liveOsmInvalidJson
+            : rawMessage.startsWith('Overpass request failed:')
+              ? `${de.feature.liveOsmHttp} ${rawMessage.replace('Overpass request failed:', '').trim()}`
+              : rawMessage
+        setOsm({
+          status: 'confirm',
+          queryDraft: query,
+          interpreterUrl,
+          lastError: message,
+        })
       }
-      hits.sort(sortOverpassHits)
-      setOsm({ status: 'done', hits })
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
-      setOsm({
-        status: 'confirm',
-        queryDraft: query,
-        interpreterUrl,
-        lastError: message,
-      })
-    }
-  }, [])
+    },
+    [overpass],
+  )
 
   const showOfficial = sources.length > 0
   const showOsm = bbox != null
@@ -202,21 +170,34 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                   <p className="text-sm text-amber-300/90">{de.feature.liveOfficialNoBbox}</p>
                 )}
                 {sources.map((src) => {
-                  const slot = officialById[src.id] ?? { status: 'idle' as const }
+                  const slot = wfs.getStatus(src.id)
+                  const officialErrorMessage =
+                    slot.status === 'error' && slot.message === 'INVALID_WFS_XML'
+                      ? de.feature.liveOfficialInvalidJson
+                      : slot.status === 'error' &&
+                          slot.message.includes("output/input format 'application/json'")
+                        ? de.feature.liveOfficialUnsupportedFormat
+                        : slot.status === 'error' && slot.message.startsWith('WFS request failed:')
+                          ? `${de.feature.liveOfficialHttp} ${slot.message.replace('WFS request failed:', '').trim()}`
+                          : slot.status === 'error'
+                            ? slot.message
+                            : null
                   return (
                     <div key={src.id} className="space-y-2">
-                      <button
-                        type="button"
-                        disabled={!bbox || slot.status === 'loading'}
-                        onClick={() => void loadOfficial(src)}
-                        className={sharedButtonClass}
-                      >
-                        {slot.status === 'loading'
-                          ? de.feature.liveOfficialLoading
-                          : `${de.feature.liveOfficialLoad}: ${src.label}`}
-                      </button>
-                      {slot.status === 'error' && (
-                        <p className="text-sm text-red-400">{slot.message}</p>
+                      {slot.status !== 'done' && (
+                        <button
+                          type="button"
+                          disabled={!bbox || slot.status === 'loading'}
+                          onClick={() => void loadOfficial(src)}
+                          className={sharedButtonClass}
+                        >
+                          {slot.status === 'loading'
+                            ? de.feature.liveOfficialLoading
+                            : `${de.feature.liveOfficialLoad}: ${src.label}`}
+                        </button>
+                      )}
+                      {slot.status === 'error' && officialErrorMessage && (
+                        <p className="text-sm text-red-400">{officialErrorMessage}</p>
                       )}
                       {slot.status === 'done' && slot.features.length === 0 && (
                         <p className="text-sm text-slate-400">{de.feature.liveOfficialEmpty}</p>
@@ -226,10 +207,12 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                           {slot.features.map((f, i) => {
                             const props = f.properties ?? {}
                             const idPart = f.id != null ? String(f.id) : String(i + 1)
+                            const title =
+                              f.id != null ? idPart : de.feature.liveOfficialFeatureTitle(i + 1, '')
                             return (
                               <PropertyCard
                                 key={`${src.id}-${idPart}`}
-                                title={de.feature.liveOfficialFeatureTitle(i + 1, idPart)}
+                                title={title}
                                 properties={props}
                                 variant="official"
                               />
@@ -245,7 +228,7 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
           )}
 
           {showOsm && (
-            <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <div className="bg-violet-950/8 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
               <dt>
                 <h3 className="text-sm/6 font-medium text-slate-200">
                   {de.feature.liveOsmHeading}
@@ -378,13 +361,13 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                   <p className="text-sm text-slate-400">{de.feature.liveOsmLoading}</p>
                 )}
 
-                {osm.status === 'done' && osm.hits.length === 0 && (
+                {osm.status === 'done' && osmHits.length === 0 && (
                   <p className="text-sm text-slate-400">{de.feature.liveOsmEmpty}</p>
                 )}
 
-                {osm.status === 'done' && osm.hits.length > 0 && (
+                {osm.status === 'done' && osmHits.length > 0 && (
                   <div className="space-y-3">
-                    {osm.hits.map((hit) => (
+                    {osmHits.map((hit) => (
                       <PropertyCard
                         key={`${hit.type}-${hit.id}`}
                         title={de.feature.liveOsmHitTitle(hit.type, hit.id)}
@@ -398,8 +381,11 @@ export function LiveSourceProperties({ data, row }: { data: ComparisonForReport;
                 {osm.status === 'done' && (
                   <button
                     type="button"
-                    onClick={() => setOsm({ status: 'idle' })}
-                    className="text-sm text-red-300/90 underline decoration-red-400/30 underline-offset-2 hover:text-red-200"
+                    onClick={() => {
+                      overpass.reset()
+                      setOsm({ status: 'idle' })
+                    }}
+                    className="text-sm text-violet-300/90 underline decoration-violet-400/30 underline-offset-2 hover:text-violet-200"
                   >
                     {de.feature.liveOsmAgain}
                   </button>

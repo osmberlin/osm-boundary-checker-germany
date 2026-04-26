@@ -1,67 +1,19 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
-import { lazy, Suspense, useId } from 'react'
-import { MapProvider } from 'react-map-gl/maplibre'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
-import { LayerToggleStatBlock, StatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
-import {
-  AreaDeltaInfoButton,
-  HausdorffInfoButton,
-  IouInfoButton,
-  SymDiffInfoButton,
-} from '../components/HausdorffInfoModal'
-import { InfoNotice } from '../components/InfoNotice'
+import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
+import { FeatureDetailStatsStrip } from '../components/featureDetail/FeatureDetailStatsStrip'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
-import { mapLayerColors } from '../components/mapLayerColors'
-import { hexToRgba } from '../components/MapLegend'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
 import { featureQueryOptions } from '../data/load'
-import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
+import { useFeatureDetailOverpass } from '../hooks/useFeatureDetailOverpass'
+import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
 import { useMapViewParam } from '../hooks/useMapViewParam'
-import { categoryLabelDe, de } from '../i18n/de'
-import {
-  EM_DASH,
-  formatDeIou,
-  formatDeMeters,
-  formatDeOrDash,
-  formatDePercentPoints,
-  formatDeSquareKilometersFromM2,
-} from '../lib/formatDe'
-import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
-import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
-import { selectSourceDateForFreshness } from '../lib/sourceFreshnessSelection'
-import type { ComparisonForReport, ReportRow } from '../types/report'
-
-const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShell'))
-
-type MapLayerControls = ReturnType<typeof useComparisonMapLayers>
-
-function normalizeUnmatchedRows(data: ComparisonForReport): ReportRow[] {
-  return data.unmatchedOsm.map((row) => ({
-    canonicalMatchKey: row.canonicalMatchKey,
-    nameLabel: row.nameLabel,
-    category: 'unmatched_osm',
-    osmRelationId: row.osmRelationId,
-    metrics: null,
-    mapBbox: row.mapBbox,
-    officialForEditPath: null,
-    officialProperties: null,
-    osmProperties: {
-      name: row.nameLabel,
-      relation_id: row.osmRelationId,
-      ...(row.adminLevel ? { admin_level: row.adminLevel } : {}),
-    },
-  }))
-}
-
-function findRow(data: ComparisonForReport, featureKey: string): ReportRow | null {
-  const inMain = data.rows.find((row) => row.canonicalMatchKey === featureKey)
-  if (inMain) return inMain
-  return normalizeUnmatchedRows(data).find((row) => row.canonicalMatchKey === featureKey) ?? null
-}
+import { de } from '../i18n/de'
+import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
 
 export function FeatureDetail() {
   const { areaId, featureKey } = useParams({ strict: false })
@@ -73,9 +25,11 @@ export function FeatureDetail() {
     ...featureQueryOptions(areaKey, featureLookupKey),
     enabled: areaId != null && featureKey != null,
   })
-  const data: ComparisonForReport | null = featureQuery.data ?? null
+  const data = featureQuery.data ?? null
+  const overpass = useFeatureDetailOverpass(featureLookupKey)
+  const wfs = useFeatureDetailWfs(featureLookupKey)
 
-  const row = !data || !featureKey ? null : findRow(data, featureKey)
+  const row = !data || !featureKey ? null : findFeatureDetailRow(data, featureKey)
   if (featureQuery.isError) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
@@ -91,61 +45,36 @@ export function FeatureDetail() {
     )
   }
 
-  const hasRowMapTiles =
-    row.category === 'unmatched_osm' ? data.hasUnmatchedPmtiles === true : data.hasPmtiles
-
   return (
     <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
-      <StatsStrip row={row} mapLayers={mapLayers} data={data} />
+      <FeatureDetailStatsStrip row={row} mapLayers={mapLayers} data={data} />
 
-      {!hasRowMapTiles ? (
-        <InfoNotice className="mt-4">{de.feature.noPmtiles}</InfoNotice>
-      ) : (
-        <div className="mt-4 w-full overflow-hidden rounded border border-slate-700">
-          <div className="h-[480px] w-full">
-            <Suspense
-              fallback={
-                <div className="flex h-full items-center justify-center text-slate-500">
-                  {de.feature.loadingMap}
-                </div>
-              }
-            >
-              <MapProvider>
-                <ComparisonMapShell
-                  sources={{
-                    primary: {
-                      pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
-                      sourceLayer: data.tippecanoeLayer,
-                    },
-                    unmatched: data.hasUnmatchedPmtiles
-                      ? {
-                          pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
-                          sourceLayer: data.tippecanoeLayer,
-                          visible: row.category === 'unmatched_osm',
-                        }
-                      : undefined,
-                  }}
-                  view={{
-                    featureId: row.canonicalMatchKey,
-                    mapBbox: row.mapBbox,
-                    urlMapView: mapViewParam.mapView,
-                    onMoveEndCommitUrl: mapViewParam.commitMapViewFromMap,
-                  }}
-                  layers={{
-                    showOfficial: row.category === 'unmatched_osm' ? false : mapLayers.showOfficial,
-                    showOsm: row.category === 'unmatched_osm' ? false : mapLayers.showOsm,
-                    showDiff: row.category === 'unmatched_osm' ? false : mapLayers.showDiff,
-                  }}
-                />
-              </MapProvider>
-            </Suspense>
-          </div>
-        </div>
-      )}
+      <FeatureDetailMapSection
+        areaKey={areaKey}
+        data={data}
+        row={row}
+        mapLayers={mapLayers}
+        mapView={mapViewParam}
+        overpassGeojson={overpass.geojson}
+        wfsGeojson={wfs.geojson}
+      />
 
       <FeatureDatasetProperties row={row} />
 
-      <LiveSourceProperties data={data} row={row} />
+      <LiveSourceProperties
+        key={row.canonicalMatchKey}
+        data={data}
+        row={row}
+        wfs={{
+          load: wfs.loadSource,
+          getStatus: wfs.getStatus,
+        }}
+        overpass={{
+          hits: overpass.hits,
+          run: overpass.runOverpass,
+          reset: overpass.resetOverpass,
+        }}
+      />
 
       <UpdateMapInstructions areaId={areaKey} row={row} />
 
@@ -159,250 +88,4 @@ export function FeatureDetail() {
       <ReportDataProvenanceFooter data={data} hideFreshnessSection />
     </div>
   )
-}
-
-function symmetricDiffAreaM2(m: NonNullable<ReportRow['metrics']>): number {
-  return m.officialAreaM2 * (m.symmetricDiffPct / 100)
-}
-
-function StatsStrip({
-  row,
-  mapLayers,
-  data,
-}: {
-  row: ReportRow
-  mapLayers: MapLayerControls
-  data: ComparisonForReport
-}) {
-  const m = row.metrics
-  const s = de.feature.stats
-  const layerId = useId()
-  const o = mapLayerColors.official
-  const osmC = mapLayerColors.osm
-  const d = mapLayerColors.diff
-  const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
-  const officialRaw = data.sourceMetadata?.official?.downloadedAt
-  const osmRaw = data.sourceMetadata?.osm?.downloadedAt
-  const hasOfficialMetadata = data.sourceMetadata?.official != null
-  const officialDateChoice = selectSourceDateForFreshness(data.sourceMetadata?.official)
-  const officialUpdatedFresh = optionalSourceStatLines(officialDateChoice.primaryRaw)
-  const officialDownloadedFresh = sourceStatLines(officialRaw, hasOfficialMetadata)
-  const officialFresh = officialUpdatedFresh ?? officialDownloadedFresh
-  const officialSecondaryLine =
-    officialDateChoice.secondaryDownloadedRaw && hasOfficialMetadata
-      ? `${de.areaReport.freshnessSecondaryDownloadedPrefix}: ${officialDownloadedFresh.absoluteLine}`
-      : null
-  const osmFresh = sourceStatLines(osmRaw, data.sourceMetadata?.osm != null)
-  const titlePrefix = data.titlePrefix
-
-  return (
-    <>
-      <div className="mb-6 flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-        <h1 className="min-w-0 text-2xl font-semibold tracking-tight text-slate-100">
-          {`${titlePrefix} ${row.nameLabel}`.trim()}
-        </h1>
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-slate-500 sm:justify-end">
-          <span className="font-mono">{row.canonicalMatchKey}</span>
-          <span className="text-slate-600" aria-hidden>
-            ·
-          </span>
-          <span>{categoryLabelDe(row.category)}</span>
-          {row.osmRelationId && (
-            <>
-              <span className="text-slate-600" aria-hidden>
-                ·
-              </span>
-              <a
-                className="text-slate-400 underline decoration-slate-500/60 underline-offset-2 hover:text-slate-300"
-                href={`https://www.openstreetmap.org/relation/${row.osmRelationId}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {de.feature.osmRelation} {row.osmRelationId}
-              </a>
-            </>
-          )}
-        </div>
-      </div>
-
-      <section className="mb-6" aria-label={de.areaReport.stats.summaryStatRowAria}>
-        <StatBlocksRow className="mt-0">
-          <SummaryStatColumn
-            heading={de.areaReport.freshnessHeadingReport}
-            relativeLine={reportFresh.relativeLine ?? EM_DASH}
-            absoluteLine={reportFresh.absoluteLine || EM_DASH}
-          />
-          <SummaryStatColumn
-            heading={de.areaReport.freshnessHeadingOfficial}
-            relativeLine={officialFresh.relativeLine}
-            absoluteLine={officialFresh.absoluteLine}
-            detailLine={officialSecondaryLine}
-          />
-          <SummaryStatColumn
-            heading={de.areaReport.freshnessHeadingOsm}
-            relativeLine={osmFresh.relativeLine}
-            absoluteLine={osmFresh.absoluteLine}
-          />
-        </StatBlocksRow>
-      </section>
-
-      <section className="rounded border border-slate-700 bg-slate-900 p-4">
-        {m && (
-          <>
-            <StatBlocksRow
-              className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 lg:[&>*:nth-child(n+2)]:border-l lg:[&>*:nth-child(n+2)]:pl-6 [&>*:nth-child(odd)]:border-l-0 [&>*:nth-child(odd)]:pl-0"
-              aria-label={s.diffMetricsRowAria}
-            >
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-0.5">
-                    <span>{s.iou}</span>
-                    <IouInfoButton />
-                  </span>
-                }
-                value={formatDeIou(m.iou)}
-              />
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-0.5">
-                    <span>{s.areaDelta}</span>
-                    <AreaDeltaInfoButton />
-                  </span>
-                }
-                value={formatDePercentPoints(m.areaDiffPct)}
-              />
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-0.5">
-                    <span>{s.symDiff}</span>
-                    <SymDiffInfoButton />
-                  </span>
-                }
-                value={formatDePercentPoints(m.symmetricDiffPct)}
-              />
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-0.5">
-                    <span>{s.hausdorff}</span>
-                    <HausdorffInfoButton />
-                  </span>
-                }
-                value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
-              />
-            </StatBlocksRow>
-
-            <StatBlocksRow className="mt-10 sm:mt-12 lg:mt-14" aria-label={s.layersRowAria}>
-              <LayerToggleStatBlock
-                inputId={`${layerId}-official`}
-                checked={mapLayers.showOfficial}
-                onChange={mapLayers.setShowOfficial}
-                label={s.areaOfficial}
-                value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
-                swatch={
-                  <div
-                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
-                    style={{
-                      borderColor: o.line,
-                      backgroundColor: hexToRgba(o.fill, o.fillOpacity),
-                    }}
-                    aria-hidden
-                  />
-                }
-              />
-              <LayerToggleStatBlock
-                inputId={`${layerId}-osm`}
-                checked={mapLayers.showOsm}
-                onChange={mapLayers.setShowOsm}
-                label={s.areaOsm}
-                value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
-                swatch={
-                  <div
-                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
-                    style={{
-                      borderColor: osmC.line,
-                      backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
-                    }}
-                    aria-hidden
-                  />
-                }
-              />
-              <LayerToggleStatBlock
-                inputId={`${layerId}-diff`}
-                checked={mapLayers.showDiff}
-                onChange={mapLayers.setShowDiff}
-                label={de.map.diff}
-                value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
-                swatch={
-                  <div
-                    className="h-full w-full shrink-0 rounded-[2px] border border-solid border-slate-500"
-                    style={{
-                      background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
-                    }}
-                    aria-hidden
-                  />
-                }
-              />
-            </StatBlocksRow>
-          </>
-        )}
-        {!m && <p className="text-sm text-amber-400">{de.feature.noMetrics}</p>}
-      </section>
-    </>
-  )
-}
-
-function SummaryStatColumn({
-  heading,
-  relativeLine,
-  absoluteLine,
-  detailLine,
-}: {
-  heading: string
-  relativeLine: string
-  absoluteLine: string
-  detailLine?: string | null
-}) {
-  const compactRelativeLine = relativeLine.replace(/\bStunden?\b/g, 'Std.')
-  const mobileAbsoluteLine = toNumericMonthAbsoluteDe(absoluteLine)
-
-  return (
-    <div className="flex min-w-0 flex-col gap-y-1">
-      <dt className="text-sm font-medium text-slate-400">{heading}</dt>
-      <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-slate-400 tabular-nums sm:text-3xl">
-        <span className="sm:hidden">{compactRelativeLine}</span>
-        <span className="hidden sm:inline">{compactRelativeLine}</span>
-      </dd>
-      <dd className="m-0 text-sm text-slate-400">
-        <span className="sm:hidden">{mobileAbsoluteLine}</span>
-        <span className="hidden sm:inline">{absoluteLine}</span>
-      </dd>
-      {detailLine ? <dd className="m-0 text-xs text-slate-500">{detailLine}</dd> : null}
-    </div>
-  )
-}
-
-function toNumericMonthAbsoluteDe(value: string): string {
-  const monthByName: Record<string, string> = {
-    Januar: '01',
-    Februar: '02',
-    März: '03',
-    April: '04',
-    Mai: '05',
-    Juni: '06',
-    Juli: '07',
-    August: '08',
-    September: '09',
-    Oktober: '10',
-    November: '11',
-    Dezember: '12',
-  }
-  const m = value.match(/^(\d{1,2})\.\s+([A-Za-zÄÖÜäöüß]+)\s+(\d{4})\s+(\d{2}:\d{2})$/)
-  if (!m) return value
-  const day = m[1]?.padStart(2, '0')
-  const monthName = m[2]
-  const year = m[3]
-  const time = m[4]
-  const month = monthName ? monthByName[monthName] : null
-  if (!day || !month || !year || !time) return value
-  return `${day}.${month}.${year} ${time}`
 }

@@ -62,5 +62,8 @@
     "oxfmt": "^0.43.0",
     "oxlint": "^1.58.0",
     "typescript": "npm:@typescript/typescript6@^6.0.0"
+  },
+  "patchedDependencies": {
+    "osm2geojson-ultra@4.0.1": "patches/osm2geojson-ultra@4.0.1.patch"
   }
 }

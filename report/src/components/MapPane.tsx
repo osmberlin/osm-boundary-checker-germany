@@ -3,6 +3,7 @@ import { useRef } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
 import MapLibre from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
+import type { OverpassGeoJsonFeatureCollection } from '../lib/overpassBbox'
 import {
   ALL_INTERACTIVE_LAYER_IDS,
   COMPARISON_BASEMAP_STYLE,
@@ -19,6 +20,8 @@ import {
 } from './map/comparisonMapFilters'
 import { ensureComparisonMapSprites } from './map/comparisonMapSprites'
 import { ComparisonVectorLayers } from './map/ComparisonVectorLayers'
+import { OverpassOverlayLayers } from './map/OverpassOverlayLayers'
+import { WfsOverlayLayers } from './map/WfsOverlayLayers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 type MapPaneSources = {
@@ -54,6 +57,11 @@ type MapPaneInteraction = {
   onFeatureClick?: (featureKey: string) => void
 }
 
+type MapPaneOverlays = {
+  overpassGeojson?: OverpassGeoJsonFeatureCollection | null
+  wfsGeojson?: GeoJSON.FeatureCollection | null
+}
+
 type FeatureStateTarget = {
   source: string
   sourceLayer: string
@@ -78,6 +86,7 @@ export default function MapPane({
   view,
   layers,
   interaction,
+  overlays,
   mapId,
   onZoomChange,
 }: {
@@ -85,6 +94,7 @@ export default function MapPane({
   view: MapPaneView
   layers: MapPaneLayers
   interaction?: MapPaneInteraction
+  overlays?: MapPaneOverlays
   /**
    * When set (e.g. via ComparisonMapShell), registers this map with MapProvider for `useMap()[mapId]`.
    * @see https://visgl.github.io/react-map-gl/docs/api-reference/mapbox/map#mapprovider
@@ -98,6 +108,8 @@ export default function MapPane({
   const { primary, unmatched } = sources
   const { featureId, mapBbox, urlMapView, onMoveEndCommitUrl } = view
   const { showOfficial, showOsm, showDiff } = layers
+  const overpassGeojson = overlays?.overpassGeojson ?? null
+  const wfsGeojson = overlays?.wfsGeojson ?? null
 
   const hoveredFeatureRef = useRef<{
     source: string
@@ -254,6 +266,8 @@ export default function MapPane({
           showDiff={false}
         />
       ) : null}
+      <WfsOverlayLayers geojson={wfsGeojson} />
+      <OverpassOverlayLayers geojson={overpassGeojson} />
     </MapLibre>
   )
 }

@@ -13,6 +13,22 @@ export const mapLayerColors = {
     fillOpacity: 0.15,
     line: '#c2410c',
   },
+  overpass: {
+    fill: '#701a75',
+    fillOpacity: 0.2,
+    line: '#86198f',
+    lineOpacity: 0.9,
+    label: '#f5d0fe',
+    labelHalo: '#0f172a',
+  },
+  wfs: {
+    fill: '#4c1d95',
+    fillOpacity: 0.22,
+    line: '#5b21b6',
+    lineOpacity: 0.95,
+    label: '#ddd6fe',
+    labelHalo: '#0f172a',
+  },
   /** Symmetric-diff patches: source = blue, OSM = red */
   diff: {
     official: {

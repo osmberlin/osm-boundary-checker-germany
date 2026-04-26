@@ -1,0 +1,32 @@
+diff --git a/dist/relation.js b/dist/relation.js
+index 01f39e5b2d6825ddb8a0aa7d8aa01a658f29c6e9..1ba3ba542e4abfb04beaa69063a2bbfe085284d4 100644
+--- a/dist/relation.js
++++ b/dist/relation.js
+@@ -235,6 +235,27 @@ export class Relation extends OsmObject {
+         if (tainted) {
+             feature.properties["@tainted"] = tainted;
+         }
++        const polygonGeometries = geometries.filter((g) => g.type === "Polygon" || g.type === "MultiPolygon");
++        if (polygonGeometries.length === 1) {
++            feature.geometry = polygonGeometries[0];
++            return feature;
++        }
++        if (polygonGeometries.length > 1) {
++            const mergedCoordinates = [];
++            for (const g of polygonGeometries) {
++                if (g.type === "Polygon") {
++                    mergedCoordinates.push(g.coordinates);
++                }
++                else {
++                    mergedCoordinates.push(...g.coordinates);
++                }
++            }
++            feature.geometry = {
++                type: "MultiPolygon",
++                coordinates: mergedCoordinates,
++            };
++            return feature;
++        }
+         if (geometries.length === 1) {
+             feature.geometry = geometries[0];
+         }
