@@ -4,7 +4,15 @@ import { spawnSync } from 'node:child_process'
  * Download BKG VG25 utm32s GeoPackage (ZIP) into `.cache/bkg/`, unzip, record `downloadedAt`.
  * Requires `unzip` on PATH (macOS/Linux). Use `--zip /path/to/vg25.utm32s.gpkg.zip` to seed from a local file instead of HTTP.
  */
-import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import {
   BKG_CACHE_DIR,
