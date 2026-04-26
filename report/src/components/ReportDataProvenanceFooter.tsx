@@ -57,7 +57,7 @@ function DataLinkItem({ label, url, details }: { label: string; url: string; det
         target="_blank"
         rel="noreferrer"
       >
-        ${label}: ${hostFromHref(url)}
+        {label}: {hostFromHref(url)}
       </a>
       {details?.length ? <span className="text-slate-500"> ({details.join(', ')})</span> : null}
     </li>
