@@ -108,7 +108,11 @@ jobs:
         timeout-minutes: 210
         run: |
           echo "### Compare phase" >> "$GITHUB_STEP_SUMMARY"
-          bun run scripts/ci/run-nightly-pipeline-with-retry.ts -- bun run pipeline:nightly:compare
+          if ! bun run pipeline:nightly:compare; then
+            echo "Compare phase failed, retrying once in 60s..." | tee -a "$GITHUB_STEP_SUMMARY"
+            sleep 60
+            bun run pipeline:nightly:compare
+          fi
         env:
           CI: '1'
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
