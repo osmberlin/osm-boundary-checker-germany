@@ -28,6 +28,15 @@
         "matched": 19,
         "unmatchedOsm": 12483
       }
+    },
+    {
+      "id": "2026-04-26",
+      "summary": {
+        "totalRows": 19,
+        "meanIou": 0.9997301327961697,
+        "matched": 19,
+        "unmatchedOsm": 12483
+      }
     }
   ]
 }
