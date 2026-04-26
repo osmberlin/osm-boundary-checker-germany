@@ -29,6 +29,10 @@
     "osmScopeFilter": "centroid_in_official_coverage",
   },
 
+  "osm": {
+    "ignoreRelationIds": ["62504", "62422"],
+  },
+
   "ogcInspectSources": [
     {
       "id": "berlin-alkis-ortsteile",
