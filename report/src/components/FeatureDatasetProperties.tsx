@@ -76,7 +76,7 @@ export function FeatureDatasetProperties({ row }: { row: ReportRow }) {
             </dd>
           </div>
           <div className="bg-red-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt className="flex items-center justify-between gap-3">
+            <dt className="flex items-center justify-between gap-3 md:justify-start">
               <h3 className="text-sm/6 font-medium text-slate-200">
                 {de.feature.datasetOsmCardTitle}
               </h3>
