@@ -1,5 +1,4 @@
 import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
-import { ChevronRightIcon } from '@heroicons/react/20/solid'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
@@ -521,7 +520,7 @@ export function AreaReport() {
                       aria-label={`${de.areaReport.table.view}: ${row.nameLabel}`}
                     >
                       <span className="sr-only">{de.areaReport.table.view}</span>
-                      <ChevronRightIcon aria-hidden className="size-5" />
+                      <span aria-hidden>→</span>
                     </Link>
                   </td>
                 </tr>
