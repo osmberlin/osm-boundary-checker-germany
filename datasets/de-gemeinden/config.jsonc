@@ -1,5 +1,6 @@
 {
   "displayName": "Deutschland Gemeinden",
+  "titlePrefix": "Gemeinde",
   "officialProfile": "bkg_vg25_gem",
   "osmProfile": "admin_rs",
 

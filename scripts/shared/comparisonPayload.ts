@@ -41,6 +41,7 @@ export const comparisonSourceMetadataEmbeddedSchema = z.object({
 export const comparisonForReportSchema = z.object({
   area: z.string(),
   displayName: z.string().trim().min(1),
+  titlePrefix: z.string().trim().min(1),
   generatedAt: z.string(),
   metricsCrs: z.string(),
   overpassBoundaryTag: z.enum(['administrative', 'postal_code']).optional(),

@@ -1,6 +1,6 @@
 import { useRouterState } from '@tanstack/react-router'
-import { areasIndex } from '../data/areasIndex'
 import { de } from '../i18n/de'
+import { areaDisplayNameForId } from '../lib/reportLookups'
 import { AppBreadcrumb, type AppBreadcrumbCrumb } from './AppBreadcrumb'
 
 function shortFeatureKey(encoded: string) {
@@ -11,9 +11,6 @@ function shortFeatureKey(encoded: string) {
 /** Route-derived crumbs in the global header (replaces a separate title bar). */
 export function PageBreadcrumb() {
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const displayNameByArea = new Map(
-    areasIndex.summaries.map((summary) => [summary.area, summary.displayName]),
-  )
 
   const segs = pathname.split('/').filter(Boolean)
   const crumbs: { homeCurrent: boolean; items: AppBreadcrumbCrumb[] } =
@@ -27,7 +24,7 @@ export function PageBreadcrumb() {
         : (() => {
             const areaId = segs[0]
             if (!areaId) return { homeCurrent: true, items: [] }
-            const areaLabel = displayNameByArea.get(areaId) ?? areaId
+            const areaLabel = areaDisplayNameForId(areaId)
 
             if (segs.length === 1) {
               return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }

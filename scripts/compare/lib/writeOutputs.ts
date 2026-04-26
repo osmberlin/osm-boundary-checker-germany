@@ -273,6 +273,7 @@ function removeObsoleteOutputFiles(outDir: string) {
 function buildStaticPayloadBase(
   areaFolder: string,
   displayName: string,
+  titlePrefix: string,
   generatedAt: string,
   metricsCrs: string,
   overpassBoundaryTag: OverpassBoundaryTag,
@@ -284,6 +285,7 @@ function buildStaticPayloadBase(
   const out: Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> = {
     area: areaFolder,
     displayName,
+    titlePrefix,
     generatedAt,
     metricsCrs,
     overpassBoundaryTag,
@@ -392,6 +394,7 @@ export function writeOutputs(
   areaPath: string,
   areaFolder: string,
   displayName: string,
+  titlePrefix: string,
   rows: CompareRow[],
   unmatchedOsm: UnmatchedOsmRow[],
   metricsCrs: string,
@@ -496,6 +499,7 @@ export function writeOutputs(
   const base = buildStaticPayloadBase(
     areaFolder,
     displayName,
+    titlePrefix,
     generatedAt,
     metricsCrs,
     overpassBoundaryTag,

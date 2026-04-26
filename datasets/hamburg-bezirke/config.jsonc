@@ -1,5 +1,6 @@
 {
   "displayName": "Hamburg Bezirke",
+  "titlePrefix": "Bezirk",
   "osmProfile": "admin_rs",
 
   // Hamburg statistical Bezirke (OGC API) — no RS in source; map BezirkNr → OSM Schlüssel.

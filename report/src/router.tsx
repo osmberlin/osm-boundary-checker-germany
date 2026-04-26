@@ -9,14 +9,22 @@ import {
 import { ReportLayout } from './App'
 import { comparisonQueryOptions, featureQueryOptions, snapshotsQueryOptions } from './data/load'
 import { routerBasePath } from './data/paths'
+import { de } from './i18n/de'
+import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
 import { stringifySearchPretty } from './lib/routerSearchStringify'
 import { AreaReport } from './pages/AreaReport'
 import { FeatureDetail } from './pages/FeatureDetail'
 import { Home } from './pages/Home'
 import { ProcessingStatus } from './pages/ProcessingStatus'
+import type { ComparisonForReport } from './types/report'
 
 export type RouterContext = {
   queryClient: QueryClient
+}
+
+function featureTitleFromData(data: ComparisonForReport | undefined, featureKey: string): string {
+  if (!data) return featureKey
+  return `${data.titlePrefix} ${featureNameLabelFromData(data, featureKey) ?? featureKey}`.trim()
 }
 
 export const rootRoute = createRootRouteWithContext<RouterContext>()({
@@ -26,12 +34,21 @@ export const rootRoute = createRootRouteWithContext<RouterContext>()({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  head: () => ({
+    meta: [{ title: de.appTitle }],
+  }),
   component: Home,
 })
 
 const statusRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/status',
+  head: () => ({
+    meta: [
+      { title: `${de.status.title} | ${de.appTitle}` },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
   component: ProcessingStatus,
 })
 
@@ -44,6 +61,12 @@ const areaRoute = createRoute({
       context.queryClient.ensureQueryData(snapshotsQueryOptions(params.areaId)),
     ])
   },
+  head: ({ params }) => ({
+    meta: [
+      { title: `${areaDisplayNameForId(params.areaId)} | ${de.appTitle}` },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
   component: AreaReport,
 })
 
@@ -51,8 +74,13 @@ const featureRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/$areaId/feature/$featureKey',
   loader: async ({ context, params }) => {
-    await context.queryClient.ensureQueryData(featureQueryOptions(params.areaId, params.featureKey))
+    return context.queryClient.ensureQueryData(
+      featureQueryOptions(params.areaId, params.featureKey),
+    )
   },
+  head: ({ params, loaderData }) => ({
+    meta: [{ title: `${featureTitleFromData(loaderData, params.featureKey)} | ${de.appTitle}` }],
+  }),
   component: FeatureDetail,
 })
 

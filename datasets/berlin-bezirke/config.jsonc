@@ -1,5 +1,6 @@
 {
   "displayName": "Berlin Bezirke",
+  "titlePrefix": "Bezirk",
   "osmProfile": "admin_rs",
 
   // Compare: FlatGeobuf inputs and id matching (see scripts/compare/lib/normalizeGermanKey.ts)

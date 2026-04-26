@@ -42,6 +42,7 @@ import {
 } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
+import { areaDisplayNameForId } from '../lib/reportLookups'
 import { selectSourceDateForFreshness } from '../lib/sourceFreshnessSelection'
 import type { AreaReportRow, ComparisonForReport, SnapshotsJson } from '../types/report'
 
@@ -104,10 +105,7 @@ export function AreaReport() {
   })
   const data: ComparisonForReport | null = comparisonQuery.data ?? null
   const snapIndex: SnapshotsJson | null = snapshotsQuery.data ?? null
-  const areaDisplayName =
-    areasIndex.summaries.find((summary) => summary.area === areaKey)?.displayName ??
-    data?.area ??
-    areaKey
+  const areaDisplayName = data?.displayName ?? areaDisplayNameForId(areaKey)
   const pageSourceExternalUrl =
     data?.sourceMetadata?.official?.sourcePublicUrl?.trim() ||
     data?.sourceMetadata?.official?.sourceDownloadUrl?.trim() ||

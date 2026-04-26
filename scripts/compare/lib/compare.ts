@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as turf from '@turf/turf'
 import type { BBox, Feature, Geometry, MultiPolygon, Point, Polygon } from 'geojson'
+import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
 import type { BoundaryConfig } from './config.ts'
 import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
@@ -174,7 +175,7 @@ function resolveRelationId(props: Record<string, unknown> | null | undefined): s
 export async function runCompare(
   runtimeRoot: string,
   areaFolder: string,
-  configRaw: unknown,
+  configRaw: DatasetConfig,
   phaseLogger?: ComparePhaseLogger,
 ): Promise<{
   config: BoundaryConfig

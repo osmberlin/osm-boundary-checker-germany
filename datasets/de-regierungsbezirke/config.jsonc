@@ -1,5 +1,6 @@
 {
   "displayName": "Deutschland Regierungsbezirke",
+  "titlePrefix": "Regierungsbezirk",
   "officialProfile": "bkg_vg25_rbz",
   "osmProfile": "admin_rs",
 

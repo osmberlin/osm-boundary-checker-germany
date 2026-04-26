@@ -109,6 +109,7 @@ const directAreaConfigSchema = z
   .object({
     officialMode: z.literal('direct'),
     displayName: trimmedString,
+    titlePrefix: trimmedString,
     official: z
       .object({
         path: trimmedString,
@@ -132,6 +133,7 @@ const profileAreaConfigSchema = z
   .object({
     officialMode: z.literal('profile'),
     displayName: trimmedString,
+    titlePrefix: trimmedString,
     officialProfile: officialProfileIdSchema,
     osmProfile: osmProfileIdSchema,
     osm: osmConfigSchema.optional(),

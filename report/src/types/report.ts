@@ -90,6 +90,7 @@ export type AreaReportRow = ReportRow
 export type ComparisonForReport = {
   area: string
   displayName: string
+  titlePrefix: string
   generatedAt: string
   metricsCrs: string
   /** Overpass `boundary=*` value for live OSM lookup; defaults to `administrative` when absent. */

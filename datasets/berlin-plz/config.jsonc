@@ -1,5 +1,6 @@
 {
   "displayName": "Berlin PLZ",
+  "titlePrefix": "Postleitzahl",
   "osmProfile": "postal_code",
 
   // Compare official Berlin postal code polygons to OSM `boundary=postal_code` features.

@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { z } from 'zod'
 import { loadBoundaryConfig } from '../compare/lib/config.ts'
 import { loadAreaConfig } from '../shared/areaConfig.ts'
+import type { DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS } from '../shared/germanyOsmPbf.ts'
 
@@ -62,11 +63,8 @@ function parseWithSchema<T>(area: string, schema: z.ZodType<T>, raw: unknown, la
   throw new Error(`${area}: ${details}`)
 }
 
-function parseAreaExtractOverride(
-  area: string,
-  rawDoc: Record<string, unknown>,
-): OsmExtractOverrideConfig {
-  const osm = rawDoc.osm
+function parseAreaExtractOverride(area: string, rawDoc: DatasetConfig): OsmExtractOverrideConfig {
+  const osm = rawDoc.osm as unknown
   if (osm === undefined) return {}
   const osmObj = parseWithSchema(area, OsmObjectSchema, osm, 'osm')
   return osmObj.extract ?? {}
@@ -85,7 +83,7 @@ export function loadSharedAdminOsmExtractConfig(
   const tagsFilterSet = new Set<string>(DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS)
 
   for (const area of discoverAreaFolders(workspaceRoot)) {
-    const rawDoc = loadAreaConfig(workspaceRoot, area) as Record<string, unknown>
+    const rawDoc = loadAreaConfig(workspaceRoot, area)
     const boundary = loadBoundaryConfig(rawDoc, area)
     const usesSharedAdminFgb = boundary.osm.profileId === 'admin_rs'
     if (!usesSharedAdminFgb) continue

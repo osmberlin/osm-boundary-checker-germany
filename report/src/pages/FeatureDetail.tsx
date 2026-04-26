@@ -22,7 +22,6 @@ import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } f
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { categoryLabelDe, de } from '../i18n/de'
-import { useDocumentMeta } from '../lib/documentMeta'
 import {
   EM_DASH,
   formatDeIou,
@@ -77,8 +76,6 @@ export function FeatureDetail() {
   const data: ComparisonForReport | null = featureQuery.data ?? null
 
   const row = !data || !featureKey ? null : findRow(data, featureKey)
-  const pageTitle = row ? `${row.nameLabel} | ${de.appTitle}` : de.appTitle
-  useDocumentMeta({ title: pageTitle })
   if (featureQuery.isError) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
@@ -196,12 +193,13 @@ function StatsStrip({
       ? `${de.areaReport.freshnessSecondaryDownloadedPrefix}: ${officialDownloadedFresh.absoluteLine}`
       : null
   const osmFresh = sourceStatLines(osmRaw, data.sourceMetadata?.osm != null)
+  const titlePrefix = data.titlePrefix
 
   return (
     <>
       <div className="mb-6 flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
         <h1 className="min-w-0 text-2xl font-semibold tracking-tight text-slate-100">
-          {row.nameLabel}
+          {`${titlePrefix} ${row.nameLabel}`.trim()}
         </h1>
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-slate-500 sm:justify-end">
           <span className="font-mono">{row.canonicalMatchKey}</span>

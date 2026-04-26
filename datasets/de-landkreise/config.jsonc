@@ -1,5 +1,6 @@
 {
   "displayName": "Deutschland Landkreise",
+  "titlePrefix": "Landkreis",
   "officialProfile": "bkg_vg25_krs",
   "osmProfile": "admin_rs",
 

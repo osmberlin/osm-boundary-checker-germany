@@ -1,5 +1,6 @@
 {
   "displayName": "Berlin Ortsteile",
+  "titlePrefix": "Ortsteil",
   "osmProfile": "admin_rs",
 
   // Compare: ALKIS Ortsteile `sch` ↔ OSM `de:regionalschluessel` (12-digit regional)

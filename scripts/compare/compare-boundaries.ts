@@ -4,6 +4,7 @@ import { appendFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { areaConfigPathForDisplay, loadAreaConfig } from '../shared/areaConfig.ts'
 import { parseAreaDisplayName } from '../shared/areaConfigMetadata.ts'
+import type { DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
@@ -81,7 +82,7 @@ async function main() {
 
   const workspaceRoot = getWorkspaceRoot()
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
-  let configRaw: unknown
+  let configRaw: DatasetConfig
   try {
     configRaw = loadAreaConfig(workspaceRoot, area)
   } catch (e) {
@@ -113,6 +114,7 @@ async function main() {
       areaPath,
       area,
       displayName,
+      config.titlePrefix,
       rows,
       unmatchedOsm,
       metricsCrs,
