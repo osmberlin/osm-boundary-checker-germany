@@ -247,7 +247,7 @@ function StatsStrip({
         {m && (
           <>
             <StatBlocksRow
-              className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 lg:[&>*:first-child]:border-l-0 lg:[&>*:first-child]:pl-0 [&>*:nth-child(odd)]:border-l-0 [&>*:nth-child(odd)]:pl-0 lg:[&>*:nth-child(odd)]:border-l lg:[&>*:nth-child(odd)]:pl-6"
+              className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 lg:[&>*:nth-child(n+2)]:border-l lg:[&>*:nth-child(n+2)]:pl-6 [&>*:nth-child(odd)]:border-l-0 [&>*:nth-child(odd)]:pl-0"
               aria-label={s.diffMetricsRowAria}
             >
               <StatBlock
@@ -297,7 +297,7 @@ function StatsStrip({
                 value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
                 swatch={
                   <div
-                    className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid"
+                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
                     style={{
                       borderColor: o.line,
                       backgroundColor: hexToRgba(o.fill, o.fillOpacity),
@@ -314,7 +314,7 @@ function StatsStrip({
                 value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
                 swatch={
                   <div
-                    className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid"
+                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
                     style={{
                       borderColor: osmC.line,
                       backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
@@ -331,7 +331,7 @@ function StatsStrip({
                 value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
                 swatch={
                   <div
-                    className="h-5 w-10 shrink-0 rounded-sm border-2 border-solid border-slate-500"
+                    className="h-full w-full shrink-0 rounded-[2px] border border-solid border-slate-500"
                     style={{
                       background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
                     }}

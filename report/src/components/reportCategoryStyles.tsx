@@ -97,7 +97,7 @@ export function ReportCategorySquareSwatch({ category }: { category: ReportRow['
 
   return (
     <div
-      className="h-[1em] w-[1em] shrink-0 rounded-[3px] border-2 border-solid"
+      className="h-full w-full shrink-0 rounded-[2px] border border-solid"
       style={{
         borderColor,
         background: s.style.background,
