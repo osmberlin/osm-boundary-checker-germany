@@ -103,31 +103,35 @@ const areasIndex = {
   geoDataSources: [
     {
       name: 'BKG (VG25, vg25_gem)',
-      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
+      href: 'https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-25-000-stand-31-12-vg25.html',
     },
     {
       name: 'BKG (VG25, vg25_krs)',
-      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
+      href: 'https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-25-000-stand-31-12-vg25.html',
     },
     {
       name: 'BKG (VG25, vg25_lan)',
-      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
+      href: 'https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-25-000-stand-31-12-vg25.html',
     },
     {
       name: 'BKG (VG25, vg25_rbz)',
-      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
+      href: 'https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-25-000-stand-31-12-vg25.html',
     },
     {
       name: 'BKG (VG25, vg25_sta)',
-      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
+      href: 'https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-25-000-stand-31-12-vg25.html',
     },
     {
       name: 'BKG (VG25, vg25_vwg)',
-      href: 'https://gdz.bkg.bund.de/index.php/default/verwaltungsgebiete-1-250-000-vg250-stand-01-01.html',
+      href: 'https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-25-000-stand-31-12-vg25.html',
     },
     {
       name: 'daten.berlin.de',
-      href: 'https://daten.berlin.de/',
+      href: 'https://daten.berlin.de/datensaetze/alkis-berlin-bezirke-wfs-ced31d7d',
+    },
+    {
+      name: 'daten.berlin.de',
+      href: 'https://daten.berlin.de/datensaetze/alkis-berlin-ortsteile-wfs-61bd3084',
     },
     {
       name: 'daten.berlin.de',
@@ -135,15 +139,15 @@ const areasIndex = {
     },
     {
       name: 'geoportal.brandenburg.de',
-      href: 'https://geoportal.brandenburg.de/',
+      href: 'https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Ded6ab7a1-7a64-4ceb-8d37-2e156b7f4546',
     },
     {
-      name: 'OpenStreetMap (Geofabrik Germany extract) (germany-latest.osm.pbf)',
-      href: 'https://download.geofabrik.de/europe/germany.html',
+      name: 'geoportal.brandenburg.de',
+      href: 'https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Db90acca9-e512-4c6c-a45e-ecc04a1e580c',
     },
     {
       name: 'suche.transparenz.hamburg.de',
-      href: 'https://suche.transparenz.hamburg.de/dataset/regionalstatistische-daten-der-bezirke-hamburgs-und-hamburg-insgesamt20',
+      href: 'https://suche.transparenz.hamburg.de/dataset/regionalstatistische-daten-der-bezirke-hamburgs-und-hamburg-insgesamt17',
     },
   ],
   licenseSummaries: [
@@ -205,60 +209,60 @@ const areasIndex = {
     {
       area: 'de-gemeinden',
       displayName: 'Deutschland Gemeinden',
-      officialLicenseLabel: 'DL-DE-BY-2.0',
-      officialLicenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialLicenseLabel: 'CC-BY-4.0',
+      officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibilityComment:
         'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
     },
     {
       area: 'de-laender',
       displayName: 'Deutschland Länder',
-      officialLicenseLabel: 'DL-DE-BY-2.0',
-      officialLicenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialLicenseLabel: 'CC-BY-4.0',
+      officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibilityComment:
         'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
     },
     {
       area: 'de-landkreise',
       displayName: 'Deutschland Landkreise',
-      officialLicenseLabel: 'DL-DE-BY-2.0',
-      officialLicenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialLicenseLabel: 'CC-BY-4.0',
+      officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibilityComment:
         'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
     },
     {
       area: 'de-regierungsbezirke',
       displayName: 'Deutschland Regierungsbezirke',
-      officialLicenseLabel: 'DL-DE-BY-2.0',
-      officialLicenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialLicenseLabel: 'CC-BY-4.0',
+      officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibilityComment:
         'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
     },
     {
       area: 'de-staat',
       displayName: 'Deutschland Staat',
-      officialLicenseLabel: 'DL-DE-BY-2.0',
-      officialLicenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialLicenseLabel: 'CC-BY-4.0',
+      officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibilityComment:
         'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
     },
     {
       area: 'de-verwaltungsgemeinschaften',
       displayName: 'Deutschland Verwaltungsgemeinschaften',
-      officialLicenseLabel: 'DL-DE-BY-2.0',
-      officialLicenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialLicenseLabel: 'CC-BY-4.0',
+      officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
+      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
       officialOsmCompatibilityComment:
         'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
     },
