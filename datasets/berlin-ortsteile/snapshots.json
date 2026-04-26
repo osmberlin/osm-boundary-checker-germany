@@ -35,7 +35,7 @@
         "totalRows": 97,
         "meanIou": 0.996400379547998,
         "matched": 97,
-        "unmatchedOsm": 6
+        "unmatchedOsm": 0
       }
     }
   ]

@@ -49,6 +49,7 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
       ? { bboxBufferDegrees: configRaw.compare.bboxBufferDegrees }
       : {}),
     osmScopeFilter: configRaw.compare.osmScopeFilter,
+    ...(configRaw.osm?.adminLevels?.length ? { adminLevels: [...configRaw.osm.adminLevels] } : {}),
     ...(configRaw.osm?.ignoreRelationIds?.length
       ? { ignoreRelationIds: [...configRaw.osm.ignoreRelationIds] }
       : {}),

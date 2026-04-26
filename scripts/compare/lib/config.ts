@@ -36,6 +36,8 @@ export type OsmConfig = {
    * - `relation_id`: match only selected relation IDs using `@id` (for example `relation/51477`).
    */
   matchCriteria?: { kind: 'property' } | { kind: 'relation_id'; relationIds: string[] }
+  /** Optional OSM admin_level values to include (for example ["10"]). */
+  adminLevels?: string[]
   /** Optional OSM relation IDs (numeric strings) to exclude from compare. */
   ignoreRelationIds?: string[]
   /** Basename under `.cache/osm` resolved from `osmProfile`. */
@@ -110,11 +112,13 @@ function parseOsmConfig(areaLabel: string, config: DatasetConfig): OsmConfig {
     osmConfig?.ignoreRelationIds,
     'osm.ignoreRelationIds',
   )
+  const adminLevels = parseNumericIdStringArray(areaLabel, osmConfig?.adminLevels, 'osm.adminLevels')
 
   return {
     profileId: config.osmProfile,
     matchProperty: profile.matchProperty,
     ...(matchCriteria ? { matchCriteria } : {}),
+    ...(adminLevels ? { adminLevels } : {}),
     ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
     sharedFgbBasename: profile.sharedFgbBasename,
   }

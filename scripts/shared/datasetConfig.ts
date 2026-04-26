@@ -102,6 +102,7 @@ const osmConfigSchema = z
         z.object({ kind: z.literal('relation_id'), relationIds: nonEmptyStringArray }).strict(),
       ])
       .optional(),
+    adminLevels: nonEmptyStringArray.optional(),
     ignoreRelationIds: nonEmptyStringArray.optional(),
   })
   .strict()

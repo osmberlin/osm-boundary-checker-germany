@@ -143,6 +143,14 @@ function filterOsmByIgnoredRelationIds(
   })
 }
 
+function filterOsmByAdminLevels(osmFeatures: Feature[], adminLevels: Set<string>): Feature[] {
+  return osmFeatures.filter((feature) => {
+    const props = feature.properties as Record<string, unknown> | null | undefined
+    const adminLevel = readAdminLevel(props ?? null)
+    return adminLevel != null && adminLevels.has(adminLevel)
+  })
+}
+
 function parseRelationId(rawId: unknown): string | null {
   const id = typeof rawId === 'string' ? rawId.trim() : ''
   if (id.length === 0) return null
@@ -213,6 +221,7 @@ export async function runCompare(
   const initialOsmFeatureCount = osmFc.features.length
   let droppedByBbox = 0
   let droppedByScope = 0
+  let droppedByAdminLevel = 0
   let droppedByIgnore = 0
 
   if (config.compare.bboxFilter === 'official_bbox_overlap') {
@@ -242,6 +251,18 @@ export async function runCompare(
       remaining: osmFc.features.length,
     })
   }
+  if ((config.osm.adminLevels?.length ?? 0) > 0) {
+    const tAdminLevelFilter = Date.now()
+    const adminLevels = new Set(config.osm.adminLevels)
+    const filtered = filterOsmByAdminLevels(osmFc.features, adminLevels)
+    droppedByAdminLevel = osmFc.features.length - filtered.length
+    osmFc = { type: 'FeatureCollection', features: filtered }
+    phaseLogger?.('filter_admin_level', Date.now() - tAdminLevelFilter, {
+      dropped: droppedByAdminLevel,
+      remaining: osmFc.features.length,
+      configuredAdminLevels: adminLevels.size,
+    })
+  }
   if ((config.osm.ignoreRelationIds?.length ?? 0) > 0) {
     const tIgnoreFilter = Date.now()
     const ignoredRelationIds = new Set(config.osm.ignoreRelationIds)
@@ -254,9 +275,9 @@ export async function runCompare(
       configuredIgnoreRelationIds: ignoredRelationIds.size,
     })
   }
-  if (droppedByBbox > 0 || droppedByScope > 0 || droppedByIgnore > 0) {
+  if (droppedByBbox > 0 || droppedByScope > 0 || droppedByAdminLevel > 0 || droppedByIgnore > 0) {
     console.log(
-      `${areaFolder}: OSM scope filtering kept ${osmFc.features.length}/${initialOsmFeatureCount} features (bbox dropped: ${droppedByBbox}, centroid scope dropped: ${droppedByScope}, ignore dropped: ${droppedByIgnore})`,
+      `${areaFolder}: OSM scope filtering kept ${osmFc.features.length}/${initialOsmFeatureCount} features (bbox dropped: ${droppedByBbox}, centroid scope dropped: ${droppedByScope}, admin_level dropped: ${droppedByAdminLevel}, ignore dropped: ${droppedByIgnore})`,
     )
   }
 
