@@ -5,7 +5,9 @@
   "scripts": {
     "compare": "bun run compare/compare-boundaries.ts",
     "report:data-flow-sizes": "bun run data-flow-sizes/report.ts",
-    "pipeline:nightly": "bun run pipeline/nightly.ts",
+    "pipeline:nightly:download": "bun run pipeline/nightly.ts --phase download",
+    "pipeline:nightly:extract": "bun run pipeline/nightly.ts --phase extract",
+    "pipeline:nightly:compare": "bun run pipeline/nightly.ts --phase compare",
     "berlin:download": "bun run berlin/download-official.ts",
     "download": "bun run download:bkg && bun run download:official && bun run download:osm",
     "download:bkg": "bun run bkg:download && bun run bkg:extract",

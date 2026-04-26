@@ -1,12 +1,39 @@
 import { spawn } from 'node:child_process'
 
 /**
- * WHAT: Runs `bun run pipeline:nightly` with a bounded retry policy.
+ * WHAT: Runs a nightly pipeline command with a bounded retry policy.
  * WHY: Nightly refresh can fail on transient network or upstream hiccups; one delayed retry improves success rate without hiding persistent failures.
  */
-function runPipeline(): Promise<void> {
+function parseArgs(argv: string[]): { command: string[]; label: string } {
+  const delimiter = argv.indexOf('--')
+  if (delimiter === -1) {
+    return {
+      command: ['bun', 'run', 'pipeline:nightly'],
+      label: 'bun run pipeline:nightly',
+    }
+  }
+
+  const raw = argv.slice(delimiter + 1).filter((part) => part.trim().length > 0)
+  if (raw.length === 0) {
+    throw new Error('Expected command after "--".')
+  }
+
+  const labelArgIndex = argv.findIndex((part) => part === '--label')
+  const label =
+    labelArgIndex >= 0 && argv[labelArgIndex + 1]?.trim().length
+      ? argv[labelArgIndex + 1].trim()
+      : raw.join(' ')
+  return { command: raw, label }
+}
+
+function runPipeline(command: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn('bun', ['run', 'pipeline:nightly'], {
+    const [exec, ...args] = command
+    if (!exec) {
+      reject(new Error('Missing executable for retry command.'))
+      return
+    }
+    const child = spawn(exec, args, {
       stdio: 'inherit',
       env: process.env,
     })
@@ -23,18 +50,19 @@ function runPipeline(): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  const { command, label } = parseArgs(process.argv.slice(2))
   const attempts = 2
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      await runPipeline()
+      await runPipeline(command)
       return
     } catch (error) {
       if (attempt >= attempts) {
         throw error
       }
       const waitSeconds = (attempt + 1) * 30
-      console.log(`Retry ${attempt + 1}/${attempts} in ${waitSeconds}s: bun run pipeline:nightly`)
+      console.log(`Retry ${attempt + 1}/${attempts} in ${waitSeconds}s: ${label}`)
       await Bun.sleep(waitSeconds * 1000)
     }
   }

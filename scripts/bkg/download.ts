@@ -21,6 +21,7 @@ import {
   BKG_ZIP_NAME,
   BKG_ZIP_URL,
 } from '../shared/bkg.ts'
+import { emitCacheDecision, mapDailyRefreshReasonToCacheState } from '../shared/cacheDecision.ts'
 import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
@@ -91,10 +92,30 @@ async function main() {
       timezone,
     })
     if (!decision.shouldDownload) {
+      emitCacheDecision({
+        source: 'bkg',
+        decision: mapDailyRefreshReasonToCacheState(decision.reason),
+        reason: decision.reason,
+        action: 'reuse',
+        detail: decision.because,
+        timezone: decision.timezone,
+        currentWindow: decision.currentWindowKey,
+        cachedWindow: decision.cachedWindowKey,
+      })
       console.log(
         `Download skipped (cache used because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey ?? 'unknown'}; use --force to re-download): ${zipDest}`,
       )
     } else {
+      emitCacheDecision({
+        source: 'bkg',
+        decision: mapDailyRefreshReasonToCacheState(decision.reason),
+        reason: decision.reason,
+        action: 'refresh',
+        detail: decision.because,
+        timezone: decision.timezone,
+        currentWindow: decision.currentWindowKey,
+        cachedWindow: decision.cachedWindowKey,
+      })
       if (decision.reason === 'cache_stale_previous_window') {
         console.log(
           `Download required (because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey})`,
@@ -118,6 +139,13 @@ async function main() {
     }
     copyFileSync(absZip, zipDest)
     console.log(`Copied local ZIP to ${zipDest}`)
+    emitCacheDecision({
+      source: 'bkg',
+      decision: 'forced-refresh',
+      reason: 'local_zip_override',
+      action: 'refresh',
+      detail: 'provided via --zip',
+    })
   }
 
   // Keep only the latest extracted dataset to avoid stale archive leftovers.

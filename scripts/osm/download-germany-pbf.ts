@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process'
  */
 import { existsSync, mkdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { emitCacheDecision, mapDailyRefreshReasonToCacheState } from '../shared/cacheDecision.ts'
 import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
 import {
   GERMANY_OSM_CACHE_DIR,
@@ -53,11 +54,31 @@ function main() {
     timezone,
   })
   if (!decision.shouldDownload) {
+    emitCacheDecision({
+      source: 'osm',
+      decision: mapDailyRefreshReasonToCacheState(decision.reason),
+      reason: decision.reason,
+      action: 'reuse',
+      detail: decision.because,
+      timezone: decision.timezone,
+      currentWindow: decision.currentWindowKey,
+      cachedWindow: decision.cachedWindowKey,
+    })
     console.log(
       `Download skipped (cache used because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey ?? 'unknown'}; use --force to re-download):\n  ${dest}`,
     )
     return
   }
+  emitCacheDecision({
+    source: 'osm',
+    decision: mapDailyRefreshReasonToCacheState(decision.reason),
+    reason: decision.reason,
+    action: 'refresh',
+    detail: decision.because,
+    timezone: decision.timezone,
+    currentWindow: decision.currentWindowKey,
+    cachedWindow: decision.cachedWindowKey,
+  })
   if (decision.reason === 'cache_stale_previous_window') {
     console.log(
       `Download required (because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey})`,

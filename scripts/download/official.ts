@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
 import { parseAreaOfficialSourceFacts } from '../shared/areaConfigMetadata.ts'
+import { emitCacheDecision, mapDailyRefreshReasonToCacheState } from '../shared/cacheDecision.ts'
 import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseDownloadOfficial } from '../shared/downloadOfficialConfig.ts'
@@ -164,6 +165,14 @@ async function processArea(
   }
 
   if (!spec) {
+    emitCacheDecision({
+      source: 'official',
+      area,
+      decision: 'not-found',
+      reason: 'no_download_config',
+      action: 'skip',
+      detail: 'area has compare config but no official.download source configured',
+    })
     logLine({ area, source: 'official', status: 'skip', reason: 'no_download_config' })
     return 'skip'
   }
@@ -186,6 +195,17 @@ async function processArea(
     timezone,
   })
   if (!decision.shouldDownload) {
+    emitCacheDecision({
+      source: 'official',
+      area,
+      decision: mapDailyRefreshReasonToCacheState(decision.reason),
+      reason: decision.reason,
+      action: 'reuse',
+      detail: decision.because,
+      timezone: decision.timezone,
+      currentWindow: decision.currentWindowKey,
+      cachedWindow: decision.cachedWindowKey,
+    })
     logLine({
       area,
       source: 'official',
@@ -198,6 +218,17 @@ async function processArea(
     })
     return 'skip'
   }
+  emitCacheDecision({
+    source: 'official',
+    area,
+    decision: mapDailyRefreshReasonToCacheState(decision.reason),
+    reason: decision.reason,
+    action: 'refresh',
+    detail: decision.because,
+    timezone: decision.timezone,
+    currentWindow: decision.currentWindowKey,
+    cachedWindow: decision.cachedWindowKey,
+  })
   if (decision.reason === 'cache_stale_previous_window') {
     logLine({
       area,

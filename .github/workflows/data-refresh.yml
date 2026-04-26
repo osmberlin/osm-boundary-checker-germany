@@ -88,9 +88,27 @@ jobs:
           echo "RUST_SIDECAR_BUILD_SECONDS=${build_seconds}" >> "$GITHUB_ENV"
           echo "Rust sidecar build duration: ${build_seconds}s" | tee -a "$GITHUB_STEP_SUMMARY"
 
-      - name: Run nightly pipeline
-        timeout-minutes: 330
-        run: bun run scripts/ci/run-nightly-pipeline-with-retry.ts
+      - name: Download pipeline sources
+        timeout-minutes: 180
+        run: |
+          echo "### Download cache decisions" >> "$GITHUB_STEP_SUMMARY"
+          bun run pipeline:nightly:download
+        env:
+          CI: '1'
+          RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
+
+      - name: Extract and prepare geometry
+        timeout-minutes: 90
+        run: bun run pipeline:nightly:extract
+        env:
+          CI: '1'
+          RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
+
+      - name: Compare boundaries
+        timeout-minutes: 210
+        run: |
+          echo "### Compare phase" >> "$GITHUB_STEP_SUMMARY"
+          bun run scripts/ci/run-nightly-pipeline-with-retry.ts -- bun run pipeline:nightly:compare
         env:
           CI: '1'
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar

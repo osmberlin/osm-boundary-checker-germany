@@ -75,6 +75,8 @@ type ProcessingState = {
   status?: 'ok' | 'fail'
 }
 
+type PipelinePhase = 'all' | 'download' | 'extract' | 'compare'
+
 function nowIso(): string {
   return new Date().toISOString()
 }
@@ -177,7 +179,30 @@ async function runStep(
   return exitCode
 }
 
+function parseArgs(argv: string[]): { phase: PipelinePhase } {
+  let phase: PipelinePhase | null = null
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] !== '--phase') continue
+    const value = argv[i + 1]?.trim().toLowerCase()
+    if (value === 'all' || value === 'download' || value === 'extract' || value === 'compare') {
+      phase = value
+      i++
+      continue
+    }
+    throw new Error(
+      `Invalid --phase value "${argv[i + 1] ?? ''}". Expected all|download|extract|compare.`,
+    )
+  }
+  if (phase == null) {
+    throw new Error(
+      'Missing required --phase argument. Expected one of: all|download|extract|compare.',
+    )
+  }
+  return { phase }
+}
+
 async function main() {
+  const { phase } = parseArgs(process.argv.slice(2))
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const processingDir = join(runtimeRoot, 'data')
@@ -204,7 +229,7 @@ async function main() {
     startedAt,
     timezone,
     inProgress: true,
-    phase: 'starting',
+    phase: `starting:${phase}`,
     updatedAt: startedAt,
   }
   writeState(statePath, state)
@@ -219,67 +244,83 @@ async function main() {
   let exitCode = 0
 
   try {
-    const preparationSteps: Array<{ step: string; args: string[] }> = [
-      { step: 'bkg:download', args: ['run', 'bkg:download'] },
-      { step: 'bkg:extract', args: ['run', 'bkg:extract'] },
+    const downloadSteps: Array<{ step: string; args: string[] }> = [
+      { step: 'download:bkg', args: ['run', 'bkg:download'] },
       { step: 'download:official', args: ['run', 'download:official'] },
-      { step: 'osm:download', args: ['run', 'osm:download'] },
-      { step: 'osm:extract', args: ['run', 'osm:extract'] },
-      // `brandenburg-berlin-plz` uses `.cache/osm/germany-postal-code-boundaries.fgb` from the same filtered PBF.
-      { step: 'osm:extract:plz', args: ['run', 'osm:extract', '--', '--kind', 'plz'] },
+      { step: 'download:osm', args: ['run', 'osm:download'] },
     ]
-    for (const prep of preparationSteps) {
-      if (failed) break
-      if (
-        (await runStep(
-          runId,
-          logPath,
-          statePath,
-          state,
-          prep.step,
-          'bun',
-          prep.args,
-          workspaceRoot,
-        )) !== 0
-      ) {
-        fail()
+
+    const extractSteps: Array<{ step: string; args: string[] }> = [
+      { step: 'extract:bkg', args: ['run', 'bkg:extract'] },
+      { step: 'extract:osm', args: ['run', 'osm:extract'] },
+      // `brandenburg-berlin-plz` uses `.cache/osm/germany-postal-code-boundaries.fgb` from the same filtered PBF.
+      { step: 'extract:osm:plz', args: ['run', 'osm:extract', '--', '--kind', 'plz'] },
+    ]
+
+    const runPhaseSteps = async (phaseSteps: Array<{ step: string; args: string[] }>) => {
+      for (const phaseStep of phaseSteps) {
+        if (failed) break
+        if (
+          (await runStep(
+            runId,
+            logPath,
+            statePath,
+            state,
+            phaseStep.step,
+            'bun',
+            phaseStep.args,
+            workspaceRoot,
+          )) !== 0
+        ) {
+          fail()
+        }
       }
     }
 
-    const areas = discoverAreas(workspaceRoot)
-    if (areas.length === 0) {
-      console.error(`No configured datasets found under ${DATASETS_DIRECTORY}/`)
-      fail()
+    if (phase === 'all' || phase === 'download') {
+      await runPhaseSteps(downloadSteps)
     }
 
-    for (const area of areas) {
-      if (failed) break
-      const t0 = Date.now()
-      const stepName = `compare:${area}`
-      console.log(`[pipeline] starting ${stepName}`)
-      appendJsonl(logPath, { kind: 'dataset_start', runId, at: nowIso(), dataset: area })
-      writeState(statePath, { ...state, phase: stepName, updatedAt: nowIso() })
-      const exitCode = await runCommand(
-        'bun',
-        ['run', 'compare:boundaries', '--', '--area', area],
-        workspaceRoot,
-        stepName,
-        { CI: '1' },
-      )
-      const durationMs = Date.now() - t0
-      appendJsonl(logPath, {
-        kind: 'dataset_end',
-        runId,
-        at: nowIso(),
-        dataset: area,
-        status: exitCode === 0 ? 'ok' : 'fail',
-        durationMs,
-        exitCode,
-      })
-      console.log(
-        `[pipeline] ${exitCode === 0 ? 'finished' : 'failed'} ${stepName} in ${formatDuration(durationMs)} (exit ${exitCode})`,
-      )
-      if (exitCode !== 0) fail()
+    if (!failed && (phase === 'all' || phase === 'extract')) {
+      await runPhaseSteps(extractSteps)
+    }
+
+    if (!failed && (phase === 'all' || phase === 'compare')) {
+      const areas = discoverAreas(workspaceRoot)
+      if (areas.length === 0) {
+        console.error(`No configured datasets found under ${DATASETS_DIRECTORY}/`)
+        fail()
+      }
+
+      for (const area of areas) {
+        if (failed) break
+        const t0 = Date.now()
+        const stepName = `compare:${area}`
+        console.log(`[pipeline] starting ${stepName}`)
+        appendJsonl(logPath, { kind: 'dataset_start', runId, at: nowIso(), dataset: area })
+        writeState(statePath, { ...state, phase: stepName, updatedAt: nowIso() })
+        const exitCode = await runCommand(
+          'bun',
+          ['run', 'compare:boundaries', '--', '--area', area],
+          workspaceRoot,
+          stepName,
+          { CI: '1' },
+        )
+        const durationMs = Date.now() - t0
+        appendJsonl(logPath, {
+          kind: 'dataset_end',
+          runId,
+          at: nowIso(),
+          dataset: area,
+          status: exitCode === 0 ? 'ok' : 'fail',
+          durationMs,
+          exitCode,
+        })
+        console.log(
+          `[pipeline] ${exitCode === 0 ? 'finished' : 'failed'} ${stepName} in ${formatDuration(durationMs)} (exit ${exitCode})`,
+        )
+        if (exitCode !== 0) fail()
+      }
     }
 
     const finalStatus = failed ? 'fail' : 'ok'
