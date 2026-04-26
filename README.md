@@ -4,14 +4,12 @@ Compare official administrative boundaries (**FlatGeobuf**) with OpenStreetMap p
 
 ## Quick start
 
-Run everything from **this directory** with Docker Compose.
+Run everything from **this directory** on your local system.
 
-1. **Install** — Docker + Docker Compose.
-2. **Build** — `docker compose build`.
-3. **Source data + processing** — `docker compose run --rm pipeline bun run pipeline:nightly`.
-4. **Web app** — `docker compose up web`, then open [http://localhost:4173](http://localhost:4173).
-
-Docker Compose uses a shared volume mounted at `/data` with `DATA_ROOT=/data`, so generated datasets, caches, and processing logs survive redeploys.
+1. **Install** — Bun, Rust toolchain, `osmium-tool`, GDAL (`ogr2ogr`), `tippecanoe`, `unzip`.
+2. **Install dependencies** — `bun install`.
+3. **Source data + processing** — `bun run pipeline:nightly`.
+4. **Web app** — `bun run report:dev`, then open the printed local URL.
 
 ## Local prerequisite (Rust sidecar)
 
@@ -39,7 +37,7 @@ If compare fails:
 - **`report/`** — Frontend app and static bundle assembly (`prepareStaticSnapshot.ts`, `generateAreasJson.ts`, Vite build).
 - **`.cache/`** — Download and extract caches (transient, gitignored).
 
-`DATA_ROOT` controls where runtime `datasets/` and `data/` are read from. Default is repo root; Docker uses `/data`.
+`DATA_ROOT` controls where runtime `datasets/` and `data/` are read from. Default is repo root.
 
 ## Canonical commands
 
@@ -54,38 +52,40 @@ Use the canonical `download:*` / `osm:*` / `bkg:*` command names.
 
 ## Setup
 
-```bash
-docker compose build
-```
+Install system dependencies on your machine:
 
-The Docker image contains **Bun**, **tippecanoe**, **GDAL** (`ogr2ogr`), **osmium-tool**, **unzip**, and the built Rust geom sidecar.
-Host installs for these tools are not required when using Docker workflows.
+- Bun
+- Rust toolchain
+- `tippecanoe`
+- GDAL (`ogr2ogr`)
+- `osmium-tool`
+- `unzip`
 
 ## Compare (CLI)
 
 Interactive (lists `datasets/*` folders that contain `config.jsonc`):
 
 ```bash
-docker compose run --rm pipeline bun run compare
+bun run compare
 ```
 
-Non-interactive (CI, Docker): set `CI=1` and pass `--area <folder>` or omit `--area` to process **all** configured areas:
+Non-interactive (CI/local scripts): set `CI=1` and pass `--area <folder>` or omit `--area` to process **all** configured areas:
 
 ```bash
-docker compose run --rm pipeline env CI=1 bun run compare -- --area berlin-bezirke
-docker compose run --rm pipeline env CI=1 bun run compare -- --all
+CI=1 bun run compare -- --area berlin-bezirke
+CI=1 bun run compare -- --all
 ```
 
 Single area without the root wrapper (no Clack), same as `bun run --filter ./scripts compare`:
 
 ```bash
-docker compose run --rm pipeline bun run compare:boundaries -- --area berlin-bezirke
+bun run compare:boundaries -- --area berlin-bezirke
 ```
 
 Or invoke the compare script directly:
 
 ```bash
-docker compose run --rm pipeline bun scripts/compare/compare-boundaries.ts --area berlin-bezirke
+bun scripts/compare/compare-boundaries.ts --area berlin-bezirke
 ```
 
 ## Download (prepare source data)
@@ -93,7 +93,7 @@ docker compose run --rm pipeline bun scripts/compare/compare-boundaries.ts --are
 One command runs BKG VG25 cache + extract, config-driven HTTP official sources (where defined), then OSM PBF + shared extract:
 
 ```bash
-docker compose run --rm pipeline bun run download
+bun run download
 ```
 
 This is a **`package.json` chain** (not a monolithic script): `download:bkg && download:official && download:osm`.
@@ -144,9 +144,9 @@ ogr2ogr -f FlatGeobuf output.fgb input.geojson
 Download the official **ZIP**, cache it under **`.cache/bkg/`** (ignored via [`.cache/.gitignore`](.cache/.gitignore)), and extract layers to `source/official.fgb` per area:
 
 ```bash
-docker compose run --rm pipeline bun run bkg:download
+bun run bkg:download
 # or: bun run bkg:download -- --zip ~/Downloads/vg25.utm32s.gpkg.zip
-docker compose run --rm pipeline bun run bkg:extract
+bun run bkg:extract
 # both: bun run bkg
 # single area: bun run bkg:extract -- --area de-gemeinden
 ```
@@ -156,9 +156,9 @@ See [docs/vg25-bkg.md](docs/vg25-bkg.md) for URLs, `ogrinfo`, and layer notes.
 **OSM PBF → shared OSM FlatGeobuf:** one **`ogr2ogr`** pass writes **`.cache/osm/germany-admin-boundaries-rs.fgb`** (default `--kind admin`). It includes administrative boundaries with a non-empty **`de:regionalschluessel`** only. Geofabrik source/provider/licence defaults are centralized in `scripts/shared/germanyOsmPbf.ts` (not duplicated in per-area configs). For `de-staat`, matching is configured via Germany relation identity (`relation/51477`) instead of synthetic RS injection. Per-area `admin_level` filtering was removed so mismatched keys stay visible in **`unmatchedOsm`**.
 
 ```bash
-docker compose run --rm pipeline bun run osm:download              # → .cache/osm/germany-latest.osm.pbf
-docker compose run --rm pipeline bun run osm:extract               # → .cache/osm/germany-admin-boundaries-rs.fgb
-docker compose run --rm pipeline bun run osm                       # download then extract
+bun run osm:download              # → .cache/osm/germany-latest.osm.pbf
+bun run osm:extract               # → .cache/osm/germany-admin-boundaries-rs.fgb
+bun run osm                       # download then extract
 # Optional: OSM_GERMANY_PBF=...  or  --pbf /path/to/file.osm.pbf
 # bun run osm:extract -- --dry-run
 ```
@@ -185,7 +185,7 @@ Adjust there if you need a different detail zoom or trade-off vs. file size.
 ## Tests
 
 ```bash
-docker compose run --rm pipeline bun run test
+bun run test
 # or: bun run test:scripts
 ```
 
@@ -194,7 +194,7 @@ docker compose run --rm pipeline bun run test
 Development (Vite dev server; static payloads from `/datasets/*` + `/data/*` and imported `areasIndex.gen.ts`):
 
 ```bash
-docker compose up web
+bun run report:dev
 ```
 
 Open the printed URL (default port 3000). The home/detail pages load precomputed static payloads (`report/src/data/areasIndex.gen.ts`, `datasets/<area>/output/*.json`), and the map loads `comparison.pmtiles` via the `pmtiles://` protocol (filtered by `featureId` on the feature detail page).
@@ -202,13 +202,13 @@ Open the printed URL (default port 3000). The home/detail pages load precomputed
 Production build from the current runtime tree (`DATA_ROOT` or repo root):
 
 ```bash
-docker compose run --rm pipeline bun run report:build
+bun run report:build
 ```
 
 Preview the static `dist/` output plus static dataset/data serving (same as dev):
 
 ```bash
-docker compose run --rm web bun run report:preview
+bun run report:preview
 ```
 
 Workspace scripts use Bun’s [`--filter`](https://bun.sh/docs/pm/filter) so you do not need to `cd` into `report/`.

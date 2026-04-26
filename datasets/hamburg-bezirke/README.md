@@ -5,7 +5,7 @@ Official geometries and attributes from the Hamburg **OGC API – Features** dat
 ## Download
 
 - Configured URL uses `filter=jahr = '2024'` and `limit=20` (7 Bezirke for that year). Update the year in the URL when newer reference years are published.
-- Run: `docker compose run --rm pipeline bun run download:official -- --area hamburg-bezirke`
+- Run: `bun run download:official -- --area hamburg-bezirke`
 
 ## Schlüssel map
 

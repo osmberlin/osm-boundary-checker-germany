@@ -1,8 +1,0 @@
-.git
-.cache
-data
-node_modules
-report/node_modules
-scripts/node_modules
-report/dist
-**/.DS_Store

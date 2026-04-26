@@ -10,44 +10,45 @@ The unzipped product contains **`DE_VG25.gpkg`** (not `DE_VG250`). Polygon layer
 
 Older products such as **VG250** (e.g. `DE_VG250.gpkg` under `vg250_ebenen_…`) use layers **`vg250_*`**. If you point `--gpkg` at such a file, update shared official profile mappings in `scripts/shared/officialProfiles.ts` accordingly.
 
-## Workspace commands (Docker)
+## Workspace commands
 
 From `osm-boundary-checker-germany/` (workspace root):
 
 ```bash
 # Fetch ZIP into .cache/bkg/, unzip, write download-metadata.json
-docker compose run --rm pipeline bun run bkg:download
+bun run bkg:download
 
 # Or copy an already downloaded ZIP (no HTTP)
-docker compose run --rm pipeline bun run bkg:download -- --zip /data/import/vg25.utm32s.gpkg.zip
+bun run bkg:download -- --zip /path/to/vg25.utm32s.gpkg.zip
 
 # Re-download from BKG
-docker compose run --rm pipeline bun run bkg:download -- --force
+bun run bkg:download -- --force
 ```
 
 ```bash
 # GPKG → source/official.fgb for all areas that define `officialProfile` (default; no flags)
-docker compose run --rm pipeline bun run bkg:extract
+bun run bkg:extract
 
 # Single area
-docker compose run --rm pipeline bun run bkg:extract -- --area de-gemeinden
+bun run bkg:extract -- --area de-gemeinden
 
 # Download + extract
-docker compose run --rm pipeline bun run bkg
+bun run bkg
 ```
 
 Override GeoPackage path:
 
 ```bash
-docker compose run --rm pipeline bun run bkg:extract -- --area de-laender --gpkg /path/to/DE_VG25.gpkg
+bun run bkg:extract -- --area de-laender --gpkg /path/to/DE_VG25.gpkg
 ```
 
 Legacy script names `download-bkg-vg25` and `extract-vg250` still map to `bkg:download` and `bkg:extract`.
 
 ## Prerequisites
 
-- Docker + Docker Compose
-- The container image provides GDAL (`ogr2ogr`) and `unzip`
+- Bun
+- GDAL (`ogr2ogr`)
+- `unzip`
 
 ## Cache layout (ignored under `.cache/`)
 

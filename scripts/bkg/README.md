@@ -3,9 +3,9 @@
 - **`download.ts`** — Download or copy `vg25.utm32s.gpkg.zip` into `.cache/bkg/`, unzip, write `download-metadata.json`.
 - **`extract.ts`** — `ogr2ogr` from cached GeoPackage to each area’s `source/official.fgb` (uses each dataset `config.jsonc` field `officialProfile`).
 
-Run from repo root through Docker:
+Run from repo root:
 
-- `docker compose run --rm pipeline bun run bkg:download`
-- `docker compose run --rm pipeline bun run bkg:extract`
-- `docker compose run --rm pipeline bun run bkg`
-- Full pipeline: `docker compose run --rm pipeline bun run download`
+- `bun run bkg:download`
+- `bun run bkg:extract`
+- `bun run bkg`
+- Full pipeline: `bun run download`

@@ -2,7 +2,7 @@
 
 ## Recommendation
 
-Use a local SQL database on the shared Docker volume for runtime metadata, and keep PMTiles as files.
+Use a local SQL database on shared local storage for runtime metadata, and keep PMTiles as files.
 
 - Keep PMTiles file-based (`comparison.pmtiles`, `unmatched.pmtiles`) for MapLibre range-request performance.
 - Move heavy table/detail payload (`comparison_table.json` fields) into DB-backed reads.
