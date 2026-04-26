@@ -70,6 +70,68 @@ function pickGpkg(paths: string[]): string {
   return fallback
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function isRetriableHttpStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500
+}
+
+function isRetriableNetworkError(error: unknown): boolean {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? (error as { code?: unknown }).code
+      : ''
+  const message =
+    typeof error === 'object' && error !== null && 'message' in error
+      ? String((error as { message?: unknown }).message ?? '')
+      : ''
+  const normalizedCode = typeof code === 'string' ? code.toUpperCase() : ''
+  if (
+    normalizedCode === 'ECONNRESET' ||
+    normalizedCode === 'ETIMEDOUT' ||
+    normalizedCode === 'EAI_AGAIN' ||
+    normalizedCode === 'ECONNABORTED'
+  ) {
+    return true
+  }
+  return message.includes('socket connection was closed unexpectedly')
+}
+
+async function downloadZipWithRetry(url: string): Promise<Buffer> {
+  const maxAttempts = 4
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) {
+        if (attempt < maxAttempts && isRetriableHttpStatus(res.status)) {
+          const waitMs = attempt * 5_000
+          console.warn(
+            `HTTP ${res.status} ${res.statusText} while fetching BKG zip (attempt ${attempt}/${maxAttempts}); retrying in ${Math.round(waitMs / 1000)}s`,
+          )
+          await sleep(waitMs)
+          continue
+        }
+        throw new Error(`HTTP ${res.status} ${res.statusText}`)
+      }
+      return Buffer.from(await res.arrayBuffer())
+    } catch (error) {
+      if (attempt < maxAttempts && isRetriableNetworkError(error)) {
+        const waitMs = attempt * 5_000
+        console.warn(
+          `Transient download error while fetching BKG zip (attempt ${attempt}/${maxAttempts}); retrying in ${Math.round(waitMs / 1000)}s`,
+        )
+        await sleep(waitMs)
+        continue
+      }
+      throw error
+    }
+  }
+
+  throw new Error('Failed to download BKG zip after retries')
+}
+
 async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
@@ -122,12 +184,7 @@ async function main() {
         )
       }
       console.log(`Fetching ${BKG_ZIP_URL}`)
-      const res = await fetch(BKG_ZIP_URL)
-      if (!res.ok) {
-        console.error(`HTTP ${res.status} ${res.statusText}`)
-        process.exit(1)
-      }
-      const buf = Buffer.from(await res.arrayBuffer())
+      const buf = await downloadZipWithRetry(BKG_ZIP_URL)
       writeFileSync(zipDest, buf)
       console.log(`Wrote ${zipDest} (${buf.length} bytes)`)
     }
