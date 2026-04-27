@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { geojson } from 'flatgeobuf'
 import type { Feature, FeatureCollection } from 'geojson'
 
@@ -12,6 +12,10 @@ export async function loadFeatureCollection(path: string): Promise<FeatureCollec
     throw new Error(
       `Expected FlatGeobuf (.fgb): ${path}. Convert: ogr2ogr -f FlatGeobuf out.fgb in.geojson`,
     )
+  }
+  const stat = statSync(path)
+  if (!stat.isFile()) {
+    throw new Error(`Expected FlatGeobuf file but found non-file path: ${path}`)
   }
   const bytes = readFileSync(path)
   const features: Feature[] = []

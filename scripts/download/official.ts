@@ -256,7 +256,8 @@ async function processArea(
 
   const tmpName = `official-${area}-${randomBytes(8).toString('hex')}.geojson`
   const tmpPath = join(tmpdir(), tmpName)
-  const outTmp = `${outAbs}.tmp-${randomBytes(4).toString('hex')}`
+  // Keep `.fgb` extension so GDAL always writes a FlatGeobuf file, not a directory datasource.
+  const outTmp = `${outAbs}.tmp-${randomBytes(4).toString('hex')}.fgb`
 
   try {
     mkdirSync(join(outAbs, '..'), { recursive: true })
@@ -282,7 +283,7 @@ async function processArea(
       // WFS GML responses are not always JSON-fetchable in-process; let GDAL read from URL directly.
       runOgr2ogrToFgb(spec.url, outTmp)
     }
-    rmSync(outAbs, { force: true })
+    rmSync(outAbs, { recursive: true, force: true })
     renameSync(outTmp, outAbs)
 
     const prev: AreaSourceMetadataFile = readAreaSourceMetadataFile(areaPath) ?? {}
@@ -394,7 +395,7 @@ async function processArea(
       /* ignore */
     }
     try {
-      if (existsSync(outTmp)) rmSync(outTmp, { force: true })
+      if (existsSync(outTmp)) rmSync(outTmp, { recursive: true, force: true })
     } catch {
       /* ignore */
     }
