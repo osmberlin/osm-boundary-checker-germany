@@ -16,7 +16,6 @@ import { DATASETS_DIRECTORY } from '../shared/datasetPaths.ts'
 import {
   readCompareGeneratedAt,
   resolveFallbackRuntimeRoot,
-  restoreBkgCacheFromFallback,
   restoreCompareOutputFromFallback,
   restoreOfficialSourceFromFallback,
   restoreOsmCacheFromFallback,
@@ -243,6 +242,9 @@ async function main() {
 
   let failed = false
   let exitCode = 0
+  let skipExtractBkg = false
+  let skipExtractOsmAdmin = false
+  let skipExtractOsmPlz = false
 
   try {
     const downloadSteps: PipelineStep[] = [
@@ -268,25 +270,49 @@ async function main() {
         let stepStatus: StepStatus = 'ok'
         let usedCache = false
         let reason: string | undefined
-        const commandExitCode = await runCommand(
-          'bun',
-          phaseStep.args,
-          workspaceRoot,
-          phaseStep.step,
-        )
+        const shouldSkipFromFallback =
+          (phaseStep.step === 'extract:bkg' && skipExtractBkg) ||
+          (phaseStep.step === 'extract:osm' && skipExtractOsmAdmin) ||
+          (phaseStep.step === 'extract:osm:plz' && skipExtractOsmPlz)
+        let commandExitCode = 0
+        if (shouldSkipFromFallback) {
+          stepStatus = 'skipped'
+          usedCache = true
+          reason = 'fallback_inputs_already_restored'
+        } else {
+          commandExitCode = await runCommand('bun', phaseStep.args, workspaceRoot, phaseStep.step)
+        }
         let finalExitCode = commandExitCode
-        if (commandExitCode !== 0) {
+        if (commandExitCode !== 0 && !shouldSkipFromFallback) {
           if (!fallbackRuntimeRoot) {
             stepStatus = 'fail'
           } else {
             switch (phaseStep.step) {
               case 'download:bkg': {
-                const restored = restoreBkgCacheFromFallback(runtimeRoot, fallbackRuntimeRoot)
-                if (restored) {
+                // For compare continuation we only need per-area official sources, not raw BKG archives.
+                const areas = discoverAreas(workspaceRoot)
+                let restoredAny = false
+                for (const area of areas) {
+                  const restored = restoreOfficialSourceFromFallback(
+                    runtimeRoot,
+                    fallbackRuntimeRoot,
+                    area,
+                  )
+                  if (restored) {
+                    restoredAny = true
+                    upsertAreaOfficialDownloadStatus(processingDir, area, {
+                      status: 'success',
+                      usedCache: true,
+                      retryHint: 'automatic retry next nightly run',
+                    })
+                  }
+                }
+                if (restoredAny) {
                   stepStatus = 'skipped'
                   usedCache = true
-                  reason = 'fallback_bkg_cache_restored'
+                  reason = 'fallback_official_source_restored_after_bkg_download_failure'
                   finalExitCode = 0
+                  skipExtractBkg = true
                 } else {
                   stepStatus = 'fail'
                 }
@@ -299,6 +325,8 @@ async function main() {
                   usedCache = true
                   reason = 'fallback_osm_cache_restored'
                   finalExitCode = 0
+                  skipExtractOsmAdmin = true
+                  skipExtractOsmPlz = true
                 } else {
                   stepStatus = 'fail'
                 }
@@ -327,6 +355,7 @@ async function main() {
                   usedCache = true
                   reason = 'fallback_official_source_restored'
                   finalExitCode = 0
+                  skipExtractBkg = true
                 } else {
                   stepStatus = 'fail'
                 }

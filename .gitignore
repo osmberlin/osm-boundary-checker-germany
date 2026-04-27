@@ -18,3 +18,7 @@ data/
 
 # Rust sidecar build artifacts
 rust/**/target/
+
+# Generated local runtime artifacts for CI validation
+.artifact-runtime/
+.artifact-runtime-report/

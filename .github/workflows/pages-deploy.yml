@@ -17,7 +17,7 @@ permissions:
   actions: read
 
 env:
-  DATASET_ARTIFACT_NAME: datasets-last-good
+  REPORT_RUNTIME_ARTIFACT_NAME: report-runtime-last-good
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 concurrency:
@@ -34,7 +34,7 @@ jobs:
        github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     env:
-      DATA_ROOT: ${{ github.workspace }}/.artifact-restore/.artifact-runtime
+      DATA_ROOT: ${{ github.workspace }}/.artifact-restore/.artifact-runtime-report
     steps:
       - uses: actions/checkout@v4
 
@@ -52,7 +52,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v11
         with:
           workflow: data-refresh.yml
-          name: ${{ env.DATASET_ARTIFACT_NAME }}
+          name: ${{ env.REPORT_RUNTIME_ARTIFACT_NAME }}
           run_id: ${{ github.event.workflow_run.id }}
           search_artifacts: false
           path: .artifact-restore
@@ -64,7 +64,7 @@ jobs:
         with:
           workflow: data-refresh.yml
           branch: main
-          name: ${{ env.DATASET_ARTIFACT_NAME }}
+          name: ${{ env.REPORT_RUNTIME_ARTIFACT_NAME }}
           search_artifacts: true
           path: .artifact-restore
           if_no_artifact_found: fail

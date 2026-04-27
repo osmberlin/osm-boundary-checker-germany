@@ -11,7 +11,7 @@ permissions:
   actions: read
 
 env:
-  DATASET_ARTIFACT_NAME: datasets-last-good
+  REPORT_RUNTIME_ARTIFACT_NAME: report-runtime-last-good
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 concurrency:
@@ -37,14 +37,14 @@ jobs:
         env:
           HUSKY: '0'
 
-      - name: Download previous refresh artifact metadata
-        id: previous-refresh-artifact
+      - name: Download previous rust sidecar metadata
+        id: previous-rust-metadata
         continue-on-error: true
         uses: dawidd6/action-download-artifact@v11
         with:
           workflow: data-refresh.yml
           branch: main
-          name: ${{ env.DATASET_ARTIFACT_NAME }}
+          name: rust-sidecar-metadata-last-good
           search_artifacts: true
           path: .previous-artifact
           if_no_artifact_found: fail
@@ -88,14 +88,53 @@ jobs:
           echo "RUST_SIDECAR_BUILD_SECONDS=${build_seconds}" >> "$GITHUB_ENV"
           echo "Rust sidecar build duration: ${build_seconds}s" | tee -a "$GITHUB_STEP_SUMMARY"
 
-      - name: Download pipeline sources
+      - name: Download pipeline sources (fresh-first)
+        id: download-phase
+        continue-on-error: true
         timeout-minutes: 180
         run: |
           echo "### Download cache decisions" >> "$GITHUB_STEP_SUMMARY"
           bun run pipeline:nightly:download
         env:
           CI: '1'
-          FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact/.artifact-runtime
+          RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
+
+      # Download fallback scopes only if fresh-first download failed.
+      - name: Download previous OSM cache scope
+        if: steps.download-phase.outcome == 'failure'
+        id: previous-osm-cache
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: data-refresh.yml
+          branch: main
+          name: source-cache-osm-last-good
+          search_artifacts: true
+          path: .previous-artifact
+          if_no_artifact_found: fail
+
+      - name: Download previous official source cache scope
+        if: steps.download-phase.outcome == 'failure'
+        id: previous-official-cache
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v11
+        with:
+          workflow: data-refresh.yml
+          branch: main
+          name: source-cache-official-last-good
+          search_artifacts: true
+          path: .previous-artifact
+          if_no_artifact_found: fail
+
+      - name: Retry download pipeline sources with fallback scopes
+        if: steps.download-phase.outcome == 'failure'
+        timeout-minutes: 180
+        run: |
+          echo "Fresh-first download failed; retrying with fallback scopes." | tee -a "$GITHUB_STEP_SUMMARY"
+          bun run pipeline:nightly:download
+        env:
+          CI: '1'
+          FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
       - name: Extract and prepare geometry
@@ -103,7 +142,7 @@ jobs:
         run: bun run pipeline:nightly:extract
         env:
           CI: '1'
-          FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact/.artifact-runtime
+          FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
       - name: Mark compare start time
@@ -122,7 +161,7 @@ jobs:
           fi
         env:
           CI: '1'
-          FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact/.artifact-runtime
+          FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
       - name: Compare timing diagnostics
@@ -171,11 +210,26 @@ jobs:
           RUST_SIDECAR_CHANGE_STATUS: ${{ steps.rust-sidecar-change.outputs.rust_sidecar_change_status }}
           RUST_SIDECAR_PREVIOUS_FINGERPRINT: ${{ steps.rust-sidecar-change.outputs.rust_sidecar_previous_fingerprint }}
 
-      - name: Upload reusable dataset artifact
+      - name: Stage slim report runtime artifact
+        run: bun run scripts/ci/stage-report-runtime-artifact.ts
+
+      - name: Audit artifact ownership and no-dup contract
+        run: bun run scripts/ci/audit-artifact-ownership.ts
+
+      - name: Cache scope summary
+        run: |
+          echo "### Cache scope summary" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f ".artifact-runtime/cache-scopes-summary.md" ]; then
+            cat ".artifact-runtime/cache-scopes-summary.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Cache summary file not found." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload report runtime artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.DATASET_ARTIFACT_NAME }}
-          path: .artifact-runtime
+          name: ${{ env.REPORT_RUNTIME_ARTIFACT_NAME }}
+          path: .artifact-runtime-report
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 4
@@ -189,21 +243,20 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
-      - name: Upload scoped BKG source cache artifact
+      - name: Upload scoped official source cache artifact
         uses: actions/upload-artifact@v4
         with:
-          name: source-cache-bkg-last-good
-          path: .artifact-runtime/scopes/source-cache-bkg
+          name: source-cache-official-last-good
+          path: .artifact-runtime/scopes/source-cache-official
           include-hidden-files: true
           if-no-files-found: warn
-          retention-days: 3
+          retention-days: 4
 
-      - name: Upload scoped compare outputs artifact
+      - name: Upload rust sidecar metadata artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compare-outputs-last-good
-          path: .artifact-runtime/scopes/compare-outputs
-          include-hidden-files: true
+          name: rust-sidecar-metadata-last-good
+          path: rust-sidecar-metadata.json
           if-no-files-found: warn
           retention-days: 4
 
