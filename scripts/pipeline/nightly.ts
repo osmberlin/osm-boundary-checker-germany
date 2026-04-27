@@ -13,6 +13,22 @@ import {
 import { join } from 'node:path'
 import { areaHasCompareConfig } from '../shared/areaConfig.ts'
 import { DATASETS_DIRECTORY } from '../shared/datasetPaths.ts'
+import {
+  readCompareGeneratedAt,
+  resolveFallbackRuntimeRoot,
+  restoreBkgCacheFromFallback,
+  restoreCompareOutputFromFallback,
+  restoreOfficialSourceFromFallback,
+  restoreOsmCacheFromFallback,
+} from '../shared/lazyFallback.ts'
+import {
+  finalizeRunStatus,
+  initRunStatus,
+  type RunBranchStatus,
+  upsertAreaCompareStatus,
+  upsertAreaOfficialDownloadStatus,
+  upsertSharedBranchStatus,
+} from '../shared/runStatus.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
@@ -76,6 +92,14 @@ type ProcessingState = {
 }
 
 type PipelinePhase = 'all' | 'download' | 'extract' | 'compare'
+type PipelineStepName =
+  | 'download:bkg'
+  | 'download:official'
+  | 'download:osm'
+  | 'extract:bkg'
+  | 'extract:osm'
+  | 'extract:osm:plz'
+type PipelineStep = { step: PipelineStepName; args: string[] }
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -146,37 +170,15 @@ async function runCommand(
   })
 }
 
-async function runStep(
-  runId: string,
-  logPath: string,
-  statePath: string,
-  state: ProcessingState,
+function branchStatusFromStepResult(
+  status: StepStatus,
+  usedCache: boolean,
   step: string,
-  command: string,
-  args: string[],
-  cwd: string,
-  extraEnv?: Record<string, string>,
-): Promise<number> {
-  const t0 = Date.now()
-  console.log(`[pipeline] starting ${step}`)
-  appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step })
-  writeState(statePath, { ...state, phase: step, updatedAt: nowIso() })
-  const exitCode = await runCommand(command, args, cwd, step, extraEnv)
-  const status: StepStatus = exitCode === 0 ? 'ok' : 'fail'
-  const durationMs = Date.now() - t0
-  appendJsonl(logPath, {
-    kind: 'step_end',
-    runId,
-    at: nowIso(),
-    step,
-    status,
-    durationMs,
-    exitCode,
-  })
-  console.log(
-    `[pipeline] ${status === 'ok' ? 'finished' : 'failed'} ${step} in ${formatDuration(durationMs)} (exit ${exitCode})`,
-  )
-  return exitCode
+): RunBranchStatus {
+  if (status === 'ok') return 'success'
+  if (status === 'skipped' && usedCache) return 'success'
+  if (step.startsWith('compare:')) return 'compare_failed'
+  return 'failed_no_cache'
 }
 
 function parseArgs(argv: string[]): { phase: PipelinePhase } {
@@ -212,6 +214,7 @@ async function main() {
   const timezone =
     process.env.PIPELINE_TIMEZONE?.trim() || process.env.TZ?.trim() || 'Europe/Berlin'
   const runId = `${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}-${randomUUID().slice(0, 8)}`
+  const fallbackRuntimeRoot = resolveFallbackRuntimeRoot(workspaceRoot)
 
   mkdirSync(processingDir, { recursive: true })
   let lockFd = -1
@@ -234,46 +237,134 @@ async function main() {
   }
   writeState(statePath, state)
   appendJsonl(logPath, { kind: 'run_start', runId, at: startedAt, timezone })
+  initRunStatus(processingDir, runId, startedAt)
   const runT0 = Date.now()
   console.log(`[pipeline] run ${runId} started (${timezone})`)
 
   let failed = false
-  const fail = () => {
-    failed = true
-  }
   let exitCode = 0
 
   try {
-    const downloadSteps: Array<{ step: string; args: string[] }> = [
+    const downloadSteps: PipelineStep[] = [
       { step: 'download:bkg', args: ['run', 'bkg:download'] },
       { step: 'download:official', args: ['run', 'download:official'] },
       { step: 'download:osm', args: ['run', 'osm:download'] },
     ]
 
-    const extractSteps: Array<{ step: string; args: string[] }> = [
+    const extractSteps: PipelineStep[] = [
       { step: 'extract:bkg', args: ['run', 'bkg:extract'] },
       { step: 'extract:osm', args: ['run', 'osm:extract'] },
       // `brandenburg-berlin-plz` uses `.cache/osm/germany-postal-code-boundaries.fgb` from the same filtered PBF.
       { step: 'extract:osm:plz', args: ['run', 'osm:extract', '--', '--kind', 'plz'] },
     ]
 
-    const runPhaseSteps = async (phaseSteps: Array<{ step: string; args: string[] }>) => {
+    const runPhaseSteps = async (phaseSteps: PipelineStep[]) => {
       for (const phaseStep of phaseSteps) {
-        if (failed) break
-        if (
-          (await runStep(
-            runId,
-            logPath,
-            statePath,
-            state,
-            phaseStep.step,
-            'bun',
-            phaseStep.args,
-            workspaceRoot,
-          )) !== 0
-        ) {
-          fail()
+        const t0 = Date.now()
+        console.log(`[pipeline] starting ${phaseStep.step}`)
+        appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step: phaseStep.step })
+        writeState(statePath, { ...state, phase: phaseStep.step, updatedAt: nowIso() })
+
+        let stepStatus: StepStatus = 'ok'
+        let usedCache = false
+        let reason: string | undefined
+        const commandExitCode = await runCommand(
+          'bun',
+          phaseStep.args,
+          workspaceRoot,
+          phaseStep.step,
+        )
+        let finalExitCode = commandExitCode
+        if (commandExitCode !== 0) {
+          if (!fallbackRuntimeRoot) {
+            stepStatus = 'fail'
+          } else {
+            switch (phaseStep.step) {
+              case 'download:bkg': {
+                const restored = restoreBkgCacheFromFallback(runtimeRoot, fallbackRuntimeRoot)
+                if (restored) {
+                  stepStatus = 'skipped'
+                  usedCache = true
+                  reason = 'fallback_bkg_cache_restored'
+                  finalExitCode = 0
+                } else {
+                  stepStatus = 'fail'
+                }
+                break
+              }
+              case 'download:osm': {
+                const restored = restoreOsmCacheFromFallback(runtimeRoot, fallbackRuntimeRoot)
+                if (restored) {
+                  stepStatus = 'skipped'
+                  usedCache = true
+                  reason = 'fallback_osm_cache_restored'
+                  finalExitCode = 0
+                } else {
+                  stepStatus = 'fail'
+                }
+                break
+              }
+              case 'download:official': {
+                const areas = discoverAreas(workspaceRoot)
+                let restoredAny = false
+                for (const area of areas) {
+                  const restored = restoreOfficialSourceFromFallback(
+                    runtimeRoot,
+                    fallbackRuntimeRoot,
+                    area,
+                  )
+                  if (restored) {
+                    restoredAny = true
+                    upsertAreaOfficialDownloadStatus(processingDir, area, {
+                      status: 'success',
+                      usedCache: true,
+                      retryHint: 'automatic retry next nightly run',
+                    })
+                  }
+                }
+                if (restoredAny) {
+                  stepStatus = 'skipped'
+                  usedCache = true
+                  reason = 'fallback_official_source_restored'
+                  finalExitCode = 0
+                } else {
+                  stepStatus = 'fail'
+                }
+                break
+              }
+              case 'extract:bkg':
+              case 'extract:osm':
+              case 'extract:osm:plz':
+                stepStatus = 'fail'
+                break
+            }
+          }
         }
+
+        const durationMs = Date.now() - t0
+        appendJsonl(logPath, {
+          kind: 'step_end',
+          runId,
+          at: nowIso(),
+          step: phaseStep.step,
+          status: stepStatus,
+          durationMs,
+          exitCode: finalExitCode,
+          reason,
+        })
+        console.log(
+          `[pipeline] ${stepStatus === 'ok' ? 'finished' : stepStatus === 'skipped' ? 'reused cache for' : 'failed'} ${phaseStep.step} in ${formatDuration(durationMs)} (exit ${finalExitCode})`,
+        )
+
+        const branchStatus = branchStatusFromStepResult(stepStatus, usedCache, phaseStep.step)
+        upsertSharedBranchStatus(processingDir, phaseStep.step, {
+          status: branchStatus,
+          usedCache,
+          retryHint:
+            branchStatus === 'failed_no_cache' ? 'automatic retry next nightly run' : undefined,
+          errorCode: finalExitCode === 0 ? undefined : String(finalExitCode),
+        })
+        if (finalExitCode !== 0) failed = true
       }
     }
 
@@ -281,24 +372,30 @@ async function main() {
       await runPhaseSteps(downloadSteps)
     }
 
-    if (!failed && (phase === 'all' || phase === 'extract')) {
+    if (phase === 'all' || phase === 'extract') {
       await runPhaseSteps(extractSteps)
     }
 
-    if (!failed && (phase === 'all' || phase === 'compare')) {
+    if (phase === 'all' || phase === 'compare') {
       const areas = discoverAreas(workspaceRoot)
       if (areas.length === 0) {
         console.error(`No configured datasets found under ${DATASETS_DIRECTORY}/`)
-        fail()
+        failed = true
+        upsertSharedBranchStatus(processingDir, 'compare:discover', {
+          status: 'failed_no_cache',
+          usedCache: false,
+          errorMessage: `No configured datasets found under ${DATASETS_DIRECTORY}/`,
+          retryHint: 'automatic retry next nightly run',
+        })
       }
 
       for (const area of areas) {
-        if (failed) break
         const t0 = Date.now()
         const stepName = `compare:${area}`
         console.log(`[pipeline] starting ${stepName}`)
         appendJsonl(logPath, { kind: 'dataset_start', runId, at: nowIso(), dataset: area })
         writeState(statePath, { ...state, phase: stepName, updatedAt: nowIso() })
+        const hadCompareOutputBefore = readCompareGeneratedAt(runtimeRoot, area) != null
         const exitCode = await runCommand(
           'bun',
           ['run', 'compare:boundaries', '--', '--area', area],
@@ -319,7 +416,39 @@ async function main() {
         console.log(
           `[pipeline] ${exitCode === 0 ? 'finished' : 'failed'} ${stepName} in ${formatDuration(durationMs)} (exit ${exitCode})`,
         )
-        if (exitCode !== 0) fail()
+        if (exitCode === 0) {
+          upsertAreaCompareStatus(processingDir, area, {
+            status: 'success',
+            usedCache: false,
+            compareOutputOrigin: 'current_run',
+            compareOutputGeneratedAt: readCompareGeneratedAt(runtimeRoot, area) ?? undefined,
+          })
+          continue
+        }
+
+        let usedCache = false
+        let compareOutputOrigin: 'cache_last_good' | 'none' = 'none'
+        if (fallbackRuntimeRoot) {
+          const restored = restoreCompareOutputFromFallback(runtimeRoot, fallbackRuntimeRoot, area)
+          if (restored) {
+            usedCache = true
+            compareOutputOrigin = 'cache_last_good'
+          }
+        }
+        if (!usedCache && hadCompareOutputBefore) {
+          usedCache = true
+          compareOutputOrigin = 'cache_last_good'
+        }
+
+        upsertAreaCompareStatus(processingDir, area, {
+          status: 'compare_failed',
+          usedCache,
+          compareOutputOrigin,
+          compareOutputGeneratedAt: readCompareGeneratedAt(runtimeRoot, area) ?? undefined,
+          errorCode: String(exitCode),
+          retryHint: 'automatic retry next nightly run',
+        })
+        failed = true
       }
     }
 
@@ -343,6 +472,12 @@ async function main() {
       updatedAt: finishedAt,
       completedAt: finishedAt,
       status: finalStatus,
+    })
+    finalizeRunStatus(processingDir, {
+      runId,
+      startedAt,
+      status: finalStatus,
+      updatedAt: finishedAt,
     })
 
     exitCode = failed ? 1 : 0

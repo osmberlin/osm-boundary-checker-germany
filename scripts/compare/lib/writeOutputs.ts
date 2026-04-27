@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import { area, bbox, featureCollection } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
@@ -67,10 +75,14 @@ function writeOfficialForEditGeojson(
   stemByKey: Map<string, string> | null,
 ) {
   const dir = join(outDir, OFFICIAL_FOR_EDIT_DIR)
-  rmSync(dir, { recursive: true, force: true })
-  if (stemByKey == null || stemByKey.size === 0) return
+  const tmpDir = `${dir}.tmp-${Date.now()}`
+  rmSync(tmpDir, { recursive: true, force: true })
+  if (stemByKey == null || stemByKey.size === 0) {
+    rmSync(dir, { recursive: true, force: true })
+    return
+  }
   const officialMeta = compactOfficialSource(sourceMetadata.official)
-  mkdirSync(dir, { recursive: true })
+  mkdirSync(tmpDir, { recursive: true })
   for (const r of rows) {
     const geom = r.officialGeometryWgs84
     if (!geom) continue
@@ -87,7 +99,15 @@ function writeOfficialForEditGeojson(
       geometry: geom,
     }
     const fileName = officialForEditGeojsonBasename(stem)
-    writeFileSync(join(dir, fileName), `${JSON.stringify(feature)}\n`, 'utf-8')
+    writeFileSync(join(tmpDir, fileName), `${JSON.stringify(feature)}\n`, 'utf-8')
+  }
+  const oldDir = `${dir}.old-${Date.now()}`
+  try {
+    if (existsSync(dir)) renameSync(dir, oldDir)
+    renameSync(tmpDir, dir)
+  } finally {
+    rmSync(oldDir, { recursive: true, force: true })
+    rmSync(tmpDir, { recursive: true, force: true })
   }
 }
 
@@ -337,7 +357,9 @@ function unmatchedRowToPayload(row: UnmatchedOsmRow): StaticUnmatchedOsmRow {
 }
 
 function writeStaticJson(path: string, body: unknown): void {
-  writeFileSync(path, `${JSON.stringify(body)}\n`, 'utf-8')
+  const tmpPath = `${path}.tmp`
+  writeFileSync(tmpPath, `${JSON.stringify(body)}\n`, 'utf-8')
+  renameSync(tmpPath, path)
 }
 
 function writePrettyJson(path: string, body: unknown): void {
@@ -522,14 +544,23 @@ export function writeOutputs(
   } satisfies ComparisonForReport)
 
   const featureDir = join(outDir, 'features')
-  rmSync(featureDir, { recursive: true, force: true })
+  const featureTmp = `${featureDir}.tmp-${Date.now()}`
+  rmSync(featureTmp, { recursive: true, force: true })
   let featureShardCount = 0
-  mkdirSync(featureDir, { recursive: true })
+  mkdirSync(featureTmp, { recursive: true })
   for (const row of payloadRows) {
     featureShardCount++
-    writeStaticJson(join(featureDir, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
+    writeStaticJson(join(featureTmp, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
       row,
     } satisfies FeatureDetailShard)
+  }
+  const featureOld = `${featureDir}.old-${Date.now()}`
+  try {
+    if (existsSync(featureDir)) renameSync(featureDir, featureOld)
+    renameSync(featureTmp, featureDir)
+  } finally {
+    rmSync(featureOld, { recursive: true, force: true })
+    rmSync(featureTmp, { recursive: true, force: true })
   }
 
   updateSnapshotsFile(

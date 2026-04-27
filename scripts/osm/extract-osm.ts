@@ -313,7 +313,6 @@ function main() {
     expressions.splice(0, expressions.length, ...adminExtract.tagsFilterExpressions)
   }
   const osmHeaderTimestamp = readOsmPbfHeaderTimestamp(inputPbf, dryRun)
-  writeOsmSourceMetadataForAreas(workspaceRoot, runtimeRoot, osmHeaderTimestamp, dryRun)
 
   let pbfForOgr = inputPbf
 
@@ -346,6 +345,9 @@ function main() {
   const outFgb = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, target.basename)
   console.log(`\nShared OSM extract (${kind}) → ${join(GERMANY_OSM_CACHE_DIR, target.basename)}`)
   runOgr2ogr(pbfForOgr, outFgb, target.sql, dryRun)
+  if (kind === 'admin') {
+    writeOsmSourceMetadataForAreas(workspaceRoot, runtimeRoot, osmHeaderTimestamp, dryRun)
+  }
 
   console.log('\nDone.')
 }

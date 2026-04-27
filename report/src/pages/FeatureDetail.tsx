@@ -7,7 +7,7 @@ import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
-import { featureQueryOptions } from '../data/load'
+import { featureQueryOptions, runStatusQueryOptions } from '../data/load'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useFeatureDetailOverpass } from '../hooks/useFeatureDetailOverpass'
 import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
@@ -25,15 +25,21 @@ export function FeatureDetail() {
     ...featureQueryOptions(areaKey, featureLookupKey),
     enabled: areaId != null && featureKey != null,
   })
+  const runStatusQuery = useQuery(runStatusQueryOptions())
   const data = featureQuery.data ?? null
   const overpass = useFeatureDetailOverpass(featureLookupKey)
   const wfs = useFeatureDetailWfs(featureLookupKey)
 
   const row = !data || !featureKey ? null : findFeatureDetailRow(data, featureKey)
+  const compareBranch = runStatusQuery.data?.areas?.[areaKey]?.compare
+  const showCompareFailedNotice = compareBranch?.status === 'compare_failed'
   if (featureQuery.isError) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
         <div className="text-red-400">{String(featureQuery.error)}</div>
+        {showCompareFailedNotice ? (
+          <p className="mt-2 text-sm text-amber-300">{de.feature.compareFailedNotice}</p>
+        ) : null}
       </div>
     )
   }
@@ -47,6 +53,11 @@ export function FeatureDetail() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
+      {showCompareFailedNotice ? (
+        <div className="mb-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          {de.feature.compareFailedNotice}
+        </div>
+      ) : null}
       <FeatureDetailStatsStrip row={row} mapLayers={mapLayers} data={data} />
 
       <FeatureDetailMapSection

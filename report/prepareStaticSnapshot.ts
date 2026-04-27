@@ -75,6 +75,10 @@ async function main() {
     join(runtimeRoot, 'data', 'processing-log.jsonl'),
     join(destDataRoot, 'processing-log.jsonl'),
   )
+  await copyIfExists(
+    join(runtimeRoot, 'data', 'run-status.json'),
+    join(destDataRoot, 'run-status.json'),
+  )
 
   console.log(
     `[prepare-static-snapshot] Wrote public datasets from ${runtimeRoot} (${comparisonTableCount} areas with comparison_table.json)`,

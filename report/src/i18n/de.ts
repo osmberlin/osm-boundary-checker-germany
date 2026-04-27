@@ -144,6 +144,10 @@ export const de = {
     loading: 'Laden…',
     errorRunCompare: 'Vergleich im Projekt ausführen, damit',
     errorRunCompareExists: 'vorliegt.',
+    compareFailedNotice:
+      'Der Vergleich für dieses Gebiet ist im letzten Lauf fehlgeschlagen. Der nächste Lauf versucht es automatisch erneut.',
+    compareFallbackNotice:
+      'Der Vergleich für dieses Gebiet ist fehlgeschlagen; es werden zuletzt erfolgreiche Vergleichsdaten angezeigt.',
     table: {
       name: 'Name',
       key: 'Schlüssel',
@@ -172,6 +176,8 @@ export const de = {
     back: '← Zurück zur Tabelle',
     loading: 'Laden…',
     notFound: 'Objekt nicht gefunden.',
+    compareFailedNotice:
+      'Der Vergleich für dieses Gebiet ist im letzten Lauf fehlgeschlagen. Die Detailansicht kann unvollständig sein.',
     loadingMap: 'Karte wird geladen …',
     osmRelation: 'OSM-Relation',
     stats: {

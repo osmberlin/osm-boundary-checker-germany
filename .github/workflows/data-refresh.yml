@@ -95,6 +95,7 @@ jobs:
           bun run pipeline:nightly:download
         env:
           CI: '1'
+          FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact/.artifact-runtime
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
       - name: Extract and prepare geometry
@@ -102,6 +103,7 @@ jobs:
         run: bun run pipeline:nightly:extract
         env:
           CI: '1'
+          FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact/.artifact-runtime
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
       - name: Compare boundaries
@@ -115,7 +117,11 @@ jobs:
           fi
         env:
           CI: '1'
+          FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact/.artifact-runtime
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
+
+      - name: Verify temporary cleanup
+        run: bun run scripts/ci/verify-temp-cleanup.ts
 
       - name: Prepare static report snapshot
         run: bun run report:sync-runtime-assets
@@ -154,4 +160,31 @@ jobs:
           path: .artifact-runtime
           include-hidden-files: true
           if-no-files-found: error
+          retention-days: 4
+
+      - name: Upload scoped OSM source cache artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-cache-osm-last-good
+          path: .artifact-runtime/scopes/source-cache-osm
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Upload scoped BKG source cache artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-cache-bkg-last-good
+          path: .artifact-runtime/scopes/source-cache-bkg
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Upload scoped compare outputs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: compare-outputs-last-good
+          path: .artifact-runtime/scopes/compare-outputs
+          include-hidden-files: true
+          if-no-files-found: warn
           retention-days: 4

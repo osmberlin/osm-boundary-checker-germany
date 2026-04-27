@@ -18,29 +18,30 @@ export function reportCategorySwatchStyle(category: ReportRow['category']): {
   className: string
   style: CSSProperties
 } {
-  if (category === 'unmatched_osm') {
-    return {
-      className: swatchBox,
-      style: {
-        borderColor: osm.line,
-        backgroundColor: hexToRgba(osm.fill, osm.fillOpacity),
-      },
-    }
-  }
-  if (category === 'official_only') {
-    return {
-      className: swatchBox,
-      style: {
-        borderColor: o.line,
-        backgroundColor: hexToRgba(o.fill, o.fillOpacity),
-      },
-    }
-  }
-  return {
-    className: `${swatchBox} border-slate-500`,
-    style: {
-      background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osm.fill, osm.fillOpacity)} 50%)`,
-    },
+  switch (category) {
+    case 'unmatched_osm':
+      return {
+        className: swatchBox,
+        style: {
+          borderColor: osm.line,
+          backgroundColor: hexToRgba(osm.fill, osm.fillOpacity),
+        },
+      }
+    case 'official_only':
+      return {
+        className: swatchBox,
+        style: {
+          borderColor: o.line,
+          backgroundColor: hexToRgba(o.fill, o.fillOpacity),
+        },
+      }
+    case 'matched':
+      return {
+        className: `${swatchBox} border-slate-500`,
+        style: {
+          background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osm.fill, osm.fillOpacity)} 50%)`,
+        },
+      }
   }
 }
 
@@ -51,25 +52,26 @@ export function reportCategoryPillStyle(category: ReportRow['category']): {
   className: string
   style: CSSProperties
 } {
-  if (category === 'unmatched_osm') {
-    return unmatchedOsmStatPillStyle()
-  }
-  if (category === 'official_only') {
-    return {
-      className: pillBase,
-      style: {
-        borderColor: o.line,
-        backgroundColor: hexToRgba(o.fill, o.fillOpacity),
-        color: 'rgb(224 242 254)',
-      },
-    }
-  }
-  return {
-    className: `${pillBase} border-slate-500`,
-    style: {
-      background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osm.fill, osm.fillOpacity)} 50%)`,
-      color: 'rgb(248 250 252)',
-    },
+  switch (category) {
+    case 'unmatched_osm':
+      return unmatchedOsmStatPillStyle()
+    case 'official_only':
+      return {
+        className: pillBase,
+        style: {
+          borderColor: o.line,
+          backgroundColor: hexToRgba(o.fill, o.fillOpacity),
+          color: 'rgb(224 242 254)',
+        },
+      }
+    case 'matched':
+      return {
+        className: `${pillBase} border-slate-500`,
+        style: {
+          background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osm.fill, osm.fillOpacity)} 50%)`,
+          color: 'rgb(248 250 252)',
+        },
+      }
   }
 }
 
@@ -92,8 +94,18 @@ export function ReportCategorySwatch({ category }: { category: ReportRow['catego
 
 export function ReportCategorySquareSwatch({ category }: { category: ReportRow['category'] }) {
   const s = reportCategorySwatchStyle(category)
-  const borderColor =
-    category === 'official_only' ? o.line : category === 'unmatched_osm' ? osm.line : o.line
+  let borderColor: string
+  switch (category) {
+    case 'official_only':
+      borderColor = o.line
+      break
+    case 'unmatched_osm':
+      borderColor = osm.line
+      break
+    case 'matched':
+      borderColor = o.line
+      break
+  }
 
   return (
     <div

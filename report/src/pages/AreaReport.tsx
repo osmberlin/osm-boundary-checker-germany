@@ -23,13 +23,14 @@ import {
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
-import { comparisonQueryOptions, snapshotsQueryOptions } from '../data/load'
+import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
 import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { categoryLabelDe, de } from '../i18n/de'
+import { isOlderThanDays } from '../lib/dataAge'
 import {
   EM_DASH,
   formatDeFixed,
@@ -102,6 +103,7 @@ export function AreaReport() {
     ...snapshotsQueryOptions(areaKey),
     enabled: areaId != null,
   })
+  const runStatusQuery = useQuery(runStatusQueryOptions())
   const data: ComparisonForReport | null = comparisonQuery.data ?? null
   const snapIndex: SnapshotsJson | null = snapshotsQuery.data ?? null
   const areaDisplayName = data?.displayName ?? areaDisplayNameForId(areaKey)
@@ -150,6 +152,12 @@ export function AreaReport() {
         if (fromSnapshots.length > 0) return fromSnapshots
         return [{ id: 'current', meanIou: computeMeanIou(data.rows) }]
       })()
+  const areaRunStatus = runStatusQuery.data?.areas?.[areaKey]
+  const compareBranch = areaRunStatus?.compare
+  const showCompareFallbackNotice =
+    compareBranch?.status === 'compare_failed' && compareBranch.usedCache === true
+  const showCompareFailedNotice =
+    compareBranch?.status === 'compare_failed' && compareBranch.usedCache !== true
   const chartIsReady = chartSize.width > 0 && chartSize.height > 0
 
   if (comparisonQuery.isError) {
@@ -169,6 +177,9 @@ export function AreaReport() {
             <code className="rounded bg-slate-800 px-1 text-slate-200">bun run compare</code>{' '}
             {de.areaReport.errorRunCompareExists}
           </p>
+          {showCompareFailedNotice ? (
+            <p className="mt-2 text-sm text-amber-300">{de.areaReport.compareFailedNotice}</p>
+          ) : null}
         </div>
       </div>
     )
@@ -212,6 +223,9 @@ export function AreaReport() {
       ? `${de.areaReport.freshnessSecondaryDownloadedPrefix}: ${officialDownloadedFresh.absoluteLine}`
       : null
   const osmFresh = sourceStatLines(osmRaw, data.sourceMetadata?.osm != null)
+  const reportIsOld = isOlderThanDays(data.generatedAt, 5)
+  const officialIsOld = isOlderThanDays(officialDateChoice.primaryRaw, 5)
+  const osmIsOld = isOlderThanDays(osmRaw, 5)
   const iouMax = maxFiniteValue(sortedRows.map((row) => row.metrics?.iou))
   const areaDiffAbsMax = maxFiniteValue(
     sortedRows.map((row) => absOrNull(row.metrics?.areaDiffPct)),
@@ -227,23 +241,36 @@ export function AreaReport() {
           sourceHref={pageSourceHref}
         />
       ) : null}
+      {showCompareFallbackNotice ? (
+        <div className="mb-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          {de.areaReport.compareFallbackNotice}
+        </div>
+      ) : null}
+      {showCompareFailedNotice ? (
+        <div className="mb-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          {de.areaReport.compareFailedNotice}
+        </div>
+      ) : null}
       <section className="mb-6" aria-label={st.summaryStatRowAria}>
         <StatBlocksRow className="mt-0">
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingReport}
             relativeLine={reportFresh.relativeLine ?? EM_DASH}
             absoluteLine={reportFresh.absoluteLine || EM_DASH}
+            isOld={reportIsOld}
           />
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingOfficial}
             relativeLine={officialFresh.relativeLine}
             absoluteLine={officialFresh.absoluteLine}
             detailLine={officialSecondaryLine}
+            isOld={officialIsOld}
           />
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingOsm}
             relativeLine={osmFresh.relativeLine}
             absoluteLine={osmFresh.absoluteLine}
+            isOld={osmIsOld}
           />
         </StatBlocksRow>
       </section>
@@ -579,11 +606,13 @@ function SummaryStatColumn({
   relativeLine,
   absoluteLine,
   detailLine,
+  isOld = false,
 }: {
   heading: string
   relativeLine: string
   absoluteLine: string
   detailLine?: string | null
+  isOld?: boolean
 }) {
   const compactRelativeLine = relativeLine.replace(/\bStunden?\b/g, 'Std.')
   const mobileAbsoluteLine = toNumericMonthAbsoluteDe(absoluteLine)
@@ -591,11 +620,13 @@ function SummaryStatColumn({
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
       <dt className="text-sm font-medium text-slate-400">{heading}</dt>
-      <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-slate-400 tabular-nums sm:text-3xl">
+      <dd
+        className={`m-0 text-2xl font-semibold tracking-tight text-pretty tabular-nums sm:text-3xl ${isOld ? 'text-rose-300' : 'text-slate-400'}`}
+      >
         <span className="sm:hidden">{compactRelativeLine}</span>
         <span className="hidden sm:inline">{compactRelativeLine}</span>
       </dd>
-      <dd className="m-0 text-sm text-slate-400">
+      <dd className={`m-0 text-sm ${isOld ? 'text-rose-300' : 'text-slate-400'}`}>
         <span className="sm:hidden">{mobileAbsoluteLine}</span>
         <span className="hidden sm:inline">{absoluteLine}</span>
       </dd>

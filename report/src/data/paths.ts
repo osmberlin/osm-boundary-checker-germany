@@ -16,6 +16,10 @@ export function processingLogJsonlUrl(): string {
   return withSiteBasePath('/data/processing-log.jsonl')
 }
 
+export function runStatusUrl(): string {
+  return withSiteBasePath('/data/run-status.json')
+}
+
 function datasetDataPath(area: string, rel: string): string {
   return withSiteBasePath(`/${DATASETS_DIRECTORY}/${area}/${rel}`)
 }

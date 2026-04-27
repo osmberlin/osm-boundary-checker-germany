@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { processingLogJsonlUrl, processingStateUrl } from '../data/paths'
+import { processingLogJsonlUrl, processingStateUrl, runStatusUrl } from '../data/paths'
 import { de } from '../i18n/de'
 import { formatDeInteger } from '../lib/formatDe'
+import type { RunStatusFile } from '../types/runStatus'
 
 type ProcessingState = {
   runId?: string
@@ -102,33 +103,35 @@ function buildRuns(events: LogEvent[]): RunView[] {
   }
   for (const event of events) {
     const run = ensure(event.runId)
-    if (event.kind === 'run_start') {
-      run.startedAt = event.at
-      continue
-    }
-    if (event.kind === 'run_end') {
-      run.endedAt = event.at
-      run.status = event.status
-      run.durationMs = event.durationMs
-      continue
-    }
-    if (event.kind === 'step_end') {
-      run.stepSummaries.push({
-        id: event.step,
-        status: event.status,
-        durationMs: event.durationMs,
-        at: event.at,
-        reason: event.reason,
-      })
-      continue
-    }
-    if (event.kind === 'dataset_end') {
-      run.datasetSummaries.push({
-        dataset: event.dataset,
-        status: event.status,
-        durationMs: event.durationMs,
-        at: event.at,
-      })
+    switch (event.kind) {
+      case 'run_start':
+        run.startedAt = event.at
+        break
+      case 'run_end':
+        run.endedAt = event.at
+        run.status = event.status
+        run.durationMs = event.durationMs
+        break
+      case 'step_end':
+        run.stepSummaries.push({
+          id: event.step,
+          status: event.status,
+          durationMs: event.durationMs,
+          at: event.at,
+          reason: event.reason,
+        })
+        break
+      case 'dataset_end':
+        run.datasetSummaries.push({
+          dataset: event.dataset,
+          status: event.status,
+          durationMs: event.durationMs,
+          at: event.at,
+        })
+        break
+      case 'step_start':
+      case 'dataset_start':
+        break
     }
   }
   return [...byRun.values()].sort((a, b) =>
@@ -139,14 +142,17 @@ function buildRuns(events: LogEvent[]): RunView[] {
 async function loadProcessingStatusData(): Promise<{
   state: ProcessingState | null
   events: LogEvent[]
+  runStatus: RunStatusFile | null
 }> {
-  const [stateRes, logRes] = await Promise.all([
+  const [stateRes, logRes, runStatusRes] = await Promise.all([
     fetch(processingStateUrl(), { cache: 'no-store' }),
     fetch(processingLogJsonlUrl(), { cache: 'no-store' }),
+    fetch(runStatusUrl(), { cache: 'no-store' }),
   ])
   const state = stateRes.ok ? ((await stateRes.json()) as ProcessingState) : null
   const events = logRes.ok ? parseJsonl(await logRes.text()) : []
-  return { state, events }
+  const runStatus = runStatusRes.ok ? ((await runStatusRes.json()) as RunStatusFile) : null
+  return { state, events, runStatus }
 }
 
 export function ProcessingStatus() {
@@ -157,6 +163,7 @@ export function ProcessingStatus() {
   })
   const state = processingQuery.data?.state ?? null
   const events = processingQuery.data?.events ?? []
+  const runStatus = processingQuery.data?.runStatus ?? null
   const error = processingQuery.isError ? String(processingQuery.error) : null
   const runs = buildRuns(events)
 
@@ -183,6 +190,20 @@ export function ProcessingStatus() {
           {de.status.currentRun}: {state?.runId ?? '—'}
         </p>
       </div>
+
+      {runStatus ? (
+        <div className="mb-6 rounded border border-slate-700 bg-slate-900 p-4">
+          <p className="text-sm font-medium text-slate-200">run-status.json</p>
+          <p className="mt-1 text-sm text-slate-400">
+            runId: <code className="rounded bg-slate-800 px-1">{runStatus.runId}</code> | status:{' '}
+            {runStatus.status ?? 'in_progress'}
+          </p>
+          <p className="mt-1 text-sm text-slate-400">
+            shared branches: {formatDeInteger(Object.keys(runStatus.shared).length)} | area
+            branches: {formatDeInteger(Object.keys(runStatus.areas).length)}
+          </p>
+        </div>
+      ) : null}
 
       {error ? <p className="mb-4 text-amber-200">{error}</p> : null}
 

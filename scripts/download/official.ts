@@ -2,7 +2,16 @@
 // Config-driven HTTP official boundaries (WFS GeoJSON / GML) → official.path FlatGeobuf. Requires ogr2ogr.
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
@@ -247,6 +256,7 @@ async function processArea(
 
   const tmpName = `official-${area}-${randomBytes(8).toString('hex')}.geojson`
   const tmpPath = join(tmpdir(), tmpName)
+  const outTmp = `${outAbs}.tmp-${randomBytes(4).toString('hex')}`
 
   try {
     mkdirSync(join(outAbs, '..'), { recursive: true })
@@ -267,11 +277,13 @@ async function processArea(
       }
       const buf = new Uint8Array(await res.arrayBuffer())
       writeFileSync(tmpPath, buf)
-      runOgr2ogrToFgb(tmpPath, outAbs)
+      runOgr2ogrToFgb(tmpPath, outTmp)
     } else {
       // WFS GML responses are not always JSON-fetchable in-process; let GDAL read from URL directly.
-      runOgr2ogrToFgb(spec.url, outAbs)
+      runOgr2ogrToFgb(spec.url, outTmp)
     }
+    rmSync(outAbs, { force: true })
+    renameSync(outTmp, outAbs)
 
     const prev: AreaSourceMetadataFile = readAreaSourceMetadataFile(areaPath) ?? {}
     let extractedWfsDates: Awaited<ReturnType<typeof extractWfsDateMetadata>> = {}
@@ -378,6 +390,11 @@ async function processArea(
   } finally {
     try {
       if (existsSync(tmpPath)) unlinkSync(tmpPath)
+    } catch {
+      /* ignore */
+    }
+    try {
+      if (existsSync(outTmp)) rmSync(outTmp, { force: true })
     } catch {
       /* ignore */
     }

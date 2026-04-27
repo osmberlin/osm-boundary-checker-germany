@@ -18,7 +18,8 @@ import {
   type WfsFeature,
 } from '../lib/wfsGetFeature'
 import type { ComparisonForReport, FeatureDetailShard, SnapshotsJson } from '../types/report'
-import { comparisonApiUrl, featureApiUrl, snapshotsUrl } from './paths'
+import { runStatusFileSchema, type RunStatusFile } from '../types/runStatus'
+import { comparisonApiUrl, featureApiUrl, runStatusUrl, snapshotsUrl } from './paths'
 
 async function readJsonStrict(url: string, response: Response): Promise<unknown> {
   const bodyText = await response.text()
@@ -63,6 +64,14 @@ export async function loadSnapshots(area: string): Promise<SnapshotsJson | null>
   const r = await fetch(url)
   if (!r.ok) return null
   return snapshotsSchema.parse(await readJsonStrict(url, r))
+}
+
+export async function loadRunStatus(): Promise<RunStatusFile | null> {
+  const url = runStatusUrl()
+  const r = await fetch(url)
+  if (!r.ok) return null
+  const parsed = runStatusFileSchema.safeParse(await readJsonStrict(url, r))
+  return parsed.success ? parsed.data : null
 }
 
 export async function loadFeatureOrFallback(
@@ -110,6 +119,13 @@ export function featureQueryOptions(area: string, featureKey: string) {
   return queryOptions({
     queryKey: ['feature', area, featureKey],
     queryFn: () => loadFeatureOrFallback(area, featureKey),
+  })
+}
+
+export function runStatusQueryOptions() {
+  return queryOptions({
+    queryKey: ['run-status'],
+    queryFn: () => loadRunStatus(),
   })
 }
 

@@ -8,6 +8,7 @@ import {
   copyFileSync,
   existsSync,
   mkdirSync,
+  renameSync,
   readdirSync,
   rmSync,
   statSync,
@@ -140,6 +141,7 @@ async function main() {
   const cacheDir = join(runtimeRoot, BKG_CACHE_DIR)
   const zipDest = join(cacheDir, BKG_ZIP_NAME)
   const extractDir = join(cacheDir, BKG_EXTRACT_SUBDIR)
+  const extractTmp = `${extractDir}.tmp-${Date.now()}`
   const timezone = resolveRefreshTimezone()
 
   mkdirSync(cacheDir, { recursive: true })
@@ -205,22 +207,30 @@ async function main() {
     })
   }
 
-  // Keep only the latest extracted dataset to avoid stale archive leftovers.
-  rmSync(extractDir, { recursive: true, force: true })
-  const unzip = spawnSync('unzip', ['-o', zipDest, '-d', extractDir], {
+  rmSync(extractTmp, { recursive: true, force: true })
+  const unzip = spawnSync('unzip', ['-o', zipDest, '-d', extractTmp], {
     stdio: 'inherit',
   })
   if (unzip.status !== 0) {
     console.error('`unzip` failed. Install unzip or extract the archive manually into', extractDir)
+    rmSync(extractTmp, { recursive: true, force: true })
     process.exit(unzip.status ?? 1)
   }
 
-  const gpkgPaths = findGpkgFiles(extractDir)
+  const gpkgPaths = findGpkgFiles(extractTmp)
   if (gpkgPaths.length === 0) {
-    console.error('No .gpkg found under', extractDir)
+    console.error('No .gpkg found under', extractTmp)
+    rmSync(extractTmp, { recursive: true, force: true })
     process.exit(1)
   }
-  const gpkgAbs = pickGpkg(gpkgPaths)
+  let gpkgAbs = ''
+  try {
+    rmSync(extractDir, { recursive: true, force: true })
+    renameSync(extractTmp, extractDir)
+    gpkgAbs = pickGpkg(gpkgPaths).replace(extractTmp, extractDir)
+  } finally {
+    if (existsSync(extractTmp)) rmSync(extractTmp, { recursive: true, force: true })
+  }
   const gpkgRelativePath = relative(workspaceRoot, gpkgAbs)
 
   const meta: DownloadMetadata = {
