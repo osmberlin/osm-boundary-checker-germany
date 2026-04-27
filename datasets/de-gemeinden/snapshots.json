@@ -1,5 +1,15 @@
 {
   "area": "de-gemeinden",
   "metricsCrs": "EPSG:25832",
-  "runs": []
+  "runs": [
+    {
+      "id": "2026-04-27",
+      "summary": {
+        "totalRows": 10981,
+        "meanIou": 0.9828348971000658,
+        "matched": 10499,
+        "unmatchedOsm": 2002
+      }
+    }
+  ]
 }

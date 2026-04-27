@@ -1,5 +1,15 @@
 {
   "area": "berlin-ortsteile",
   "metricsCrs": "EPSG:32633",
-  "runs": []
+  "runs": [
+    {
+      "id": "2026-04-27",
+      "summary": {
+        "totalRows": 97,
+        "meanIou": 0.9964004690497047,
+        "matched": 97,
+        "unmatchedOsm": 0
+      }
+    }
+  ]
 }

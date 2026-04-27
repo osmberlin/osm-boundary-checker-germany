@@ -1,5 +1,15 @@
 {
   "area": "hamburg-bezirke",
   "metricsCrs": "EPSG:25832",
-  "runs": []
+  "runs": [
+    {
+      "id": "2026-04-27",
+      "summary": {
+        "totalRows": 7,
+        "meanIou": 0.9117940462475238,
+        "matched": 7,
+        "unmatchedOsm": 0
+      }
+    }
+  ]
 }

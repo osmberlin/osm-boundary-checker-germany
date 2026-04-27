@@ -1,5 +1,15 @@
 {
   "area": "brandenburg-berlin-plz",
   "metricsCrs": "EPSG:25832",
-  "runs": []
+  "runs": [
+    {
+      "id": "2026-04-27",
+      "summary": {
+        "totalRows": 410,
+        "meanIou": 0.976994582827767,
+        "matched": 405,
+        "unmatchedOsm": 1
+      }
+    }
+  ]
 }

@@ -1,5 +1,15 @@
 {
   "area": "de-landkreise",
   "metricsCrs": "EPSG:25832",
-  "runs": []
+  "runs": [
+    {
+      "id": "2026-04-27",
+      "summary": {
+        "totalRows": 403,
+        "meanIou": 0.9973618044231717,
+        "matched": 400,
+        "unmatchedOsm": 1
+      }
+    }
+  ]
 }

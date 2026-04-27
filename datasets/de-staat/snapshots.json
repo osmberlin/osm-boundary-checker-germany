@@ -1,5 +1,15 @@
 {
   "area": "de-staat",
   "metricsCrs": "EPSG:25832",
-  "runs": []
+  "runs": [
+    {
+      "id": "2026-04-27",
+      "summary": {
+        "totalRows": 1,
+        "meanIou": 0.9992768903085397,
+        "matched": 1,
+        "unmatchedOsm": 0
+      }
+    }
+  ]
 }
