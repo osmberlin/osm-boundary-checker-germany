@@ -2,6 +2,10 @@ name: Deploy GitHub Pages
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'report/**'
   workflow_run:
     workflows: ['Refresh Datasets']
     types: [completed]
@@ -24,6 +28,7 @@ jobs:
   build:
     if: |
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_branch == 'main')
@@ -54,7 +59,7 @@ jobs:
           if_no_artifact_found: fail
 
       - name: Download latest refresh artifact
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name != 'workflow_run'
         uses: dawidd6/action-download-artifact@v11
         with:
           workflow: data-refresh.yml
