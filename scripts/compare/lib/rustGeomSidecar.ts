@@ -31,6 +31,27 @@ function defaultRustBinaryPath(): string {
   return join(here, '../../../rust/geom-sidecar/target/release/geom-sidecar' + ext)
 }
 
+// Heavy datasets like `de-gemeinden` (≈11k municipalities × full Germany detail) explode the
+// per-call JSON payload to multiple GB when sent as a single batch, which causes OOM/SIGTERM
+// in CI. Process inputs in bounded chunks so each spawn stays well below memory limits.
+const RUST_BATCH_CHUNK_DEFAULT = 500
+const RUST_BATCH_CHUNK_SIZE = RUST_BATCH_CHUNK_DEFAULT
+
+function logRustChunkProgress(
+  command: string,
+  chunkIndex: number,
+  totalChunks: number,
+  chunkSize: number,
+  totalItems: number,
+  elapsedMs: number,
+): void {
+  // Surface progress to stdout so CI logs show *which* phase is running and roughly how far
+  // along; without this the heavy phases were silent for many minutes.
+  console.log(
+    `[rust-geom] ${command} chunk ${chunkIndex}/${totalChunks} (size=${chunkSize} of ${totalItems}, elapsedMs=${elapsedMs})`,
+  )
+}
+
 function rustBootstrapHint(bin: string): string {
   return (
     `Rust geometry sidecar is required for compare runs.\n` +
@@ -69,58 +90,94 @@ function runRustCommand<TInput, TOutput>(command: string, payload: TInput): TOut
 }
 
 export function unionByKeyWithRust(buckets: RustUnionBucket[]): RustUnionResult[] {
-  const output = runRustCommand<
-    { buckets: RustUnionBucket[] },
-    {
-      results: Array<{
-        key: string
-        geometry: Geometry | null
-        feature_ids: string[]
-        properties: Record<string, unknown> | null
-      }>
+  if (buckets.length === 0) return []
+  const totalChunks = Math.max(1, Math.ceil(buckets.length / RUST_BATCH_CHUNK_SIZE))
+  const startedAt = Date.now()
+  const out: RustUnionResult[] = []
+  for (let i = 0; i < totalChunks; i++) {
+    const slice = buckets.slice(i * RUST_BATCH_CHUNK_SIZE, (i + 1) * RUST_BATCH_CHUNK_SIZE)
+    const output = runRustCommand<
+      { buckets: RustUnionBucket[] },
+      {
+        results: Array<{
+          key: string
+          geometry: Geometry | null
+          feature_ids: string[]
+          properties: Record<string, unknown> | null
+        }>
+      }
+    >('union-by-key', { buckets: slice })
+    for (const row of output.results) {
+      out.push({
+        key: row.key,
+        geometry: row.geometry,
+        feature_ids: row.feature_ids,
+        properties: row.properties,
+      })
     }
-  >('union-by-key', { buckets })
-  return output.results.map((row) => ({
-    key: row.key,
-    geometry: row.geometry,
-    feature_ids: row.feature_ids,
-    properties: row.properties,
-  }))
+    logRustChunkProgress(
+      'union-by-key',
+      i + 1,
+      totalChunks,
+      slice.length,
+      buckets.length,
+      Date.now() - startedAt,
+    )
+  }
+  return out
 }
 
 export function calculateMetricsBatchWithRust(
   rows: Array<{ officialProjected: Geometry | null; osmProjected: Geometry | null }>,
 ): Array<MetricResult | null> {
-  const output = runRustCommand<
-    { rows: Array<{ official_projected: Geometry | null; osm_projected: Geometry | null }> },
-    {
-      rows: Array<{
-        iou: number
-        area_diff_pct: number
-        symmetric_diff_pct: number
-        hausdorff_m: number
-        official_area_m2: number
-        osm_area_m2: number
-      } | null>
+  if (rows.length === 0) return []
+  const totalChunks = Math.max(1, Math.ceil(rows.length / RUST_BATCH_CHUNK_SIZE))
+  const startedAt = Date.now()
+  const out: Array<MetricResult | null> = []
+  for (let i = 0; i < totalChunks; i++) {
+    const slice = rows.slice(i * RUST_BATCH_CHUNK_SIZE, (i + 1) * RUST_BATCH_CHUNK_SIZE)
+    const output = runRustCommand<
+      { rows: Array<{ official_projected: Geometry | null; osm_projected: Geometry | null }> },
+      {
+        rows: Array<{
+          iou: number
+          area_diff_pct: number
+          symmetric_diff_pct: number
+          hausdorff_m: number
+          official_area_m2: number
+          osm_area_m2: number
+        } | null>
+      }
+    >('metrics-batch', {
+      rows: slice.map((row) => ({
+        official_projected: row.officialProjected,
+        osm_projected: row.osmProjected,
+      })),
+    })
+    for (const row of output.rows) {
+      out.push(
+        row
+          ? {
+              iou: row.iou,
+              areaDiffPct: row.area_diff_pct,
+              symmetricDiffPct: row.symmetric_diff_pct,
+              hausdorffM: row.hausdorff_m,
+              officialAreaM2: row.official_area_m2,
+              osmAreaM2: row.osm_area_m2,
+            }
+          : null,
+      )
     }
-  >('metrics-batch', {
-    rows: rows.map((row) => ({
-      official_projected: row.officialProjected,
-      osm_projected: row.osmProjected,
-    })),
-  })
-  return output.rows.map((row) =>
-    row
-      ? {
-          iou: row.iou,
-          areaDiffPct: row.area_diff_pct,
-          symmetricDiffPct: row.symmetric_diff_pct,
-          hausdorffM: row.hausdorff_m,
-          officialAreaM2: row.official_area_m2,
-          osmAreaM2: row.osm_area_m2,
-        }
-      : null,
-  )
+    logRustChunkProgress(
+      'metrics-batch',
+      i + 1,
+      totalChunks,
+      slice.length,
+      rows.length,
+      Date.now() - startedAt,
+    )
+  }
+  return out
 }
 
 export function calculateDiffBatchWithRust(
@@ -131,33 +188,51 @@ export function calculateDiffBatchWithRust(
     osmGeometryWgs84: Geometry | null
   }>,
 ): RustDiffBatchResult[] {
-  const output = runRustCommand<
-    {
-      rows: Array<{
-        category: string
-        canonical_match_key: string
-        official_geometry_wgs84: Geometry | null
-        osm_geometry_wgs84: Geometry | null
-      }>
-    },
-    {
-      rows: Array<{
-        canonical_match_key: string
-        external_diff: Geometry | null
-        osm_diff: Geometry | null
-      }>
+  if (rows.length === 0) return []
+  const totalChunks = Math.max(1, Math.ceil(rows.length / RUST_BATCH_CHUNK_SIZE))
+  const startedAt = Date.now()
+  const out: RustDiffBatchResult[] = []
+  for (let i = 0; i < totalChunks; i++) {
+    const slice = rows.slice(i * RUST_BATCH_CHUNK_SIZE, (i + 1) * RUST_BATCH_CHUNK_SIZE)
+    const output = runRustCommand<
+      {
+        rows: Array<{
+          category: string
+          canonical_match_key: string
+          official_geometry_wgs84: Geometry | null
+          osm_geometry_wgs84: Geometry | null
+        }>
+      },
+      {
+        rows: Array<{
+          canonical_match_key: string
+          external_diff: Geometry | null
+          osm_diff: Geometry | null
+        }>
+      }
+    >('diff-batch', {
+      rows: slice.map((row) => ({
+        category: row.category,
+        canonical_match_key: row.canonicalMatchKey,
+        official_geometry_wgs84: row.officialGeometryWgs84,
+        osm_geometry_wgs84: row.osmGeometryWgs84,
+      })),
+    })
+    for (const row of output.rows) {
+      out.push({
+        canonicalMatchKey: row.canonical_match_key,
+        externalDiff: row.external_diff,
+        osmDiff: row.osm_diff,
+      })
     }
-  >('diff-batch', {
-    rows: rows.map((row) => ({
-      category: row.category,
-      canonical_match_key: row.canonicalMatchKey,
-      official_geometry_wgs84: row.officialGeometryWgs84,
-      osm_geometry_wgs84: row.osmGeometryWgs84,
-    })),
-  })
-  return output.rows.map((row) => ({
-    canonicalMatchKey: row.canonical_match_key,
-    externalDiff: row.external_diff,
-    osmDiff: row.osm_diff,
-  }))
+    logRustChunkProgress(
+      'diff-batch',
+      i + 1,
+      totalChunks,
+      slice.length,
+      rows.length,
+      Date.now() - startedAt,
+    )
+  }
+  return out
 }

@@ -228,16 +228,26 @@ export async function runCompare(
   instrumentation?.setInFlightPhase?.('load_official')
   instrumentation?.checkpoint?.('before_load_official', { path: officialPath })
   const officialFc = await loadFeatureCollection(officialPath)
-  phaseLogger?.('load_official', Date.now() - tLoadOfficial, {
+  const loadOfficialMs = Date.now() - tLoadOfficial
+  phaseLogger?.('load_official', loadOfficialMs, {
     featureCount: officialFc.features.length,
   })
+  // Also surface to stdout: heavy datasets like de-gemeinden spend many seconds in load/union
+  // phases; without stdout output the GitHub Actions runner has nothing but heartbeats to show.
+  console.log(
+    `[compare:${areaFolder}] load_official done features=${officialFc.features.length} elapsedMs=${loadOfficialMs}`,
+  )
   instrumentation?.checkpoint?.('after_load_official', { featureCount: officialFc.features.length })
 
   const tLoadOsm = Date.now()
   instrumentation?.setInFlightPhase?.('load_osm')
   instrumentation?.checkpoint?.('before_load_osm', { path: osmPath })
   let osmFc = await loadFeatureCollection(osmPath)
-  phaseLogger?.('load_osm', Date.now() - tLoadOsm, { featureCount: osmFc.features.length })
+  const loadOsmMs = Date.now() - tLoadOsm
+  phaseLogger?.('load_osm', loadOsmMs, { featureCount: osmFc.features.length })
+  console.log(
+    `[compare:${areaFolder}] load_osm done features=${osmFc.features.length} elapsedMs=${loadOsmMs}`,
+  )
   instrumentation?.checkpoint?.('after_load_osm', { featureCount: osmFc.features.length })
 
   const initialOsmFeatureCount = osmFc.features.length
@@ -303,6 +313,9 @@ export async function runCompare(
     )
   }
 
+  console.log(
+    `[compare:${areaFolder}] starting union_official featureCount=${officialFc.features.length}`,
+  )
   const tUnionOfficial = Date.now()
   instrumentation?.setInFlightPhase?.('union_official')
   instrumentation?.checkpoint?.('before_union_official')
@@ -317,9 +330,14 @@ export async function runCompare(
       preset,
     )
   })
-  phaseLogger?.('union_official', Date.now() - tUnionOfficial, { keys: officialMap.size })
+  const unionOfficialMs = Date.now() - tUnionOfficial
+  phaseLogger?.('union_official', unionOfficialMs, { keys: officialMap.size })
+  console.log(
+    `[compare:${areaFolder}] union_official done keys=${officialMap.size} elapsedMs=${unionOfficialMs}`,
+  )
   instrumentation?.checkpoint?.('after_union_official', { keys: officialMap.size })
 
+  console.log(`[compare:${areaFolder}] starting union_osm featureCount=${osmFc.features.length}`)
   const tUnionOsm = Date.now()
   instrumentation?.setInFlightPhase?.('union_osm')
   instrumentation?.checkpoint?.('before_union_osm')
@@ -334,7 +352,9 @@ export async function runCompare(
     if (v == null) return null
     return normalizeOsmValue(osmMatchProperty, String(v), preset).canonicalMatchKey
   })
-  phaseLogger?.('union_osm', Date.now() - tUnionOsm, { keys: osmMap.size })
+  const unionOsmMs = Date.now() - tUnionOsm
+  phaseLogger?.('union_osm', unionOsmMs, { keys: osmMap.size })
+  console.log(`[compare:${areaFolder}] union_osm done keys=${osmMap.size} elapsedMs=${unionOsmMs}`)
   instrumentation?.checkpoint?.('after_union_osm', { keys: osmMap.size })
 
   const osmNameByKey = new Map<string, string>()
@@ -411,16 +431,23 @@ export async function runCompare(
       })
     }
   }
-  phaseLogger?.('project', Date.now() - tProject, {
+  const projectMs = Date.now() - tProject
+  phaseLogger?.('project', projectMs, {
     rows: rows.length,
     pendingMetrics: pendingMetrics.length,
   })
+  console.log(
+    `[compare:${areaFolder}] project done rows=${rows.length} pendingMetrics=${pendingMetrics.length} elapsedMs=${projectMs}`,
+  )
   instrumentation?.checkpoint?.('after_project_loop', {
     rows: rows.length,
     pendingMetrics: pendingMetrics.length,
   })
 
   if (pendingMetrics.length > 0) {
+    console.log(
+      `[compare:${areaFolder}] starting metrics_rust pendingMetrics=${pendingMetrics.length}`,
+    )
     const tMetrics = Date.now()
     instrumentation?.setInFlightPhase?.('metrics')
     instrumentation?.checkpoint?.('before_metrics_rust', { pendingMetrics: pendingMetrics.length })
@@ -434,12 +461,16 @@ export async function runCompare(
       const row = rows[pendingMetrics[i]!.rowIndex]
       if (row) row.metrics = rustMetrics[i] ?? null
     }
-    phaseLogger?.('metrics', Date.now() - tMetrics, {
+    const metricsMs = Date.now() - tMetrics
+    phaseLogger?.('metrics', metricsMs, {
       calculated: pendingMetrics.length,
     })
+    console.log(
+      `[compare:${areaFolder}] metrics_rust done calculated=${pendingMetrics.length} elapsedMs=${metricsMs}`,
+    )
     instrumentation?.checkpoint?.('after_metrics_rust', {
       calculated: pendingMetrics.length,
-      elapsedMs: Date.now() - tMetrics,
+      elapsedMs: metricsMs,
     })
   }
   instrumentation?.setInFlightPhase?.(null)

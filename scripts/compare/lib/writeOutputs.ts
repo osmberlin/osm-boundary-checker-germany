@@ -214,6 +214,7 @@ function buildGeometryFeatureCollection(
   instrumentation?: CompareInstrumentation,
 ): FeatureCollection {
   const features: Feature[] = []
+  console.log(`[writeOutputs] starting diff_rust rows=${rows.length}`)
   const tDiff = Date.now()
   instrumentation?.setInFlightPhase?.('diff')
   instrumentation?.checkpoint?.('before_diff_rust', { rows: rows.length })
@@ -234,10 +235,12 @@ function buildGeometryFeatureCollection(
       },
     ]),
   )
-  phaseLogger?.('diff', Date.now() - tDiff, { rows: rustDiffRows.length })
+  const diffMs = Date.now() - tDiff
+  phaseLogger?.('diff', diffMs, { rows: rustDiffRows.length })
+  console.log(`[writeOutputs] diff_rust done rows=${rustDiffRows.length} elapsedMs=${diffMs}`)
   instrumentation?.checkpoint?.('after_diff_rust', {
     rows: rustDiffRows.length,
-    elapsedMs: Date.now() - tDiff,
+    elapsedMs: diffMs,
   })
 
   for (const r of rows) {
@@ -471,18 +474,23 @@ export function writeOutputs(
     mkdirSync(buildDir, { recursive: true })
     writeFileSync(fgbPath, geojson.serialize(geometryFc))
     try {
+      console.log(`[writeOutputs] starting tippecanoe_main features=${geometryFc.features.length}`)
       const tTippecanoeMain = Date.now()
       instrumentation?.setInFlightPhase?.('tippecanoe_main')
       instrumentation?.checkpoint?.('before_tippecanoe_main', {
         features: geometryFc.features.length,
       })
       runTippecanoe(fgbPath, pmtilesPath)
-      phaseLogger?.('tippecanoe_main', Date.now() - tTippecanoeMain, {
+      const tippecanoeMs = Date.now() - tTippecanoeMain
+      phaseLogger?.('tippecanoe_main', tippecanoeMs, {
         features: geometryFc.features.length,
       })
+      console.log(
+        `[writeOutputs] tippecanoe_main done features=${geometryFc.features.length} elapsedMs=${tippecanoeMs}`,
+      )
       instrumentation?.checkpoint?.('after_tippecanoe_main', {
         features: geometryFc.features.length,
-        elapsedMs: Date.now() - tTippecanoeMain,
+        elapsedMs: tippecanoeMs,
       })
       hasPmtiles = true
     } finally {
