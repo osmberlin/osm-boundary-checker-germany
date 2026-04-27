@@ -125,7 +125,7 @@ export function upsertAreaCompareStatus(
     areas: {
       ...current.areas,
       [area]: {
-        ...(current.areas[area] ?? {}),
+        ...current.areas[area],
         compare: {
           ...branch,
           updatedAt: safeNow(),
@@ -145,7 +145,7 @@ export function upsertAreaOfficialDownloadStatus(
     areas: {
       ...current.areas,
       [area]: {
-        ...(current.areas[area] ?? {}),
+        ...current.areas[area],
         officialDownload: {
           ...branch,
           updatedAt: safeNow(),
