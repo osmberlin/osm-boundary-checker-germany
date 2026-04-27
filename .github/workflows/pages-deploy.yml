@@ -47,7 +47,6 @@ jobs:
         uses: dawidd6/action-download-artifact@v11
         with:
           workflow: data-refresh.yml
-          branch: main
           name: ${{ env.DATASET_ARTIFACT_NAME }}
           run_id: ${{ github.event.workflow_run.id }}
           search_artifacts: false
