@@ -24,7 +24,12 @@ import {
 } from '../../shared/officialForEditGeojson.ts'
 import type { OgcWfsInspectSource } from '../../shared/ogcInspectSources.ts'
 import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/sourceMetadata.ts'
-import type { ComparePhaseLogger, CompareRow, UnmatchedOsmRow } from './compare.ts'
+import type {
+  CompareInstrumentation,
+  ComparePhaseLogger,
+  CompareRow,
+  UnmatchedOsmRow,
+} from './compare.ts'
 import { computeMeanIou } from './metrics.ts'
 import { runTippecanoe, TIPPECANOE_LAYER } from './runTippecanoe.ts'
 import { calculateDiffBatchWithRust } from './rustGeomSidecar.ts'
@@ -206,9 +211,12 @@ function appendDiffFeaturesForRowWithPrecomputed(
 function buildGeometryFeatureCollection(
   rows: CompareRow[],
   phaseLogger?: ComparePhaseLogger,
+  instrumentation?: CompareInstrumentation,
 ): FeatureCollection {
   const features: Feature[] = []
   const tDiff = Date.now()
+  instrumentation?.setInFlightPhase?.('diff')
+  instrumentation?.checkpoint?.('before_diff_rust', { rows: rows.length })
   const rustDiffRows = calculateDiffBatchWithRust(
     rows.map((row) => ({
       category: row.category,
@@ -227,6 +235,10 @@ function buildGeometryFeatureCollection(
     ]),
   )
   phaseLogger?.('diff', Date.now() - tDiff, { rows: rustDiffRows.length })
+  instrumentation?.checkpoint?.('after_diff_rust', {
+    rows: rustDiffRows.length,
+    elapsedMs: Date.now() - tDiff,
+  })
 
   for (const r of rows) {
     if (r.officialGeometryWgs84) {
@@ -426,6 +438,7 @@ export function writeOutputs(
   filterConfigSummary: ComparisonFilterConfigSummary | null = null,
   ogcInspectSources: OgcWfsInspectSource[] = [],
   phaseLogger?: ComparePhaseLogger,
+  instrumentation?: CompareInstrumentation,
 ): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
   const buildDir = join(outDir, BUILD_DIR)
@@ -438,7 +451,7 @@ export function writeOutputs(
   const officialOnly = rows.filter((r) => r.category === 'official_only')
   const meanIou = computeMeanIou(rows)
 
-  const geometryFc = buildGeometryFeatureCollection(rows, phaseLogger)
+  const geometryFc = buildGeometryFeatureCollection(rows, phaseLogger, instrumentation)
   const fgbPath = join(buildDir, BUILD_FGB)
   const pmtilesPath = join(outDir, PMTILES)
   const unmatchedFgbPath = join(buildDir, 'unmatched.fgb')
@@ -459,9 +472,17 @@ export function writeOutputs(
     writeFileSync(fgbPath, geojson.serialize(geometryFc))
     try {
       const tTippecanoeMain = Date.now()
+      instrumentation?.setInFlightPhase?.('tippecanoe_main')
+      instrumentation?.checkpoint?.('before_tippecanoe_main', {
+        features: geometryFc.features.length,
+      })
       runTippecanoe(fgbPath, pmtilesPath)
       phaseLogger?.('tippecanoe_main', Date.now() - tTippecanoeMain, {
         features: geometryFc.features.length,
+      })
+      instrumentation?.checkpoint?.('after_tippecanoe_main', {
+        features: geometryFc.features.length,
+        elapsedMs: Date.now() - tTippecanoeMain,
       })
       hasPmtiles = true
     } finally {
@@ -488,9 +509,17 @@ export function writeOutputs(
     writeFileSync(unmatchedFgbPath, geojson.serialize(unmatchedFc))
     try {
       const tTippecanoeUnmatched = Date.now()
+      instrumentation?.setInFlightPhase?.('tippecanoe_unmatched')
+      instrumentation?.checkpoint?.('before_tippecanoe_unmatched', {
+        features: unmatchedFc.features.length,
+      })
       runTippecanoe(unmatchedFgbPath, unmatchedPmtilesPath)
       phaseLogger?.('tippecanoe_unmatched', Date.now() - tTippecanoeUnmatched, {
         features: unmatchedFc.features.length,
+      })
+      instrumentation?.checkpoint?.('after_tippecanoe_unmatched', {
+        features: unmatchedFc.features.length,
+        elapsedMs: Date.now() - tTippecanoeUnmatched,
       })
       hasUnmatchedPmtiles = true
     } finally {
@@ -537,6 +566,11 @@ export function writeOutputs(
   const payloadUnmatched = unmatchedOsm.map(unmatchedRowToPayload)
 
   const tWritePayloads = Date.now()
+  instrumentation?.setInFlightPhase?.('write_payloads')
+  instrumentation?.checkpoint?.('before_write_payloads', {
+    rows: payloadRows.length,
+    unmatched: payloadUnmatched.length,
+  })
   writeStaticJson(join(outDir, TABLE_JSON), {
     ...base,
     rows: payloadRows,
@@ -547,12 +581,21 @@ export function writeOutputs(
   const featureTmp = `${featureDir}.tmp-${Date.now()}`
   rmSync(featureTmp, { recursive: true, force: true })
   let featureShardCount = 0
+  const shardProgressInterval = 1000
   mkdirSync(featureTmp, { recursive: true })
   for (const row of payloadRows) {
     featureShardCount++
     writeStaticJson(join(featureTmp, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
       row,
     } satisfies FeatureDetailShard)
+    if (
+      featureShardCount % shardProgressInterval === 0 ||
+      featureShardCount === payloadRows.length
+    ) {
+      instrumentation?.progress?.('write_feature_shards', featureShardCount, payloadRows.length, {
+        elapsedMs: Date.now() - tWritePayloads,
+      })
+    }
   }
   const featureOld = `${featureDir}.old-${Date.now()}`
   try {
@@ -577,6 +620,13 @@ export function writeOutputs(
     unmatched: payloadUnmatched.length,
     featureShards: featureShardCount,
   })
+  instrumentation?.checkpoint?.('after_write_payloads', {
+    rows: payloadRows.length,
+    unmatched: payloadUnmatched.length,
+    featureShards: featureShardCount,
+    elapsedMs: Date.now() - tWritePayloads,
+  })
+  instrumentation?.setInFlightPhase?.(null)
 
   return { snapshotId }
 }

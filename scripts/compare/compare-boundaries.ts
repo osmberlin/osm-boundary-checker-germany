@@ -65,8 +65,16 @@ function createInternalPhaseLogger(
 ): {
   runId: string
   phaseLogger: ComparePhaseLogger
+  checkpointLogger: (checkpoint: string, meta?: Record<string, unknown>) => void
+  progressLogger: (
+    scope: string,
+    current: number,
+    total: number,
+    meta?: Record<string, unknown>,
+  ) => void
+  appendEvent: (event: Record<string, unknown>) => void
   logRunStart: () => void
-  logRunEnd: (status: 'ok' | 'fail') => void
+  logRunEnd: (status: 'ok' | 'fail', meta?: Record<string, unknown>) => void
 } {
   const runId = `${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}-${randomUUID().slice(0, 8)}`
   const internalLogPath = join(runtimeRoot, 'data', 'internal-compare-timing.jsonl')
@@ -80,6 +88,7 @@ function createInternalPhaseLogger(
   }
   return {
     runId,
+    appendEvent: append,
     phaseLogger: (phase, durationMs, meta) =>
       append({
         kind: 'compare_phase',
@@ -87,8 +96,21 @@ function createInternalPhaseLogger(
         durationMs,
         ...meta,
       }),
+    checkpointLogger: (checkpoint, meta) =>
+      append({ kind: 'compare_checkpoint', checkpoint, ...meta }),
+    progressLogger: (scope, current, total, meta) =>
+      append({ kind: 'compare_progress', scope, current, total, ...meta }),
     logRunStart: () => append({ kind: 'compare_run_start' }),
-    logRunEnd: (status) => append({ kind: 'compare_run_end', status }),
+    logRunEnd: (status, meta) => append({ kind: 'compare_run_end', status, ...meta }),
+  }
+}
+
+function signalExitCode(signal: 'SIGINT' | 'SIGTERM'): number {
+  switch (signal) {
+    case 'SIGINT':
+      return 130
+    case 'SIGTERM':
+      return 143
   }
 }
 
@@ -111,20 +133,73 @@ async function main() {
   }
 
   console.log(`Comparing area: ${area}`)
-  const { runId, phaseLogger, logRunStart, logRunEnd } = createInternalPhaseLogger(
-    runtimeRoot,
-    area,
-  )
+  const {
+    runId,
+    phaseLogger,
+    checkpointLogger,
+    progressLogger,
+    appendEvent,
+    logRunStart,
+    logRunEnd,
+  } = createInternalPhaseLogger(runtimeRoot, area)
+  const runStartedEpoch = Date.now()
+  let lastCheckpoint = 'run_start'
+  let inFlightPhase: string | null = null
+  let finalized = false
+
+  const checkpoint = (name: string, meta?: Record<string, unknown>) => {
+    lastCheckpoint = name
+    checkpointLogger(name, meta)
+  }
+  const finalizeRun = (status: 'ok' | 'fail', meta?: Record<string, unknown>) => {
+    if (finalized) return
+    finalized = true
+    logRunEnd(status, meta)
+  }
+  const onSignal = (signal: 'SIGINT' | 'SIGTERM') => {
+    appendEvent({
+      kind: 'compare_signal',
+      signal,
+      lastCheckpoint,
+      inFlightPhase,
+      elapsedMs: Date.now() - runStartedEpoch,
+    })
+    finalizeRun('fail', {
+      reason: 'signal',
+      signal,
+      lastCheckpoint,
+      inFlightPhase,
+      elapsedMs: Date.now() - runStartedEpoch,
+    })
+    process.exit(signalExitCode(signal))
+  }
+
+  process.once('SIGTERM', onSignal)
+  process.once('SIGINT', onSignal)
   logRunStart()
+  checkpoint('run_start')
   console.log(`[compare] timing runId=${runId}`)
   const areaPath = datasetFolderPath(runtimeRoot, area)
   try {
+    checkpoint('before_run_compare')
     const { config, rows, unmatchedOsm, metricsCrs } = await runCompare(
       runtimeRoot,
       area,
       configRaw,
       phaseLogger,
+      {
+        checkpoint: (name, meta) => checkpoint(name, meta),
+        progress: (scope, current, total, meta) =>
+          progressLogger(scope, current, total, {
+            elapsedMs: Date.now() - runStartedEpoch,
+            ...meta,
+          }),
+        setInFlightPhase: (phase) => {
+          inFlightPhase = phase
+        },
+      },
     )
+    checkpoint('after_run_compare', { rows: rows.length, unmatched: unmatchedOsm.length })
     const meta = requireComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
     const filterConfigSummary = toFilterConfigSummary(configRaw)
     const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
@@ -143,12 +218,33 @@ async function main() {
       filterConfigSummary,
       ogcInspectSources,
       phaseLogger,
+      {
+        checkpoint: (name, cpMeta) => checkpoint(name, cpMeta),
+        progress: (scope, current, total, pMeta) =>
+          progressLogger(scope, current, total, {
+            elapsedMs: Date.now() - runStartedEpoch,
+            ...pMeta,
+          }),
+        setInFlightPhase: (phase) => {
+          inFlightPhase = phase
+        },
+      },
     )
+    checkpoint('after_write_outputs')
     console.log(`Wrote output PMTiles + static report payloads under ${DATASETS_DIRECTORY}/${area}`)
-    logRunEnd('ok')
+    finalizeRun('ok', { elapsedMs: Date.now() - runStartedEpoch })
   } catch (error) {
-    logRunEnd('fail')
+    checkpoint('compare_failed', { detail: String(error) })
+    finalizeRun('fail', {
+      elapsedMs: Date.now() - runStartedEpoch,
+      lastCheckpoint,
+      inFlightPhase,
+      detail: String(error),
+    })
     throw error
+  } finally {
+    process.removeListener('SIGTERM', onSignal)
+    process.removeListener('SIGINT', onSignal)
   }
 }
 

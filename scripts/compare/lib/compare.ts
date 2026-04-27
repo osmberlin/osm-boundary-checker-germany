@@ -42,6 +42,21 @@ export type ComparePhaseLogger = (
   meta?: Record<string, unknown>,
 ) => void
 
+export type CompareCheckpointLogger = (checkpoint: string, meta?: Record<string, unknown>) => void
+
+export type CompareProgressLogger = (
+  scope: string,
+  current: number,
+  total: number,
+  meta?: Record<string, unknown>,
+) => void
+
+export type CompareInstrumentation = {
+  checkpoint?: CompareCheckpointLogger
+  progress?: CompareProgressLogger
+  setInFlightPhase?: (phase: string | null) => void
+}
+
 function pickOsmRelationId(featureIds: string[], props?: Record<string, unknown> | null): string {
   const rel = featureIds.find((id) => id.startsWith('relation/'))
   if (rel) return rel.replace('relation/', '')
@@ -185,6 +200,7 @@ export async function runCompare(
   areaFolder: string,
   configRaw: DatasetConfig,
   phaseLogger?: ComparePhaseLogger,
+  instrumentation?: CompareInstrumentation,
 ): Promise<{
   config: BoundaryConfig
   rows: CompareRow[]
@@ -209,14 +225,20 @@ export async function runCompare(
   const metricsCrs = config.metricsCrs
 
   const tLoadOfficial = Date.now()
+  instrumentation?.setInFlightPhase?.('load_official')
+  instrumentation?.checkpoint?.('before_load_official', { path: officialPath })
   const officialFc = await loadFeatureCollection(officialPath)
   phaseLogger?.('load_official', Date.now() - tLoadOfficial, {
     featureCount: officialFc.features.length,
   })
+  instrumentation?.checkpoint?.('after_load_official', { featureCount: officialFc.features.length })
 
   const tLoadOsm = Date.now()
+  instrumentation?.setInFlightPhase?.('load_osm')
+  instrumentation?.checkpoint?.('before_load_osm', { path: osmPath })
   let osmFc = await loadFeatureCollection(osmPath)
   phaseLogger?.('load_osm', Date.now() - tLoadOsm, { featureCount: osmFc.features.length })
+  instrumentation?.checkpoint?.('after_load_osm', { featureCount: osmFc.features.length })
 
   const initialOsmFeatureCount = osmFc.features.length
   let droppedByBbox = 0
@@ -282,6 +304,8 @@ export async function runCompare(
   }
 
   const tUnionOfficial = Date.now()
+  instrumentation?.setInFlightPhase?.('union_official')
+  instrumentation?.checkpoint?.('before_union_official')
   const officialMap = unionFeaturesByKey(officialFc, (props) => {
     if (config.official.constantMatchKey) {
       return normalizeOfficialValue(config.official.constantMatchKey, preset)
@@ -294,8 +318,11 @@ export async function runCompare(
     )
   })
   phaseLogger?.('union_official', Date.now() - tUnionOfficial, { keys: officialMap.size })
+  instrumentation?.checkpoint?.('after_union_official', { keys: officialMap.size })
 
   const tUnionOsm = Date.now()
+  instrumentation?.setInFlightPhase?.('union_osm')
+  instrumentation?.checkpoint?.('before_union_osm')
   const osmMap = unionFeaturesByKey(osmFc, (props) => {
     const p = props as Record<string, unknown>
     if (relationIdCriteria) {
@@ -308,6 +335,7 @@ export async function runCompare(
     return normalizeOsmValue(osmMatchProperty, String(v), preset).canonicalMatchKey
   })
   phaseLogger?.('union_osm', Date.now() - tUnionOsm, { keys: osmMap.size })
+  instrumentation?.checkpoint?.('after_union_osm', { keys: osmMap.size })
 
   const osmNameByKey = new Map<string, string>()
   for (const f of osmFc.features) {
@@ -338,6 +366,9 @@ export async function runCompare(
   }> = []
 
   const tProject = Date.now()
+  instrumentation?.setInFlightPhase?.('project')
+  instrumentation?.checkpoint?.('before_project_loop', { totalRows: officialKeys.length })
+  const projectProgressInterval = 1000
   for (const key of officialKeys) {
     const o = officialMap.get(key)
     const s = osmMap.get(key)
@@ -373,14 +404,26 @@ export async function runCompare(
       officialProperties: o?.properties ?? null,
       osmProperties: s?.properties ?? null,
     })
+    if (rows.length % projectProgressInterval === 0 || rows.length === officialKeys.length) {
+      instrumentation?.progress?.('project_rows', rows.length, officialKeys.length, {
+        elapsedMs: Date.now() - tProject,
+        pendingMetrics: pendingMetrics.length,
+      })
+    }
   }
   phaseLogger?.('project', Date.now() - tProject, {
+    rows: rows.length,
+    pendingMetrics: pendingMetrics.length,
+  })
+  instrumentation?.checkpoint?.('after_project_loop', {
     rows: rows.length,
     pendingMetrics: pendingMetrics.length,
   })
 
   if (pendingMetrics.length > 0) {
     const tMetrics = Date.now()
+    instrumentation?.setInFlightPhase?.('metrics')
+    instrumentation?.checkpoint?.('before_metrics_rust', { pendingMetrics: pendingMetrics.length })
     const rustMetrics = calculateMetricsBatchWithRust(
       pendingMetrics.map((entry) => ({
         officialProjected: entry.officialProjected,
@@ -394,7 +437,12 @@ export async function runCompare(
     phaseLogger?.('metrics', Date.now() - tMetrics, {
       calculated: pendingMetrics.length,
     })
+    instrumentation?.checkpoint?.('after_metrics_rust', {
+      calculated: pendingMetrics.length,
+      elapsedMs: Date.now() - tMetrics,
+    })
   }
+  instrumentation?.setInFlightPhase?.(null)
 
   const officialKeySet = new Set(officialMap.keys())
   const unmatchedOsm: UnmatchedOsmRow[] = []

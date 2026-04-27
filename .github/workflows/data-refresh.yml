@@ -106,6 +106,11 @@ jobs:
           FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact/.artifact-runtime
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
+      - name: Mark compare start time
+        run: |
+          echo "COMPARE_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
+          echo "COMPARE_START_UTC=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+
       - name: Compare boundaries
         timeout-minutes: 210
         run: |
@@ -119,6 +124,19 @@ jobs:
           CI: '1'
           FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact/.artifact-runtime
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
+
+      - name: Compare timing diagnostics
+        if: always()
+        run: |
+          compare_end_epoch="$(date +%s)"
+          echo "### Compare phase timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "- start_utc: ${COMPARE_START_UTC:-unknown}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- end_utc: $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${COMPARE_START_EPOCH:-}" ]; then
+            echo "- approx_seconds: $((compare_end_epoch - COMPARE_START_EPOCH))" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- approx_seconds: unknown" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Verify temporary cleanup
         run: bun run scripts/ci/verify-temp-cleanup.ts
@@ -188,3 +206,21 @@ jobs:
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 4
+
+      - name: Final run diagnostics
+        if: always()
+        run: |
+          echo "### Run context diagnostics" >> "$GITHUB_STEP_SUMMARY"
+          echo "- run_id: $GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "- run_attempt: $GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
+          echo "- event: $GITHUB_EVENT_NAME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ref_name: $GITHUB_REF_NAME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- actor: $GITHUB_ACTOR" >> "$GITHUB_STEP_SUMMARY"
+          echo "- compare_start_utc: ${COMPARE_START_UTC:-unknown}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Recent data-refresh runs" >> "$GITHUB_STEP_SUMMARY"
+          if gh run list --workflow "data-refresh.yml" -L 5 --json databaseId,status,conclusion,createdAt,event,headBranch > /tmp/recent-data-refresh-runs.json; then
+            cat /tmp/recent-data-refresh-runs.json >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Unable to fetch recent runs via gh CLI." >> "$GITHUB_STEP_SUMMARY"
+          fi
