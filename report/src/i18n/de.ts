@@ -265,10 +265,8 @@ export const de = {
         'Remote Control in den JOSM-Einstellungen aktivieren. Links rufen JOSM lokal auf (Port 8111).',
       josmLoadObject: 'Relation inkl. Mitglieder laden (load_object)',
       josmImport: 'Amtliches GeoJSON als neue Ebene importieren (import)',
-      josmLoadAndZoom: 'API-Ausschnitt laden und Relation auswählen (load_and_zoom)',
       josmImportDisabledHint:
         'Kein amtlicher GeoJSON-Export — zuerst Vergleich mit amtlicher Geometrie oder aktuelle Auswertung (ohne Snapshot) nutzen.',
-      josmLoadAndZoomDisabledHint: 'Benötigt Kartenausschnitt und OSM-Relation-ID.',
       josmNoRelation:
         'Keine OSM-Relation-ID in dieser Zeile — nur amtliche Geometrie oder Datenlücke; Relation zuerst in OSM anlegen bzw. zuordnen.',
       josmImportFallback:

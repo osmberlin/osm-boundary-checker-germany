@@ -125,26 +125,6 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
                     {u.josmImport}
                   </button>
                 )}
-                {josm.loadAndZoom != null ? (
-                  <a
-                    href={josm.loadAndZoom}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`${u.josmLoadAndZoom} — ${u.opensInNewWindowTitle}`}
-                    className={sharedButtonClass}
-                  >
-                    {u.josmLoadAndZoom}
-                  </a>
-                ) : (
-                  <button type="button" disabled className={sharedButtonClass}>
-                    {u.josmLoadAndZoom}
-                  </button>
-                )}
-                {josm.loadAndZoom == null &&
-                  row.osmRelationId.trim() !== '' &&
-                  row.mapBbox == null && (
-                    <p className="text-xs text-slate-500">{u.josmLoadAndZoomDisabledHint}</p>
-                  )}
                 {josm.loadObject == null && (
                   <p className="text-xs text-slate-500">{u.josmNoRelation}</p>
                 )}

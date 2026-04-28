@@ -56,7 +56,6 @@ export function buildOpenStreetMapIdEditUrl(
 export type JosmEditorLinks = {
   loadObject: string | null
   importGeojson: string | null
-  loadAndZoom: string | null
 }
 
 export function buildJosmEditorLinks(
@@ -69,17 +68,5 @@ export function buildJosmEditorLinks(
   const importGeojson = officialGeojsonAbsoluteUrl
     ? `${JOSM_REMOTE}/import?new_layer=true&url=${encodeURIComponent(officialGeojsonAbsoluteUrl)}`
     : null
-  let loadAndZoom: string | null = null
-  if (row.mapBbox && id !== '') {
-    const [w, s, e, n] = row.mapBbox
-    const params = new URLSearchParams({
-      left: String(w),
-      right: String(e),
-      bottom: String(s),
-      top: String(n),
-      select: `r${id}`,
-    })
-    loadAndZoom = `${JOSM_REMOTE}/load_and_zoom?${params.toString()}`
-  }
-  return { loadObject, importGeojson, loadAndZoom }
+  return { loadObject, importGeojson }
 }
