@@ -48,6 +48,10 @@
     "changelog:prefill": "changelog-kit-prefill --output-json-path report/public/changelog.gen.json --ignore-commit-term \"chore(data):\"",
     "changelog:verify": "changelog-kit-verify --output-json-path report/public/changelog.gen.json --ignore-commit-term \"chore(data):\"",
     "changelog:build": "changelog-kit-build --output-json-path report/public/changelog.gen.json",
+    "update:deps": "bunx taze latest --include-locked --interactive --write",
+    "update:gitdeps": "bun update @tordans/changelog-kit",
+    "update:app": "bun install && bun run check && bun run changelog",
+    "update": "bun run update:deps && bun run update:gitdeps && bun run update:app",
     "typecheck": "tsgo -p tsconfig.json && tsgo -p scripts/tsconfig.json && tsgo -p report/tsconfig.json",
     "lint": "oxlint --fix --fix-suggestions --fix-dangerously .",
     "check": "bun run format && bun run lint && bun run typecheck && bun run report:lint:react-compiler"
