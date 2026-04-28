@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { join } from 'node:path'
-import { area, bbox, featureCollection } from '@turf/turf'
+import { area, bbox, cleanCoords, featureCollection, simplify, truncate } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
 import type {
@@ -40,6 +40,9 @@ const PMTILES_UNMATCHED = 'unmatched.pmtiles'
 const BUILD_DIR = '_build'
 const BUILD_FGB = 'geometries.fgb'
 const OFFICIAL_FOR_EDIT_DIR = 'official_for_edit'
+const OFFICIAL_FOR_EDIT_SIMPLIFY_METERS = 10
+const OFFICIAL_FOR_EDIT_SIMPLIFY_DEGREES = OFFICIAL_FOR_EDIT_SIMPLIFY_METERS / 111_320
+const OFFICIAL_FOR_EDIT_COORD_PRECISION = 6
 
 export type OverpassBoundaryTag = 'administrative' | 'postal_code'
 
@@ -114,7 +117,7 @@ function writeOfficialForEditGeojson(
         boundarySource: 'external' as const,
         ...officialMeta,
       },
-      geometry: geom,
+      geometry: normalizeOfficialForEditGeometry(geom),
     }
     const fileName = officialForEditGeojsonBasename(stem)
     writeFileSync(join(tmpDir, fileName), `${JSON.stringify(feature)}\n`, 'utf-8')
@@ -126,6 +129,27 @@ function writeOfficialForEditGeojson(
   } finally {
     rmSync(oldDir, { recursive: true, force: true })
     rmSync(tmpDir, { recursive: true, force: true })
+  }
+}
+
+function normalizeOfficialForEditGeometry(geometry: Geometry): Geometry {
+  const polygon = asPolygonFeature(geometry)
+  if (!polygon) return geometry
+  try {
+    const simplified = simplify(polygon, {
+      tolerance: OFFICIAL_FOR_EDIT_SIMPLIFY_DEGREES,
+      highQuality: true,
+      mutate: false,
+    }) as Feature<Polygon | MultiPolygon>
+    const cleaned = cleanCoords(simplified, { mutate: false }) as Feature<Polygon | MultiPolygon>
+    const rounded = truncate(cleaned, {
+      precision: OFFICIAL_FOR_EDIT_COORD_PRECISION,
+      coordinates: 2,
+      mutate: false,
+    }) as Feature<Polygon | MultiPolygon>
+    return rounded.geometry
+  } catch {
+    return geometry
   }
 }
 
