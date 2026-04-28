@@ -8,10 +8,6 @@ import {
 import type { ReportRow } from '../types/report'
 import { sharedButtonClass } from './sharedButtonStyles'
 
-function openInNewWindow(href: string) {
-  window.open(href, '_blank', 'noopener,noreferrer')
-}
-
 function triggerGeojsonDownload(href: string) {
   const a = document.createElement('a')
   a.href = href
@@ -79,14 +75,15 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <div className="flex flex-col gap-2">
-                <button
-                  type="button"
+                <a
+                  href={idUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   title={`${u.openId} — ${u.opensInNewWindowTitle}`}
                   className={sharedButtonClass}
-                  onClick={() => openInNewWindow(idUrl)}
                 >
                   {u.openId}
-                </button>
+                </a>
               </div>
               <p className="mt-3 text-xs text-slate-500">{u.idDisableFeaturesHint}</p>
             </dd>
@@ -98,45 +95,51 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  disabled={josm.loadObject == null}
-                  title={
-                    josm.loadObject != null
-                      ? `${u.josmLoadObject} — ${u.opensInNewWindowTitle}`
-                      : undefined
-                  }
-                  className={sharedButtonClass}
-                  onClick={() => josm.loadObject != null && openInNewWindow(josm.loadObject)}
-                >
-                  {u.josmLoadObject}
-                </button>
-                <button
-                  type="button"
-                  disabled={josm.importGeojson == null}
-                  title={
-                    josm.importGeojson != null
-                      ? `${u.josmImport} — ${u.opensInNewWindowTitle}`
-                      : undefined
-                  }
-                  className={sharedButtonClass}
-                  onClick={() => josm.importGeojson != null && openInNewWindow(josm.importGeojson)}
-                >
-                  {u.josmImport}
-                </button>
-                <button
-                  type="button"
-                  disabled={josm.loadAndZoom == null}
-                  title={
-                    josm.loadAndZoom != null
-                      ? `${u.josmLoadAndZoom} — ${u.opensInNewWindowTitle}`
-                      : undefined
-                  }
-                  className={sharedButtonClass}
-                  onClick={() => josm.loadAndZoom != null && openInNewWindow(josm.loadAndZoom)}
-                >
-                  {u.josmLoadAndZoom}
-                </button>
+                {josm.loadObject != null ? (
+                  <a
+                    href={josm.loadObject}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${u.josmLoadObject} — ${u.opensInNewWindowTitle}`}
+                    className={sharedButtonClass}
+                  >
+                    {u.josmLoadObject}
+                  </a>
+                ) : (
+                  <button type="button" disabled className={sharedButtonClass}>
+                    {u.josmLoadObject}
+                  </button>
+                )}
+                {josm.importGeojson != null ? (
+                  <a
+                    href={josm.importGeojson}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${u.josmImport} — ${u.opensInNewWindowTitle}`}
+                    className={sharedButtonClass}
+                  >
+                    {u.josmImport}
+                  </a>
+                ) : (
+                  <button type="button" disabled className={sharedButtonClass}>
+                    {u.josmImport}
+                  </button>
+                )}
+                {josm.loadAndZoom != null ? (
+                  <a
+                    href={josm.loadAndZoom}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${u.josmLoadAndZoom} — ${u.opensInNewWindowTitle}`}
+                    className={sharedButtonClass}
+                  >
+                    {u.josmLoadAndZoom}
+                  </a>
+                ) : (
+                  <button type="button" disabled className={sharedButtonClass}>
+                    {u.josmLoadAndZoom}
+                  </button>
+                )}
                 {josm.loadAndZoom == null &&
                   row.osmRelationId.trim() !== '' &&
                   row.mapBbox == null && (
