@@ -73,6 +73,17 @@ function compactOfficialSource(
   return Object.keys(out).length > 0 ? out : undefined
 }
 
+function flattenOfficialSourceForProperties(
+  officialMeta: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (!officialMeta) return undefined
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(officialMeta)) {
+    out[`officialSource.${key}`] = value
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
 function writeOfficialForEditGeojson(
   outDir: string,
   rows: CompareRow[],
@@ -86,7 +97,9 @@ function writeOfficialForEditGeojson(
     rmSync(dir, { recursive: true, force: true })
     return
   }
-  const officialMeta = compactOfficialSource(sourceMetadata.official)
+  const officialMeta = flattenOfficialSourceForProperties(
+    compactOfficialSource(sourceMetadata.official),
+  )
   mkdirSync(tmpDir, { recursive: true })
   for (const r of rows) {
     const geom = r.officialGeometryWgs84
@@ -99,7 +112,7 @@ function writeOfficialForEditGeojson(
         featureId: r.canonicalMatchKey,
         nameLabel: r.nameLabel,
         boundarySource: 'external' as const,
-        ...(officialMeta ? { officialSource: officialMeta } : {}),
+        ...officialMeta,
       },
       geometry: geom,
     }

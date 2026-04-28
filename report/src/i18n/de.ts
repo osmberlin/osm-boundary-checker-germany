@@ -256,7 +256,7 @@ export const de = {
       downloadOfficial: 'Amtliches Polygon laden (GeoJSON)',
       downloadOfficialDisabledHint: 'Für diese Detailansicht gibt es keine amtliche Geometrie.',
       downloadOfficialHint:
-        'Datei enthält u. a. Namen, Schlüssel und `officialSource` (Anbieter, Datensatz, URL, …), sofern beim Vergleich hinterlegt.',
+        'Datei enthält u. a. Namen, Schlüssel und Felder wie `officialSource.provider`, `officialSource.dataset`, `officialSource.sourcePublicUrl` usw., sofern beim Vergleich hinterlegt.',
       opensInNewWindowTitle: 'Öffnet in einem neuen Browser-Tab',
       openId: 'In iD öffnen',
       idDisableFeaturesHint:
