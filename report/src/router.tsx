@@ -13,6 +13,7 @@ import { de } from './i18n/de'
 import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
 import { stringifySearchPretty } from './lib/routerSearchStringify'
 import { AreaReport } from './pages/AreaReport'
+import { Changelog } from './pages/Changelog'
 import { FeatureDetail } from './pages/FeatureDetail'
 import { Home } from './pages/Home'
 import { ProcessingStatus } from './pages/ProcessingStatus'
@@ -50,6 +51,15 @@ const statusRoute = createRoute({
     ],
   }),
   component: ProcessingStatus,
+})
+
+const changelogRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/changelog',
+  head: () => ({
+    meta: [{ title: `${de.changelog.heading} | ${de.appTitle}` }],
+  }),
+  component: Changelog,
 })
 
 const areaRoute = createRoute({
@@ -96,6 +106,7 @@ const fallbackRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   statusRoute,
+  changelogRoute,
   areaRoute,
   featureRoute,
   fallbackRoute,

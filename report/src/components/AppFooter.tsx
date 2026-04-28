@@ -91,6 +91,15 @@ export function AppFooter() {
           <Link to="/status" className={endFooterLinkClass}>
             {de.home.processingStatusLink}
           </Link>
+          <span
+            aria-hidden
+            className="mx-1.5 text-slate-500 transition-colors duration-150 group-hover/footer:text-sky-300/70"
+          >
+            ·
+          </span>
+          <Link to="/changelog" className={endFooterLinkClass}>
+            {de.navChangelog}
+          </Link>
         </p>
       </div>
     </footer>

@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '@tordans/changelog-kit/styles';
 
 @theme {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;

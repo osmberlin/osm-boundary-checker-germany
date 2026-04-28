@@ -1,4 +1,5 @@
 import { queryOptions } from '@tanstack/react-query'
+import { changelogFileSchema, type ChangelogFile } from '@tordans/changelog-kit/schemas'
 import {
   comparisonForReportSchema,
   featureDetailShardSchema,
@@ -19,7 +20,7 @@ import {
 } from '../lib/wfsGetFeature'
 import type { ComparisonForReport, FeatureDetailShard, SnapshotsJson } from '../types/report'
 import { runStatusFileSchema, type RunStatusFile } from '../types/runStatus'
-import { comparisonApiUrl, featureApiUrl, runStatusUrl, snapshotsUrl } from './paths'
+import { changelogUrl, comparisonApiUrl, featureApiUrl, runStatusUrl, snapshotsUrl } from './paths'
 
 async function readJsonStrict(url: string, response: Response): Promise<unknown> {
   const bodyText = await response.text()
@@ -71,6 +72,14 @@ export async function loadRunStatus(): Promise<RunStatusFile | null> {
   const r = await fetch(url)
   if (!r.ok) return null
   const parsed = runStatusFileSchema.safeParse(await readJsonStrict(url, r))
+  return parsed.success ? parsed.data : null
+}
+
+export async function loadChangelog(): Promise<ChangelogFile | null> {
+  const url = changelogUrl()
+  const r = await fetch(url)
+  if (!r.ok) return null
+  const parsed = changelogFileSchema.safeParse(await readJsonStrict(url, r))
   return parsed.success ? parsed.data : null
 }
 
@@ -126,6 +135,13 @@ export function runStatusQueryOptions() {
   return queryOptions({
     queryKey: ['run-status'],
     queryFn: () => loadRunStatus(),
+  })
+}
+
+export function changelogQueryOptions() {
+  return queryOptions({
+    queryKey: ['changelog'],
+    queryFn: loadChangelog,
   })
 }
 

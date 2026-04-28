@@ -36,6 +36,12 @@ export function Home() {
         <a href={GITHUB_ISSUES_NEW_URL} className={homeLinkClass} target="_blank" rel="noreferrer">
           {de.home.githubIssuesLinkLabel}
         </a>
+        <span aria-hidden className="mx-1.5 text-slate-500">
+          ·
+        </span>
+        <Link to="/changelog" className={homeLinkClass}>
+          {de.home.changelogLinkLabel}
+        </Link>
       </p>
       {areas.length === 0 ? (
         <p className="text-slate-400">{de.home.noAreas}</p>

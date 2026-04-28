@@ -44,12 +44,17 @@
     "report:data-sizes": "bun run --filter report report:data-sizes",
     "report:data-flow-sizes": "bun run --filter ./scripts report:data-flow-sizes",
     "report:generate-areas": "bun run --filter report generate-areas",
+    "changelog": "bun run changelog:verify && bun run changelog:build",
+    "changelog:prefill": "changelog-kit-prefill --output-json-path report/public/changelog.gen.json",
+    "changelog:verify": "changelog-kit-verify --output-json-path report/public/changelog.gen.json",
+    "changelog:build": "changelog-kit-build --output-json-path report/public/changelog.gen.json",
     "typecheck": "tsgo -p tsconfig.json && tsgo -p scripts/tsconfig.json && tsgo -p report/tsconfig.json",
     "lint": "oxlint --fix --fix-suggestions --fix-dangerously .",
     "check": "bun run format && bun run lint && bun run typecheck && bun run report:lint:react-compiler"
   },
   "dependencies": {
-    "@clack/prompts": "^0.10.0"
+    "@clack/prompts": "^0.10.0",
+    "@tordans/changelog-kit": "github:tordans/changelog-kit#3cf1332977040920a219e89fc969a5fdf5df996f"
   },
   "devDependencies": {
     "@types/bun": "latest",

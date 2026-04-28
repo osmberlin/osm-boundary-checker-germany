@@ -4,6 +4,7 @@ import type { ReportRow } from '../types/report'
 /** UI copy (German). Metric modal copy lives in scripts/compare/lib/metrics/ (per-metric folder, de.ts). */
 export const de = {
   appTitle: 'OSM-Grenzabgleich',
+  navChangelog: 'Changelog',
 
   breadcrumb: {
     navLabel: 'Brotkrumen-Navigation',
@@ -97,6 +98,7 @@ export const de = {
 
   home: {
     processingStatusLink: 'Verarbeitungsstatus öffnen',
+    changelogLinkLabel: 'Changelog',
     githubCodeLinkLabel: 'Code auf GitHub',
     githubIssuesLinkLabel: 'Issue melden',
     introP1:
@@ -130,6 +132,13 @@ export const de = {
     result: 'Ergebnis',
     downloadAndSteps: 'Download- und Prozessschritte',
     datasets: 'Datensätze',
+  },
+
+  changelog: {
+    heading: 'Changelog',
+    loading: 'Lade Changelog…',
+    error: 'Changelog konnte nicht geladen werden.',
+    empty: 'Noch keine Changelog-Einträge.',
   },
 
   areaReport: {

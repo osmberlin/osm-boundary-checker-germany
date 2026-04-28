@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-04-28T11:36:07.579Z",
+  "months": [
+    {
+      "month": "2026-04",
+      "entries": [
+        {
+          "refs": ["1b69c86"],
+          "descriptionMd": "Unter `/changelog` gibt es eine Übersicht von Änderungen für die Nuzter:innen der App relevant sein könnten.",
+          "committedAtIso": "2026-04-28T09:20:43+03:00",
+          "committedAtShort": "2026-04-28",
+          "refsDisplay": ["1b69c86"]
+        }
+      ]
+    }
+  ]
+}
