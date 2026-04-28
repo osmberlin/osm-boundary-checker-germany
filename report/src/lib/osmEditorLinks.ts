@@ -1,6 +1,6 @@
 import type { ReportRow } from '../types/report'
 
-const OSM_ID_EDITOR = 'https://www.openstreetmap.org/edit'
+const OSM_ID_EDITOR = 'https://ideditor.netlify.app/'
 
 /** Hide most clutter; keep boundaries, water, and main roads visible (negative list). */
 export const ID_DISABLE_FEATURES =
@@ -27,35 +27,30 @@ function bboxToView(bbox: [number, number, number, number]): {
   return { zoom, lat, lon }
 }
 
-/**
- * openstreetmap.org iD: query selects relation; hash carries gpx URL + disable_features.
- * Custom GeoJSON URL must be in the hash (not query `gpx` — that is for trace IDs).
- */
+/** iD standalone: pass API params in the hash portion of the URL. */
 export function buildOpenStreetMapIdEditUrl(
   row: ReportRow,
   officialGeojsonAbsoluteUrl: string | null,
 ): string {
   const url = new URL(OSM_ID_EDITOR)
-  url.searchParams.set('editor', 'id')
+  const hash = new URLSearchParams()
 
   if (row.mapBbox) {
     const { zoom, lat, lon } = bboxToView(row.mapBbox)
-    url.searchParams.set('lat', lat.toFixed(6))
-    url.searchParams.set('lon', lon.toFixed(6))
-    url.searchParams.set('zoom', String(zoom))
+    hash.set('map', `${zoom}/${lat.toFixed(6)}/${lon.toFixed(6)}`)
   }
 
   if (row.osmRelationId.trim() !== '') {
-    url.searchParams.set('relation', row.osmRelationId.trim())
+    hash.set('id', `r${row.osmRelationId.trim()}`)
   }
 
-  const hash = new URLSearchParams()
   hash.set('disable_features', ID_DISABLE_FEATURES)
   if (officialGeojsonAbsoluteUrl) {
     hash.set('gpx', officialGeojsonAbsoluteUrl)
   }
 
-  return `${url.pathname}${url.search}#${hash.toString()}`
+  url.hash = hash.toString()
+  return url.toString()
 }
 
 export type JosmEditorLinks = {
