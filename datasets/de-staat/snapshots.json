@@ -10,6 +10,15 @@
         "matched": 1,
         "unmatchedOsm": 0
       }
+    },
+    {
+      "id": "2026-04-28",
+      "summary": {
+        "totalRows": 1,
+        "meanIou": 0.9992768903085397,
+        "matched": 1,
+        "unmatchedOsm": 0
+      }
     }
   ]
 }
