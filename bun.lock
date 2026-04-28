@@ -6,7 +6,7 @@
       "name": "osm-boundary-checker-germany",
       "dependencies": {
         "@clack/prompts": "^0.10.0",
-        "@tordans/changelog-kit": "github:tordans/changelog-kit#3cf1332977040920a219e89fc969a5fdf5df996f",
+        "@tordans/changelog-kit": "github:tordans/changelog-kit",
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -409,7 +409,7 @@
 
     "@tanstack/virtual-core": ["@tanstack/virtual-core@3.13.23", "", {}, "sha512-zSz2Z2HNyLjCplANTDyl3BcdQJc2k1+yyFoKhNRmCr7V7dY8o8q5m8uFTI1/Pg1kL+Hgrz6u3Xo6eFUB7l66cg=="],
 
-    "@tordans/changelog-kit": ["@tordans/changelog-kit@github:tordans/changelog-kit#3cf1332", { "dependencies": { "yaml": "^2.8.1", "zod": "^3.24.1" }, "peerDependencies": { "react": ">=18.0.0" }, "bin": { "changelog-kit-build": "./dist/cli/build.js", "changelog-kit-prefill": "./dist/cli/prefill.js", "changelog-kit-verify": "./dist/cli/verify.js" } }, "tordans-changelog-kit-3cf1332", "sha512-2RPyPp+8HiyCbdq64lrRTPW9BRBL5qT9lQDNEHyWsU3z0C83s2v804DDGqn7a4bh30CTxfRlH2N8AW1Oj+QSAA=="],
+    "@tordans/changelog-kit": ["@tordans/changelog-kit@github:tordans/changelog-kit#c941cce", { "dependencies": { "yaml": "^2.8.1", "zod": "^3.24.1" }, "peerDependencies": { "react": ">=18.0.0" }, "bin": { "changelog-kit-build": "./dist/cli/build.js", "changelog-kit-prefill": "./dist/cli/prefill.js", "changelog-kit-verify": "./dist/cli/verify.js" } }, "tordans-changelog-kit-c941cce", "sha512-pkpAOj14qYUT81U6oSZ45FIDIHuoOpYQe9K7AZDwkGJDIm65D54typ94jhVYQoKdO4fvNZYN+gpwXQb3jOJVAg=="],
 
     "@turf/along": ["@turf/along@7.3.4", "", { "dependencies": { "@turf/bearing": "7.3.4", "@turf/destination": "7.3.4", "@turf/distance": "7.3.4", "@turf/helpers": "7.3.4", "@turf/invariant": "7.3.4", "@types/geojson": "^7946.0.10", "tslib": "^2.8.1" } }, "sha512-PvIoXin0I1t3nRwJz7uqR6fsxDMqdGwJq90qGOeqkNwlZqlF+5o2wKHPwYwi0RXZhLvxRP5qlbNIvV8ADdbWxw=="],
 
