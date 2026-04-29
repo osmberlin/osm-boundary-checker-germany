@@ -6,6 +6,21 @@ export type ReportMetrics = {
   areaDiffPct: number
   symmetricDiffPct: number
   hausdorffM: number
+  hausdorffP95M?: number
+  hausdorffNorm?: number
+  issueIndicator?: {
+    level: 'ok' | 'review' | 'issue'
+    reasons: Array<
+      | 'STRONG_OVERLAP_LOW_DIFF'
+      | 'BOUNDARY_OUTLIER_BUT_OVERLAP_STABLE'
+      | 'LOW_IOU_HIGH_SYM_DIFF'
+      | 'HIGH_AREA_DELTA'
+      | 'BASELINE_ANOMALY_IOU_DELTA'
+      | 'BASELINE_ANOMALY_SYMDIFF_DELTA'
+      | 'BASELINE_ANOMALY_AREA_DELTA'
+      | 'BASELINE_ANOMALY_HAUSDORFF_NORM_DELTA'
+    >
+  }
   officialAreaM2: number
   osmAreaM2: number
 }
@@ -132,6 +147,8 @@ export type SnapshotsJson = {
       meanIou: number
       matched: number
       unmatchedOsm: number
+      issues?: number
+      reviews?: number
     }
   }[]
 }

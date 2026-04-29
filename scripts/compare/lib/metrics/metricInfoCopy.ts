@@ -4,5 +4,9 @@ export type MetricInfoCopy = {
   title: string
   lead: string
   paragraphs: readonly string[]
+  references?: readonly {
+    label: string
+    href: string
+  }[]
   close: string
 }

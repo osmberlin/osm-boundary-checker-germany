@@ -2,5 +2,6 @@
 export { areaDeltaModalDe } from './area-delta/de.ts'
 export { hausdorffRustDocDe, hausdorffModalDe } from './hausdorff/de.ts'
 export { iouModalDe } from './iou/de.ts'
+export { issueIndicatorModalDe } from './issue-indicator/de.ts'
 export { meanIouChartDe, meanIouModalDe } from './mean-iou/de.ts'
 export { symDiffModalDe } from './symmetric-difference/de.ts'

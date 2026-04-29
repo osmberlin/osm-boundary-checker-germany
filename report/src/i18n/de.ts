@@ -164,6 +164,8 @@ export const de = {
       iou: 'IoU',
       areaDelta: 'Δ Fläche %',
       hausdorff: 'Hausdorff',
+      hausdorffP95: 'Hausdorff P95',
+      issueIndicator: 'Bewertung',
       map: 'Karte',
       view: 'Detail',
     },
@@ -194,6 +196,8 @@ export const de = {
       areaDelta: 'Flächenabweichung',
       symDiff: 'Symmetrische Differenz',
       hausdorff: 'Hausdorff-Abstand',
+      hausdorffP95: 'Hausdorff P95',
+      issueIndicator: 'Bewertungsampel',
       areaOfficial: 'Amtliche Fläche',
       areaOsm: 'OSM-Fläche',
       diffMetricsRowAria: 'Differenz-Kennzahlen',
@@ -296,6 +300,17 @@ export const de = {
     zoomInForFullDetail: 'Auf Zoom 15 wechseln',
   },
 } as const
+
+export function issueLevelLabelDe(level: 'ok' | 'review' | 'issue'): string {
+  switch (level) {
+    case 'ok':
+      return 'ok'
+    case 'review':
+      return 'review'
+    case 'issue':
+      return 'issue'
+  }
+}
 
 export function categoryLabelDe(cat: ReportRow['category']): string {
   switch (cat) {

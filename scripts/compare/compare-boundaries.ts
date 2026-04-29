@@ -1,10 +1,14 @@
 #!/usr/bin/env bun
 import { randomUUID } from 'node:crypto'
-import { appendFileSync, mkdirSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { areaConfigPathForDisplay, loadAreaConfig } from '../shared/areaConfig.ts'
 import { parseAreaDisplayName } from '../shared/areaConfigMetadata.ts'
-import type { ComparisonFilterConfigSummary } from '../shared/comparisonPayload.ts'
+import {
+  comparisonForReportSchema,
+  type ComparisonFilterConfigSummary,
+  type ReportMetrics,
+} from '../shared/comparisonPayload.ts'
 import type { DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
@@ -56,6 +60,24 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
     ...(configRaw.officialMode === 'direct' && configRaw.official.extractLayer?.trim()
       ? { officialExtractLayer: configRaw.official.extractLayer.trim() }
       : {}),
+  }
+}
+
+function loadPreviousMetricsByKey(areaPath: string): Map<string, ReportMetrics> {
+  const tablePath = join(areaPath, 'output', 'comparison_table.json')
+  if (!existsSync(tablePath)) return new Map()
+  try {
+    const raw = JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown
+    const parsed = comparisonForReportSchema.safeParse(raw)
+    if (!parsed.success) return new Map()
+    const out = new Map<string, ReportMetrics>()
+    for (const row of parsed.data.rows) {
+      if (!row.metrics) continue
+      out.set(row.canonicalMatchKey, row.metrics)
+    }
+    return out
+  } catch {
+    return new Map()
   }
 }
 
@@ -180,6 +202,13 @@ async function main() {
   checkpoint('run_start')
   console.log(`[compare] timing runId=${runId}`)
   const areaPath = datasetFolderPath(runtimeRoot, area)
+  const previousMetricsByKey = loadPreviousMetricsByKey(areaPath)
+  const skipIssueIndicator = area === 'de-gemeinden'
+  if (skipIssueIndicator) {
+    console.log(
+      `[compare] skipping issue-indicator enrichment for ${area} (isolated from parallel de-gemeinden split work)`,
+    )
+  }
   try {
     checkpoint('before_run_compare')
     const { config, rows, unmatchedOsm, metricsCrs } = await runCompare(
@@ -197,6 +226,10 @@ async function main() {
         setInFlightPhase: (phase) => {
           inFlightPhase = phase
         },
+      },
+      {
+        previousMetricsByKey,
+        skipIssueIndicator,
       },
     )
     checkpoint('after_run_compare', { rows: rows.length, unmatched: unmatchedOsm.length })

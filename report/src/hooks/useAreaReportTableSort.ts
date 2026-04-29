@@ -2,7 +2,16 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { z } from 'zod'
 import type { AreaReportRow, ReportCategory } from '../types/report'
 
-export const AREA_TABLE_SORT_KEYS = ['name', 'key', 'category', 'iou', 'area', 'haus'] as const
+export const AREA_TABLE_SORT_KEYS = [
+  'name',
+  'key',
+  'category',
+  'iou',
+  'area',
+  'haus',
+  'haus95',
+  'issue',
+] as const
 
 export type AreaTableSortKey = (typeof AREA_TABLE_SORT_KEYS)[number]
 
@@ -23,6 +32,25 @@ function hausdorffValue(m: AreaReportRow['metrics']): number | null {
   if (!m) return null
   const v = m.hausdorffM
   return Number.isNaN(v) ? null : v
+}
+
+function hausdorffP95Value(m: AreaReportRow['metrics']): number | null {
+  if (!m) return null
+  const v = m.hausdorffP95M
+  if (v == null) return null
+  return Number.isNaN(v) ? null : v
+}
+
+function issueRank(m: AreaReportRow['metrics']): number | null {
+  if (!m?.issueIndicator) return null
+  switch (m.issueIndicator.level) {
+    case 'ok':
+      return 0
+    case 'review':
+      return 1
+    case 'issue':
+      return 2
+  }
 }
 
 const CATEGORY_ORDER: ReportCategory[] = ['matched', 'official_only', 'unmatched_osm']
@@ -57,6 +85,16 @@ function compareRows(
     case 'haus': {
       const va = hausdorffValue(a.metrics)
       const vb = hausdorffValue(b.metrics)
+      return compareNullableNum(va, vb, inv)
+    }
+    case 'haus95': {
+      const va = hausdorffP95Value(a.metrics)
+      const vb = hausdorffP95Value(b.metrics)
+      return compareNullableNum(va, vb, inv)
+    }
+    case 'issue': {
+      const va = issueRank(a.metrics)
+      const vb = issueRank(b.metrics)
       return compareNullableNum(va, vb, inv)
     }
     default:

@@ -3,6 +3,7 @@ import {
   areaDeltaModalDe,
   hausdorffModalDe,
   iouModalDe,
+  issueIndicatorModalDe,
   meanIouModalDe,
   symDiffModalDe,
 } from '@compare-metrics/modalCopyDe.ts'
@@ -67,6 +68,22 @@ export function MetricInfoButton({ copy, className, iconClassName }: MetricInfoB
               {p}
             </p>
           ))}
+          {copy.references?.length ? (
+            <ul className="list-disc space-y-1 pl-5 text-sm text-slate-300">
+              {copy.references.map((ref) => (
+                <li key={ref.href}>
+                  <a
+                    href={ref.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline decoration-slate-500/60 underline-offset-2 hover:text-slate-100"
+                  >
+                    {ref.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </AppDialogBody>
         <AppDialogActions>
           <button
@@ -100,4 +117,8 @@ export function SymDiffInfoButton(props: Omit<MetricInfoButtonProps, 'copy'>) {
 
 export function MeanIouInfoButton(props: Omit<MetricInfoButtonProps, 'copy'>) {
   return <MetricInfoButton copy={meanIouModalDe} {...props} />
+}
+
+export function IssueIndicatorInfoButton(props: Omit<MetricInfoButtonProps, 'copy'>) {
+  return <MetricInfoButton copy={issueIndicatorModalDe} {...props} />
 }

@@ -7,6 +7,25 @@ export const reportMetricsSchema = z.object({
   areaDiffPct: z.number(),
   symmetricDiffPct: z.number(),
   hausdorffM: z.number(),
+  hausdorffP95M: z.number().optional(),
+  hausdorffNorm: z.number().optional(),
+  issueIndicator: z
+    .object({
+      level: z.enum(['ok', 'review', 'issue']),
+      reasons: z.array(
+        z.enum([
+          'STRONG_OVERLAP_LOW_DIFF',
+          'BOUNDARY_OUTLIER_BUT_OVERLAP_STABLE',
+          'LOW_IOU_HIGH_SYM_DIFF',
+          'HIGH_AREA_DELTA',
+          'BASELINE_ANOMALY_IOU_DELTA',
+          'BASELINE_ANOMALY_SYMDIFF_DELTA',
+          'BASELINE_ANOMALY_AREA_DELTA',
+          'BASELINE_ANOMALY_HAUSDORFF_NORM_DELTA',
+        ]),
+      ),
+    })
+    .optional(),
   officialAreaM2: z.number(),
   osmAreaM2: z.number(),
 })
@@ -80,6 +99,8 @@ export const snapshotsSchema = z.object({
         meanIou: z.number(),
         matched: z.number(),
         unmatchedOsm: z.number(),
+        issues: z.number().optional(),
+        reviews: z.number().optional(),
       }),
     }),
   ),

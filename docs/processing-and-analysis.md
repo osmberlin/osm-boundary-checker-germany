@@ -147,14 +147,14 @@ Operational notes and example counts: [comparison-status.md](./comparison-status
 
 Implementations and German modal copy are indexed in **[docs/kpis.md](./kpis.md)** (table of `compute.ts` + `de.ts` per metric). Published copy: [github.com/osmberlin/osm-boundary-checker-germany/blob/main/docs/kpis.md](https://github.com/osmberlin/osm-boundary-checker-germany/blob/main/docs/kpis.md).
 
-| Level                          | KPIs / indicators                                                                      | Where it is defined                                    |
-| ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| **Home (per area card)**       | Count **matched**, **official_only**, **unmatched OSM** (no geometry metrics)          | [How we compare](#how-we-compare-the-data).            |
-| **Area report — summary row**  | Freshness: report generated time, official download time, OSM extract time             | Provenance; not geometric KPIs.                        |
-| **Area report — category row** | Same three **counts** as home, with toggles for map/table                              | [How we compare](#how-we-compare-the-data).            |
-| **Area report — chart**        | **Mean IoU** per snapshot (`snapshots.json` → `summary.meanIou`); info modal           | [kpis.md](./kpis.md) → Mean IoU row                    |
-| **Area report — table**        | Per row: **IoU**, **Δ area %**, **Hausdorff (m)**                                      | [kpis.md](./kpis.md) → IoU, area delta, Hausdorff rows |
-| **Feature detail**             | **IoU**, **area delta**, **symmetric difference %**, **Hausdorff**; area layer toggles | [kpis.md](./kpis.md)                                   |
+| Level                          | KPIs / indicators                                                                                                              | Where it is defined                         |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| **Home (per area card)**       | Count **matched**, **official_only**, **unmatched OSM** (no geometry metrics)                                                  | [How we compare](#how-we-compare-the-data). |
+| **Area report — summary row**  | Freshness: report generated time, official download time, OSM extract time                                                     | Provenance; not geometric KPIs.             |
+| **Area report — category row** | Same three **counts** as home, with toggles for map/table                                                                      | [How we compare](#how-we-compare-the-data). |
+| **Area report — chart**        | **Mean IoU** per snapshot (`snapshots.json` → `summary.meanIou`); optional issue/review summary counters                       | [kpis.md](./kpis.md) → Mean IoU row         |
+| **Area report — table**        | Per row: **IoU**, **Δ area %**, **Hausdorff (m)**, **Hausdorff P95**, **issue indicator**                                      | [kpis.md](./kpis.md)                        |
+| **Feature detail**             | **IoU**, **area delta**, **symmetric difference %**, **Hausdorff**, **Hausdorff P95**, **issue indicator**; area layer toggles | [kpis.md](./kpis.md)                        |
 
 **In-app modals:** `[report/src/components/MetricInfoModal.tsx](../report/src/components/MetricInfoModal.tsx)` imports copy from `[scripts/compare/lib/metrics/modalCopyDe.ts](../scripts/compare/lib/metrics/modalCopyDe.ts)` (re-exports each metric’s `de.ts`).
 

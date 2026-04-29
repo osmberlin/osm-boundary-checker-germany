@@ -9,6 +9,12 @@ import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
 import { unionFeaturesByKey } from './geoMerge.ts'
 import { loadFeatureCollection } from './loadFeatureCollection.ts'
 import { type MetricResult } from './metrics.ts'
+import {
+  classifyIssueIndicator,
+  computeBaselineAnomalies,
+  withRobustBoundaryMetrics,
+} from './metrics/issueIndicator.ts'
+import { isPoly } from './metrics/sharedGeom.ts'
 import { normalizeOfficialValue, normalizeOsmValue } from './normalizeGermanKey.ts'
 import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
 import { projectGeometry } from './projectGeometry.ts'
@@ -201,6 +207,10 @@ export async function runCompare(
   configRaw: DatasetConfig,
   phaseLogger?: ComparePhaseLogger,
   instrumentation?: CompareInstrumentation,
+  options?: {
+    previousMetricsByKey?: Map<string, MetricResult>
+    skipIssueIndicator?: boolean
+  },
 ): Promise<{
   config: BoundaryConfig
   rows: CompareRow[]
@@ -457,9 +467,37 @@ export async function runCompare(
         osmProjected: entry.osmProjected,
       })),
     )
+    const baselineRows: Array<{ key: string; current: MetricResult; previous: MetricResult }> = []
+    const skipIssueIndicator = options?.skipIssueIndicator === true
     for (let i = 0; i < pendingMetrics.length; i++) {
-      const row = rows[pendingMetrics[i]!.rowIndex]
-      if (row) row.metrics = rustMetrics[i] ?? null
+      const pending = pendingMetrics[i]
+      if (!pending) continue
+      const row = rows[pending.rowIndex]
+      const metric = rustMetrics[i] ?? null
+      if (!row) continue
+      if (!metric) {
+        row.metrics = null
+        continue
+      }
+      if (skipIssueIndicator) {
+        row.metrics = metric
+        continue
+      }
+      const withRobust =
+        isPoly(pending.officialProjected) && isPoly(pending.osmProjected)
+          ? withRobustBoundaryMetrics(metric, pending.officialProjected, pending.osmProjected)
+          : metric
+      row.metrics = withRobust
+      const previous = options?.previousMetricsByKey?.get(row.canonicalMatchKey)
+      if (previous) baselineRows.push({ key: row.canonicalMatchKey, current: withRobust, previous })
+    }
+    if (!skipIssueIndicator) {
+      const baselineByKey = computeBaselineAnomalies(baselineRows)
+      for (const row of rows) {
+        if (!row.metrics) continue
+        const baselineReasons = baselineByKey.get(row.canonicalMatchKey) ?? []
+        row.metrics.issueIndicator = classifyIssueIndicator(row.metrics, baselineReasons)
+      }
     }
     const metricsMs = Date.now() - tMetrics
     phaseLogger?.('metrics', metricsMs, {

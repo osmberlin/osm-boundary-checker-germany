@@ -18,6 +18,7 @@ import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
   IouInfoButton,
+  IssueIndicatorInfoButton,
   MeanIouInfoButton,
 } from '../components/HausdorffInfoModal'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
@@ -29,7 +30,7 @@ import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilte
 import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
-import { categoryLabelDe, de } from '../i18n/de'
+import { categoryLabelDe, de, issueLevelLabelDe } from '../i18n/de'
 import { isOlderThanDays } from '../lib/dataAge'
 import {
   EM_DASH,
@@ -231,6 +232,7 @@ export function AreaReport() {
     sortedRows.map((row) => absOrNull(row.metrics?.areaDiffPct)),
   )
   const hausdorffMax = maxFiniteValue(sortedRows.map((row) => row.metrics?.hausdorffM))
+  const hausdorffP95Max = maxFiniteValue(sortedRows.map((row) => row.metrics?.hausdorffP95M))
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
@@ -472,6 +474,28 @@ export function AreaReport() {
                   <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
                 }
               />
+              <SortableTh
+                column="haus95"
+                label={de.areaReport.table.hausdorffP95}
+                align="right"
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSort={setColumn}
+                labelEnd={
+                  <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
+                }
+              />
+              <SortableTh
+                column="issue"
+                label={de.areaReport.table.issueIndicator}
+                align="left"
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSort={setColumn}
+                labelEnd={
+                  <IssueIndicatorInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
+                }
+              />
               <th
                 className="px-3 py-2 text-right text-slate-100"
                 aria-label={de.areaReport.table.view}
@@ -535,6 +559,19 @@ export function AreaReport() {
                       }
                     />
                   </td>
+                  <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
+                    <MetricCellBar
+                      ratio={normalizedRatio(row.metrics?.hausdorffP95M, hausdorffP95Max)}
+                      value={
+                        row.metrics
+                          ? formatDeOrDash(row.metrics.hausdorffP95M, formatDeMeters)
+                          : EM_DASH
+                      }
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-left text-slate-100">
+                    <IssueBadge level={row.metrics?.issueIndicator?.level} />
+                  </td>
                   <td className="px-3 py-2 text-right">
                     <Link
                       className="inline-flex items-center text-slate-500 transition-colors group-hover:text-sky-300 focus-visible:text-sky-300"
@@ -557,6 +594,21 @@ export function AreaReport() {
       <ReportLicenseCompatibilitySection data={data} />
       <ReportDataProvenanceFooter data={data} hideFreshnessSection />
     </div>
+  )
+}
+
+function IssueBadge({ level }: { level: 'ok' | 'review' | 'issue' | undefined }) {
+  if (!level) return <span className="text-slate-500">{EM_DASH}</span>
+  const classes =
+    level === 'ok'
+      ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200'
+      : level === 'review'
+        ? 'border-amber-400/40 bg-amber-500/15 text-amber-200'
+        : 'border-rose-400/40 bg-rose-500/15 text-rose-200'
+  return (
+    <span className={`inline-flex rounded border px-2 py-0.5 text-xs font-medium ${classes}`}>
+      {issueLevelLabelDe(level)}
+    </span>
   )
 }
 

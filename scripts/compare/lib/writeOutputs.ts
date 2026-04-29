@@ -426,6 +426,8 @@ function updateSnapshotsFile(
   matchedCount: number,
   officialOnlyCount: number,
   unmatchedOsmCount: number,
+  reviewCount: number,
+  issueCount: number,
 ) {
   const snapshotsPath = join(areaPath, 'snapshots.json')
   let snapshots: {
@@ -433,7 +435,14 @@ function updateSnapshotsFile(
     metricsCrs: string
     runs: Array<{
       id: string
-      summary: { totalRows: number; meanIou: number; matched: number; unmatchedOsm: number }
+      summary: {
+        totalRows: number
+        meanIou: number
+        matched: number
+        unmatchedOsm: number
+        reviews?: number
+        issues?: number
+      }
     }>
   } = {
     area: areaPath.split('/').pop() ?? '',
@@ -456,6 +465,8 @@ function updateSnapshotsFile(
       meanIou,
       matched: matchedCount,
       unmatchedOsm: unmatchedOsmCount,
+      reviews: reviewCount,
+      issues: issueCount,
     },
   }
   const nextRuns = (snapshots.runs ?? []).filter((r) => r.id !== snapshotId)
@@ -490,6 +501,8 @@ export function writeOutputs(
   const matched = rows.filter((r) => r.category === 'matched')
   const officialOnly = rows.filter((r) => r.category === 'official_only')
   const meanIou = computeMeanIou(rows)
+  const reviewCount = rows.filter((row) => row.metrics?.issueIndicator?.level === 'review').length
+  const issueCount = rows.filter((row) => row.metrics?.issueIndicator?.level === 'issue').length
 
   const geometryFc = buildGeometryFeatureCollection(rows, phaseLogger, instrumentation)
   const fgbPath = join(buildDir, BUILD_FGB)
@@ -659,6 +672,8 @@ export function writeOutputs(
     matched.length,
     officialOnly.length,
     unmatchedOsm.length,
+    reviewCount,
+    issueCount,
   )
   phaseLogger?.('write_payloads', Date.now() - tWritePayloads, {
     rows: payloadRows.length,

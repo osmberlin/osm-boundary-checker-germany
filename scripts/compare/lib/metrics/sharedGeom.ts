@@ -13,4 +13,9 @@ export function jstsAreaM2(g: Geometry): number {
   return geom.getArea()
 }
 
+export function jstsBoundaryLengthM(g: Geometry): number {
+  const geom = geoReader.read(g) as { getBoundary: () => { getLength: () => number } }
+  return geom.getBoundary().getLength()
+}
+
 export { geoReader }

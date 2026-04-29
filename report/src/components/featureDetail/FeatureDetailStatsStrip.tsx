@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { categoryLabelDe, de } from '../../i18n/de'
+import { categoryLabelDe, de, issueLevelLabelDe } from '../../i18n/de'
 import { isOlderThanDays } from '../../lib/dataAge'
 import {
   EM_DASH,
@@ -18,6 +18,7 @@ import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
   IouInfoButton,
+  IssueIndicatorInfoButton,
   SymDiffInfoButton,
 } from '../HausdorffInfoModal'
 import { mapLayerColors } from '../mapLayerColors'
@@ -166,7 +167,30 @@ export function FeatureDetailStatsStrip({
                 }
                 value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
               />
+              <StatBlock
+                label={
+                  <span className="inline-flex items-center gap-0.5">
+                    <span>{s.hausdorffP95}</span>
+                    <HausdorffInfoButton />
+                  </span>
+                }
+                value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}
+              />
+              <StatBlock
+                label={
+                  <span className="inline-flex items-center gap-0.5">
+                    <span>{s.issueIndicator}</span>
+                    <IssueIndicatorInfoButton />
+                  </span>
+                }
+                value={<IssueBadge level={m.issueIndicator?.level} />}
+              />
             </StatBlocksRow>
+            {m.issueIndicator?.reasons?.length ? (
+              <p className="mt-3 text-xs text-slate-400">
+                Gründe: {m.issueIndicator.reasons.map(issueReasonLabelDe).join(' · ')}
+              </p>
+            ) : null}
 
             <StatBlocksRow className="mt-10 sm:mt-12 lg:mt-14" aria-label={s.layersRowAria}>
               <LayerToggleStatBlock
@@ -226,6 +250,52 @@ export function FeatureDetailStatsStrip({
       </section>
     </>
   )
+}
+
+function IssueBadge({ level }: { level: 'ok' | 'review' | 'issue' | undefined }) {
+  if (!level) return <span className="text-slate-400">{EM_DASH}</span>
+  const classes =
+    level === 'ok'
+      ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200'
+      : level === 'review'
+        ? 'border-amber-400/40 bg-amber-500/15 text-amber-200'
+        : 'border-rose-400/40 bg-rose-500/15 text-rose-200'
+  return (
+    <span className={`inline-flex rounded border px-2 py-0.5 text-xs font-medium ${classes}`}>
+      {issueLevelLabelDe(level)}
+    </span>
+  )
+}
+
+function issueReasonLabelDe(
+  reason:
+    | 'STRONG_OVERLAP_LOW_DIFF'
+    | 'BOUNDARY_OUTLIER_BUT_OVERLAP_STABLE'
+    | 'LOW_IOU_HIGH_SYM_DIFF'
+    | 'HIGH_AREA_DELTA'
+    | 'BASELINE_ANOMALY_IOU_DELTA'
+    | 'BASELINE_ANOMALY_SYMDIFF_DELTA'
+    | 'BASELINE_ANOMALY_AREA_DELTA'
+    | 'BASELINE_ANOMALY_HAUSDORFF_NORM_DELTA',
+): string {
+  switch (reason) {
+    case 'STRONG_OVERLAP_LOW_DIFF':
+      return 'starke Ueberlappung bei kleiner Flaechendifferenz'
+    case 'BOUNDARY_OUTLIER_BUT_OVERLAP_STABLE':
+      return 'hohe Randabweichung, aber stabile Ueberlappung'
+    case 'LOW_IOU_HIGH_SYM_DIFF':
+      return 'niedrige IoU mit hoher symmetrischer Differenz'
+    case 'HIGH_AREA_DELTA':
+      return 'hohe Flaechenabweichung'
+    case 'BASELINE_ANOMALY_IOU_DELTA':
+      return 'ungewoehnlicher IoU-Sprung ggü. letztem Lauf'
+    case 'BASELINE_ANOMALY_SYMDIFF_DELTA':
+      return 'ungewoehnlicher SymDiff-Sprung ggü. letztem Lauf'
+    case 'BASELINE_ANOMALY_AREA_DELTA':
+      return 'ungewoehnlicher Flaechen-Sprung ggü. letztem Lauf'
+    case 'BASELINE_ANOMALY_HAUSDORFF_NORM_DELTA':
+      return 'ungewoehnlicher Hausdorff-Norm-Sprung ggü. letztem Lauf'
+  }
 }
 
 function SummaryStatColumn({
