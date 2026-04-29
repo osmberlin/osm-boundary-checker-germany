@@ -3,3 +3,15 @@ entries:
       - '1b69c86'
     descriptionMd: |
       Unter `/changelog` gibt es eine Übersicht von Änderungen für die Nuzter:innen der App relevant sein könnten.
+  - refs:
+      - '4ed60e25445e844174ac33b4f574b0fc1e5de8e5'
+    descriptionMd: |
+      Der iD-Editor-Link hat jetzt andere Einstellungen, so dass die Grenzen nicht mehr verschwinden, wenn man sie verschiebt. Das ist ein iD-Editor-Bug den wir jetzt umgehen, in dem wir für unseren UseCase nicht relevante Daten angezeigt lassen (nicht verstecken).
+  - refs:
+      - '5b636c276db11b23f5ecc62bcbc84fb59a6d9525'
+    descriptionMd: |
+      Bisher haben die KPI immer nur eine Fläche bewertet. Große Flächen konnten dann bpsw. sehr hohe Werte bekommen – aber nicht weil der Unterschied groß ist, sondern wegen der großen Fläche. Jetzt gibt es KPI die die Fläche mit berücksichtigen. Außerdem gibt es eine Bewertung (und Begründung der Bewertung) ob eine Zeile geprüft werden muss oder nicht, die alle Indikatoren betrachtet.
+  - refs:
+      - '8a387a984b383a6e84804e4bb27ccb2d47093ddc'
+      - 'de6e202fc6584eaa40c37703f815feed48db4931'
+    hide: true
