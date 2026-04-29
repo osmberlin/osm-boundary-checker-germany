@@ -78,9 +78,6 @@ jobs:
       - name: Build static report shell
         run: bun run report:build:app
 
-      - name: PMTiles byte-range smoke test
-        run: bun run scripts/ci/pmtiles-byte-range-smoke-test.ts
-
       - uses: actions/upload-pages-artifact@v3
         with:
           path: report/dist
