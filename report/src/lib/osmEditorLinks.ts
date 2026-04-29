@@ -4,7 +4,7 @@ const OSM_ID_EDITOR = 'https://ideditor.netlify.app/'
 
 /** Hide most clutter; keep boundaries, water, and main roads visible (negative list). */
 export const ID_DISABLE_FEATURES =
-  'points,service_roads,paths,buildings,building_parts,indoor,landuse,rail,pistes,aerialways,power,past_future,others'
+  'address_points,points,service_roads,paths,buildings,building_parts,indoor,landuse,rail,pistes,aerialways,power,past_future'
 
 const JOSM_REMOTE = 'http://127.0.0.1:8111'
 
