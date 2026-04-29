@@ -2,6 +2,12 @@
 
 This note captures the outcome of a full compare pass over all `berlin-*` and `de-*` area folders, the fixes applied in code, and what is still noisy in the data.
 
+## de-gemeinden datasets
+
+- `de-gemeinden-*` state areas are compared directly as separate datasets.
+- `bkg:extract` prepares `de-gemeinden-*/source/official.fgb` from shared VG25 cache using ARS-prefix filtering.
+- Compare writes per-state payloads and PMTiles directly for each state area.
+
 ## What was broken and fixed in code
 
 1. **`EPSG:25832` and metrics**  

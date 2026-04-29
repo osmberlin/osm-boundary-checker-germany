@@ -5,7 +5,6 @@
 
   // Compare: ALKIS Ortsteile `nam` ↔ OSM `name` (admin_level=10 scope)
   "official": {
-    "path": "source/official.fgb",
     "extractLayer": "alkis_ortsteile:ortsteile",
     "download": {
       "kind": "http",

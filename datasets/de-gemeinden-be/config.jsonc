@@ -1,0 +1,35 @@
+{
+  "displayName": "Deutschland Gemeinden (Berlin)",
+  "titlePrefix": "Gemeinde",
+  "official": {
+    "extractFilter": {
+      "property": "ARS",
+      "valuePrefix": "11",
+    },
+  },
+  "osmProfile": "admin_rs",
+  "idNormalization": {
+    "preset": "regional-12",
+  },
+  "metricsCrs": "EPSG:25832",
+  "compare": {
+    "officialMatchProperty": "ARS",
+    "bboxFilter": "official_bbox_overlap",
+    "bboxBufferDegrees": 0.02,
+    "osmScopeFilter": "centroid_in_official_coverage",
+  },
+  "osm": {
+    "adminLevels": ["8"],
+  },
+  "ogcInspectSources": [
+    {
+      "id": "bkg-vg25-gem",
+      "label": "BKG VG25 Gemeinden",
+      "type": "wfs",
+      "baseUrl": "https://sgx.geodatenzentrum.de/wfs_vg25",
+      "typeName": "vg25_gem",
+      "wfsVersion": "1.1.0",
+      "maxFeatures": 80,
+    },
+  ],
+}

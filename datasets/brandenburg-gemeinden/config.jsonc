@@ -5,7 +5,6 @@
   // Compare: LGB Verwaltungsgrenzen Gemeinden `ags` ↔ OSM `de:regionalschluessel` (BB-specific key reduction).
   "osmProfile": "admin_rs",
   "official": {
-    "path": "source/official.fgb",
     "extractLayer": "app:gem",
     "download": {
       "kind": "http",

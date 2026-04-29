@@ -71,7 +71,7 @@ Config ownership is explicit:
 
 1. **Inputs**
 
-- **Official:** one FlatGeobuf per area at `datasets/<area>/<official.path>` (typically `source/official.fgb`).
+- **Official:** one FlatGeobuf per area at `datasets/<area>/source/official.fgb`.
 - **OSM:** a shared FlatGeobuf selected by top-level `osmProfile` (`admin_rs` or `postal_code`), built from the Germany extract.
 
 2. **Matching key**

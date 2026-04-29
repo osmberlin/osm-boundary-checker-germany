@@ -118,6 +118,8 @@ export function restoreCompareOutputFromFallback(
       'output',
     ),
     join(fallbackRuntimeRoot, '.artifact-runtime', 'compare-outputs', 'datasets', area, 'output'),
+    // Slim report-runtime artifact layout.
+    join(fallbackRuntimeRoot, '.artifact-runtime-report', 'datasets', area, 'output'),
     // Legacy full runtime fallback.
     join(datasetFolderPath(fallbackRuntimeRoot, area), 'output'),
   ])
@@ -141,6 +143,8 @@ export function restoreCompareOutputFromFallback(
       area,
       'snapshots.json',
     ),
+    // Slim report-runtime artifact layout.
+    join(fallbackRuntimeRoot, '.artifact-runtime-report', 'datasets', area, 'snapshots.json'),
     join(datasetFolderPath(fallbackRuntimeRoot, area), 'snapshots.json'),
   ])
   const restoredOutput = outputSource

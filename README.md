@@ -76,6 +76,8 @@ CI=1 bun run compare -- --area berlin-bezirke
 CI=1 bun run compare -- --all
 ```
 
+`de-gemeinden-*` state areas are compared directly. Their `source/official.fgb` files are prepared by `bun run bkg:extract` from the shared VG25 cache using ARS-prefix filters.
+
 Single area without the root wrapper (no Clack), same as `bun run --filter ./scripts compare`:
 
 ```bash
@@ -98,14 +100,14 @@ bun run download
 
 This is a **`package.json` chain** (not a monolithic script): `download:bkg && download:official && download:osm`.
 
-| Script                                        | What it runs                                                                                                                                                         |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `download`                                    | Full chain above                                                                                                                                                     |
-| `download:bkg`                                | `bkg:download` then `bkg:extract` (ZIP → `.cache`, per-area `source/official.fgb` from VG25)                                                                         |
-| `download:bkg:fetch` / `download:bkg:extract` | BKG download or extract only                                                                                                                                         |
-| `download:official`                           | Areas with `config.jsonc` → `official.download` (HTTP GeoJSON) → `official.path` as FlatGeobuf; cache-aware daily refresh window logs explicit skip/download reasons |
-| `download:osm`                                | `osm:download` then `osm:extract`                                                                                                                                    |
-| `download:osm:fetch` / `download:osm:extract` | OSM steps only                                                                                                                                                       |
+| Script                                        | What it runs                                                                                                                                                               |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `download`                                    | Full chain above                                                                                                                                                           |
+| `download:bkg`                                | `bkg:download` then `bkg:extract` (ZIP → `.cache`, per-area `source/official.fgb` from VG25)                                                                               |
+| `download:bkg:fetch` / `download:bkg:extract` | BKG download or extract only                                                                                                                                               |
+| `download:official`                           | Areas with `config.jsonc` → `official.download` (HTTP GeoJSON) → `source/official.fgb` as FlatGeobuf; cache-aware daily refresh window logs explicit skip/download reasons |
+| `download:osm`                                | `osm:download` then `osm:extract`                                                                                                                                          |
+| `download:osm:fetch` / `download:osm:extract` | OSM steps only                                                                                                                                                             |
 
 **`official.download` in `config.jsonc`:** `kind` (`http`), `url`, `format` (`geojson` or `gml`), optional `crs` (for documentation / logs). WFS URLs should set the desired CRS with `srsName` / `SRSNAME` in the query string. Other WFS output formats are service-specific—check the service **GetCapabilities**.
 
@@ -120,11 +122,13 @@ This is a **`package.json` chain** (not a monolithic script): `download:bkg && d
 - **`output/unmatched.pmtiles`** — Optional tiles for **`unmatchedOsm`** geometries (same `source-layer` name as the main archive: `boundaries`).
 - **`output/official_for_edit/*.geojson`** — Per-feature edit helpers for updating OSM boundaries.
 
+For `de-gemeinden-*` areas, compare writes `comparison_table.json`, `features/*.json`, `snapshots.json`, and PMTiles directly per state area.
+
 ### Source data (FlatGeobuf)
 
 Each dataset lives under **`datasets/<slug>/`** with **`source/official.fgb`**. Compare payloads are written as static JSON under `datasets/<slug>/output/` plus `snapshots.json`, while map artifacts stay file-based in `datasets/<slug>/output/*.pmtiles`. **Gitignored (local / CI / deploy bundle):** downloaded **`*.fgb`**, **`*.pmtiles`**, tippecanoe **`output/_build/`**, and compare-generated GeoJSON under **`output/official_for_edit/`** — see **[`datasets/.gitignore`](datasets/.gitignore)**. OSM input uses top-level `osmProfile` (shared registries under `.cache/osm/`: `admin_rs` → `germany-admin-boundaries-rs.fgb`, `postal_code` → `germany-postal-code-boundaries.fgb`). Optional **`source/metadata.json`** records when data was fetched and is embedded into compare payload provenance.
 
-**`config.jsonc`** is the only human-authored per-area setup file. It holds **`displayName`**, top-level **`osmProfile`**, optional top-level **`officialProfile`** (profile-driven BKG mode), or an **`official`** block for direct HTTP mode with **`official.path`**, optional **`official.extractLayer`**, optional **`official.download`**, optional **`official.source`**, optional **`official.constantMatchKey`**, and optional **`official.keyTransposition`** (map official IDs to raw OSM-style keys when the source has no compatible Schlüssel). Compare settings live under **`compare`** with required **`compare.officialMatchProperty`**, required **`compare.bboxFilter`**, optional **`compare.bboxBufferDegrees`**, and required **`compare.osmScopeFilter`**. Optional **`osm`** contains `matchCriteria`, `ignoreRelationIds`, and `extract` overrides. Optional **`ogcInspectSources`** configures live WFS lookups in report feature detail.
+**`config.jsonc`** is the only human-authored per-area setup file. It holds **`displayName`**, top-level **`osmProfile`**, optional top-level **`officialProfile`** (profile-driven BKG mode), or an **`official`** block for direct HTTP mode with optional **`official.extractLayer`**, optional **`official.extractFilter`** (`property` + `valuePrefix` for scoped BKG extraction), optional **`official.download`**, optional **`official.source`**, optional **`official.constantMatchKey`**, and optional **`official.keyTransposition`** (map official IDs to raw OSM-style keys when the source has no compatible Schlüssel). Compare settings live under **`compare`** with required **`compare.officialMatchProperty`**, required **`compare.bboxFilter`**, optional **`compare.bboxBufferDegrees`**, and required **`compare.osmScopeFilter`**. Optional **`osm`** contains `matchCriteria`, `ignoreRelationIds`, and `extract` overrides. Optional **`ogcInspectSources`** configures live WFS lookups in report feature detail.
 
 **Clean-state rule:** legacy keys **`sources`** and **`osmExtract`** are no longer supported.
 
@@ -148,7 +152,7 @@ bun run bkg:download
 # or: bun run bkg:download -- --zip ~/Downloads/vg25.utm32s.gpkg.zip
 bun run bkg:extract
 # both: bun run bkg
-# single area: bun run bkg:extract -- --area de-gemeinden
+# single area: bun run bkg:extract -- --area de-gemeinden-be
 ```
 
 See [docs/vg25-bkg.md](docs/vg25-bkg.md) for URLs, `ogrinfo`, and layer notes.

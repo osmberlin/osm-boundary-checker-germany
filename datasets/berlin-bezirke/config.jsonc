@@ -5,7 +5,6 @@
 
   // Compare: FlatGeobuf inputs and id matching (see scripts/compare/lib/normalizeGermanKey.ts)
   "official": {
-    "path": "source/official.fgb",
     "extractLayer": "alkis_bezirke:bezirksgrenzen",
     "download": {
       "kind": "http",

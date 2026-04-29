@@ -5,7 +5,6 @@
 
   // Compare official Brandenburg + Berlin postal code polygons to OSM `boundary=postal_code` features.
   "official": {
-    "path": "source/official.fgb",
     "download": {
       "kind": "http",
       "url": "https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json",

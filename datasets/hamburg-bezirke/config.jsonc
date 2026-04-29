@@ -5,7 +5,6 @@
 
   // Hamburg statistical Bezirke (OGC API) — compare by Bezirk name to OSM admin_level=9 names.
   "official": {
-    "path": "source/official.fgb",
     "download": {
       "kind": "http",
       "url": "https://api.hamburg.de/datasets/v1/regionalstatistische_daten_bezirke/collections/regionalstatistische_daten_bezirke/items?f=json&filter=jahr%20%3D%20%272024%27&limit=20",

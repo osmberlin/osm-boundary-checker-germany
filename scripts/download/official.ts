@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// Config-driven HTTP official boundaries (WFS GeoJSON / GML) → official.path FlatGeobuf. Requires ogr2ogr.
+// Config-driven HTTP official boundaries (WFS GeoJSON / GML) → source/official.fgb. Requires ogr2ogr.
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import {
@@ -18,7 +18,11 @@ import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
 import { parseAreaOfficialSourceFacts } from '../shared/areaConfigMetadata.ts'
 import { emitCacheDecision, mapDailyRefreshReasonToCacheState } from '../shared/cacheDecision.ts'
 import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
-import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
+import {
+  DATASETS_DIRECTORY,
+  OFFICIAL_SOURCE_RELATIVE_PATH,
+  datasetFolderPath,
+} from '../shared/datasetPaths.ts'
 import { parseDownloadOfficial } from '../shared/downloadOfficialConfig.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
@@ -186,15 +190,7 @@ async function processArea(
     return 'skip'
   }
 
-  const doc = raw as Record<string, unknown>
-  const officialCfg = doc.official as Record<string, unknown> | undefined
-  const relPath = officialCfg && typeof officialCfg.path === 'string' ? officialCfg.path.trim() : ''
-  if (!relPath) {
-    logLine({ area, source: 'official', status: 'fail', reason: 'missing_official.path' })
-    return 'fail'
-  }
-
-  const outAbs = join(areaPath, relPath)
+  const outAbs = join(areaPath, OFFICIAL_SOURCE_RELATIVE_PATH)
   const cacheExists = existsSync(outAbs)
   const cachedAt = cacheExists ? statSync(outAbs).mtime.toISOString() : undefined
   const decision = decideDailyRefresh({

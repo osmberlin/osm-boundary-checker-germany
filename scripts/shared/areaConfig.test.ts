@@ -27,12 +27,11 @@ describe('loadAreaConfig', () => {
   test('loads valid area config object', () => {
     const root = makeWorkspace(
       'valid-config',
-      '{ "displayName":"Valid Config","osmProfile":"admin_rs","official":{"path":"source/official.fgb"},"compare":{"officialMatchProperty":"ARS","bboxFilter":"none","osmScopeFilter":"none"},"idNormalization":{"preset":"regional-12"},"metricsCrs":"EPSG:25832","osm": {"extract": {"includeRelationIds": ["51477"]}} }',
+      '{ "displayName":"Valid Config","osmProfile":"admin_rs","official":{},"compare":{"officialMatchProperty":"ARS","bboxFilter":"none","osmScopeFilter":"none"},"idNormalization":{"preset":"regional-12"},"metricsCrs":"EPSG:25832","osm": {"extract": {"includeRelationIds": ["51477"]}} }',
     )
     const loaded = loadAreaConfig(root, 'valid-config')
     expect(loaded.officialMode).toBe('direct')
     if (loaded.officialMode !== 'direct') throw new Error('Expected direct config branch')
-    expect(loaded.official.path).toBe('source/official.fgb')
   })
 })
 
@@ -40,7 +39,7 @@ describe('areaHasOsmExtract', () => {
   test('detects modern osm.extract arrays', () => {
     const root = makeWorkspace(
       'modern-osm-extract',
-      '{ "displayName":"Modern OSM Extract","osmProfile":"admin_rs","official":{"path":"source/official.fgb"},"compare":{"officialMatchProperty":"ARS","bboxFilter":"none","osmScopeFilter":"none"},"idNormalization":{"preset":"regional-12"},"metricsCrs":"EPSG:25832","osm": {"extract": {"includeRelationIds": ["51477"]}} }',
+      '{ "displayName":"Modern OSM Extract","osmProfile":"admin_rs","official":{},"compare":{"officialMatchProperty":"ARS","bboxFilter":"none","osmScopeFilter":"none"},"idNormalization":{"preset":"regional-12"},"metricsCrs":"EPSG:25832","osm": {"extract": {"includeRelationIds": ["51477"]}} }',
     )
     expect(areaHasOsmExtract(root, 'modern-osm-extract')).toBe(true)
   })
@@ -48,7 +47,7 @@ describe('areaHasOsmExtract', () => {
   test('returns false when osm.extract is absent', () => {
     const root = makeWorkspace(
       'no-osm-extract',
-      '{ "displayName":"No OSM Extract","osmProfile":"admin_rs","official":{"path":"source/official.fgb"},"compare":{"officialMatchProperty":"ARS","bboxFilter":"none","osmScopeFilter":"none"},"idNormalization":{"preset":"regional-12"},"metricsCrs":"EPSG:25832","osm": {} }',
+      '{ "displayName":"No OSM Extract","osmProfile":"admin_rs","official":{},"compare":{"officialMatchProperty":"ARS","bboxFilter":"none","osmScopeFilter":"none"},"idNormalization":{"preset":"regional-12"},"metricsCrs":"EPSG:25832","osm": {} }',
     )
     expect(areaHasOsmExtract(root, 'no-osm-extract')).toBe(false)
   })

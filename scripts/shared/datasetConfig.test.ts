@@ -6,7 +6,6 @@ describe('parseDatasetConfig', () => {
     const parsed = parseDatasetConfig('area-http', {
       displayName: 'Area HTTP',
       official: {
-        path: 'source/official.fgb',
         source: { sourcePublicUrl: 'https://example.test/info' },
         download: { url: 'https://example.test/wfs' },
       },
@@ -43,7 +42,7 @@ describe('parseDatasetConfig', () => {
       parseDatasetConfig('area-invalid', {
         displayName: 'Area Invalid',
         officialProfile: 'bkg_vg25_gem',
-        official: { path: 'source/official.fgb' },
+        official: {},
         osmProfile: 'admin_rs',
         idNormalization: { preset: 'regional-12' },
         metricsCrs: 'EPSG:25832',

@@ -8,12 +8,16 @@ import { spawnSync } from 'node:child_process'
  * Use `--area <folder>` for a single area. Interactive Clack prompts appear when the GPKG is missing (non-CI).
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
 import { BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA, BKG_ZIP_URL } from '../shared/bkg.ts'
 import { parseDatasetConfig } from '../shared/datasetConfig.ts'
-import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
+import {
+  DATASETS_DIRECTORY,
+  OFFICIAL_SOURCE_RELATIVE_PATH,
+  datasetFolderPath,
+} from '../shared/datasetPaths.ts'
 import { officialProfileIdSchema, resolveOfficialProfile } from '../shared/officialProfiles.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
@@ -27,7 +31,12 @@ import {
 } from '../shared/sourceMetadataIo.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
-type AreaLayerSpec = { area: string; profileId: string; layer: string }
+type AreaLayerSpec = {
+  area: string
+  profileId: string
+  layer: string
+  where?: string
+}
 
 function isCi(): boolean {
   return process.env.CI === '1' || process.env.CI === 'true'
@@ -70,16 +79,27 @@ function resolveGpkgPath(runtimeRoot: string, cliGpkg: string | null): string {
   return resolve(runtimeRoot, meta.gpkgRelativePath)
 }
 
-function readBkgLayerForArea(
-  workspaceRoot: string,
-  area: string,
-): { profileId: string; layer: string } | null {
+function readBkgLayerForArea(workspaceRoot: string, area: string): AreaLayerSpec | null {
   const doc = loadAreaConfig(workspaceRoot, area) as Record<string, unknown>
   const parsed = parseDatasetConfig(area, doc)
-  if (parsed.officialMode !== 'profile') return null
-  const profileId = parsed.officialProfile
-  const layer = resolveOfficialProfile(profileId).extractLayer
-  return { profileId, layer }
+  if (parsed.officialMode === 'profile') {
+    const profileId = parsed.officialProfile
+    const layer = resolveOfficialProfile(profileId).extractLayer
+    return { area, profileId, layer }
+  }
+
+  const extractFilter = parsed.official.extractFilter
+  if (!extractFilter) return null
+  if (parsed.compare.officialMatchProperty !== 'ARS') return null
+  const layer = parsed.official.extractLayer ?? 'vg25_gem'
+  const filterProperty = extractFilter.property.trim()
+  const filterValuePrefix = extractFilter.valuePrefix.trim()
+  return {
+    area,
+    profileId: 'bkg_vg25_gem',
+    layer,
+    where: `${filterProperty} LIKE '${filterValuePrefix}%'`,
+  }
 }
 
 function discoverBkgAreaSpecs(workspaceRoot: string): AreaLayerSpec[] {
@@ -90,9 +110,9 @@ function discoverBkgAreaSpecs(workspaceRoot: string): AreaLayerSpec[] {
     if (!entry.isDirectory() || entry.name.startsWith('.')) continue
     const area = entry.name
     if (!areaHasCompareConfig(workspaceRoot, area)) continue
-    const profile = readBkgLayerForArea(workspaceRoot, area)
-    if (!profile) continue
-    out.push({ area, profileId: profile.profileId, layer: profile.layer })
+    const spec = readBkgLayerForArea(workspaceRoot, area)
+    if (!spec) continue
+    out.push(spec)
   }
   return out.sort((a, b) => a.area.localeCompare(b.area))
 }
@@ -207,11 +227,12 @@ async function ensureGpkgPath(
   }
 }
 
-function runOgr2ogr(gpkg: string, layer: string, outFgb: string): void {
-  const r = spawnSync('ogr2ogr', ['-f', 'FlatGeobuf', '-t_srs', 'EPSG:4326', outFgb, gpkg, layer], {
-    encoding: 'utf-8',
-    stdio: ['ignore', 'inherit', 'pipe'],
-  })
+function runOgr2ogr(gpkg: string, layer: string, outFgb: string, where?: string): void {
+  const args = ['-f', 'FlatGeobuf', '-t_srs', 'EPSG:4326', outFgb, gpkg, layer]
+  if (where) {
+    args.push('-where', where)
+  }
+  const r = spawnSync('ogr2ogr', args, { encoding: 'utf-8', stdio: ['ignore', 'inherit', 'pipe'] })
   if (r.status !== 0) {
     const detail = (r.stderr ?? '').trim() || '(no stderr)'
     throw new Error(
@@ -244,7 +265,7 @@ async function main() {
   const specs = discoverBkgAreaSpecs(workspaceRoot)
   if (specs.length === 0) {
     console.error(
-      `No datasets with officialProfile configured under ${DATASETS_DIRECTORY}/<area>/config.jsonc`,
+      `No extract-capable datasets configured under ${DATASETS_DIRECTORY}/<area>/config.jsonc`,
     )
     process.exit(1)
   }
@@ -252,7 +273,7 @@ async function main() {
   if (area && selected.length === 0) {
     if (areaHasCompareConfig(workspaceRoot, area)) {
       console.error(
-        `Area "${area}" has compare config but no officialProfile in ${DATASETS_DIRECTORY}/${area}/config.jsonc`,
+        `Area "${area}" has compare config but no extract-capable official source in ${DATASETS_DIRECTORY}/${area}/config.jsonc`,
       )
     } else {
       console.error(`Unknown area "${area}"`)
@@ -267,13 +288,14 @@ async function main() {
     )
   }
 
-  for (const { area: areaFolder, profileId, layer } of selected) {
+  for (const { area: areaFolder, profileId, layer, where } of selected) {
     const areaPath = datasetFolderPath(runtimeRoot, areaFolder)
-    const outDir = join(areaPath, 'source')
-    const outFgb = join(outDir, 'official.fgb')
+    const outFgb = join(areaPath, OFFICIAL_SOURCE_RELATIVE_PATH)
+    const outDir = dirname(outFgb)
     mkdirSync(outDir, { recursive: true })
-    console.log(`${areaFolder}: ${layer} → ${outFgb}`)
-    runOgr2ogr(gpkgAbs, layer, outFgb)
+    const whereSummary = where ? ` (${where})` : ''
+    console.log(`${areaFolder}: ${layer}${whereSummary} → ${outFgb}`)
+    runOgr2ogr(gpkgAbs, layer, outFgb, where)
 
     const profile = resolveOfficialProfile(officialProfileIdSchema.parse(profileId))
     const prev = readAreaSourceMetadataFile(areaPath) ?? {}

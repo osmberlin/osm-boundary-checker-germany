@@ -5,6 +5,15 @@ import { datasetLicenseIdSchema, osmLicenseCompatibilitySchema } from './sourceM
 
 const trimmedString = z.string().trim().min(1)
 const nonEmptyStringArray = z.array(trimmedString).min(1)
+const extractFilterSchema = z
+  .object({
+    property: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z_][A-Za-z0-9_]*$/),
+    valuePrefix: z.string().trim().min(1),
+  })
+  .strict()
 
 const officialSourceSchema = z
   .object({
@@ -114,8 +123,8 @@ const directAreaConfigSchema = z
     titlePrefix: trimmedString,
     official: z
       .object({
-        path: trimmedString,
         extractLayer: trimmedString.optional(),
+        extractFilter: extractFilterSchema.optional(),
         source: officialSourceSchema.optional(),
         download: officialDownloadSchema.optional(),
         constantMatchKey: trimmedString.optional(),

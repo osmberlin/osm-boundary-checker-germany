@@ -1,19 +1,26 @@
 {
-  "displayName": "Deutschland Gemeinden",
+  "displayName": "Deutschland Gemeinden (Mecklenburg-Vorpommern)",
   "titlePrefix": "Gemeinde",
-  "officialProfile": "bkg_vg25_gem",
+  "official": {
+    "extractFilter": {
+      "property": "ARS",
+      "valuePrefix": "13",
+    },
+  },
   "osmProfile": "admin_rs",
-
   "idNormalization": {
     "preset": "regional-12",
   },
   "metricsCrs": "EPSG:25832",
   "compare": {
     "officialMatchProperty": "ARS",
-    "bboxFilter": "none",
-    "osmScopeFilter": "none",
+    "bboxFilter": "official_bbox_overlap",
+    "bboxBufferDegrees": 0.02,
+    "osmScopeFilter": "centroid_in_official_coverage",
   },
-
+  "osm": {
+    "adminLevels": ["8"],
+  },
   "ogcInspectSources": [
     {
       "id": "bkg-vg25-gem",

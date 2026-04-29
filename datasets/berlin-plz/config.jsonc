@@ -5,7 +5,6 @@
 
   // Compare official Berlin postal code polygons to OSM `boundary=postal_code` features.
   "official": {
-    "path": "source/official.fgb",
     "extractLayer": "postleitzahlen:postleitzahlen",
     "download": {
       "kind": "http",

@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import type { DatasetConfig } from '../../shared/datasetConfig.ts'
+import { OFFICIAL_SOURCE_RELATIVE_PATH } from '../../shared/datasetPaths.ts'
 import { GERMANY_OSM_CACHE_DIR } from '../../shared/germanyOsmPbf.ts'
 import { resolveOfficialProfile } from '../../shared/officialProfiles.ts'
 import { resolveOsmProfile } from '../../shared/osmProfiles.ts'
@@ -146,7 +147,7 @@ export function loadBoundaryConfig(config: DatasetConfig, areaLabel = 'area'): B
   return {
     titlePrefix: config.titlePrefix,
     official: {
-      path: officialProfile ? 'source/official.fgb' : directOfficial!.path,
+      path: OFFICIAL_SOURCE_RELATIVE_PATH,
       matchProperty,
       ...(officialProfile?.extractLayer === 'vg25_sta' ? { constantMatchKey: '51477' } : {}),
       ...(directOfficial?.constantMatchKey
