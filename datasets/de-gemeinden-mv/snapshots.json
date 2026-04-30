@@ -1,0 +1,17 @@
+{
+  "area": "de-gemeinden-mv",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-04-30",
+      "summary": {
+        "totalRows": 724,
+        "meanIou": 0.9777425455503094,
+        "matched": 712,
+        "unmatchedOsm": 2,
+        "reviews": 133,
+        "issues": 259
+      }
+    }
+  ]
+}

@@ -28,6 +28,17 @@
         "matched": 400,
         "unmatchedOsm": 1
       }
+    },
+    {
+      "id": "2026-04-30",
+      "summary": {
+        "totalRows": 403,
+        "meanIou": 0.9973624658106872,
+        "matched": 400,
+        "unmatchedOsm": 1,
+        "reviews": 3,
+        "issues": 6
+      }
     }
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "area": "de-gemeinden-hh",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-04-30",
+      "summary": {
+        "totalRows": 1,
+        "meanIou": 0,
+        "matched": 0,
+        "unmatchedOsm": 0,
+        "reviews": 0,
+        "issues": 0
+      }
+    }
+  ]
+}

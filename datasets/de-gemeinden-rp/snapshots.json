@@ -1,0 +1,17 @@
+{
+  "area": "de-gemeinden-rp",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-04-30",
+      "summary": {
+        "totalRows": 2325,
+        "meanIou": 0.9665323081259712,
+        "matched": 1905,
+        "unmatchedOsm": 375,
+        "reviews": 279,
+        "issues": 1017
+      }
+    }
+  ]
+}

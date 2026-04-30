@@ -1,0 +1,17 @@
+{
+  "area": "de-gemeinden-th",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-04-30",
+      "summary": {
+        "totalRows": 605,
+        "meanIou": 0.9574274866324172,
+        "matched": 542,
+        "unmatchedOsm": 54,
+        "reviews": 61,
+        "issues": 422
+      }
+    }
+  ]
+}

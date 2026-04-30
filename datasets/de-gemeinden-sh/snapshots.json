@@ -1,0 +1,17 @@
+{
+  "area": "de-gemeinden-sh",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-04-30",
+      "summary": {
+        "totalRows": 1106,
+        "meanIou": 0.9680389334646967,
+        "matched": 1096,
+        "unmatchedOsm": 2,
+        "reviews": 184,
+        "issues": 648
+      }
+    }
+  ]
+}
