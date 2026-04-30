@@ -44,7 +44,7 @@
     "report:data-sizes": "bun run --filter report report:data-sizes",
     "report:data-flow-sizes": "bun run --filter ./scripts report:data-flow-sizes",
     "report:generate-areas": "bun run --filter report generate-areas",
-    "changelog": "bun run changelog:verify && bun run changelog:build",
+    "changelog": "bun run changelog:verify && bun run changelog:build && bun run format",
     "changelog:prefill": "changelog-kit-prefill --output-json-path report/public/changelog.gen.json --ignore-commit-term \"chore(data):\"",
     "changelog:verify": "changelog-kit-verify --output-json-path report/public/changelog.gen.json --ignore-commit-term \"chore(data):\"",
     "changelog:build": "changelog-kit-build --output-json-path report/public/changelog.gen.json",
