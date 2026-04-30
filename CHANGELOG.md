@@ -4,6 +4,10 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-04
 
+### `6483d38`
+
+Unter `/review` gibt es jetzt eine Übersichter aller Grenzen, die als "zu prüfen" oder (wahrscheinlich) "fehlerhaft" markiert sind.
+
 ### `4ed60e2`
 
 Der iD-Editor-Link hat jetzt andere Einstellungen, so dass die Grenzen nicht mehr verschwinden, wenn man sie verschiebt. Das ist ein iD-Editor-Bug den wir jetzt umgehen, in dem wir für unseren UseCase nicht relevante Daten angezeigt lassen (nicht verstecken).

@@ -1,41 +1,36 @@
 {
-  "generatedAt": "2026-04-29T20:45:40.620Z",
+  "generatedAt": "2026-04-30T12:06:50.603Z",
   "months": [
     {
       "month": "2026-04",
       "entries": [
         {
-          "refs": [
-            "4ed60e25445e844174ac33b4f574b0fc1e5de8e5"
-          ],
+          "refs": ["6483d38"],
+          "descriptionMd": "Unter `/review` gibt es jetzt eine Übersichter aller Grenzen, die als \"zu prüfen\" oder (wahrscheinlich) \"fehlerhaft\" markiert sind.",
+          "committedAtIso": "2026-04-30T15:04:12+03:00",
+          "committedAtShort": "2026-04-30",
+          "refsDisplay": ["6483d38"]
+        },
+        {
+          "refs": ["4ed60e25445e844174ac33b4f574b0fc1e5de8e5"],
           "descriptionMd": "Der iD-Editor-Link hat jetzt andere Einstellungen, so dass die Grenzen nicht mehr verschwinden, wenn man sie verschiebt. Das ist ein iD-Editor-Bug den wir jetzt umgehen, in dem wir für unseren UseCase nicht relevante Daten angezeigt lassen (nicht verstecken).",
           "committedAtIso": "2026-04-29T23:44:37+03:00",
           "committedAtShort": "2026-04-29",
-          "refsDisplay": [
-            "4ed60e2"
-          ]
+          "refsDisplay": ["4ed60e2"]
         },
         {
-          "refs": [
-            "5b636c276db11b23f5ecc62bcbc84fb59a6d9525"
-          ],
+          "refs": ["5b636c276db11b23f5ecc62bcbc84fb59a6d9525"],
           "descriptionMd": "Bisher haben die KPI immer nur eine Fläche bewertet. Große Flächen konnten dann bpsw. sehr hohe Werte bekommen – aber nicht weil der Unterschied groß ist, sondern wegen der großen Fläche. Jetzt gibt es KPI die die Fläche mit berücksichtigen. Außerdem gibt es eine Bewertung (und Begründung der Bewertung) ob eine Zeile geprüft werden muss oder nicht, die alle Indikatoren betrachtet.",
           "committedAtIso": "2026-04-29T23:44:37+03:00",
           "committedAtShort": "2026-04-29",
-          "refsDisplay": [
-            "5b636c2"
-          ]
+          "refsDisplay": ["5b636c2"]
         },
         {
-          "refs": [
-            "1b69c86"
-          ],
+          "refs": ["1b69c86"],
           "descriptionMd": "Unter `/changelog` gibt es eine Übersicht von Änderungen für die Nuzter:innen der App relevant sein könnten.",
           "committedAtIso": "2026-04-28T09:20:43+03:00",
           "committedAtShort": "2026-04-28",
-          "refsDisplay": [
-            "1b69c86"
-          ]
+          "refsDisplay": ["1b69c86"]
         }
       ]
     }
