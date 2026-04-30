@@ -99,6 +99,7 @@ export const de = {
   home: {
     processingStatusLink: 'Verarbeitungsstatus öffnen',
     changelogLinkLabel: 'Changelog',
+    reviewQueueLinkLabel: 'Prüfliste: Ampel nicht ok',
     githubCodeLinkLabel: 'Code auf GitHub',
     githubIssuesLinkLabel: 'Issue melden',
     introP1:
@@ -109,10 +110,33 @@ export const de = {
     leadAfter: 'des jeweiligen Gebiets gelesen (zuerst den Vergleich ausführen).',
     noAreas:
       'Keine Gebiete mit output/comparison_table.json unter datasets/ gefunden. Vergleich ausführen (bun run compare).',
-    /** Home list: per-area row of category counts. */
-    categoryStatsAria: 'Zugeordnet, nur amtlich, OSM ohne Treffer in offiziellen Daten — Anzahl',
+    /** Home list: per-area row of category/review counts. */
+    categoryStatsAria:
+      'Zugeordnet, nur amtlich, OSM ohne Treffer in offiziellen Daten, Prüfung, Problem — Anzahl',
     unmatchedStat: 'Nur OSM',
+    reviewsStat: 'Prüfung',
+    issuesStat: 'Problem',
     unmatchedLink: 'Liste: OSM ohne Treffer im amtlichen Export',
+  },
+
+  review: {
+    breadcrumb: 'Prüfliste',
+    title: 'Prüfliste: Ampel nicht ok',
+    intro:
+      'Schnellzugriff auf Grenzen, die in der letzten Auswertung voraussichtlich Nacharbeit brauchen. Gezeigt werden alle Einträge mit Bewertungsampel review oder issue.',
+    empty: 'Aktuell keine Einträge mit Ampel != ok gefunden.',
+    totalStatsAria: 'Anzahl betroffener Datensätze sowie Einträge mit review oder issue',
+    datasetCount: 'Datensätze',
+    reviewsCount: 'Prüfung',
+    issuesCount: 'Problem',
+    sectionCountSuffix: 'Einträge',
+    table: {
+      name: 'Name',
+      key: 'Schlüssel',
+      category: 'Kategorie',
+      issueLevel: 'Bewertung',
+      view: 'Detail',
+    },
   },
 
   status: {
@@ -304,11 +328,11 @@ export const de = {
 export function issueLevelLabelDe(level: 'ok' | 'review' | 'issue'): string {
   switch (level) {
     case 'ok':
-      return 'ok'
+      return 'OK'
     case 'review':
-      return 'review'
+      return 'Prüfung'
     case 'issue':
-      return 'issue'
+      return 'Problem'
   }
 }
 

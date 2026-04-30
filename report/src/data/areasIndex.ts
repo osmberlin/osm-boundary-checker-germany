@@ -6,6 +6,8 @@ export type AreaSummary = {
   matched: number
   officialOnly: number
   unmatchedOsm: number
+  reviews: number
+  issues: number
 }
 
 export type GeoDataSource = {
@@ -44,6 +46,8 @@ function parseAreaSummary(raw: unknown): AreaSummary | null {
     matched: typeof rec.matched === 'number' ? rec.matched : 0,
     officialOnly: typeof rec.officialOnly === 'number' ? rec.officialOnly : 0,
     unmatchedOsm: typeof rec.unmatchedOsm === 'number' ? rec.unmatchedOsm : 0,
+    reviews: typeof rec.reviews === 'number' ? rec.reviews : 0,
+    issues: typeof rec.issues === 'number' ? rec.issues : 0,
   }
 }
 

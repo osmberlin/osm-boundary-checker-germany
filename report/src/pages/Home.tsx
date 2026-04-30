@@ -42,6 +42,12 @@ export function Home() {
         <Link to="/changelog" className={homeLinkClass}>
           {de.home.changelogLinkLabel}
         </Link>
+        <span aria-hidden className="mx-1.5 text-slate-500">
+          ·
+        </span>
+        <Link to="/review" className={homeLinkClass}>
+          {de.home.reviewQueueLinkLabel}
+        </Link>
       </p>
       {areas.length === 0 ? (
         <p className="text-slate-400">{de.home.noAreas}</p>
@@ -54,6 +60,10 @@ export function Home() {
               const matched = entry ? formatDeInteger(entry.matched) : EM_DASH
               const officialOnly = entry ? formatDeInteger(entry.officialOnly) : EM_DASH
               const unmatched = entry ? formatDeInteger(entry.unmatchedOsm) : EM_DASH
+              const reviewsCountRaw = entry?.reviews ?? 0
+              const issuesCountRaw = entry?.issues ?? 0
+              const reviews = entry ? formatDeInteger(reviewsCountRaw) : EM_DASH
+              const issues = entry ? formatDeInteger(issuesCountRaw) : EM_DASH
               return (
                 <li key={a}>
                   <Link
@@ -93,6 +103,32 @@ export function Home() {
                       <StatBlock
                         label={<UnmatchedOsmStatPill>{de.home.unmatchedStat}</UnmatchedOsmStatPill>}
                         value={unmatched}
+                      />
+                      <StatBlock
+                        label={
+                          <span
+                            className={reviewsCountRaw > 0 ? 'text-amber-200' : 'text-slate-400'}
+                          >
+                            {de.home.reviewsStat}
+                          </span>
+                        }
+                        value={
+                          <span className={reviewsCountRaw > 0 ? 'text-amber-200' : undefined}>
+                            {reviews}
+                          </span>
+                        }
+                      />
+                      <StatBlock
+                        label={
+                          <span className={issuesCountRaw > 0 ? 'text-rose-200' : 'text-slate-400'}>
+                            {de.home.issuesStat}
+                          </span>
+                        }
+                        value={
+                          <span className={issuesCountRaw > 0 ? 'text-rose-200' : undefined}>
+                            {issues}
+                          </span>
+                        }
                       />
                     </StatBlocksRow>
                   </Link>

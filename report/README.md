@@ -5,8 +5,8 @@ The app is built with **Vite** and consumes static runtime artifacts from `datas
 - **Dev**: `bun run dev` (Vite dev server).
 - **Dev (with Rust compare bootstrap)**: `bun run dev:with-rust`.
 - **Preview**: `bun run preview` (Vite preview for `dist/`).
-- **Sync runtime assets**: `bun run sync-runtime-assets` copies from `DATA_ROOT` (`datasets/`, `data/`) into `report/public` and regenerates `report/src/data/areasIndex.gen.ts`.
-- **Build app shell**: `bun run build` builds Vite output and bundles static assets from `report/public` while the app imports `areasIndex.gen.ts` directly.
+- **Sync runtime assets**: `bun run sync-runtime-assets` copies from `DATA_ROOT` (`datasets/`, `data/`) into `report/public` and regenerates `report/src/data/areasIndex.gen.ts` plus `report/src/data/reviewQueue.gen.ts`.
+- **Build app shell**: `bun run build` builds Vite output and bundles static assets from `report/public` while the app imports generated index payloads from `report/src/data/*.gen.ts`.
 - **Build from runtime in one command**: `bun run build:with-runtime`.
 
 Runtime root resolution:

@@ -17,6 +17,7 @@ import { Changelog } from './pages/Changelog'
 import { FeatureDetail } from './pages/FeatureDetail'
 import { Home } from './pages/Home'
 import { ProcessingStatus } from './pages/ProcessingStatus'
+import { ReviewQueue } from './pages/ReviewQueue'
 import type { ComparisonForReport } from './types/report'
 
 export type RouterContext = {
@@ -60,6 +61,15 @@ const changelogRoute = createRoute({
     meta: [{ title: `${de.changelog.heading} | ${de.appTitle}` }],
   }),
   component: Changelog,
+})
+
+const reviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/review',
+  head: () => ({
+    meta: [{ title: `${de.review.title} | ${de.appTitle}` }],
+  }),
+  component: ReviewQueue,
 })
 
 const areaRoute = createRoute({
@@ -107,6 +117,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   statusRoute,
   changelogRoute,
+  reviewRoute,
   areaRoute,
   featureRoute,
   fallbackRoute,

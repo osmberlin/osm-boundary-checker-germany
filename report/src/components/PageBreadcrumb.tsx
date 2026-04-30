@@ -21,28 +21,33 @@ export function PageBreadcrumb() {
             homeCurrent: false,
             items: [{ name: de.status.breadcrumb, current: true }],
           }
-        : (() => {
-            const areaId = segs[0]
-            if (!areaId) return { homeCurrent: true, items: [] }
-            const areaLabel = areaDisplayNameForId(areaId)
-
-            if (segs.length === 1) {
-              return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
+        : segs[0] === 'review'
+          ? {
+              homeCurrent: false,
+              items: [{ name: de.review.breadcrumb, current: true }],
             }
+          : (() => {
+              const areaId = segs[0]
+              if (!areaId) return { homeCurrent: true, items: [] }
+              const areaLabel = areaDisplayNameForId(areaId)
 
-            if (segs[1] === 'feature' && segs[2]) {
-              const fk = segs[2]
-              return {
-                homeCurrent: false,
-                items: [
-                  { name: areaLabel, to: `/${areaId}` },
-                  { name: shortFeatureKey(fk), current: true },
-                ],
+              if (segs.length === 1) {
+                return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
               }
-            }
 
-            return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
-          })()
+              if (segs[1] === 'feature' && segs[2]) {
+                const fk = segs[2]
+                return {
+                  homeCurrent: false,
+                  items: [
+                    { name: areaLabel, to: `/${areaId}` },
+                    { name: shortFeatureKey(fk), current: true },
+                  ],
+                }
+              }
+
+              return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
+            })()
 
   return (
     <AppBreadcrumb appTitle={de.appTitle} homeCurrent={crumbs.homeCurrent} items={crumbs.items} />

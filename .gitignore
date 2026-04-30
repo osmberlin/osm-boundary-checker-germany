@@ -9,6 +9,7 @@ dist/
 data/
 !report/src/data/
 !report/src/data/**
+report/src/data/reviewQueue.gen.ts
 
 # Transient tippecanoe input (removed after successful run; ignore if left behind)
 **/output/_build/

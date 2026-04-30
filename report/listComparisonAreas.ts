@@ -24,8 +24,25 @@ const areaHomeSummarySchema = z.object({
   matched: z.number(),
   officialOnly: z.number(),
   unmatchedOsm: z.number(),
+  reviews: z.number(),
+  issues: z.number(),
 })
 export type AreaHomeSummary = z.infer<typeof areaHomeSummarySchema>
+
+const reviewQueueEntrySchema = z.object({
+  canonicalMatchKey: z.string().min(1),
+  nameLabel: z.string().min(1),
+  category: z.enum(['matched', 'official_only']),
+})
+export type ReviewQueueEntry = z.infer<typeof reviewQueueEntrySchema>
+
+const reviewQueueAreaSchema = z.object({
+  area: z.string().min(1),
+  displayName: z.string().min(1),
+  reviewEntries: z.array(reviewQueueEntrySchema),
+  issueEntries: z.array(reviewQueueEntrySchema),
+})
+export type ReviewQueueArea = z.infer<typeof reviewQueueAreaSchema>
 
 const areaLicenseSummarySchema = z.object({
   area: z.string().min(1),
@@ -195,10 +212,15 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
       const rows = parsed.rows ?? []
       let matched = 0
       let officialOnly = 0
+      let reviews = 0
+      let issues = 0
       for (const row of rows) {
         const c = row.category
         if (c === 'matched') matched++
         else if (c === 'official_only') officialOnly++
+        const level = row.metrics?.issueIndicator?.level
+        if (level === 'review') reviews++
+        else if (level === 'issue') issues++
       }
       const unmatched = parsed.unmatchedOsm?.length ?? 0
       const summary: AreaHomeSummary = {
@@ -207,6 +229,8 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
         matched,
         officialOnly,
         unmatchedOsm: unmatched,
+        reviews,
+        issues,
       }
       out.push(summary)
     } catch {
@@ -215,4 +239,49 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
   }
   const sorted = out.sort((a, b) => a.area.localeCompare(b.area))
   return z.array(areaHomeSummarySchema).parse(sorted)
+}
+
+/** Cross-area review queue from all rows with non-ok issue indicator levels. */
+export function listReviewQueueByArea(runtimeRoot: string): ReviewQueueArea[] {
+  const datasetsRoot = join(runtimeRoot, DATASETS_DIRECTORY)
+  if (!existsSync(datasetsRoot)) return []
+  const out: ReviewQueueArea[] = []
+  for (const entry of readdirSync(datasetsRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+    const area = entry.name
+    const tablePath = join(datasetsRoot, area, 'output', 'comparison_table.json')
+    if (!existsSync(tablePath)) continue
+    try {
+      const parsed = comparisonForReportSchema.parse(
+        JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown,
+      )
+      const reviewEntries: ReviewQueueEntry[] = []
+      const issueEntries: ReviewQueueEntry[] = []
+      for (const row of parsed.rows ?? []) {
+        const level = row.metrics?.issueIndicator?.level
+        if (level !== 'review' && level !== 'issue') continue
+        if (row.category !== 'matched' && row.category !== 'official_only') continue
+        const entryForQueue: ReviewQueueEntry = {
+          canonicalMatchKey: row.canonicalMatchKey,
+          nameLabel: row.nameLabel,
+          category: row.category,
+        }
+        if (level === 'issue') issueEntries.push(entryForQueue)
+        else reviewEntries.push(entryForQueue)
+      }
+      if (reviewEntries.length === 0 && issueEntries.length === 0) continue
+      reviewEntries.sort((a, b) => a.nameLabel.localeCompare(b.nameLabel, 'de'))
+      issueEntries.sort((a, b) => a.nameLabel.localeCompare(b.nameLabel, 'de'))
+      out.push({
+        area,
+        displayName: parsed.displayName,
+        reviewEntries,
+        issueEntries,
+      })
+    } catch {
+      // ignore malformed table file for this area
+    }
+  }
+  const sorted = out.sort((a, b) => a.area.localeCompare(b.area))
+  return z.array(reviewQueueAreaSchema).parse(sorted)
 }
