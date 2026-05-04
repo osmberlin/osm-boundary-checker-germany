@@ -1,8 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { z } from 'zod'
+import { loadAreaConfig } from '../scripts/shared/areaConfig.ts'
 import { comparisonForReportSchema } from '../scripts/shared/comparisonPayload.ts'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
+import { resolveOsmProfile } from '../scripts/shared/osmProfiles.ts'
 import { sourceMetadataSideSchema } from '../scripts/shared/sourceMetadata.ts'
 
 /** Dataset slugs under `datasets/` that contain `output/comparison_table.json`. */
@@ -26,8 +28,31 @@ const areaHomeSummarySchema = z.object({
   unmatchedOsm: z.number(),
   reviews: z.number(),
   issues: z.number(),
+  /** From area `config.jsonc` + osmProfile (for report UI; not from comparison_table). */
+  osmMatchProperty: z.string().min(1).optional(),
+  osmAdminLevels: z.array(z.string().min(1)).optional(),
 })
 export type AreaHomeSummary = z.infer<typeof areaHomeSummarySchema>
+
+function osmMatchRulesFromAreaConfig(
+  workspaceRoot: string,
+  area: string,
+): { osmMatchProperty?: string; osmAdminLevels?: string[] } {
+  try {
+    const cfg = loadAreaConfig(workspaceRoot, area)
+    const matchProperty = resolveOsmProfile(cfg.osmProfile).matchProperty
+    const adminLevels =
+      cfg.osm?.adminLevels != null && cfg.osm.adminLevels.length > 0
+        ? [...cfg.osm.adminLevels]
+        : undefined
+    return {
+      osmMatchProperty: matchProperty,
+      ...(adminLevels ? { osmAdminLevels: adminLevels } : {}),
+    }
+  } catch {
+    return {}
+  }
+}
 
 const reviewQueueEntrySchema = z.object({
   canonicalMatchKey: z.string().min(1),
@@ -223,6 +248,7 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
         else if (level === 'issue') issues++
       }
       const unmatched = parsed.unmatchedOsm?.length ?? 0
+      const fromConfig = osmMatchRulesFromAreaConfig(runtimeRoot, area)
       const summary: AreaHomeSummary = {
         area,
         displayName: parsed.displayName,
@@ -231,6 +257,8 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
         unmatchedOsm: unmatched,
         reviews,
         issues,
+        ...(fromConfig.osmMatchProperty ? { osmMatchProperty: fromConfig.osmMatchProperty } : {}),
+        ...(fromConfig.osmAdminLevels ? { osmAdminLevels: fromConfig.osmAdminLevels } : {}),
       }
       out.push(summary)
     } catch {

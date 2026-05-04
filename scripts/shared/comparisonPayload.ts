@@ -65,6 +65,8 @@ export const comparisonFilterConfigSummarySchema = z.object({
   adminLevels: z.array(z.string().trim().min(1)).optional(),
   ignoreRelationIds: z.array(z.string().trim().min(1)).optional(),
   officialExtractLayer: z.string().trim().min(1).optional(),
+  /** OSM tag used as match key (from osmProfile, e.g. de:regionalschluessel). */
+  osmMatchProperty: z.string().trim().min(1).optional(),
 })
 
 export const comparisonForReportSchema = z.object({

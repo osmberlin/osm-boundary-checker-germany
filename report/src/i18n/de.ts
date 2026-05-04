@@ -290,6 +290,11 @@ export const de = {
     datasetPropertiesLegacySnapshot:
       'Für diesen Snapshot sind keine gespeicherten Attribute verfügbar — Vergleich erneut ausführen.',
 
+    expectedOsmTagsSectionAria: 'Erwartete OSM-Tags für den Abgleich',
+    expectedOsmTagsSectionTitle: 'Erwartete OSM-Tags',
+    expectedOsmTagsSectionLead:
+      'Diese Grenze ist in OpenStreetMap bisher nicht zugeordnet. Damit der Abgleich greift, sollte die passende Grenz-Relation folgende Tags enthalten (laut aktueller Datensatz-Konfiguration):',
+
     updateMap: {
       title: 'Daten in OSM bearbeiten',
       lead: 'Amtliche Referenzgeometrie als GeoJSON sowie Direktlinks zu iD und JOSM — für Abgleich und Korrektur der OSM-Grenze.',

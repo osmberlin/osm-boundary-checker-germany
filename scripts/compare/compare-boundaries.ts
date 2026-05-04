@@ -12,6 +12,7 @@ import {
 import type { DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
+import { resolveOsmProfile } from '../shared/osmProfiles.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { requireComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
 import { readAreaSourceMetadataFile } from '../shared/sourceMetadataIo.ts'
@@ -46,6 +47,7 @@ function nowIso(): string {
 }
 
 function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfigSummary {
+  const osmProfile = resolveOsmProfile(configRaw.osmProfile)
   return {
     officialMatchProperty: configRaw.compare.officialMatchProperty,
     bboxFilter: configRaw.compare.bboxFilter,
@@ -53,6 +55,7 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
       ? { bboxBufferDegrees: configRaw.compare.bboxBufferDegrees }
       : {}),
     osmScopeFilter: configRaw.compare.osmScopeFilter,
+    osmMatchProperty: osmProfile.matchProperty,
     ...(configRaw.osm?.adminLevels?.length ? { adminLevels: [...configRaw.osm.adminLevels] } : {}),
     ...(configRaw.osm?.ignoreRelationIds?.length
       ? { ignoreRelationIds: [...configRaw.osm.ignoreRelationIds] }

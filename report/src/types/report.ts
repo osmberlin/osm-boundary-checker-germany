@@ -63,8 +63,11 @@ export type ComparisonFilterConfigSummary = {
   bboxFilter: 'none' | 'official_bbox_overlap'
   bboxBufferDegrees?: number
   osmScopeFilter: 'none' | 'centroid_in_official_coverage'
+  adminLevels?: string[]
   ignoreRelationIds?: string[]
   officialExtractLayer?: string
+  /** OSM tag used as match key (from osmProfile, e.g. de:regionalschluessel). */
+  osmMatchProperty?: string
 }
 
 /** WFS source for live property loading (mirrors `ogcInspectSources` in area config). */

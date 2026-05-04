@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
+import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmTagsSection'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
 import { FeatureDetailStatsStrip } from '../components/featureDetail/FeatureDetailStatsStrip'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
@@ -71,6 +72,8 @@ export function FeatureDetail() {
       />
 
       <FeatureDatasetProperties row={row} />
+
+      <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
 
       <LiveSourceProperties
         key={row.canonicalMatchKey}
