@@ -2,6 +2,10 @@ name: Refresh Datasets
 
 on:
   workflow_dispatch:
+  # If you change this schedule (cron or timezone), update the same cadence everywhere it is described:
+  # - report/src/i18n/de.ts → de.status.dataRefreshCadence
+  # - report/src/pages/ProcessingStatus.tsx (lead paragraph)
+  # - docs/nightly-runtime-rate-limits.md (scheduled refresh bullets)
   schedule:
     # Sun/Wed/Fri/Sat at 04:00 Europe/Berlin (DST-aware).
     - cron: '0 4 * * 0,3,5,6'

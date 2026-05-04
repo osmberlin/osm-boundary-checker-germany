@@ -141,6 +141,9 @@ export const de = {
   status: {
     breadcrumb: 'Verarbeitungsstatus',
     title: 'Verarbeitungsstatus',
+    /** Keep in sync with .github/workflows/data-refresh.yml schedule (cron + timezone). */
+    dataRefreshCadence:
+      'Vergleich und veröffentlichte Auswertungen werden automatisch viermal pro Woche neu erstellt (sonntags, mittwochs, freitags und samstags jeweils um 04:00 Uhr Europe/Berlin). Diese Seite zeigt den aktuellen Stand der Verarbeitung.',
     backHome: '← Zurück zur Startseite',
     inProgressLabel: 'Lauf aktiv',
     inProgressYes: 'Ja',

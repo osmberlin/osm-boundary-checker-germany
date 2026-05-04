@@ -176,6 +176,10 @@ export function ProcessingStatus() {
         </Link>
       </div>
 
+      <p className="mb-6 max-w-prose text-sm text-pretty text-slate-400">
+        {de.status.dataRefreshCadence}
+      </p>
+
       <div className="mb-6 rounded border border-slate-700 bg-slate-900 p-4">
         <p className="text-sm text-slate-300">
           {de.status.inProgressLabel}:{' '}
