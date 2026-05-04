@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ogcWfsInspectSourceSchema } from './ogcInspectSources.ts'
-import { osmSourceMetadataSideSchema, sourceMetadataSideSchema } from './sourceMetadata.ts'
+import { osmSourceMetadataPersistedSchema, sourceMetadataSideSchema } from './sourceMetadata.ts'
 
 export const reportMetricsSchema = z.object({
   iou: z.number(),
@@ -54,7 +54,7 @@ export const unmatchedOsmRowSchema = z.object({
 
 export const comparisonSourceMetadataEmbeddedSchema = z.object({
   official: sourceMetadataSideSchema,
-  osm: osmSourceMetadataSideSchema,
+  osm: osmSourceMetadataPersistedSchema.optional().default({}),
 })
 
 export const comparisonFilterConfigSummarySchema = z.object({

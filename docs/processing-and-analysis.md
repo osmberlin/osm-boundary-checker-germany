@@ -62,7 +62,7 @@ Nightlies and one-shot runs are orchestrated from the workspace root (see [READM
 Config ownership is explicit:
 
 - `datasets/<area>/config.jsonc` = human-authored setup (compare, profiles, optional direct official download/source facts).
-- `datasets/<area>/source/metadata.json` = runtime provenance written by pipeline scripts.
+- `datasets/<area>/source/metadata.json` = runtime provenance written by pipeline scripts. The `official` block holds the amtliche Quelle (URLs, licence, download timestamps). The `osm` block is **slim** only: `downloadedAt` (from the Germany PBF header when `osm:extract` runs) and optional `sourceDateSource`. Geofabrik URLs and ODbL defaults are **not** duplicated here — they live in `GERMANY_OSM_SOURCE_DEFAULTS` in [`scripts/shared/germanyOsmPbf.ts`](../scripts/shared/germanyOsmPbf.ts) and are merged at compare / report time via [`scripts/shared/osmGermanyProvenance.ts`](../scripts/shared/osmGermanyProvenance.ts).
 - Legacy config keys `sources` and `osmExtract` are not supported.
 
 ---

@@ -23,14 +23,9 @@ import {
   GERMANY_OSM_PBF_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
-  GERMANY_OSM_SOURCE_DEFAULTS,
 } from '../shared/germanyOsmPbf.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
-import {
-  type AreaSourceMetadataFile,
-  datasetLicenseLabelForId,
-  mergeAreaSourceMetadata,
-} from '../shared/sourceMetadata.ts'
+import { type AreaSourceMetadataFile, mergeAreaSourceMetadata } from '../shared/sourceMetadata.ts'
 import {
   readAreaSourceMetadataFile,
   writeAreaSourceMetadataFile,
@@ -260,13 +255,6 @@ function writeOsmSourceMetadataForAreas(
       osm: {
         downloadedAt: downloadedAt ?? prev.osm?.downloadedAt,
         sourceDateSource: downloadedAt ? 'osm_pbf_header' : prev.osm?.sourceDateSource,
-        provider: GERMANY_OSM_SOURCE_DEFAULTS.provider,
-        dataset: GERMANY_OSM_SOURCE_DEFAULTS.dataset,
-        sourcePublicUrl: GERMANY_OSM_SOURCE_DEFAULTS.sourcePublicUrl,
-        sourceDownloadUrl: GERMANY_OSM_SOURCE_DEFAULTS.sourceDownloadUrl,
-        licenseId: GERMANY_OSM_SOURCE_DEFAULTS.licenseId,
-        licenseLabel: datasetLicenseLabelForId(GERMANY_OSM_SOURCE_DEFAULTS.licenseId),
-        licenseSourceUrl: GERMANY_OSM_SOURCE_DEFAULTS.licenseSourceUrl,
       },
     }
     if (dryRun) {

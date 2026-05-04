@@ -1,3 +1,4 @@
+import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import { de } from '../i18n/de'
 import { EM_DASH } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
@@ -145,12 +146,9 @@ function officialFilterItems(filter: ComparisonFilterConfigSummary | undefined) 
   return items
 }
 
-function osmFilterItems(
-  filter: ComparisonFilterConfigSummary | undefined,
-  osmNote: string | undefined,
-) {
+function osmFilterItems(filter: ComparisonFilterConfigSummary | undefined) {
   const p = de.provenance
-  if (!filter && !osmNote?.trim()) {
+  if (!filter) {
     return [
       <li key="no-config" className="text-slate-500">
         {p.noFilterConfig}
@@ -158,31 +156,21 @@ function osmFilterItems(
     ]
   }
   const items = []
-  if (filter) {
+  items.push(
+    <FilterItem
+      key="osm-scope-filter"
+      code={`osmScopeFilter=${filter.osmScopeFilter}`}
+      description={p.filterDescriptions.osmScopeFilter[filter.osmScopeFilter]}
+    />,
+  )
+  if ((filter.ignoreRelationIds?.length ?? 0) > 0) {
+    const ids = filter.ignoreRelationIds!.join(',')
     items.push(
       <FilterItem
-        key="osm-scope-filter"
-        code={`osmScopeFilter=${filter.osmScopeFilter}`}
-        description={p.filterDescriptions.osmScopeFilter[filter.osmScopeFilter]}
+        key="ignore-relations"
+        code={`ignoreRelationIds=${ids}`}
+        description={p.filterDescriptions.ignoreRelationIds}
       />,
-    )
-    if ((filter.ignoreRelationIds?.length ?? 0) > 0) {
-      const ids = filter.ignoreRelationIds!.join(',')
-      items.push(
-        <FilterItem
-          key="ignore-relations"
-          code={`ignoreRelationIds=${ids}`}
-          description={p.filterDescriptions.ignoreRelationIds}
-        />,
-      )
-    }
-  }
-  if (osmNote?.trim()) {
-    items.push(
-      <li key="osm-note">
-        <span className="text-slate-500">{p.osmFilterNoteTitle}: </span>
-        <span>{osmNote.trim()}</span>
-      </li>,
     )
   }
   return items
@@ -211,7 +199,8 @@ export function ReportDataProvenanceFooter({
   hideFreshnessSection = false,
 }: ReportDataProvenanceFooterProps) {
   const p = de.provenance
-  const { official, osm } = data.sourceMetadata
+  const { official } = data.sourceMetadata
+  const osm = buildResolvedOsmSourceSide(data.sourceMetadata.osm)
   const filter = data.filterConfigSummary
 
   const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
@@ -324,7 +313,7 @@ export function ReportDataProvenanceFooter({
             </dt>
             <dd className="mt-3 md:col-span-2 md:mt-0">
               <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
-                {osmFilterItems(filter, osm.note)}
+                {osmFilterItems(filter)}
               </ul>
             </dd>
           </div>

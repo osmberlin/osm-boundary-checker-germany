@@ -14,7 +14,7 @@ import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
 import { resolveOsmProfile } from '../shared/osmProfiles.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
-import { requireComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
+import { buildComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
 import { readAreaSourceMetadataFile } from '../shared/sourceMetadataIo.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 import { type ComparePhaseLogger, runCompare } from './lib/compare.ts'
@@ -236,7 +236,7 @@ async function main() {
       },
     )
     checkpoint('after_run_compare', { rows: rows.length, unmatched: unmatchedOsm.length })
-    const meta = requireComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
+    const meta = buildComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
     const filterConfigSummary = toFilterConfigSummary(configRaw)
     const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
     const overpassBoundaryTag = overpassBoundaryTagFromMatchProperty(config.osm.matchProperty)

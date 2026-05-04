@@ -36,7 +36,12 @@ export const germanyOsmSourceDefaultsSchema = z.object({
 })
 export type GermanyOsmSourceDefaults = z.infer<typeof germanyOsmSourceDefaultsSchema>
 
-/** App-level OSM provenance defaults shared by all datasets. */
+/**
+ * App-level OSM provenance defaults shared by all datasets (Geofabrik Germany extract).
+ * Per-area `source/metadata.json` and `comparison_table.json` only persist runtime fields
+ * under `osm` (`downloadedAt`, `sourceDateSource`); merge with `buildResolvedOsmSourceSide`
+ * in [osmGermanyProvenance.ts](./osmGermanyProvenance.ts) / the report UI for full provenance.
+ */
 export const GERMANY_OSM_SOURCE_DEFAULTS: GermanyOsmSourceDefaults = {
   provider: 'OpenStreetMap (Geofabrik Germany extract)',
   dataset: GERMANY_OSM_PBF_BASENAME,

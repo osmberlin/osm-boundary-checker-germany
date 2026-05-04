@@ -13,6 +13,7 @@ import {
 } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
+import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import { LayerToggleStatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
 import {
   AreaDeltaInfoButton,
@@ -260,7 +261,8 @@ export function AreaReport() {
   const st = de.areaReport.stats
   const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
   const officialRaw = data.sourceMetadata?.official?.downloadedAt
-  const osmRaw = data.sourceMetadata?.osm?.downloadedAt
+  const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
+  const osmRaw = osmResolved.downloadedAt
   const hasOfficialMetadata = data.sourceMetadata?.official != null
   const officialDateChoice = selectSourceDateForFreshness(data.sourceMetadata?.official)
   const officialUpdatedFresh = optionalSourceStatLines(officialDateChoice.primaryRaw)
@@ -270,7 +272,7 @@ export function AreaReport() {
     officialDateChoice.secondaryDownloadedRaw && hasOfficialMetadata
       ? `${de.areaReport.freshnessSecondaryDownloadedPrefix}: ${officialDownloadedFresh.absoluteLine}`
       : null
-  const osmFresh = sourceStatLines(osmRaw, data.sourceMetadata?.osm != null)
+  const osmFresh = sourceStatLines(osmRaw, true)
   const reportIsOld = isOlderThanDays(data.generatedAt, 5)
   const officialIsOld = isOlderThanDays(officialDateChoice.primaryRaw, 5)
   const osmIsOld = isOlderThanDays(osmRaw, 5)

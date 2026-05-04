@@ -86,34 +86,47 @@ export type SourceMetadataSide = z.infer<typeof sourceMetadataSideSchema>
 export const osmSourceMetadataSideSchema = sourceMetadataCommonSideSchema
 export type OsmSourceMetadataSide = z.infer<typeof osmSourceMetadataSideSchema>
 
+/**
+ * OSM fields persisted per area / embedded in `comparison_table.json`.
+ * Static Geofabrik URLs, licence, and provider live only in `GERMANY_OSM_SOURCE_DEFAULTS`
+ * ([germanyOsmPbf.ts](./germanyOsmPbf.ts)); merge at read time with `buildResolvedOsmSourceSide`
+ * ([osmGermanyProvenance.ts](./osmGermanyProvenance.ts)).
+ */
+export const osmSourceMetadataPersistedSchema = z.object({
+  downloadedAt: optionalTrimmedString,
+  sourceDateSource: sourceDateSourceSchema,
+})
+export type OsmSourceMetadataPersisted = z.infer<typeof osmSourceMetadataPersistedSchema>
+
 /** On-disk shape for `<area>/source/metadata.json`. */
 export const areaSourceMetadataFileSchema = z.object({
   official: sourceMetadataSideSchema.optional(),
-  osm: osmSourceMetadataSideSchema.optional(),
+  osm: osmSourceMetadataPersistedSchema.optional(),
 })
 export type AreaSourceMetadataFile = z.infer<typeof areaSourceMetadataFileSchema>
 
 /** Embedded in `comparison_table.json` for the report UI. */
 export const comparisonSourceMetadataSchema = z.object({
   official: sourceMetadataSideSchema,
-  osm: osmSourceMetadataSideSchema,
+  /** Optional for legacy payloads; defaults merge from `GERMANY_OSM_SOURCE_DEFAULTS` in the report. */
+  osm: osmSourceMetadataPersistedSchema.optional().default({}),
 })
 export type ComparisonSourceMetadata = z.infer<typeof comparisonSourceMetadataSchema>
 
-export function requireComparisonSourceMetadata(
+export function buildComparisonSourceMetadata(
   file: AreaSourceMetadataFile | null,
 ): ComparisonSourceMetadata {
-  if (!file?.official || !file?.osm) {
-    throw new Error('source/metadata.json must contain both `official` and `osm` sections')
+  if (!file?.official) {
+    throw new Error('source/metadata.json must contain `official` section')
   }
+  const osm = osmSourceMetadataPersistedSchema.parse({
+    downloadedAt: file.osm?.downloadedAt,
+    sourceDateSource: file.osm?.sourceDateSource,
+  })
   return {
     official: file.official,
-    osm: file.osm,
+    osm,
   }
-}
-
-export function toComparisonSourceMetadata(file: AreaSourceMetadataFile): ComparisonSourceMetadata {
-  return requireComparisonSourceMetadata(file)
 }
 
 export function mergeAreaSourceMetadata(

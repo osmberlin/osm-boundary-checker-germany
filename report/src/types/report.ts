@@ -1,3 +1,5 @@
+import type { OsmSourceMetadataPersisted } from '../../../scripts/shared/sourceMetadata.ts'
+
 export type ReportCategory = 'matched' | 'official_only' | 'unmatched_osm'
 export type OverpassBoundaryTag = 'administrative' | 'postal_code'
 
@@ -127,10 +129,15 @@ export type ComparisonForReport = {
   hasUnmatchedPmtiles?: boolean
   /** MapLibre `source-layer` name (matches tippecanoe `-l`). */
   tippecanoeLayer: string
-  /** Always embedded from `<area>/source/metadata.json` at compare time. */
+  /**
+   * Embedded at compare time. `official` is full provenance from the amtliche Quelle.
+   * `osm` is slim (`downloadedAt`, `sourceDateSource` only); URLs and licence come from
+   * `GERMANY_OSM_SOURCE_DEFAULTS` — merge in the UI via `buildResolvedOsmSourceSide` (see
+   * `scripts/shared/osmGermanyProvenance.ts`).
+   */
   sourceMetadata: {
     official: SourceMetadataSide
-    osm: SourceMetadataSide
+    osm: OsmSourceMetadataPersisted
   }
   /** Optional compact compare filter summary from `<area>/config.jsonc`. */
   filterConfigSummary?: ComparisonFilterConfigSummary

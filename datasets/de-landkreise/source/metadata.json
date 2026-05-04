@@ -16,14 +16,6 @@
   },
   "osm": {
     "downloadedAt": "2026-04-21T20:20:22Z",
-    "sourceDateSource": "osm_pbf_header",
-    "provider": "OpenStreetMap (Geofabrik Germany extract)",
-    "dataset": "germany-latest.osm.pbf",
-    "sourcePublicUrl": "https://download.geofabrik.de/europe/germany.html",
-    "sourceDownloadUrl": "https://download.geofabrik.de/europe/germany-latest.osm.pbf",
-    "note": "ogr2ogr multipolygons WHERE Kreise @ al6+RS OR al4+SUBSTR RS = LL0000000000 with LL in (02,11) — HH/BE Stadtstaaten",
-    "licenseId": "odbl_10",
-    "licenseLabel": "ODbL-1.0",
-    "licenseSourceUrl": "https://www.openstreetmap.org/copyright"
+    "sourceDateSource": "osm_pbf_header"
   }
 }

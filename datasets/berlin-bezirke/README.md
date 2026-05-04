@@ -9,7 +9,7 @@ Configuration: [config.jsonc](./config.jsonc).
 
 ## Source
 
-Official and OSM layers live under **`source/`** as **FlatGeobuf** (`.fgb`). Timestamps for the report UI go in [source/metadata.json](./source/metadata.json) (`official.downloadedAt`, `osm.downloadedAt`).
+Official and OSM layers live under **`source/`** as **FlatGeobuf** (`.fgb`). Provenance for the report UI is in [source/metadata.json](./source/metadata.json): `official.*` for the amtliche Quelle, and a slim `osm` block (`downloadedAt`, optional `sourceDateSource`) updated by `osm:extract`. Geofabrik URLs and licence text are not stored per dataset — they come from `GERMANY_OSM_SOURCE_DEFAULTS` in `scripts/shared/germanyOsmPbf.ts` and are merged in the report.
 
 Convert GeoJSON from WFS or Overpass before replacing the `.fgb` files:
 
