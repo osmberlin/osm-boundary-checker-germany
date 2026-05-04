@@ -104,6 +104,7 @@ export const areaSourceMetadataFileSchema = z.object({
   osm: osmSourceMetadataPersistedSchema.optional(),
 })
 export type AreaSourceMetadataFile = z.infer<typeof areaSourceMetadataFileSchema>
+export type AreaSourceMetadataFileInput = z.input<typeof areaSourceMetadataFileSchema>
 
 /** Embedded in `comparison_table.json` for the report UI. */
 export const comparisonSourceMetadataSchema = z.object({
@@ -114,17 +115,18 @@ export const comparisonSourceMetadataSchema = z.object({
 export type ComparisonSourceMetadata = z.infer<typeof comparisonSourceMetadataSchema>
 
 export function buildComparisonSourceMetadata(
-  file: AreaSourceMetadataFile | null,
+  file: AreaSourceMetadataFileInput | null,
 ): ComparisonSourceMetadata {
   if (!file?.official) {
     throw new Error('source/metadata.json must contain `official` section')
   }
+  const official = sourceMetadataSideSchema.parse(file.official)
   const osm = osmSourceMetadataPersistedSchema.parse({
     downloadedAt: file.osm?.downloadedAt,
     sourceDateSource: file.osm?.sourceDateSource,
   })
   return {
-    official: file.official,
+    official,
     osm,
   }
 }
