@@ -297,26 +297,28 @@ export const de = {
 
     updateMap: {
       title: 'Daten in OSM bearbeiten',
-      lead: 'Amtliche Referenzgeometrie als GeoJSON sowie Direktlinks zu iD und JOSM — für Abgleich und Korrektur der OSM-Grenze.',
+      lead: 'Amtliches Referenz-GeoJSON zum Download, Direktlinks für iD und JOSM — zum Abgleich und zur Korrektur der OSM-Grenze.',
       downloadOfficialHeading: 'Amtliches GeoJSON',
       idHeading: 'iD-Editor',
       josmHeading: 'JOSM (Remote Control)',
-      downloadOfficial: 'Amtliches Polygon laden (GeoJSON)',
+      downloadOfficial: 'GeoJSON herunterladen',
       downloadOfficialDisabledHint: 'Für diese Detailansicht gibt es keine amtliche Geometrie.',
       downloadOfficialHint:
         'Datei enthält u. a. Namen, Schlüssel und Felder wie `officialSource.provider`, `officialSource.dataset`, `officialSource.sourcePublicUrl` usw., sofern beim Vergleich hinterlegt.',
+      downloadOfficialPipelineHint:
+        'Hinweis: Beim Export werden die Umringe leicht vereinfacht (ca. 2,5 m Toleranz) und Koordinaten auf sechs Nachkommastellen gerundet — für überschaubare Dateigröße in iD/JOSM.',
       opensInNewWindowTitle: 'Öffnet in einem neuen Browser-Tab',
-      openId: 'In iD öffnen',
+      openId: 'In iD öffnen mit amtlicher Grenze (GeoJSON)',
       idDisableFeaturesHint:
         'Hinweis: In iD werden u. a. Gebäude, Wege und Bahn usw. ausgeblendet; Grenzen, Gewässer und übergeordnete Straßen bleiben sichtbar.',
       josmRemoteLead:
         'Remote Control in den JOSM-Einstellungen aktivieren. Links rufen JOSM lokal auf (Port 8111).',
-      josmLoadObject: 'Relation inkl. Mitglieder laden (load_object)',
-      josmImport: 'Amtliches GeoJSON als neue Ebene importieren (import)',
+      josmLoadObject: 'OSM Relation in JOSM laden',
+      josmLoadObjectTitle: 'Relation inkl. Mitglieder (Remote Control: load_object)',
+      josmImport: 'In JOSM öffnen mit amtlicher Grenze (GeoJSON)',
+      josmImportTitle: 'Amtliches GeoJSON als neue Ebene (Remote Control: import)',
       josmImportDisabledHint:
         'Kein amtlicher GeoJSON-Export — zuerst Vergleich mit amtlicher Geometrie oder aktuelle Auswertung (ohne Snapshot) nutzen.',
-      josmNoRelation:
-        'Keine OSM-Relation-ID in dieser Zeile — nur amtliche Geometrie oder Datenlücke; Relation zuerst in OSM anlegen bzw. zuordnen.',
       josmImportFallback:
         'Falls Import per URL fehlschlägt: GeoJSON herunterladen und in JOSM über Datei öffnen.',
       tableHint:

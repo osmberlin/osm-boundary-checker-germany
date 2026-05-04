@@ -8,20 +8,13 @@ import {
 import type { ReportRow } from '../types/report'
 import { sharedButtonClass } from './sharedButtonStyles'
 
-function triggerGeojsonDownload(href: string) {
-  const a = document.createElement('a')
-  a.href = href
-  const tail = href.split('/').pop()
-  if (tail?.endsWith('.geojson')) a.download = tail
-  a.rel = 'noopener'
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-}
-
 export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: ReportRow }) {
   const u = de.feature.updateMap
   const officialHref = officialForEditGeojsonHref(areaId, row)
+  const officialBasename = officialHref?.split('/').pop()
+  const officialDownloadFilename = officialBasename?.endsWith('.geojson')
+    ? officialBasename
+    : undefined
   const officialAbsolute = officialHref != null ? absoluteUrlFromPath(officialHref) : null
   const idUrl = buildOpenStreetMapIdEditUrl(row, officialAbsolute)
   const josm = buildJosmEditorLinks(row, officialAbsolute)
@@ -42,16 +35,14 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <div className="flex flex-col gap-2">
-                {canDownloadOfficial ? (
-                  <>
-                    <button
-                      type="button"
-                      className={sharedButtonClass}
-                      onClick={() => officialHref != null && triggerGeojsonDownload(officialHref)}
-                    >
-                      {u.downloadOfficial}
-                    </button>
-                  </>
+                {canDownloadOfficial && officialHref != null ? (
+                  <a
+                    href={officialHref}
+                    download={officialDownloadFilename}
+                    className={sharedButtonClass}
+                  >
+                    {u.downloadOfficial}
+                  </a>
                 ) : (
                   <div className="flex items-center gap-3">
                     <button
@@ -66,6 +57,9 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
                   </div>
                 )}
               </div>
+              {canDownloadOfficial ? (
+                <p className="mt-3 text-xs text-slate-500">{u.downloadOfficialPipelineHint}</p>
+              ) : null}
             </dd>
           </div>
 
@@ -95,27 +89,12 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <div className="flex flex-col gap-2">
-                {josm.loadObject != null ? (
-                  <a
-                    href={josm.loadObject}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`${u.josmLoadObject} — ${u.opensInNewWindowTitle}`}
-                    className={sharedButtonClass}
-                  >
-                    {u.josmLoadObject}
-                  </a>
-                ) : (
-                  <button type="button" disabled className={sharedButtonClass}>
-                    {u.josmLoadObject}
-                  </button>
-                )}
                 {josm.importGeojson != null ? (
                   <a
                     href={josm.importGeojson}
                     target="_blank"
                     rel="noopener noreferrer"
-                    title={`${u.josmImport} — ${u.opensInNewWindowTitle}`}
+                    title={`${u.josmImportTitle} — ${u.opensInNewWindowTitle}`}
                     className={sharedButtonClass}
                   >
                     {u.josmImport}
@@ -125,8 +104,20 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
                     {u.josmImport}
                   </button>
                 )}
-                {josm.loadObject == null && (
-                  <p className="text-xs text-slate-500">{u.josmNoRelation}</p>
+                {josm.loadObject != null ? (
+                  <a
+                    href={josm.loadObject}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${u.josmLoadObjectTitle} — ${u.opensInNewWindowTitle}`}
+                    className={sharedButtonClass}
+                  >
+                    {u.josmLoadObject}
+                  </a>
+                ) : (
+                  <button type="button" disabled className={sharedButtonClass}>
+                    {u.josmLoadObject}
+                  </button>
                 )}
               </div>
             </dd>
