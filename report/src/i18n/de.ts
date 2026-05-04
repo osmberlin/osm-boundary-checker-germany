@@ -3,7 +3,7 @@ import type { ReportRow } from '../types/report'
 
 /** UI copy (German). Metric modal copy lives in scripts/compare/lib/metrics/ (per-metric folder, de.ts). */
 export const de = {
-  appTitle: 'OSM-Grenzabgleich',
+  appTitle: 'OSM Grenzabgleich',
   navChangelog: 'Changelog',
 
   breadcrumb: {
@@ -102,12 +102,11 @@ export const de = {
     reviewQueueLinkLabel: 'Prüfliste: Ampel nicht ok',
     githubCodeLinkLabel: 'Code auf GitHub',
     githubIssuesLinkLabel: 'Issue melden',
-    introP1:
-      'Diese Anwendung vergleicht amtliche Grenzdaten mit OpenStreetMap (OSM). Ein nächtlicher Lauf (einmal pro Tag) bezieht die OSM-Daten des Vortags und stellt sie den jeweiligen amtlichen Geometrien gegenüber.',
-    introP2:
-      'Die Auswertung zeigt, wo OSM-Objekte den amtlichen Referenzen zugeordnet werden können oder nicht — etwa wegen Tagging — und wo sich Grenzverläufe zwischen beiden Datensätzen unterscheiden, mit mehreren Kennzahlen dargestellt. So findest du Tagging- und geometrische Abweichungen. Schaltflächen zur Bearbeitung öffnen die Referenzgrenze, damit du die OSM-Daten manuell anpassen kannst.',
-    leadBefore: 'Gebiet wählen. Die Auswertung wird aus dem Ordner',
-    leadAfter: 'des jeweiligen Gebiets gelesen (zuerst den Vergleich ausführen).',
+    introHeading: 'OpenStreetMap und Daten zu amtlichen Grenzen',
+    introLead:
+      'Diese Anwendung vergleicht verschiedene amtliche Datensätze zu Grenzen und PLZ-Bereichen mit OSM-Daten. Das Ziel ist Transparenz über die Qualität der Daten in OSM und Hilfsmittel zur Verbesserung der Datenqualität.',
+    metaDescription:
+      'Vergleich amtlicher Grenz- und PLZ-Daten mit OpenStreetMap: Transparenz über die Datenqualität in OSM und Hilfsmittel zu deren Verbesserung.',
     noAreas:
       'Keine Gebiete mit output/comparison_table.json unter datasets/ gefunden. Vergleich ausführen (bun run compare).',
     /** Home list: per-area row of category/review counts. */

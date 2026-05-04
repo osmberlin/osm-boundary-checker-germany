@@ -12,6 +12,7 @@ import { routerBasePath } from './data/paths'
 import { de } from './i18n/de'
 import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
 import { stringifySearchPretty } from './lib/routerSearchStringify'
+import { socialSharingImageAbsoluteUrl } from './lib/siteBasePath'
 import { AreaReport } from './pages/AreaReport'
 import { Changelog } from './pages/Changelog'
 import { FeatureDetail } from './pages/FeatureDetail'
@@ -29,8 +30,23 @@ function featureTitleFromData(data: ComparisonForReport | undefined, featureKey:
   return `${data.titlePrefix} ${featureNameLabelFromData(data, featureKey) ?? featureKey}`.trim()
 }
 
+const socialImageUrl = socialSharingImageAbsoluteUrl()
+
 export const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: ReportLayout,
+  head: () => ({
+    meta: [
+      { name: 'description', content: de.home.metaDescription },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:site_name', content: de.appTitle },
+      { property: 'og:title', content: de.appTitle },
+      { property: 'og:description', content: de.home.metaDescription },
+      { property: 'og:image', content: socialImageUrl },
+      { property: 'og:image:type', content: 'image/png' },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:image', content: socialImageUrl },
+    ],
+  }),
 })
 
 const indexRoute = createRoute({

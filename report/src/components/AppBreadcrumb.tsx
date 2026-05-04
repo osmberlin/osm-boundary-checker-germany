@@ -1,6 +1,6 @@
-import { HomeIcon } from '@heroicons/react/20/solid'
 import { Link } from '@tanstack/react-router'
 import { de } from '../i18n/de'
+import { withSiteBasePath } from '../lib/siteBasePath'
 
 export type AppBreadcrumbCrumb = { name: string; to: string } | { name: string; current: true }
 
@@ -30,7 +30,8 @@ type Props = {
 export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
   const homeSegmentClass =
     'flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-slate-200'
-  const homeIconClass = 'size-5 shrink-0 text-slate-400 md:-ml-1'
+  const homeLogoClass = 'h-5 w-5 shrink-0 object-contain md:-ml-1'
+  const homeLogoSrc = withSiteBasePath('/osm-grenzabgleich-logo-2025.svg')
   const rowClass = 'h-14'
 
   return (
@@ -45,17 +46,17 @@ export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
           <div className={`flex items-center ${rowClass}`}>
             {homeCurrent ? (
               <span className={homeSegmentClass} aria-current="page">
-                <HomeIcon aria-hidden className={homeIconClass} />
+                <img src={homeLogoSrc} alt="" width={20} height={20} className={homeLogoClass} />
                 <span className="text-brand-100">{appTitle}</span>
                 <span className="sr-only">{de.breadcrumb.home}</span>
               </span>
             ) : (
               <Link
                 to="/"
-                className={`${homeSegmentClass} hover:[&_svg]:text-slate-300`}
+                className={`${homeSegmentClass} hover:[&_img]:opacity-90`}
                 aria-label={`${de.breadcrumb.home} — ${appTitle}`}
               >
-                <HomeIcon aria-hidden className={homeIconClass} />
+                <img src={homeLogoSrc} alt="" width={20} height={20} className={homeLogoClass} />
                 <span className="text-brand-100">{appTitle}</span>
               </Link>
             )}

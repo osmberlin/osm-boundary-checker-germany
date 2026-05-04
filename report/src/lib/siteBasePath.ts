@@ -42,3 +42,13 @@ export function withSiteBasePath(pathnameWithLeadingSlash: string): string {
   if (basePath === '') return pathnameWithLeadingSlash
   return `${basePath}${pathnameWithLeadingSlash}`
 }
+
+/** Matches `base` in vite.config.ts (GitHub Pages project site). */
+export const GITHUB_PAGES_SITE_PATH = '/osm-boundary-checker-germany'
+
+export const GITHUB_PAGES_ORIGIN = 'https://osmberlin.github.io'
+
+/** Absolute URL for Open Graph / Twitter (PNG under `public/`). */
+export function socialSharingImageAbsoluteUrl(): string {
+  return `${GITHUB_PAGES_ORIGIN}${GITHUB_PAGES_SITE_PATH}/social-sharing-osm-grenzabgleich-2025.png`
+}

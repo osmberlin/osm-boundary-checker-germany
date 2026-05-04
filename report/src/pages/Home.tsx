@@ -4,6 +4,7 @@ import { ReportCategoryPill, UnmatchedOsmStatPill } from '../components/reportCa
 import { areasIndex, type AreaLicenseSummary } from '../data/areasIndex'
 import { categoryLabelDe, de } from '../i18n/de'
 import { EM_DASH, formatDeInteger } from '../lib/formatDe'
+import { withSiteBasePath } from '../lib/siteBasePath'
 
 const GITHUB_REPO_ROOT = 'https://github.com/osmberlin/osm-boundary-checker-germany'
 const GITHUB_ISSUES_NEW_URL = `${GITHUB_REPO_ROOT}/issues/new`
@@ -17,38 +18,55 @@ export function Home() {
     areasIndex.summaries.map((entry) => [entry.area, entry]),
   )
 
+  const logoSrc = withSiteBasePath('/osm-grenzabgleich-logo-2025.svg')
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
-      <p className="mb-4 max-w-prose text-pretty text-slate-400">{de.home.introP1}</p>
-      <p className="mb-6 max-w-prose text-pretty text-slate-400">{de.home.introP2}</p>
-      <p className="mb-6 text-slate-400">
-        {de.home.leadBefore}{' '}
-        <code className="rounded bg-slate-800 px-1 text-slate-200">output/</code>{' '}
-        {de.home.leadAfter}
-      </p>
-      <p className="mb-6 text-slate-400">
-        <a href={GITHUB_REPO_ROOT} className={homeLinkClass} target="_blank" rel="noreferrer">
-          {de.home.githubCodeLinkLabel}
-        </a>
-        <span aria-hidden className="mx-1.5 text-slate-500">
-          ·
-        </span>
-        <a href={GITHUB_ISSUES_NEW_URL} className={homeLinkClass} target="_blank" rel="noreferrer">
-          {de.home.githubIssuesLinkLabel}
-        </a>
-        <span aria-hidden className="mx-1.5 text-slate-500">
-          ·
-        </span>
-        <Link to="/changelog" className={homeLinkClass}>
-          {de.home.changelogLinkLabel}
-        </Link>
-        <span aria-hidden className="mx-1.5 text-slate-500">
-          ·
-        </span>
-        <Link to="/review" className={homeLinkClass}>
-          {de.home.reviewQueueLinkLabel}
-        </Link>
-      </p>
+      <div className="mb-6 flex flex-col gap-6 md:flex-row md:items-start">
+        <div className="flex shrink-0 justify-center md:justify-start">
+          <img
+            src={logoSrc}
+            alt=""
+            width={200}
+            height={120}
+            className="max-h-32 max-w-[200px] object-contain object-left"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="mb-4 max-w-prose text-2xl font-semibold tracking-tight text-pretty text-slate-100 sm:text-3xl">
+            {de.home.introHeading}
+          </h1>
+          <p className="mb-6 max-w-prose text-pretty text-slate-400">{de.home.introLead}</p>
+          <p className="mb-6 text-slate-400">
+            <a href={GITHUB_REPO_ROOT} className={homeLinkClass} target="_blank" rel="noreferrer">
+              {de.home.githubCodeLinkLabel}
+            </a>
+            <span aria-hidden className="mx-1.5 text-slate-500">
+              ·
+            </span>
+            <a
+              href={GITHUB_ISSUES_NEW_URL}
+              className={homeLinkClass}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {de.home.githubIssuesLinkLabel}
+            </a>
+            <span aria-hidden className="mx-1.5 text-slate-500">
+              ·
+            </span>
+            <Link to="/changelog" className={homeLinkClass}>
+              {de.home.changelogLinkLabel}
+            </Link>
+            <span aria-hidden className="mx-1.5 text-slate-500">
+              ·
+            </span>
+            <Link to="/review" className={homeLinkClass}>
+              {de.home.reviewQueueLinkLabel}
+            </Link>
+          </p>
+        </div>
+      </div>
       {areas.length === 0 ? (
         <p className="text-slate-400">{de.home.noAreas}</p>
       ) : (
