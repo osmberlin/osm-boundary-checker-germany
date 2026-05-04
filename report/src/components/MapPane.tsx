@@ -55,8 +55,8 @@ type MapPaneLayers = {
 }
 
 type MapPaneInteraction = {
-  /** Overview: navigate to feature detail when clicking a polygon. */
-  onFeatureClick?: (featureKey: string) => void
+  /** Overview: navigate to feature detail when clicking polygon(s); ids are deduped. */
+  onFeatureClick?: (featureKeys: string[]) => void
 }
 
 type MapPaneOverlays = {
@@ -181,14 +181,14 @@ export default function MapPane({
     if (!onFeatureClick) return
     const fs = e.features
     if (!fs?.length) return
+    const ids: string[] = []
     for (const f of fs) {
       const props = f.properties as Record<string, unknown> | null
       const id = props?.featureId
-      if (typeof id === 'string' && id.length > 0) {
-        onFeatureClick(id)
-        break
-      }
+      if (typeof id === 'string' && id.length > 0) ids.push(id)
     }
+    const uniqueKeys = [...new Set(ids)]
+    if (uniqueKeys.length > 0) onFeatureClick(uniqueKeys)
   }
 
   function onMapMouseMove(e: { target: maplibregl.Map; features?: GeoJSON.Feature[] }) {

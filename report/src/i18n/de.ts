@@ -204,6 +204,11 @@ export const de = {
       categoryToggleRowAria: 'Kategorien für Tabelle und Karte',
       mapNoVisibleCategories: 'Keine Kategorie ausgewählt — mindestens eine aktivieren.',
       mapLoading: 'Karte wird geladen …',
+      /** Overview map: overlapping official-only vs unmatched OSM polygons. */
+      mapOverlapPickerTitle: 'Mehrere Objekte an dieser Stelle',
+      mapOverlapPickerLead:
+        'Amtliche Fläche (nur amtlich) und OSM-Fläche (nur OSM) liegen hier übereinander. Wählen Sie die gewünschte Detailansicht.',
+      mapOverlapPickerClose: 'Schließen',
     },
   },
 

@@ -25,6 +25,13 @@ import { IssueBadge } from '../components/IssueBadge'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
+import {
+  AppDialogActions,
+  AppDialogBody,
+  AppDialogDescription,
+  AppDialogTitle,
+  Dialog,
+} from '../components/ui/Dialog'
 import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
@@ -46,7 +53,12 @@ import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
 import { areaDisplayNameForId } from '../lib/reportLookups'
 import { selectSourceDateForFreshness } from '../lib/sourceFreshnessSelection'
-import type { AreaReportRow, ComparisonForReport, SnapshotsJson } from '../types/report'
+import type {
+  AreaReportRow,
+  ComparisonForReport,
+  ReportCategory,
+  SnapshotsJson,
+} from '../types/report'
 
 const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShell'))
 
@@ -87,11 +99,45 @@ function normalizeUnmatchedRows(data: ComparisonForReport): AreaReportRow[] {
   }))
 }
 
+function resolveFeatureRowMeta(
+  reportData: ComparisonForReport,
+  key: string,
+): { category: ReportCategory; nameLabel: string } | null {
+  for (const r of reportData.rows) {
+    if (r.canonicalMatchKey === key) {
+      return { category: r.category, nameLabel: r.nameLabel }
+    }
+  }
+  for (const u of reportData.unmatchedOsm) {
+    if (u.canonicalMatchKey === key) {
+      return { category: 'unmatched_osm', nameLabel: u.nameLabel }
+    }
+  }
+  return null
+}
+
+function needsOfficialOnlyAndUnmatchedOsmPicker(
+  keys: string[],
+  reportData: ComparisonForReport,
+): boolean {
+  if (keys.length < 2) return false
+  let hasOfficialOnly = false
+  let hasUnmatched = false
+  for (const k of keys) {
+    const m = resolveFeatureRowMeta(reportData, k)
+    if (!m) continue
+    if (m.category === 'official_only') hasOfficialOnly = true
+    if (m.category === 'unmatched_osm') hasUnmatched = true
+  }
+  return hasOfficialOnly && hasUnmatched
+}
+
 export function AreaReport() {
   const { areaId } = useParams({ strict: false })
   const areaKey = areaId ?? ''
   const navigate = useNavigate()
   const statsInputId = useId()
+  const [overlapPickKeys, setOverlapPickKeys] = useState<string[] | null>(null)
   const { enabledSet, enabledCategories, setCategoryEnabled, isCategoryEnabled } =
     useAreaReportCategoryFilter()
   const mapLayers = useComparisonMapLayers()
@@ -357,10 +403,21 @@ export function AreaReport() {
                       showDiff: mapLayers.showDiff,
                     }}
                     interaction={{
-                      onFeatureClick: (featureKey) => {
+                      onFeatureClick: (featureKeys) => {
+                        if (featureKeys.length === 1) {
+                          void navigate({
+                            to: '/$areaId/feature/$featureKey',
+                            params: { areaId: areaKey, featureKey: featureKeys[0] },
+                          })
+                          return
+                        }
+                        if (needsOfficialOnlyAndUnmatchedOsmPicker(featureKeys, data)) {
+                          setOverlapPickKeys(featureKeys)
+                          return
+                        }
                         void navigate({
                           to: '/$areaId/feature/$featureKey',
-                          params: { areaId: areaKey, featureKey },
+                          params: { areaId: areaKey, featureKey: featureKeys[0] },
                         })
                       },
                     }}
@@ -591,6 +648,53 @@ export function AreaReport() {
           </tbody>
         </table>
       </div>
+
+      <Dialog open={overlapPickKeys !== null} onClose={() => setOverlapPickKeys(null)} size="md">
+        <AppDialogTitle>{st.mapOverlapPickerTitle}</AppDialogTitle>
+        <AppDialogDescription>{st.mapOverlapPickerLead}</AppDialogDescription>
+        <AppDialogBody>
+          <ul className="list-none space-y-3 p-0">
+            {(overlapPickKeys ?? []).map((key) => {
+              const meta = resolveFeatureRowMeta(data, key)
+              return (
+                <li
+                  key={key}
+                  className="flex flex-col gap-2 rounded border border-slate-700/80 bg-slate-800/40 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    {meta ? (
+                      <>
+                        <ReportCategoryPill category={meta.category}>
+                          {categoryLabelDe(meta.category)}
+                        </ReportCategoryPill>
+                        <span className="text-sm font-medium text-slate-100">{meta.nameLabel}</span>
+                      </>
+                    ) : (
+                      <span className="font-mono text-sm break-all text-slate-300">{key}</span>
+                    )}
+                  </div>
+                  <Link
+                    className="shrink-0 text-sm font-medium text-sky-400 underline decoration-slate-500/60 underline-offset-2 hover:text-sky-300"
+                    to="/$areaId/feature/$featureKey"
+                    params={{ areaId: areaKey, featureKey: key }}
+                  >
+                    {de.areaReport.table.view}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </AppDialogBody>
+        <AppDialogActions>
+          <button
+            type="button"
+            className="rounded-lg border border-slate-600 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 shadow-sm hover:bg-slate-700"
+            onClick={() => setOverlapPickKeys(null)}
+          >
+            {st.mapOverlapPickerClose}
+          </button>
+        </AppDialogActions>
+      </Dialog>
 
       <ReportLicenseCompatibilitySection data={data} />
       <ReportDataProvenanceFooter data={data} hideFreshnessSection />
