@@ -102,6 +102,13 @@ export function FeatureDetailStatsStrip({
 
       <section className="mb-6" aria-label={de.areaReport.stats.summaryStatRowAria}>
         <StatBlocksRow className="mt-0">
+          {m ? (
+            <IssueIndicatorStatColumn
+              label={s.issueIndicator}
+              level={m.issueIndicator?.level}
+              reasons={m.issueIndicator?.reasons}
+            />
+          ) : null}
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingReport}
             relativeLine={reportFresh.relativeLine ?? EM_DASH}
@@ -128,12 +135,12 @@ export function FeatureDetailStatsStrip({
         {m && (
           <>
             <StatBlocksRow
-              className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 lg:[&>*:nth-child(n+2)]:border-l lg:[&>*:nth-child(n+2)]:pl-6 [&>*:nth-child(odd)]:border-l-0 [&>*:nth-child(odd)]:pl-0"
+              className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 max-lg:[&>*:nth-child(odd)]:border-l-0 max-lg:[&>*:nth-child(odd)]:pl-0"
               aria-label={s.diffMetricsRowAria}
             >
               <StatBlock
                 label={
-                  <span className="inline-flex items-center gap-0.5">
+                  <span className="inline-flex items-center gap-1">
                     <span>{s.iou}</span>
                     <IouInfoButton />
                   </span>
@@ -142,7 +149,7 @@ export function FeatureDetailStatsStrip({
               />
               <StatBlock
                 label={
-                  <span className="inline-flex items-center gap-0.5">
+                  <span className="inline-flex items-center gap-1">
                     <span>{s.areaDelta}</span>
                     <AreaDeltaInfoButton />
                   </span>
@@ -151,8 +158,9 @@ export function FeatureDetailStatsStrip({
               />
               <StatBlock
                 label={
-                  <span className="inline-flex items-center gap-0.5">
-                    <span>{s.symDiff}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="lg:hidden">{s.symDiff}</span>
+                    <span className="hidden lg:inline">{s.symDiffShort}</span>
                     <SymDiffInfoButton />
                   </span>
                 }
@@ -160,7 +168,7 @@ export function FeatureDetailStatsStrip({
               />
               <StatBlock
                 label={
-                  <span className="inline-flex items-center gap-0.5">
+                  <span className="inline-flex items-center gap-1">
                     <span>{s.hausdorff}</span>
                     <HausdorffInfoButton />
                   </span>
@@ -169,28 +177,14 @@ export function FeatureDetailStatsStrip({
               />
               <StatBlock
                 label={
-                  <span className="inline-flex items-center gap-0.5">
+                  <span className="inline-flex items-center gap-1">
                     <span>{s.hausdorffP95}</span>
                     <HausdorffInfoButton />
                   </span>
                 }
                 value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}
               />
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-0.5">
-                    <span>{s.issueIndicator}</span>
-                    <IssueIndicatorInfoButton />
-                  </span>
-                }
-                value={<IssueBadge level={m.issueIndicator?.level} />}
-              />
             </StatBlocksRow>
-            {m.issueIndicator?.reasons?.length ? (
-              <p className="mt-3 text-xs text-slate-400">
-                Gründe: {m.issueIndicator.reasons.map(issueReasonLabelDe).join(' · ')}
-              </p>
-            ) : null}
 
             <StatBlocksRow className="mt-10 sm:mt-12 lg:mt-14" aria-label={s.layersRowAria}>
               <LayerToggleStatBlock
@@ -252,21 +246,6 @@ export function FeatureDetailStatsStrip({
   )
 }
 
-function IssueBadge({ level }: { level: 'ok' | 'review' | 'issue' | undefined }) {
-  if (!level) return <span className="text-slate-400">{EM_DASH}</span>
-  const classes =
-    level === 'ok'
-      ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200'
-      : level === 'review'
-        ? 'border-amber-400/40 bg-amber-500/15 text-amber-200'
-        : 'border-rose-400/40 bg-rose-500/15 text-rose-200'
-  return (
-    <span className={`inline-flex rounded border px-2 py-0.5 text-xs font-medium ${classes}`}>
-      {issueLevelLabelDe(level)}
-    </span>
-  )
-}
-
 function issueReasonLabelDe(
   reason:
     | 'STRONG_OVERLAP_LOW_DIFF'
@@ -296,6 +275,59 @@ function issueReasonLabelDe(
     case 'BASELINE_ANOMALY_HAUSDORFF_NORM_DELTA':
       return 'ungewoehnlicher Hausdorff-Norm-Sprung ggü. letztem Lauf'
   }
+}
+
+type IssueReasonCode = Parameters<typeof issueReasonLabelDe>[0]
+
+function IssueIndicatorStatColumn({
+  label,
+  level,
+  reasons,
+}: {
+  label: string
+  level: 'ok' | 'review' | 'issue' | undefined
+  reasons: IssueReasonCode[] | undefined
+}) {
+  const primaryClass =
+    level === 'ok'
+      ? 'text-emerald-200'
+      : level === 'review'
+        ? 'text-amber-200'
+        : level === 'issue'
+          ? 'text-rose-200'
+          : 'text-slate-400'
+  const primaryText = level ? issueLevelLabelDe(level) : EM_DASH
+  const reasonsLine = reasons?.length
+    ? capitalizeFirstDe(reasons.map(issueReasonLabelDe).join(' · '))
+    : null
+
+  return (
+    <div className="flex min-w-0 flex-col gap-y-1">
+      <dt className="text-sm font-medium text-slate-400">
+        <span className="inline-flex items-center gap-1">
+          <span>{label}</span>
+          <IssueIndicatorInfoButton />
+        </span>
+      </dt>
+      <dd
+        className={`m-0 text-2xl font-semibold tracking-tight text-pretty tabular-nums sm:text-3xl ${primaryClass}`}
+      >
+        <span className="sm:hidden">{primaryText}</span>
+        <span className="hidden sm:inline">{primaryText}</span>
+      </dd>
+      {reasonsLine ? (
+        <dd className="m-0 text-sm text-slate-400">
+          <span className="sm:hidden">{reasonsLine}</span>
+          <span className="hidden sm:inline">{reasonsLine}</span>
+        </dd>
+      ) : null}
+    </div>
+  )
+}
+
+function capitalizeFirstDe(value: string): string {
+  if (!value) return value
+  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 function SummaryStatColumn({
