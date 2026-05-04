@@ -22,22 +22,13 @@ export function Home() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-6 md:flex-row md:items-start">
-        <div className="flex shrink-0 justify-center md:justify-start">
-          <img
-            src={logoSrc}
-            alt=""
-            width={200}
-            height={120}
-            className="max-h-32 max-w-[200px] object-contain object-left"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="mb-4 max-w-prose text-2xl font-semibold tracking-tight text-pretty text-slate-100 sm:text-3xl">
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:gap-4 md:justify-between">
+        <div className="min-w-0 flex-1 md:pr-2">
+          <h1 className="mb-2 max-w-prose text-2xl font-semibold tracking-tight text-pretty text-slate-100 sm:text-3xl">
             {de.home.introHeading}
           </h1>
-          <p className="mb-6 max-w-prose text-pretty text-slate-400">{de.home.introLead}</p>
-          <p className="mb-6 text-slate-400">
+          <p className="mb-3 max-w-prose text-pretty text-slate-400">{de.home.introLead}</p>
+          <p className="text-slate-400">
             <a href={GITHUB_REPO_ROOT} className={homeLinkClass} target="_blank" rel="noreferrer">
               {de.home.githubCodeLinkLabel}
             </a>
@@ -65,6 +56,15 @@ export function Home() {
               {de.home.reviewQueueLinkLabel}
             </Link>
           </p>
+        </div>
+        <div className="hidden shrink-0 justify-end pt-1 md:flex">
+          <img
+            src={logoSrc}
+            alt=""
+            width={200}
+            height={120}
+            className="max-h-32 max-w-[200px] object-contain object-right"
+          />
         </div>
       </div>
       {areas.length === 0 ? (
