@@ -22,7 +22,7 @@ export function Home() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:gap-4 md:justify-between">
+      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
         <div className="min-w-0 flex-1 md:pr-2">
           <h1 className="mb-2 max-w-prose text-2xl font-semibold tracking-tight text-pretty text-slate-100 sm:text-3xl">
             {de.home.introHeading}
@@ -101,7 +101,11 @@ export function Home() {
                         →
                       </span>
                     </div>
-                    <StatBlocksRow className="mt-4" aria-label={de.home.categoryStatsAria}>
+                    <StatBlocksRow
+                      className="mt-4"
+                      narrowLayout="gridThreeTwoRows"
+                      aria-label={de.home.categoryStatsAria}
+                    >
                       <StatBlock
                         label={
                           <ReportCategoryPill category="matched">

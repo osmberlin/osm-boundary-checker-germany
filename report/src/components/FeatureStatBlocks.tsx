@@ -1,32 +1,45 @@
 import type { ReactNode } from 'react'
 
+const statBlocksRowDefaultLayout = [
+  'flex min-w-0 flex-row flex-nowrap gap-x-0',
+  '[&>*]:min-w-0 [&>*]:flex-1 [&>*]:basis-0',
+  '[&>*]:border-white/15 [&>*]:border-l [&>*]:pl-3',
+  '[&>*]:first:border-l-0 [&>*]:first:pl-0',
+  '[&>*]:lg:pl-6',
+] as const
+
+/** Three columns then remainder: fits five home KPIs in two rows on narrow viewports. */
+const statBlocksRowNarrowGridLayout = [
+  'grid min-w-0 grid-cols-3 gap-x-3 gap-y-4',
+  '[&>*]:min-w-0',
+  'md:flex md:flex-row md:flex-nowrap md:gap-x-0 md:gap-y-0',
+  'md:[&>*]:flex-1 md:[&>*]:basis-0',
+  'md:[&>*]:border-white/15 md:[&>*]:border-l md:[&>*]:pl-3',
+  'md:[&>*]:first:border-l-0 md:[&>*]:first:pl-0',
+  'md:[&>*]:lg:pl-6',
+] as const
+
 /**
- * Single horizontal row of stat blocks (value on top, label below).
+ * Single horizontal row of stat blocks (label on top, value below).
  * Children get equal flex width; left border between cells (not before first).
+ * Use `narrowLayout="gridThreeTwoRows"` for a 3+2 grid below the `md` breakpoint.
  */
 export function StatBlocksRow({
   children,
   className = '',
   'aria-label': ariaLabel,
+  narrowLayout = 'default',
 }: {
   children: ReactNode
   className?: string
   'aria-label'?: string
+  narrowLayout?: 'default' | 'gridThreeTwoRows'
 }) {
+  const layoutClasses =
+    narrowLayout === 'gridThreeTwoRows' ? statBlocksRowNarrowGridLayout : statBlocksRowDefaultLayout
+
   return (
-    <dl
-      aria-label={ariaLabel}
-      className={[
-        'flex min-w-0 flex-row flex-nowrap gap-x-0',
-        '[&>*]:min-w-0 [&>*]:flex-1 [&>*]:basis-0',
-        '[&>*]:border-white/15 [&>*]:border-l [&>*]:pl-3',
-        '[&>*]:first:border-l-0 [&>*]:first:pl-0',
-        '[&>*]:lg:pl-6',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
+    <dl aria-label={ariaLabel} className={[...layoutClasses, className].filter(Boolean).join(' ')}>
       {children}
     </dl>
   )
