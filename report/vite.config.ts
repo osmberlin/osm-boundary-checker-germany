@@ -30,8 +30,8 @@ function spaGithubPages404(): Plugin {
 }
 
 export default defineConfig(({ command }) => ({
-  // Project Pages deploy target: https://osmberlin.github.io/osm-boundary-checker-germany/
-  base: command === 'build' ? '/osm-boundary-checker-germany/' : '/',
+  // Production: custom domain root (https://grenzabgleich.osm-verkehrswende.org/). Dev: '/'.
+  base: command === 'build' ? '/' : '/',
   plugins: [
     tailwindcss(),
     react(),

@@ -234,11 +234,13 @@ See [`report/src/data/paths.ts`](report/src/data/paths.ts).
 Smoke-test a deployed PMTiles URL:
 
 ```bash
-curl -I "https://<org>.github.io/<repo>/datasets/<area>/output/comparison.pmtiles"
-curl -I -H "Range: bytes=0-15" "https://<org>.github.io/<repo>/datasets/<area>/output/comparison.pmtiles"
+curl -I "https://grenzabgleich.osm-verkehrswende.org/datasets/<area>/output/comparison.pmtiles"
+curl -I -H "Range: bytes=0-15" "https://grenzabgleich.osm-verkehrswende.org/datasets/<area>/output/comparison.pmtiles"
 ```
 
 Expected: first response includes `Content-Length`; second returns `206 Partial Content` with `Content-Range`.
+
+**GitHub Pages custom domain** (e.g. `https://grenzabgleich.osm-verkehrswende.org/`): add the hostname under repo **Settings → Pages → Custom domain** before pointing DNS. At your DNS provider, set a **`CNAME`** for `grenzabgleich` to **`<github-org-or-user>.github.io`** (no repository path in the target). For takeover protection, verify the domain under org **Settings → Pages → Add a domain** and keep the TXT record GitHub shows ([verify for Pages](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/verifying-your-custom-domain-for-github-pages), [manage custom domain](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site)). Publishing uses Actions; no `CNAME` file in the repo is required.
 
 The report registers the MapLibre `pmtiles://` protocol once at startup via [`report/src/main.tsx`](report/src/main.tsx) → [`report/src/lib/pmtilesMaplibreRegister.ts`](report/src/lib/pmtilesMaplibreRegister.ts) (see [PMTiles + MapLibre](https://github.com/protomaps/PMTiles#maplibre-gl-js)).
 

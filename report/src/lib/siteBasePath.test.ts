@@ -19,4 +19,13 @@ describe('detectSiteBasePathFromLocation', () => {
       }),
     ).toBe('')
   })
+
+  it('returns empty path on custom Pages domain (root deployment)', () => {
+    expect(
+      detectSiteBasePathFromLocation({
+        hostname: 'grenzabgleich.osm-verkehrswende.org',
+        pathname: '/berlin-bezirke',
+      }),
+    ).toBe('')
+  })
 })
