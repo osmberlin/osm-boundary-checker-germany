@@ -2,6 +2,20 @@
 
 Automatisch aus `changelog.registry.yaml` erzeugt.
 
+## 2026-05
+
+### `062d511`, `acb6ffc`
+
+Wenn zwei Flächen in der Karte übereinander liegen aber kein match sind, wird jetzt ein Dialog angezeigt über dem man beide Detailseiten öffnen kann. Auf der Detailseite der amtlichen Daten (nicht nicht gematched wurden) steht zudem, welche Tags nötig wären in OSM, um die Fläche zu matchen.
+
+### `884ab63`, `63a213f`, `7735ab1`, `ad8925b`, `f4902f9`, `8732ac5`, `cb71b10`, `8eb1ae9`, `5c3744a`, `4235f47`
+
+Neues Logo, Favicon, Sharing-Text und Bild und Intro-Text. Außerdem einige Text- und Styling-Verbesserungen. Die Seite ist jetzt unter grenzabgleich.osm-verkehrswende.org erreichbar.
+
+### `4a505d3`, `3f88c2c`, `a34e3e4`
+
+Auf der `/status`-Seite wird erklärt an welchen Tagen und Zeiten die Daten aktualisiert werden.
+
 ## 2026-04
 
 ### `6483d38`
