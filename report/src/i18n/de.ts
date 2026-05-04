@@ -219,6 +219,8 @@ export const de = {
       iou: 'IoU',
       areaDelta: 'Flächenabweichung',
       symDiff: 'Symmetrische Differenz',
+      /** Narrow KPI column at `lg`; full phrase below `lg`. */
+      symDiffShort: 'Symmetrische Diff.',
       hausdorff: 'Hausdorff-Abstand',
       hausdorffP95: 'Hausdorff P95',
       issueIndicator: 'Bewertungsampel',
@@ -278,7 +280,7 @@ export const de = {
     datasetPropertiesSectionLead:
       'Eigenschaften der zusammengeführten GeoJSON-Objekte zum Zeitpunkt des letzten Vergleichs — ohne Live-Abfrage.',
     datasetOfficialCardTitle: 'Amtliche Daten',
-    datasetOsmCardTitle: 'OSM-Daten',
+    datasetOsmCardTitle: 'OSM-Daten (Auszug)',
     datasetOsmOpenHistory: 'Auf osm.org anzeigen',
     datasetPropertiesEmpty: '—',
     datasetPropertiesLegacySnapshot:
