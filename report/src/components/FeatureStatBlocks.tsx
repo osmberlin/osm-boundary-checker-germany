@@ -44,7 +44,7 @@ export function StatBlock({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
-      <dt className="text-sm/6 font-medium text-slate-400">{label}</dt>
+      <dt className="text-sm leading-snug font-medium text-pretty text-slate-400">{label}</dt>
       <dd className="flex items-baseline gap-x-2">
         <span className="text-2xl font-semibold tracking-tight text-pretty text-slate-100 tabular-nums sm:text-3xl">
           {value}
