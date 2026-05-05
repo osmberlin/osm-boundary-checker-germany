@@ -1,4 +1,7 @@
+import type { ReactElement } from 'react'
+import type { OsmMatchCriteriaSummary } from '../../../scripts/shared/comparisonPayload.ts'
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
+import { areasIndex } from '../data/areasIndex'
 import { de } from '../i18n/de'
 import { EM_DASH } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
@@ -146,6 +149,157 @@ function officialFilterItems(filter: ComparisonFilterConfigSummary | undefined) 
   return items
 }
 
+function matchCriteriaLine(mc: OsmMatchCriteriaSummary): { code: string; description: string } {
+  const p = de.provenance
+  return mc.kind === 'property'
+    ? { code: 'osmMatchCriteria=property', description: p.compareMatchCriteriaProperty }
+    : {
+        code: `osmMatchCriteria=relation_id`,
+        description: p.compareMatchCriteriaRelations(mc.relationIds.join(', ')),
+      }
+}
+
+/** Compare-specific rules shown first under „Datenquellen“. */
+function compareRulesItems(
+  data: ComparisonForReport,
+  filter: ComparisonFilterConfigSummary | undefined,
+) {
+  const p = de.provenance
+  const summary = areasIndex.summaries.find((x) => x.area === data.area)
+  const osmMatchProp = filter?.osmMatchProperty?.trim() || summary?.osmMatchProperty
+  const adminLevels = filter?.adminLevels?.length ? filter.adminLevels : summary?.osmAdminLevels
+  const preset = data.idNormalizationPreset
+  const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
+  const mc = data.osmMatchCriteria
+
+  const lacksCore = !filter?.officialMatchProperty?.trim() && !preset && !osmMatchProp && !mc?.kind
+
+  if (lacksCore && !(filter?.bboxFilter != null || filter?.osmScopeFilter != null)) {
+    return [
+      <li key="compare-none" className="text-slate-500">
+        {p.compareNoCompareConfig}
+      </li>,
+    ]
+  }
+
+  const presetLabels = de.germanKeyExplorer.presets
+  const items: ReactElement[] = []
+
+  if (filter?.officialMatchProperty?.trim()) {
+    const key = filter.officialMatchProperty.trim()
+    items.push(
+      <FilterItem
+        key="compare-official"
+        code={`officialMatchProperty=${key}`}
+        description={p.filterDescriptions.officialMatchProperty(key)}
+      />,
+    )
+  }
+
+  if (osmMatchProp) {
+    items.push(
+      <FilterItem
+        key="compare-osm-tag"
+        code={`osmMatchTag=${osmMatchProp}`}
+        description={p.compareOsmMatchTag(osmMatchProp)}
+      />,
+    )
+  }
+
+  if (preset) {
+    const labelDe =
+      preset in presetLabels ? presetLabels[preset as keyof typeof presetLabels] : preset
+    items.push(
+      <FilterItem
+        key="compare-preset"
+        code={`idNormalization.preset=${preset}`}
+        description={p.compareIdNormalization(preset, labelDe)}
+      />,
+    )
+  }
+
+  items.push(
+    <FilterItem
+      key="compare-boundary"
+      code={`boundary=${boundaryValue}`}
+      description={p.compareBoundaryTag(boundaryValue)}
+    />,
+  )
+
+  if (adminLevels?.length) {
+    items.push(
+      <FilterItem
+        key="compare-admin"
+        code={`admin_level=[${adminLevels.join(', ')}]`}
+        description={p.compareAdminLevels(adminLevels.join(', '))}
+      />,
+    )
+  }
+
+  if (mc) {
+    const { code: mcCode, description: mcDesc } = matchCriteriaLine(mc)
+    items.push(<FilterItem key="compare-match-criteria" code={mcCode} description={mcDesc} />)
+  }
+
+  if (filter?.bboxFilter) {
+    items.push(
+      <FilterItem
+        key="compare-bbox"
+        code={`bboxFilter=${filter.bboxFilter}`}
+        description={p.filterDescriptions.bboxFilter[filter.bboxFilter]}
+      />,
+    )
+    if (filter.bboxFilter === 'official_bbox_overlap' && filter.bboxBufferDegrees !== undefined) {
+      items.push(
+        <FilterItem
+          key="compare-bbox-buffer"
+          code={`bboxBufferDegrees=${filter.bboxBufferDegrees}`}
+          description={p.filterDescriptions.bboxBufferDegrees(filter.bboxBufferDegrees)}
+        />,
+      )
+    }
+  }
+
+  if (filter?.osmScopeFilter) {
+    items.push(
+      <FilterItem
+        key="compare-osm-scope"
+        code={`osmScopeFilter=${filter.osmScopeFilter}`}
+        description={p.filterDescriptions.osmScopeFilter[filter.osmScopeFilter]}
+      />,
+    )
+  }
+
+  if ((filter?.ignoreRelationIds?.length ?? 0) > 0) {
+    const ids = filter!.ignoreRelationIds!.join(',')
+    items.push(
+      <FilterItem
+        key="compare-ignore-rel"
+        code={`ignoreRelationIds=${ids}`}
+        description={p.filterDescriptions.ignoreRelationIds}
+      />,
+    )
+  }
+
+  if (filter?.officialExtractLayer?.trim()) {
+    items.push(
+      <FilterItem
+        key="compare-extract-layer"
+        code={`officialExtractLayer=${filter.officialExtractLayer.trim()}`}
+        description={p.compareOfficialExtractLayer}
+      />,
+    )
+  }
+
+  return items.length > 0
+    ? items
+    : [
+        <li key="compare-none" className="text-slate-500">
+          {p.compareNoCompareConfig}
+        </li>,
+      ]
+}
+
 function osmFilterItems(filter: ComparisonFilterConfigSummary | undefined) {
   const p = de.provenance
   if (!filter) {
@@ -266,6 +420,18 @@ export function ReportDataProvenanceFooter({
 
       <div className="border-t border-slate-700">
         <dl className="divide-y divide-slate-700/80">
+          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <dt>
+              <h3 className="text-sm/6 font-semibold text-slate-100">{p.compareHeading}</h3>
+            </dt>
+            <dd className="mt-3 md:col-span-2 md:mt-0">
+              <p className="mb-4 text-xs text-slate-400">{p.compareLead}</p>
+              <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+                {compareRulesItems(data, filter)}
+              </ul>
+            </dd>
+          </div>
+
           <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
             <dt>
               <h3 className="text-sm/6 font-medium text-slate-200">{p.officialHeading}</h3>

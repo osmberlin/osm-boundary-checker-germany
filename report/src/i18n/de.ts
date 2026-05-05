@@ -12,6 +12,7 @@ export const de = {
   },
 
   footer: {
+    germanKeyExplorerLink: 'Schlüssel-Explorer',
     geoDataLine: 'Geodaten: ',
     osmLinkHref: 'https://www.openstreetmap.org/copyright',
     osmLinkLabel: 'OpenStreetMap',
@@ -68,6 +69,25 @@ export const de = {
     },
     osmHeading: 'OpenStreetMap Daten',
     osmFilterHeading: 'OpenStreetMap Daten Filterung',
+    compareHeading: 'Datenabgleich',
+    compareLead:
+      'Regeln zur Zuordnung amtlicher Gebiete zu OSM-Grenzen: Schlüsselfelder, Normalisierung und räumliche Filter.',
+    compareNoCompareConfig:
+      'Keine Abgleichskonfiguration im Report eingebettet (kein Filter-Summary oder Preset vorhanden).',
+    compareOsmMatchTag: (tag: string) =>
+      `Zuordnung erfolgt über den Wert von \`${tag}\` auf der OSM-Relation (wie im Vergleich ausgewählt). Dieselbe Normalisierung wie auf der amtlichen Seite wird vor dem Vergleich angewendet.`,
+    compareIdNormalization: (presetKey: string, presetLabelDe: string) =>
+      `\`idNormalization.preset\` ist \`${presetKey}\` (${presetLabelDe}). Rohwerte aus amtlichem Schlüsselfeld und OSM-Tag werden damit konsistent zu einem gemeinsamen Vergleichsschlüssel (matchKey) normalisiert.`,
+    compareBoundaryTag: (value: string) =>
+      `Im OSM-Extrakt und für Live-Anbindungen gilt \`boundary=${value}\`.`,
+    compareAdminLevels: (levelsCsv: string) =>
+      `Erwartete \`admin_level\`-Werte auf der OSM-Seite für diesen Datensatz: ${levelsCsv}.`,
+    compareMatchCriteriaProperty:
+      'Zusätzliches OSM-Match über Tag-Vergleich (matchCriteria.kind=property gemäß Konfiguration).',
+    compareMatchCriteriaRelations: (ids: string) =>
+      `Zusätzliches OSM-Match nur für Relation-ID(s): ${ids}.`,
+    compareOfficialExtractLayer:
+      'Dieser amtliche GDAL/WFS-Layer liefert die Geometrien und Attribute für diesen Vergleich.',
     directDownloadDetails: {
       wfs: 'WFS',
       pbf: 'PBF',
@@ -298,6 +318,23 @@ export const de = {
     expectedOsmTagsSectionTitle: 'Erwartete OSM-Tags',
     expectedOsmTagsSectionLead:
       'Diese Grenze ist in OpenStreetMap bisher nicht zugeordnet. Damit der Abgleich greift, sollte die passende Grenz-Relation folgende Tags enthalten (laut aktueller Datensatz-Konfiguration):',
+    decodeKeyExplorerLink: 'Schlüssel-Felder dekodieren',
+    matcherContextSectionAria: 'Vergleichsregeln für diesen Datensatz',
+    matcherContextSectionTitle: 'Abgleich: OSM-Referenz und Filter',
+    matcherContextSectionLead:
+      'Diese OSM-Grenze hat kein passendes amtliches Gegenstück in diesem Datensatz. So ist der Abgleich konfiguriert (ohne Live-Abfrage):',
+    matcherBoundaryTag: 'Overpass boundary',
+    matcherOfficialProperty: 'Amtliches Match-Feld',
+    matcherOsmProperty: 'OSM Match-Tag',
+    matcherAdminLevels: 'admin_level (erwartet)',
+    matcherBboxFilter: 'Bounding-Box-Filter',
+    matcherOsmScope: 'OSM-Geometrie-Filter',
+    matcherIgnoreRelations: 'Ignorierte Relation-IDs',
+    matcherIdPreset: 'Schlüssel-Normalisierung',
+    matcherOsmCriteria: 'OSM-Match',
+    matcherCriteriaProperty: 'über Tag-Vergleich',
+    matcherCriteriaRelations: (ids: string) => `Relation-ID(s): ${ids}`,
+    matcherDecodeKeyLink: 'Schlüssel dekodieren',
 
     updateMap: {
       title: 'Daten in OSM bearbeiten',
@@ -327,6 +364,68 @@ export const de = {
         'Falls Import per URL fehlschlägt: GeoJSON herunterladen und in JOSM über Datei öffnen.',
       tableHint:
         'Diese comparison_table.json enthält noch kein Feld officialForEditPath — bitte den Vergleich erneut ausführen, um die GeoJSON-Exports zu erzeugen.',
+    },
+  },
+
+  germanKeyExplorer: {
+    metaTitle: 'Schlüssel-Explorer',
+    title: 'ARS / AGS / Vergleichs-Presets',
+    lead: 'Ziffernfolgen aus dem amtlichen Gemeindeschlüssel (AGS), dem Regionalschlüssel (ARS, oft als de:regionalschluessel in OSM) und den Normalisierungs-Presets dieses Projekts — inklusive Padding und Sonderfälle (z. B. Berlin-Bezirk).',
+    inputLabel: 'Schlüssel oder Rohwert',
+    inputPlaceholder: 'z. B. 11001, 11000001, 010515163022 oder PLZ',
+    presetLabel: 'Preset hervorheben',
+    presetHint:
+      'Entspricht idNormalization.preset in der Datensatz-Konfiguration. „Alle“ zeigt die Normalisierung für jedes Preset.',
+    presetOptionAll: 'Alle Presets',
+    areaBadge: (area: string) => `Datensatz: ${area}`,
+    submitUrl: 'URL aktualisieren',
+    digitsLabel: 'Nur Ziffern',
+    arsTableTitle: 'Regionalschlüssel (12 Stellen, ARS)',
+    arsTableLead:
+      'Aufteilung nach OSM-Wiki (DE:Key:de:regionalschluessel). Kurze amtliche Schlüssel werden beim Vergleich oft mit Nullen auf 12 Stellen erweitert.',
+    segmentBl: 'Bundesland (Stellen 1–2)',
+    segmentRb: 'Regierungsbezirk (3), 0 wenn keiner',
+    segmentKreis: 'Kreis / kreisfreie Stadt (4–5)',
+    segmentVg: 'Gemeindeverband (6–9)',
+    segmentGem: 'Gemeinde (10–12)',
+    agsTitle: 'Amtlicher Gemeindeschlüssel (8 Stellen, AGS)',
+    agsLead:
+      'Erste acht Stellen einer vollständigen 12-stelligen ARS entsprechen oft der Gemeindeebene im AGS — Randfälle sind möglich.',
+    agsFromArs: 'Aus 12-stelligem Schlüssel',
+    derivedBb: 'Brandenburg-Preset (erste 5 + letzte 3 Ziffern der ARS)',
+    berlinTitle: 'Berlin Bezirk',
+    berlinLead:
+      'Kurzform mit fünf Ziffern (z. B. 11001) wird im Vergleich auf acht Stellen expandiert.',
+    berlinExpanded: 'Expandiert (berlin-bezirk-ags)',
+    statistikportalTitle: 'Gemeindeverzeichnis',
+    statistikportalLead:
+      'Onlineabfrage des Statistikportals (Stichtag und Hinweise siehe dort). Deep-Link mit 8-stelligem AGS:',
+    statistikportalButton: 'Im Gemeindeverzeichnis öffnen',
+    statistikportalHomePage: 'Statistikportal — Gemeindeverzeichnis (Start)',
+    arsTableEmpty:
+      'Keine vollständige 12-stellige ARS aus den Ziffern ableitbar — siehe Normalisierung unter „regional-12“.',
+    wikiLinksTitle: 'OSM-Wiki',
+    wikiRsLabel: 'de:regionalschluessel',
+    wikiAgsLabel: 'de:amtlicher_gemeindeschluessel',
+    normalizationTitle: 'Normalisierung je Preset',
+    normalizationLead:
+      'Werte wie vom Vergleich verwendet (matchKey). Spalte „Anmerkungen“ entspricht internen Hinweisen aus normalizeGermanKey.',
+    colPreset: 'Preset',
+    colCanonical: 'matchKey',
+    colNotes: 'Anmerkungen',
+    emptyState: 'Bitte einen Schlüssel eingeben oder per URL-Parameter ?key= übergeben.',
+    govconnectTitle: 'Hinweis zu Namen und APIs',
+    govconnectBody:
+      'Namen zu Kreisen und Gemeinden liefert das Statistikportal in der manuellen Suche; eine offizielle öffentliche Browser-API des Portals ist hier nicht angebunden. Drittanbieter-JSON-APIs (z. B. Gemeindeverzeichnis-Dienste) können CORS, Verfügbarkeit und Nutzungsbedingungen betreffen — deshalb zunächst Verlinkung statt automatischer Namensauflösung.',
+    sourceKeyRs: 'OSM-Tag',
+    sourceKeyRsValue: 'de:regionalschluessel',
+    presets: {
+      'berlin-bezirk-ags': 'Berlin Bezirk → AGS-8',
+      'amtlicher-8': 'Amtlicher 8-stellig',
+      'regional-12': 'Regionalschlüssel 12-stellig',
+      'brandenburg-gemeinden-8': 'Brandenburg Gemeinden',
+      'plz-5': 'Postleitzahl',
+      text: 'Text (Name)',
     },
   },
 

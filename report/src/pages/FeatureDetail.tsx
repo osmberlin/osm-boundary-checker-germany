@@ -4,6 +4,7 @@ import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties
 import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmTagsSection'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
 import { FeatureDetailStatsStrip } from '../components/featureDetail/FeatureDetailStatsStrip'
+import { MatcherContextSection } from '../components/featureDetail/MatcherContextSection'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
@@ -74,6 +75,8 @@ export function FeatureDetail() {
       <FeatureDatasetProperties row={row} />
 
       <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
+
+      <MatcherContextSection areaKey={areaKey} data={data} row={row} />
 
       <LiveSourceProperties
         key={row.canonicalMatchKey}

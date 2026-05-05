@@ -1,3 +1,7 @@
+import type {
+  IdNormalizationPreset,
+  OsmMatchCriteriaSummary,
+} from '../../../scripts/shared/comparisonPayload.ts'
 import type { OsmSourceMetadataPersisted } from '../../../scripts/shared/sourceMetadata.ts'
 
 export type ReportCategory = 'matched' | 'official_only' | 'unmatched_osm'
@@ -141,6 +145,10 @@ export type ComparisonForReport = {
   }
   /** Optional compact compare filter summary from `<area>/config.jsonc`. */
   filterConfigSummary?: ComparisonFilterConfigSummary
+  /** From `idNormalization.preset` in area config; one value per `comparison_table.json`. */
+  idNormalizationPreset?: IdNormalizationPreset
+  /** From optional `osm.matchCriteria` in area config. */
+  osmMatchCriteria?: OsmMatchCriteriaSummary
   /** From optional `ogcInspectSources` in area config (compare embeds a copy). */
   ogcInspectSources?: OgcWfsInspectSource[]
   rows: ReportRow[]

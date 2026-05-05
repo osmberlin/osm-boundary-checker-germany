@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { areasIndex } from '../../data/areasIndex'
 import { de } from '../../i18n/de'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
@@ -58,6 +59,9 @@ export function ExpectedOsmTagsSection({
   const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
   const adminLevels = summary?.osmAdminLevels ?? data.filterConfigSummary?.adminLevels
   const matchProperty = summary?.osmMatchProperty ?? data.filterConfigSummary?.osmMatchProperty
+  const mpTrim = matchProperty?.trim() ?? ''
+  const showKeyExplorer =
+    mpTrim === 'de:regionalschluessel' || mpTrim === 'de:amtlicher_gemeindeschluessel'
 
   return (
     <section
@@ -71,6 +75,21 @@ export function ExpectedOsmTagsSection({
         <p className="mt-2 max-w-4xl text-sm text-slate-400">
           {de.feature.expectedOsmTagsSectionLead}
         </p>
+        {showKeyExplorer ? (
+          <p className="mt-3">
+            <Link
+              to="/tools/german-key"
+              search={{
+                key: row.canonicalMatchKey,
+                ...(data.idNormalizationPreset ? { preset: data.idNormalizationPreset } : {}),
+                area: areaKey,
+              }}
+              className="text-sm font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+            >
+              {de.feature.decodeKeyExplorerLink}
+            </Link>
+          </p>
+        ) : null}
       </div>
       <div className="border-t border-slate-700">
         <dl>
