@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "compare": "bun run compare/compare-boundaries.ts",
+    "german-key-lookup:update": "bun run report/generate-german-key-lookup.ts",
+    "german-key-lookup:weekly": "bun run report/generate-german-key-lookup.ts --weekly",
     "report:data-flow-sizes": "bun run data-flow-sizes/report.ts",
     "pipeline:nightly:download": "bun run pipeline/nightly.ts --phase download",
     "pipeline:nightly:extract": "bun run pipeline/nightly.ts --phase extract",
@@ -34,6 +36,7 @@
     "@turf/turf": "^7.2.0",
     "flatgeobuf": "^4.4.0",
     "jsts": "^2.12.1",
+    "jszip": "^3.10.1",
     "proj4": "^2.15.0",
     "zod": "^4.3.6"
   },
