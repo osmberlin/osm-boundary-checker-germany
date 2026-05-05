@@ -1,15 +1,45 @@
 import { de } from '../../i18n/de'
-import type { Ars12Segments } from '../../lib/germanKeyExplorer'
+import type { Ars12Segments, ArsSegmentNames } from '../../lib/germanKeyExplorer'
 
-export function ArsSegmentsTable({ segments }: { segments: Ars12Segments | null }) {
+export function ArsSegmentsTable({
+  segments,
+  names,
+}: {
+  segments: Ars12Segments | null
+  names: ArsSegmentNames | null
+}) {
   const t = de.germanKeyExplorer
-  const rows: Array<{ label: string; value: string; span: string }> = segments
+  const rows: Array<{ label: string; value: string; span: string; name: string | null }> = segments
     ? [
-        { label: t.segmentBl, value: segments.bundesland, span: '1–2' },
-        { label: t.segmentRb, value: segments.regierungsbezirk, span: '3' },
-        { label: t.segmentKreis, value: segments.kreis, span: '4–5' },
-        { label: t.segmentVg, value: segments.gemeindeverband, span: '6–9' },
-        { label: t.segmentGem, value: segments.gemeinde, span: '10–12' },
+        {
+          label: t.segmentBl,
+          value: segments.bundesland,
+          span: '1–2',
+          name: names?.bundesland ?? null,
+        },
+        {
+          label: t.segmentRb,
+          value: segments.regierungsbezirk,
+          span: '3',
+          name:
+            names?.regierungsbezirk ??
+            (segments.regierungsbezirk === '0' ? t.noRegierungsbezirk : null),
+        },
+        { label: t.segmentKreis, value: segments.kreis, span: '4–5', name: names?.kreis ?? null },
+        {
+          label: t.segmentVg,
+          value: segments.gemeindeverband,
+          span: '6–9',
+          name:
+            names?.gemeindeverband ??
+            (segments.gemeindeverband === '0000' ? t.noGemeindeverband : null),
+        },
+        {
+          label: t.segmentGem,
+          value: segments.gemeinde,
+          span: '10–12',
+          name: names?.gemeinde ?? null,
+        },
       ]
     : []
 
@@ -23,12 +53,13 @@ export function ArsSegmentsTable({ segments }: { segments: Ars12Segments | null 
             <th className="px-3 py-2 text-left font-mono text-xs font-medium text-slate-200">
               Ziffern
             </th>
+            <th className="px-3 py-2 text-left font-medium text-slate-300">{t.colName}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-700/80">
           {rows.length === 0 ? (
             <tr>
-              <td className="px-3 py-3 text-slate-500" colSpan={3}>
+              <td className="px-3 py-3 text-slate-500" colSpan={4}>
                 {t.arsTableEmpty}
               </td>
             </tr>
@@ -38,6 +69,7 @@ export function ArsSegmentsTable({ segments }: { segments: Ars12Segments | null 
                 <td className="px-3 py-2">{row.label}</td>
                 <td className="px-3 py-2 text-slate-400">{row.span}</td>
                 <td className="px-3 py-2 font-mono text-slate-100">{row.value}</td>
+                <td className="px-3 py-2 text-slate-300">{row.name ?? '—'}</td>
               </tr>
             ))
           )}

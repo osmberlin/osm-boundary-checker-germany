@@ -1,9 +1,11 @@
-import { idNormalizationPresetSchema } from '../../../scripts/shared/comparisonPayload.ts'
-import type { IdNormalizationPreset } from '../../../scripts/shared/comparisonPayload.ts'
+import {
+  coerceSchluesselExplorerPreset,
+  type GermanSchluesselExplorerPreset,
+} from './germanKeyExplorer.ts'
 
 export type GermanKeySearch = {
   key?: string
-  preset?: IdNormalizationPreset
+  preset?: GermanSchluesselExplorerPreset
   area?: string
 }
 
@@ -18,11 +20,11 @@ function coerceSearchString(value: unknown): string | undefined {
 export function validateGermanKeySearch(raw: Record<string, unknown>): GermanKeySearch {
   const key = coerceSearchString(raw.key)
   const area = coerceSearchString(raw.area)
-  const presetParsed = idNormalizationPresetSchema.optional().safeParse(raw.preset)
-  const preset = presetParsed.success ? presetParsed.data : undefined
+  const presetRaw = coerceSearchString(raw.preset)
+  const presetCoerced = presetRaw !== undefined ? coerceSchluesselExplorerPreset(presetRaw) : ''
   const out: GermanKeySearch = {}
   if (key !== undefined) out.key = key
   if (area !== undefined) out.area = area
-  if (preset !== undefined) out.preset = preset
+  if (presetCoerced !== '') out.preset = presetCoerced
   return out
 }

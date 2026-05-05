@@ -2,7 +2,13 @@ import { describe, expect, test } from 'vitest'
 import {
   ags8FromArs12Digits,
   brandenburgGemeinden8From12,
+  coerceSchluesselExplorerPreset,
   digitsOnly,
+  formatNormalizationNotesForExplorerUi,
+  isSchluesselExplorerPreset,
+  lookupArsSegmentNames,
+  lookupGemeindeNameByAgs,
+  lookupNameForNormalizedPresetKey,
   parseArs12Segments,
   sourceKeyForPreset,
   statistikportalGemeindeUrl,
@@ -24,8 +30,8 @@ describe('germanKeyExplorer', () => {
     })
   })
 
-  test('ags8FromArs12Digits is first 8 digits', () => {
-    expect(ags8FromArs12Digits('145213040530')).toBe('14521304')
+  test('ags8FromArs12Digits derives LLRKK + GGG from ARS', () => {
+    expect(ags8FromArs12Digits('145213040530')).toBe('14521530')
   })
 
   test('brandenburgGemeinden8From12', () => {
@@ -47,5 +53,37 @@ describe('germanKeyExplorer', () => {
     expect(sourceKeyForPreset('plz-5')).toBe('postal_code')
     expect(sourceKeyForPreset('text')).toBe('name')
     expect(sourceKeyForPreset('regional-12')).toBe('de:regionalschluessel')
+  })
+
+  test('coerceSchluesselExplorerPreset', () => {
+    expect(coerceSchluesselExplorerPreset('regional-12')).toBe('regional-12')
+    expect(coerceSchluesselExplorerPreset('plz-5')).toBe('')
+    expect(coerceSchluesselExplorerPreset(undefined)).toBe('')
+  })
+
+  test('isSchluesselExplorerPreset', () => {
+    expect(isSchluesselExplorerPreset('amtlicher-8')).toBe(true)
+    expect(isSchluesselExplorerPreset('plz-5')).toBe(false)
+    expect(isSchluesselExplorerPreset(undefined)).toBe(false)
+  })
+
+  test('formatNormalizationNotesForExplorerUi maps known tokens', () => {
+    expect(formatNormalizationNotesForExplorerUi(['bb-gemeinden-first5-plus-last3'])).toContain(
+      'Brandenburg',
+    )
+    expect(formatNormalizationNotesForExplorerUi(['unexpected-digit-length:9'])).toContain('9')
+    expect(formatNormalizationNotesForExplorerUi(['unknown-token'])).toBe('unknown-token')
+  })
+
+  test('lookup helpers resolve official names', () => {
+    expect(lookupGemeindeNameByAgs('01001000')).toBe('Flensburg, Stadt')
+    expect(lookupNameForNormalizedPresetKey('regional-12', '010010000000')).toBe('Flensburg, Stadt')
+    expect(lookupArsSegmentNames('010010000000')).toEqual({
+      bundesland: 'Schleswig-Holstein',
+      regierungsbezirk: null,
+      kreis: 'Flensburg, Stadt',
+      gemeindeverband: 'Flensburg, Stadt',
+      gemeinde: 'Flensburg, Stadt',
+    })
   })
 })

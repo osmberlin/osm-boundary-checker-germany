@@ -1,15 +1,18 @@
 import type { ReactElement } from 'react'
+import { Fragment } from 'react'
 import type { OsmMatchCriteriaSummary } from '../../../scripts/shared/comparisonPayload.ts'
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import { areasIndex } from '../data/areasIndex'
 import { de } from '../i18n/de'
 import { EM_DASH } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
+import { isSchluesselExplorerPreset } from '../lib/germanKeyExplorer'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
-import type { ComparisonFilterConfigSummary, ComparisonForReport } from '../types/report'
+import type { ComparisonFilterConfigSummary, ComparisonForReport, ReportRow } from '../types/report'
 
 export type ReportDataProvenanceFooterProps = {
   data: ComparisonForReport
+  row?: ReportRow
   className?: string
   hideFreshnessSection?: boolean
 }
@@ -100,53 +103,10 @@ function FilterItem({ code, description }: { code: string; description: string }
     <li>
       <span className="block">
         <code className="break-all text-slate-500">{code}</code>
-        <span className="text-slate-500">:</span>
       </span>
       <span className="block">{description}</span>
     </li>
   )
-}
-
-function officialFilterItems(filter: ComparisonFilterConfigSummary | undefined) {
-  const p = de.provenance
-  if (!filter) {
-    return [
-      <li key="no-config" className="text-slate-500">
-        {p.noFilterConfig}
-      </li>,
-    ]
-  }
-  const items = [
-    <FilterItem
-      key="official-match-property"
-      code={`officialMatchProperty=${filter.officialMatchProperty}`}
-      description={p.filterDescriptions.officialMatchProperty(filter.officialMatchProperty)}
-    />,
-    <FilterItem
-      key="bbox-filter"
-      code={`bboxFilter=${filter.bboxFilter}`}
-      description={p.filterDescriptions.bboxFilter[filter.bboxFilter]}
-    />,
-  ]
-  if (filter.bboxBufferDegrees !== undefined) {
-    items.push(
-      <FilterItem
-        key="bbox-buffer"
-        code={`bboxBufferDegrees=${filter.bboxBufferDegrees}`}
-        description={p.filterDescriptions.bboxBufferDegrees(filter.bboxBufferDegrees)}
-      />,
-    )
-  }
-  if (filter.officialExtractLayer?.trim()) {
-    items.push(
-      <FilterItem
-        key="official-extract-layer"
-        code={`officialExtractLayer=${filter.officialExtractLayer.trim()}`}
-        description="Dieser GDAL/WFS-Layer wird aus der amtlichen Quelle extrahiert."
-      />,
-    )
-  }
-  return items
 }
 
 function matchCriteriaLine(mc: OsmMatchCriteriaSummary): { code: string; description: string } {
@@ -159,30 +119,20 @@ function matchCriteriaLine(mc: OsmMatchCriteriaSummary): { code: string; descrip
       }
 }
 
-/** Compare-specific rules shown first under „Datenquellen“. */
-function compareRulesItems(
+function compareMappingItems(
   data: ComparisonForReport,
   filter: ComparisonFilterConfigSummary | undefined,
 ) {
   const p = de.provenance
   const summary = areasIndex.summaries.find((x) => x.area === data.area)
   const osmMatchProp = filter?.osmMatchProperty?.trim() || summary?.osmMatchProperty
-  const adminLevels = filter?.adminLevels?.length ? filter.adminLevels : summary?.osmAdminLevels
   const preset = data.idNormalizationPreset
-  const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
   const mc = data.osmMatchCriteria
 
-  const lacksCore = !filter?.officialMatchProperty?.trim() && !preset && !osmMatchProp && !mc?.kind
-
-  if (lacksCore && !(filter?.bboxFilter != null || filter?.osmScopeFilter != null)) {
-    return [
-      <li key="compare-none" className="text-slate-500">
-        {p.compareNoCompareConfig}
-      </li>,
-    ]
+  const presetLabels = {
+    ...de.germanKeyExplorer.presets,
+    ...de.provenance.idNormalizationPresetExtraLabels,
   }
-
-  const presetLabels = de.germanKeyExplorer.presets
   const items: ReactElement[] = []
 
   if (filter?.officialMatchProperty?.trim()) {
@@ -218,7 +168,26 @@ function compareRulesItems(
     )
   }
 
-  items.push(
+  if (mc) {
+    const { code: mcCode, description: mcDesc } = matchCriteriaLine(mc)
+    items.push(<FilterItem key="compare-match-criteria" code={mcCode} description={mcDesc} />)
+  }
+
+  return items
+}
+
+function compareFilterItems(
+  data: ComparisonForReport,
+  filter: ComparisonFilterConfigSummary | undefined,
+) {
+  const p = de.provenance
+  const summary = areasIndex.summaries.find((x) => x.area === data.area)
+  const adminLevels = filter?.adminLevels?.length ? filter.adminLevels : summary?.osmAdminLevels
+  const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
+  const osmItems: ReactElement[] = []
+  const officialItems: ReactElement[] = []
+
+  osmItems.push(
     <FilterItem
       key="compare-boundary"
       code={`boundary=${boundaryValue}`}
@@ -227,7 +196,7 @@ function compareRulesItems(
   )
 
   if (adminLevels?.length) {
-    items.push(
+    osmItems.push(
       <FilterItem
         key="compare-admin"
         code={`admin_level=[${adminLevels.join(', ')}]`}
@@ -236,13 +205,8 @@ function compareRulesItems(
     )
   }
 
-  if (mc) {
-    const { code: mcCode, description: mcDesc } = matchCriteriaLine(mc)
-    items.push(<FilterItem key="compare-match-criteria" code={mcCode} description={mcDesc} />)
-  }
-
   if (filter?.bboxFilter) {
-    items.push(
+    officialItems.push(
       <FilterItem
         key="compare-bbox"
         code={`bboxFilter=${filter.bboxFilter}`}
@@ -250,7 +214,7 @@ function compareRulesItems(
       />,
     )
     if (filter.bboxFilter === 'official_bbox_overlap' && filter.bboxBufferDegrees !== undefined) {
-      items.push(
+      officialItems.push(
         <FilterItem
           key="compare-bbox-buffer"
           code={`bboxBufferDegrees=${filter.bboxBufferDegrees}`}
@@ -261,7 +225,7 @@ function compareRulesItems(
   }
 
   if (filter?.osmScopeFilter) {
-    items.push(
+    osmItems.push(
       <FilterItem
         key="compare-osm-scope"
         code={`osmScopeFilter=${filter.osmScopeFilter}`}
@@ -272,7 +236,7 @@ function compareRulesItems(
 
   if ((filter?.ignoreRelationIds?.length ?? 0) > 0) {
     const ids = filter!.ignoreRelationIds!.join(',')
-    items.push(
+    osmItems.push(
       <FilterItem
         key="compare-ignore-rel"
         code={`ignoreRelationIds=${ids}`}
@@ -282,7 +246,7 @@ function compareRulesItems(
   }
 
   if (filter?.officialExtractLayer?.trim()) {
-    items.push(
+    officialItems.push(
       <FilterItem
         key="compare-extract-layer"
         code={`officialExtractLayer=${filter.officialExtractLayer.trim()}`}
@@ -291,43 +255,152 @@ function compareRulesItems(
     )
   }
 
-  return items.length > 0
-    ? items
-    : [
-        <li key="compare-none" className="text-slate-500">
-          {p.compareNoCompareConfig}
-        </li>,
-      ]
+  return { osmItems, officialItems }
 }
 
-function osmFilterItems(filter: ComparisonFilterConfigSummary | undefined) {
+/** Three `dl` rows: Vergleichsregeln, OSM-Filter, amtliche Filter — headings in `dt` like source rows. */
+function compareProvenanceDlRows(
+  data: ComparisonForReport,
+  row: ReportRow | undefined,
+  filter: ComparisonFilterConfigSummary | undefined,
+) {
   const p = de.provenance
-  if (!filter) {
-    return [
-      <li key="no-config" className="text-slate-500">
-        {p.noFilterConfig}
-      </li>,
-    ]
-  }
-  const items = []
-  items.push(
-    <FilterItem
-      key="osm-scope-filter"
-      code={`osmScopeFilter=${filter.osmScopeFilter}`}
-      description={p.filterDescriptions.osmScopeFilter[filter.osmScopeFilter]}
-    />,
-  )
-  if ((filter.ignoreRelationIds?.length ?? 0) > 0) {
-    const ids = filter.ignoreRelationIds!.join(',')
-    items.push(
-      <FilterItem
-        key="ignore-relations"
-        code={`ignoreRelationIds=${ids}`}
-        description={p.filterDescriptions.ignoreRelationIds}
-      />,
+  const mappingItems = compareMappingItems(data, filter)
+  const { osmItems, officialItems } = compareFilterItems(data, filter)
+  const compareDataItems =
+    row == null
+      ? []
+      : [
+          {
+            key: 'compare-data-osm',
+            code:
+              row.category === 'official_only'
+                ? p.compareDataMissing
+                : row.canonicalMatchKey || EM_DASH,
+            label: p.compareDataOsmLabel,
+          },
+          {
+            key: 'compare-data-official',
+            code:
+              row.category === 'unmatched_osm'
+                ? p.compareDataMissing
+                : row.canonicalMatchKey || EM_DASH,
+            label: p.compareDataOfficialLabel,
+          },
+        ]
+  const compareDataExplorerHref =
+    row == null
+      ? null
+      : (() => {
+          const params = new URLSearchParams({
+            key: row.canonicalMatchKey,
+            area: data.area,
+          })
+          if (
+            data.idNormalizationPreset &&
+            isSchluesselExplorerPreset(data.idNormalizationPreset)
+          ) {
+            params.set('preset', data.idNormalizationPreset)
+          }
+          return `http://127.0.0.1:5174/tools/german-key?${params.toString()}`
+        })()
+
+  if (mappingItems.length === 0 && osmItems.length === 0 && officialItems.length === 0) {
+    return (
+      <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+        <dt className="sr-only">{p.compareHeading}</dt>
+        <dd className="mt-3 md:col-span-2 md:mt-0">
+          <p className="text-slate-500" role="note">
+            {p.compareNoCompareConfig}
+          </p>
+        </dd>
+      </div>
     )
   }
-  return items
+
+  return (
+    <Fragment>
+      {compareDataItems.length > 0 ? (
+        <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+          <dt>
+            <h3 className="text-sm/6 font-medium text-slate-200">{p.compareDataHeading}</h3>
+          </dt>
+          <dd className="mt-3 md:col-span-2 md:mt-0">
+            {compareDataExplorerHref ? (
+              <p className="mb-2">
+                <a
+                  className="text-sm font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+                  href={compareDataExplorerHref}
+                >
+                  {p.compareDataExplorerLink}
+                </a>
+              </p>
+            ) : null}
+            <p className="text-xs text-slate-400">{p.compareDataLead}</p>
+            <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+              {compareDataItems.map((item) => (
+                <li key={item.key}>
+                  <span className="inline-flex flex-wrap items-baseline gap-x-2">
+                    <code className="break-all text-slate-500">{item.code}</code>
+                    <span>{item.label}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </dd>
+        </div>
+      ) : null}
+
+      <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+        <dt>
+          <h3 className="text-sm/6 font-medium text-slate-200">{p.compareMappingHeading}</h3>
+        </dt>
+        <dd className="mt-3 md:col-span-2 md:mt-0">
+          <p className="text-xs text-slate-400">
+            {p.compareMappingLeadWithMetricsCrs(data.metricsCrs)}
+          </p>
+          {mappingItems.length > 0 ? (
+            <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+              {mappingItems}
+            </ul>
+          ) : (
+            <p className="mt-2 text-slate-500">{p.compareMappingEmpty}</p>
+          )}
+        </dd>
+      </div>
+
+      <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+        <dt>
+          <h3 className="text-sm/6 font-medium text-slate-200">{p.compareOsmFilterHeading}</h3>
+        </dt>
+        <dd className="mt-3 md:col-span-2 md:mt-0">
+          <p className="text-xs text-slate-400">{p.compareFilterLead}</p>
+          {osmItems.length > 0 ? (
+            <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+              {osmItems}
+            </ul>
+          ) : (
+            <p className="mt-2 text-slate-500">{p.compareFilterEmpty}</p>
+          )}
+        </dd>
+      </div>
+
+      <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+        <dt>
+          <h3 className="text-sm/6 font-medium text-slate-200">{p.compareOfficialFilterHeading}</h3>
+        </dt>
+        <dd className="mt-3 md:col-span-2 md:mt-0">
+          {officialItems.length > 0 ? (
+            <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+              {officialItems}
+            </ul>
+          ) : (
+            <p className="mt-2 text-slate-500">{p.compareFilterEmpty}</p>
+          )}
+        </dd>
+      </div>
+    </Fragment>
+  )
 }
 
 function DateLine({ label, abs, rel }: { label: string; abs: string; rel: string }) {
@@ -349,6 +422,7 @@ function DateLine({ label, abs, rel }: { label: string; abs: string; rel: string
 
 export function ReportDataProvenanceFooter({
   data,
+  row,
   className = '',
   hideFreshnessSection = false,
 }: ReportDataProvenanceFooterProps) {
@@ -376,12 +450,11 @@ export function ReportDataProvenanceFooter({
 
   return (
     <section
-      className={`mt-14 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 text-sm text-slate-400 shadow-sm ${className}`.trim()}
+      className={`mt-10 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 text-sm text-slate-400 shadow-sm ${className}`.trim()}
       aria-label={p.sectionAria}
     >
       <div className="px-4 py-6 sm:px-6">
         <h2 className="text-base font-semibold text-slate-100">{p.title}</h2>
-        <p className="mt-1 text-xs text-slate-400">{p.leadWithMetricsCrs(data.metricsCrs)}</p>
       </div>
 
       {!hideFreshnessSection ? (
@@ -420,21 +493,11 @@ export function ReportDataProvenanceFooter({
 
       <div className="border-t border-slate-700">
         <dl className="divide-y divide-slate-700/80">
-          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt>
-              <h3 className="text-sm/6 font-semibold text-slate-100">{p.compareHeading}</h3>
-            </dt>
-            <dd className="mt-3 md:col-span-2 md:mt-0">
-              <p className="mb-4 text-xs text-slate-400">{p.compareLead}</p>
-              <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
-                {compareRulesItems(data, filter)}
-              </ul>
-            </dd>
-          </div>
+          {compareProvenanceDlRows(data, row, filter)}
 
           <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
             <dt>
-              <h3 className="text-sm/6 font-medium text-slate-200">{p.officialHeading}</h3>
+              <h3 className="text-sm/6 font-medium text-slate-200">{p.officialSourceHeading}</h3>
             </dt>
             <dd className="mt-3 md:col-span-2 md:mt-0">
               <ul className="list-disc space-y-2 pl-5 text-slate-300 marker:text-slate-500">
@@ -449,18 +512,7 @@ export function ReportDataProvenanceFooter({
 
           <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
             <dt>
-              <h3 className="text-sm/6 font-medium text-slate-200">{p.officialFilterHeading}</h3>
-            </dt>
-            <dd className="mt-3 md:col-span-2 md:mt-0">
-              <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
-                {officialFilterItems(filter)}
-              </ul>
-            </dd>
-          </div>
-
-          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt>
-              <h3 className="text-sm/6 font-medium text-slate-200">{p.osmHeading}</h3>
+              <h3 className="text-sm/6 font-medium text-slate-200">{p.osmSourceHeading}</h3>
             </dt>
             <dd className="mt-3 md:col-span-2 md:mt-0">
               <ul className="list-disc space-y-2 pl-5 text-slate-300 marker:text-slate-500">
@@ -469,17 +521,6 @@ export function ReportDataProvenanceFooter({
                   sourceDownloadUrl={osm.sourceDownloadUrl}
                   sourceDownloadDetails={osmDownloadDetails}
                 />
-              </ul>
-            </dd>
-          </div>
-
-          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt>
-              <h3 className="text-sm/6 font-medium text-slate-200">{p.osmFilterHeading}</h3>
-            </dt>
-            <dd className="mt-3 md:col-span-2 md:mt-0">
-              <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
-                {osmFilterItems(filter)}
               </ul>
             </dd>
           </div>

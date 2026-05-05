@@ -1,9 +1,19 @@
+import { z } from 'zod'
 import {
   berlinBezirkToCanonical,
   normalizeOsmValue,
   type NormalizedGermanKey,
 } from '../../../scripts/compare/lib/normalizeGermanKey.ts'
 import type { IdNormalizationPreset } from '../../../scripts/shared/comparisonPayload.ts'
+import germanKeyLookup from '../data/germanKeyLookup.gen'
+import { de } from '../i18n/de'
+
+const lookupBundeslaender = germanKeyLookup.bundeslaender as Record<string, string>
+const lookupRegierungsbezirke = germanKeyLookup.regierungsbezirke as Record<string, string>
+const lookupKreise = germanKeyLookup.kreise as Record<string, string>
+const lookupGemeindeverbaende = germanKeyLookup.gemeindeverbaende as Record<string, string>
+const lookupGemeindenByAgs = germanKeyLookup.gemeindenByAgs as Record<string, string>
+const lookupGemeindenByArs = germanKeyLookup.gemeindenByArs as Record<string, string>
 
 /** Gemeindeverzeichnis Online deep links use 8-digit AGS (amtlicher Gemeindeschlüssel). */
 export const STATISTIKPORTAL_GEMEINDEVERZEICHNIS =
@@ -38,8 +48,8 @@ export function parseArs12Segments(digits: string): Ars12Segments | null {
 /** First 8 digits of a 12-digit ARS: matches AGS when Gemeindeebene applies (see Destatis / wiki). */
 export function ags8FromArs12Digits(digits12: string): string | null {
   const d = digitsOnly(digits12)
-  if (d.length < 8) return null
-  return d.slice(0, 8)
+  if (d.length < 12) return null
+  return `${d.slice(0, 5)}${d.slice(9, 12)}`
 }
 
 export function statistikportalGemeindeUrl(ags8: string): string {
@@ -54,14 +64,35 @@ export function brandenburgGemeinden8From12(digits12: string): string | null {
   return `${d.slice(0, 5)}${d.slice(9, 12)}`
 }
 
-export const ALL_ID_NORMALIZATION_PRESETS: IdNormalizationPreset[] = [
+/**
+ * Presets this page documents: AGS / ARS / Berlin / Brandenburg Schlüssel — not PLZ or
+ * text-based matching (see dataset `idNormalization` for those).
+ */
+export const GERMAN_SCHLUESSEL_EXPLORER_PRESETS = [
   'berlin-bezirk-ags',
   'amtlicher-8',
   'regional-12',
   'brandenburg-gemeinden-8',
-  'plz-5',
-  'text',
-]
+] as const
+
+export type GermanSchluesselExplorerPreset = (typeof GERMAN_SCHLUESSEL_EXPLORER_PRESETS)[number]
+
+export const germanSchluesselExplorerPresetSchema = z.enum(GERMAN_SCHLUESSEL_EXPLORER_PRESETS)
+
+export function coerceSchluesselExplorerPreset(
+  raw: string | undefined,
+): GermanSchluesselExplorerPreset | '' {
+  if (raw === undefined || raw === '') return ''
+  const p = germanSchluesselExplorerPresetSchema.safeParse(raw)
+  return p.success ? p.data : ''
+}
+
+export function isSchluesselExplorerPreset(
+  p: IdNormalizationPreset | undefined,
+): p is GermanSchluesselExplorerPreset {
+  if (p === undefined) return false
+  return (GERMAN_SCHLUESSEL_EXPLORER_PRESETS as readonly string[]).includes(p)
+}
 
 /** Match key tag used when normalizing (compare uses the tag implied by osmProfile). */
 export function sourceKeyForPreset(preset: IdNormalizationPreset): string {
@@ -83,15 +114,90 @@ export function normalizeForPreset(
 }
 
 export type PresetNormalizationRow = {
-  preset: IdNormalizationPreset
+  preset: GermanSchluesselExplorerPreset
   result: NormalizedGermanKey
 }
 
-export function normalizationsForAllPresets(raw: string): PresetNormalizationRow[] {
-  return ALL_ID_NORMALIZATION_PRESETS.map((preset) => ({
+export function normalizationsForSchluesselPresets(raw: string): PresetNormalizationRow[] {
+  return GERMAN_SCHLUESSEL_EXPLORER_PRESETS.map((preset) => ({
     preset,
     result: normalizeForPreset(raw, preset),
   }))
+}
+
+/**
+ * Rows for the Schlüssel-Explorer normalization table only.
+ * Omits `berlin-bezirk-ags`: that preset targets 5-digit Berlin Bezirk codes (and passthrough 8-digit);
+ * full 12-digit ARS inputs only produce a misleading `unexpected-digit-length` note there, while
+ * Berlin expansion is shown in the dedicated block when applicable (`tryBerlinBezirkCanonical5`).
+ */
+export function normalizationsForSchluesselExplorerTable(raw: string): PresetNormalizationRow[] {
+  return normalizationsForSchluesselPresets(raw).filter((r) => r.preset !== 'berlin-bezirk-ags')
+}
+
+const UNEXPECTED_DIGIT_LENGTH_NOTE = /^unexpected-digit-length:(\d+)$/
+
+/** Human-readable German labels for compare `notes` tokens (explorer table only). */
+export function formatNormalizationNotesForExplorerUi(notes: readonly string[]): string {
+  const t = de.germanKeyExplorer
+  const labels = t.normalizationNotesUi as Record<string, string>
+  return notes
+    .map((note) => {
+      const m = UNEXPECTED_DIGIT_LENGTH_NOTE.exec(note)
+      if (m?.[1]) return t.normalizationNoteUnexpectedDigitLength(m[1])
+      return labels[note] ?? note
+    })
+    .join('; ')
+}
+
+export type ArsSegmentNames = {
+  bundesland: string | null
+  regierungsbezirk: string | null
+  kreis: string | null
+  gemeindeverband: string | null
+  gemeinde: string | null
+}
+
+export function lookupArsSegmentNames(ars12: string): ArsSegmentNames | null {
+  const d = digitsOnly(ars12)
+  if (d.length < 12) return null
+  const full = d.slice(0, 12)
+  const segments = parseArs12Segments(full)
+  if (!segments) return null
+  return {
+    bundesland: lookupBundeslaender[segments.bundesland] ?? null,
+    regierungsbezirk: lookupRegierungsbezirke[full.slice(0, 3)] ?? null,
+    kreis: lookupKreise[full.slice(0, 5)] ?? null,
+    gemeindeverband: lookupGemeindeverbaende[full.slice(0, 9)] ?? null,
+    gemeinde: lookupGemeindenByArs[full] ?? null,
+  }
+}
+
+export function lookupGemeindeNameByAgs(ags8: string): string | null {
+  const d = digitsOnly(ags8)
+  if (d.length < 8) return null
+  return lookupGemeindenByAgs[d.slice(0, 8)] ?? null
+}
+
+export function lookupGemeindeNameByArs(ars12: string): string | null {
+  const d = digitsOnly(ars12)
+  if (d.length < 12) return null
+  return lookupGemeindenByArs[d.slice(0, 12)] ?? null
+}
+
+export function lookupNameForNormalizedPresetKey(
+  preset: GermanSchluesselExplorerPreset,
+  canonicalKey: string,
+): string | null {
+  switch (preset) {
+    case 'regional-12':
+      return lookupGemeindeNameByArs(canonicalKey)
+    case 'amtlicher-8':
+    case 'brandenburg-gemeinden-8':
+      return lookupGemeindeNameByAgs(canonicalKey)
+    case 'berlin-bezirk-ags':
+      return null
+  }
 }
 
 export function tryBerlinBezirkCanonical5(
