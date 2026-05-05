@@ -72,7 +72,8 @@ export function FeatureDetailStatsStrip({
       : null
   const osmFresh = sourceStatLines(osmRaw, true)
   const reportIsOld = isOlderThanDays(data.generatedAt, 5)
-  const officialIsOld = isOlderThanDays(officialDateChoice.primaryRaw, 5)
+  const officialCheckRaw = officialRaw ?? officialDateChoice.primaryRaw
+  const officialIsOld = isOlderThanDays(officialCheckRaw, 5)
   const osmIsOld = isOlderThanDays(osmRaw, 5)
   const titlePrefix = data.titlePrefix
 
@@ -317,7 +318,7 @@ function NoMatchCategoryStatColumn({
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
       <dt className="text-sm font-medium text-slate-400">{label}</dt>
-      <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-amber-200 tabular-nums sm:text-3xl">
+      <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-rose-300 tabular-nums sm:text-3xl">
         {primaryText}
       </dd>
     </div>
