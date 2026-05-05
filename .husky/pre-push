@@ -1,2 +1,6 @@
+echo "[pre-push] checking Destatis german-key lookup freshness"
+bun run german-key-lookup:weekly
+echo "[pre-push] rebuilding changelog"
 bun run changelog
+echo "[pre-push] running repo checks"
 bun run check
