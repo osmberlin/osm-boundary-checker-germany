@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import germanKeyLookupBundle from '../data/germanKeyLookup.gen'
 import {
   ags8FromArs12Digits,
   brandenburgGemeinden8From12,
@@ -13,7 +14,20 @@ import {
   sourceKeyForPreset,
   statistikportalGemeindeUrl,
   tryBerlinBezirkCanonical5,
+  type GermanKeyLookupTables,
 } from './germanKeyExplorer'
+
+function lookupTablesDefault(): GermanKeyLookupTables {
+  const ds = germanKeyLookupBundle.datasets[germanKeyLookupBundle.defaultDatasetId]
+  return {
+    bundeslaender: ds.bundeslaender,
+    regierungsbezirke: ds.regierungsbezirke,
+    kreise: ds.kreise,
+    gemeindeverbaende: ds.gemeindeverbaende,
+    gemeindenByAgs: ds.gemeindenByAgs,
+    gemeindenByArs: ds.gemeindenByArs,
+  }
+}
 
 describe('germanKeyExplorer', () => {
   test('digitsOnly strips non-digits', () => {
@@ -76,9 +90,12 @@ describe('germanKeyExplorer', () => {
   })
 
   test('lookup helpers resolve official names', () => {
-    expect(lookupGemeindeNameByAgs('01001000')).toBe('Flensburg, Stadt')
-    expect(lookupNameForNormalizedPresetKey('regional-12', '010010000000')).toBe('Flensburg, Stadt')
-    expect(lookupArsSegmentNames('010010000000')).toEqual({
+    const tables = lookupTablesDefault()
+    expect(lookupGemeindeNameByAgs(tables, '01001000')).toBe('Flensburg, Stadt')
+    expect(lookupNameForNormalizedPresetKey(tables, 'regional-12', '010010000000')).toBe(
+      'Flensburg, Stadt',
+    )
+    expect(lookupArsSegmentNames(tables, '010010000000')).toEqual({
       bundesland: 'Schleswig-Holstein',
       regierungsbezirk: null,
       kreis: 'Flensburg, Stadt',

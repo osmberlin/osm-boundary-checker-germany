@@ -5,15 +5,17 @@ import {
   type NormalizedGermanKey,
 } from '../../../scripts/compare/lib/normalizeGermanKey.ts'
 import type { IdNormalizationPreset } from '../../../scripts/shared/comparisonPayload.ts'
-import germanKeyLookup from '../data/germanKeyLookup.gen'
 import { de } from '../i18n/de'
 
-const lookupBundeslaender = germanKeyLookup.bundeslaender as Record<string, string>
-const lookupRegierungsbezirke = germanKeyLookup.regierungsbezirke as Record<string, string>
-const lookupKreise = germanKeyLookup.kreise as Record<string, string>
-const lookupGemeindeverbaende = germanKeyLookup.gemeindeverbaende as Record<string, string>
-const lookupGemeindenByAgs = germanKeyLookup.gemeindenByAgs as Record<string, string>
-const lookupGemeindenByArs = germanKeyLookup.gemeindenByArs as Record<string, string>
+/** GV100AD-derived lookup maps for one Destatis dataset (from germanKeyLookup.gen). */
+export type GermanKeyLookupTables = {
+  bundeslaender: Record<string, string>
+  regierungsbezirke: Record<string, string>
+  kreise: Record<string, string>
+  gemeindeverbaende: Record<string, string>
+  gemeindenByAgs: Record<string, string>
+  gemeindenByArs: Record<string, string>
+}
 
 /** Gemeindeverzeichnis Online deep links use 8-digit AGS (amtlicher Gemeindeschlüssel). */
 export const STATISTIKPORTAL_GEMEINDEVERZEICHNIS =
@@ -158,43 +160,53 @@ export type ArsSegmentNames = {
   gemeinde: string | null
 }
 
-export function lookupArsSegmentNames(ars12: string): ArsSegmentNames | null {
+export function lookupArsSegmentNames(
+  tables: GermanKeyLookupTables,
+  ars12: string,
+): ArsSegmentNames | null {
   const d = digitsOnly(ars12)
   if (d.length < 12) return null
   const full = d.slice(0, 12)
   const segments = parseArs12Segments(full)
   if (!segments) return null
   return {
-    bundesland: lookupBundeslaender[segments.bundesland] ?? null,
-    regierungsbezirk: lookupRegierungsbezirke[full.slice(0, 3)] ?? null,
-    kreis: lookupKreise[full.slice(0, 5)] ?? null,
-    gemeindeverband: lookupGemeindeverbaende[full.slice(0, 9)] ?? null,
-    gemeinde: lookupGemeindenByArs[full] ?? null,
+    bundesland: tables.bundeslaender[segments.bundesland] ?? null,
+    regierungsbezirk: tables.regierungsbezirke[full.slice(0, 3)] ?? null,
+    kreis: tables.kreise[full.slice(0, 5)] ?? null,
+    gemeindeverband: tables.gemeindeverbaende[full.slice(0, 9)] ?? null,
+    gemeinde: tables.gemeindenByArs[full] ?? null,
   }
 }
 
-export function lookupGemeindeNameByAgs(ags8: string): string | null {
+export function lookupGemeindeNameByAgs(
+  tables: GermanKeyLookupTables,
+  ags8: string,
+): string | null {
   const d = digitsOnly(ags8)
   if (d.length < 8) return null
-  return lookupGemeindenByAgs[d.slice(0, 8)] ?? null
+  return tables.gemeindenByAgs[d.slice(0, 8)] ?? null
 }
 
-export function lookupGemeindeNameByArs(ars12: string): string | null {
+export function lookupGemeindeNameByArs(
+  tables: GermanKeyLookupTables,
+  ars12: string,
+): string | null {
   const d = digitsOnly(ars12)
   if (d.length < 12) return null
-  return lookupGemeindenByArs[d.slice(0, 12)] ?? null
+  return tables.gemeindenByArs[d.slice(0, 12)] ?? null
 }
 
 export function lookupNameForNormalizedPresetKey(
+  tables: GermanKeyLookupTables,
   preset: GermanSchluesselExplorerPreset,
   canonicalKey: string,
 ): string | null {
   switch (preset) {
     case 'regional-12':
-      return lookupGemeindeNameByArs(canonicalKey)
+      return lookupGemeindeNameByArs(tables, canonicalKey)
     case 'amtlicher-8':
     case 'brandenburg-gemeinden-8':
-      return lookupGemeindeNameByAgs(canonicalKey)
+      return lookupGemeindeNameByAgs(tables, canonicalKey)
     case 'berlin-bezirk-ags':
       return null
   }

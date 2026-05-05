@@ -403,6 +403,7 @@ export const de = {
     dataSourceLinkLabel: 'Destatis Gemeindeverzeichnis',
     dataSourceDateLabel: (dateLabel: string) =>
       `Datenstand der eingebundenen Textdatei: ${dateLabel}.`,
+    datasetPickerAria: 'Destatis-Stichtag für Namen in diesem Explorer',
     inputLabel: 'Gemeindeschlüssel',
     inputPlaceholder: 'z. B. 11001, 11000001, 010515163022',
     presetLabel: 'Preset hervorheben',

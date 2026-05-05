@@ -14,6 +14,7 @@ import {
   statistikportalGemeindeUrl,
   tryBerlinBezirkCanonical5,
   type Ars12Segments,
+  type GermanKeyLookupTables,
   type GermanSchluesselExplorerPreset,
 } from '../../lib/germanKeyExplorer'
 import type { GermanKeySearch } from '../../lib/germanKeySearch'
@@ -24,9 +25,11 @@ function presetLabel(p: GermanSchluesselExplorerPreset): string {
 }
 
 export function GermanKeyExplorerContent({
+  lookupTables,
   search,
   onApplySearch,
 }: {
+  lookupTables: GermanKeyLookupTables
   search: GermanKeySearch
   onApplySearch: (next: GermanKeySearch) => void
 }) {
@@ -42,13 +45,13 @@ export function GermanKeyExplorerContent({
           .canonicalMatchKey ?? '')
       : ''
   const segments: Ars12Segments | null = padded12.length >= 12 ? parseArs12Segments(padded12) : null
-  const segmentNames = padded12.length >= 12 ? lookupArsSegmentNames(padded12) : null
+  const segmentNames = padded12.length >= 12 ? lookupArsSegmentNames(lookupTables, padded12) : null
   const ags8From12 = d.length >= 12 ? ags8FromArs12Digits(d) : d.length >= 8 ? d.slice(0, 8) : null
   const bb8 = d.length >= 12 ? brandenburgGemeinden8From12(d) : null
   const agsForPortal =
     ags8From12 !== null && ags8From12.length === 8 ? ags8From12 : d.length === 8 ? d : null
 
-  const bbName = bb8 ? lookupGemeindeNameByAgs(bb8) : null
+  const bbName = bb8 ? lookupGemeindeNameByAgs(lookupTables, bb8) : null
   const berlin = tryBerlinBezirkCanonical5(raw)
 
   const rows = raw !== '' ? normalizationsForSchluesselExplorerTable(raw) : []
@@ -58,14 +61,14 @@ export function GermanKeyExplorerContent({
       osmKey: 'de:regionalschluessel',
       bkgKey: 'ARS',
       length: '12 Ziffern',
-      name: padded12 ? lookupGemeindeNameByArs(padded12) : null,
+      name: padded12 ? lookupGemeindeNameByArs(lookupTables, padded12) : null,
     },
     {
       value: ags8From12 ?? '—',
       osmKey: 'de:amtlicher_gemeindeschluessel',
       bkgKey: 'AGS',
       length: '8 Ziffern',
-      name: ags8From12 ? lookupGemeindeNameByAgs(ags8From12) : null,
+      name: ags8From12 ? lookupGemeindeNameByAgs(lookupTables, ags8From12) : null,
     },
   ]
 
@@ -74,6 +77,8 @@ export function GermanKeyExplorerContent({
     const next: GermanKeySearch = {}
     if (localKey.trim() !== '') next.key = localKey.trim()
     if (search.area) next.area = search.area
+    if (search.preset) next.preset = search.preset
+    if (search.gvDataset) next.gvDataset = search.gvDataset
     onApplySearch(next)
   }
 

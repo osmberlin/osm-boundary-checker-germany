@@ -6,15 +6,39 @@ import { pathToFileURL } from 'node:url'
 import JSZip from 'jszip'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
-/** Destatis quarterly Gemeinde ZIPs (GV100ADQ). We pick the newest snapshot date from file names. */
-const DESTATIS_GV100ADQ_ZIP_URLS = [
-  'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD1QAktuell.zip?__blob=publicationFile&v=17',
-  'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD2QAktuell.zip?__blob=publicationFile&v=14',
-  'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD3QAktuell.zip?__blob=publicationFile&v=16',
-  'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD4QAktuell.zip?__blob=publicationFile&v=15',
+const GENERATED_MODULE_RELATIVE_PATH = 'report/src/data/germanKeyLookup.gen.ts'
+
+/** Ordered definitions: output bundle preserves this order in `datasetIds`. */
+const GERMAN_KEY_LOOKUP_SOURCE_DEFINITIONS = [
+  {
+    id: 'latest',
+    label: 'Letzte Veröffentlichung',
+    provenanceLines: [] as const,
+    sourcePublicUrl:
+      'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/_inhalt.html#124272',
+    downloadUrls: [
+      'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD1QAktuell.zip?__blob=publicationFile&v=17',
+      'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD2QAktuell.zip?__blob=publicationFile&v=14',
+      'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD3QAktuell.zip?__blob=publicationFile&v=16',
+      'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD4QAktuell.zip?__blob=publicationFile&v=15',
+    ],
+  },
+  {
+    id: 'gv100adj-2024',
+    label: 'Jahresausgabe GV100ADJ',
+    provenanceLines: [
+      'Jahresausgabe am 31.12.2024',
+      'Veröffentlichung passend zu den BKG-Verwaltungsgebieten (Stand 31.12.2025)',
+    ] as const,
+    sourcePublicUrl:
+      'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADJ/GV100AD31122024.html',
+    downloadUrls: [
+      'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADJ/GV100AD31122024.zip?__blob=publicationFile&v=2',
+    ],
+  },
 ] as const
 
-const GENERATED_MODULE_RELATIVE_PATH = 'report/src/data/germanKeyLookup.gen.ts'
+const DEFAULT_DATASET_ID = 'latest' as const
 
 type PublicationSource = {
   downloadUrl: string
@@ -36,20 +60,33 @@ type MunicipalityWorkbookRow = {
   name: string
 }
 
-type QuarterlySourceCandidate = PublicationSource & {
+type SourceCandidate = PublicationSource & {
   textFileBuffer: Buffer
 }
 
-type GeneratedGermanKeyLookup = {
-  checkedAt: string
-  generatedAt: string
-  source: PublicationSource
+type LookupMaps = {
   bundeslaender: Record<string, string>
   regierungsbezirke: Record<string, string>
   kreise: Record<string, string>
   gemeindeverbaende: Record<string, string>
   gemeindenByAgs: Record<string, string>
   gemeindenByArs: Record<string, string>
+}
+
+type GermanKeyDatasetPayload = LookupMaps & {
+  id: string
+  label: string
+  provenanceLines: readonly string[]
+  sourcePublicUrl: string
+  source: PublicationSource
+}
+
+type GermanKeyLookupBundlePayload = {
+  checkedAt: string
+  generatedAt: string
+  defaultDatasetId: typeof DEFAULT_DATASET_ID
+  datasetIds: readonly string[]
+  datasets: Record<string, GermanKeyDatasetPayload>
 }
 
 function logLine(message: string, meta: Record<string, string | number | undefined> = {}): void {
@@ -152,8 +189,6 @@ async function downloadBuffer(downloadUrl: string): Promise<Buffer> {
   return buf
 }
 
-type ParsedLookupTables = Omit<GeneratedGermanKeyLookup, 'source'>
-
 function parseDdMmYyyy(raw: string): Date | null {
   if (!/^\d{8}$/.test(raw)) return null
   const day = Number(raw.slice(0, 2))
@@ -188,9 +223,16 @@ function parseGv100AdTxtRows(buffer: Buffer): MunicipalityWorkbookRow[] {
   }))
 }
 
-async function resolveLatestQuarterlySource(): Promise<QuarterlySourceCandidate> {
-  const candidates: QuarterlySourceCandidate[] = []
-  for (const downloadUrl of DESTATIS_GV100ADQ_ZIP_URLS) {
+/**
+ * Download each ZIP URL, collect GV100AD TXT candidates, return the one with the newest snapshot
+ * date in the archive entry file name.
+ */
+async function resolveBestPublicationSource(
+  datasetId: string,
+  downloadUrls: readonly string[],
+): Promise<SourceCandidate> {
+  const candidates: SourceCandidate[] = []
+  for (const downloadUrl of downloadUrls) {
     const zipBuffer = await downloadBuffer(downloadUrl)
     const archive = await JSZip.loadAsync(zipBuffer)
     const txtEntry = Object.values(archive.files).find((entry) =>
@@ -217,20 +259,21 @@ async function resolveLatestQuarterlySource(): Promise<QuarterlySourceCandidate>
     })
   }
   if (candidates.length === 0) {
-    throw new Error('No quarterly GV100AD sources available')
+    throw new Error(`No GV100AD sources available for dataset ${datasetId}`)
   }
   candidates.sort((a, b) => a.snapshotDate.localeCompare(b.snapshotDate))
-  const latest = candidates.at(-1)!
-  logLine('selected latest quarterly source', {
-    snapshotDate: latest.snapshotDate,
-    archiveEntry: latest.archiveEntry,
-    downloadUrl: latest.downloadUrl,
+  const best = candidates.at(-1)!
+  logLine('selected publication source', {
+    datasetId,
+    snapshotDate: best.snapshotDate,
+    archiveEntry: best.archiveEntry,
+    downloadUrl: best.downloadUrl,
   })
-  return latest
+  return best
 }
 
-/** Build lookup maps from GV100AD fixed-width TXT (inside Destatis quarterly ZIP). */
-function parseGv100AdTxtToLookup(buffer: Buffer): ParsedLookupTables {
+/** Build lookup maps from GV100AD fixed-width TXT (inside Destatis ZIP). */
+function parseGv100AdTxtToLookupMaps(buffer: Buffer): LookupMaps {
   const rows = parseGv100AdTxtRows(buffer)
 
   const bundeslaender = new Map<string, string>()
@@ -271,8 +314,6 @@ function parseGv100AdTxtToLookup(buffer: Buffer): ParsedLookupTables {
   }
 
   return {
-    checkedAt: new Date().toISOString(),
-    generatedAt: new Date().toISOString(),
     bundeslaender: sortedObject(bundeslaender),
     regierungsbezirke: sortedObject(regierungsbezirke),
     kreise: sortedObject(kreise),
@@ -282,12 +323,12 @@ function parseGv100AdTxtToLookup(buffer: Buffer): ParsedLookupTables {
   }
 }
 
-function writeGeneratedModule(outAbsPath: string, payload: GeneratedGermanKeyLookup): void {
+function writeGeneratedModule(outAbsPath: string, payload: GermanKeyLookupBundlePayload): void {
   const body = JSON.stringify(payload, null, 2)
   const source = `/* AUTO-GENERATED by scripts/report/generate-german-key-lookup.ts. Do not edit manually. */
-const germanKeyLookup = ${body} as const
+const germanKeyLookupBundle = ${body} as const
 
-export default germanKeyLookup
+export default germanKeyLookupBundle
 `
   mkdirSync(dirname(outAbsPath), { recursive: true })
   writeFileSync(outAbsPath, source, 'utf8')
@@ -323,27 +364,43 @@ async function main(): Promise<void> {
     }
   }
 
-  const latestSource = await resolveLatestQuarterlySource()
-  const tables = parseGv100AdTxtToLookup(latestSource.textFileBuffer)
-  const payload: GeneratedGermanKeyLookup = {
-    ...tables,
-    source: {
-      downloadUrl: latestSource.downloadUrl,
-      archiveEntry: latestSource.archiveEntry,
-      snapshotDate: latestSource.snapshotDate,
-    },
+  const now = new Date().toISOString()
+  const datasets: Record<string, GermanKeyDatasetPayload> = {}
+
+  for (const def of GERMAN_KEY_LOOKUP_SOURCE_DEFINITIONS) {
+    const resolved = await resolveBestPublicationSource(def.id, def.downloadUrls)
+    const maps = parseGv100AdTxtToLookupMaps(resolved.textFileBuffer)
+    datasets[def.id] = {
+      id: def.id,
+      label: def.label,
+      provenanceLines: [...def.provenanceLines],
+      sourcePublicUrl: def.sourcePublicUrl,
+      source: {
+        downloadUrl: resolved.downloadUrl,
+        archiveEntry: resolved.archiveEntry,
+        snapshotDate: resolved.snapshotDate,
+      },
+      ...maps,
+    }
+  }
+
+  const payload: GermanKeyLookupBundlePayload = {
+    checkedAt: now,
+    generatedAt: now,
+    defaultDatasetId: DEFAULT_DATASET_ID,
+    datasetIds: GERMAN_KEY_LOOKUP_SOURCE_DEFINITIONS.map((d) => d.id),
+    datasets,
   }
 
   writeGeneratedModule(outAbsPath, payload)
   formatGeneratedModule(outAbsPath)
 
-  logLine('lookup generated', {
+  const latest = datasets[DEFAULT_DATASET_ID]
+  logLine('bundle generated', {
     output: GENERATED_MODULE_RELATIVE_PATH,
-    bundeslaender: Object.keys(payload.bundeslaender).length,
-    regierungsbezirke: Object.keys(payload.regierungsbezirke).length,
-    kreise: Object.keys(payload.kreise).length,
-    gemeindeverbaende: Object.keys(payload.gemeindeverbaende).length,
-    gemeindenByAgs: Object.keys(payload.gemeindenByAgs).length,
+    datasets: payload.datasetIds.length,
+    bundeslaender: latest ? Object.keys(latest.bundeslaender).length : 0,
+    gemeindenByAgs: latest ? Object.keys(latest.gemeindenByAgs).length : 0,
   })
 }
 
