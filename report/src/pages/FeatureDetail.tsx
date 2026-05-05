@@ -72,7 +72,11 @@ export function FeatureDetail() {
         wfsGeojson={wfs.geojson}
       />
 
-      <FeatureDatasetProperties row={row} />
+      <UpdateMapInstructions areaId={areaKey} row={row} />
+
+      <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
+
+      <FeatureDatasetProperties row={row} data={data} />
 
       <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
 
@@ -93,10 +97,7 @@ export function FeatureDetail() {
         }}
       />
 
-      <UpdateMapInstructions areaId={areaKey} row={row} />
-
       <ReportLicenseCompatibilitySection data={data} />
-      <ReportDataProvenanceFooter data={data} hideFreshnessSection />
     </div>
   )
 }

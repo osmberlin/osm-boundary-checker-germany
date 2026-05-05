@@ -1,5 +1,12 @@
+import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import { de } from '../i18n/de'
-import type { ReportRow } from '../types/report'
+import {
+  pickOfficialDatasetExtractDate,
+  pickOsmDatasetExtractDate,
+} from '../lib/datasetExtractDataDates'
+import { EM_DASH } from '../lib/formatDe'
+import { sourceStatLines } from '../lib/reportFreshnessLines'
+import type { ComparisonForReport, ReportRow } from '../types/report'
 
 function formatPropertyValue(value: unknown): string {
   if (value === null || value === undefined) return de.feature.datasetPropertiesEmpty
@@ -43,9 +50,48 @@ function DatasetPropertyCard({ properties }: { properties: Record<string, unknow
   )
 }
 
-export function FeatureDatasetProperties({ row }: { row: ReportRow }) {
+function DatasetExtractDataDateCaption({
+  lines,
+  note,
+}: {
+  lines: ReturnType<typeof sourceStatLines>
+  note?: string | null
+}) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <p className="text-xs leading-normal text-slate-400">
+        <span className="text-slate-500">{de.feature.datasetExtractDataDateLabel}:</span>{' '}
+        <span>{lines.absoluteLine}</span>
+        {lines.relativeLine !== EM_DASH ? (
+          <span className="text-slate-500"> · {lines.relativeLine}</span>
+        ) : null}
+      </p>
+      {note ? <p className="text-[11px] leading-snug text-slate-500">{note}</p> : null}
+    </div>
+  )
+}
+
+export function FeatureDatasetProperties({
+  row,
+  data,
+}: {
+  row: ReportRow
+  data: ComparisonForReport
+}) {
   const official = forDisplay(row.officialProperties)
   const osm = forDisplay(row.osmProperties)
+  const hasOfficialMeta = data.sourceMetadata?.official != null
+  const officialPick = pickOfficialDatasetExtractDate(data.sourceMetadata?.official)
+  const officialDataLines = sourceStatLines(officialPick.raw, hasOfficialMeta)
+  const officialDataNote = officialPick.isPipelineFetchFallback
+    ? de.feature.datasetExtractOfficialPipelineFetchNote
+    : null
+
+  const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
+  const osmPick = pickOsmDatasetExtractDate(osmResolved)
+  const osmDataLines = sourceStatLines(osmPick.raw, true)
+  const osmDataNote =
+    osmPick.raw && !osmPick.snapshotFromPbfHeader ? de.feature.datasetExtractOsmUncertainNote : null
   const osmRelationId = row.osmRelationId.trim()
   const osmHistoryUrl =
     osmRelationId === '' ? null : `https://www.openstreetmap.org/relation/${osmRelationId}/history`
@@ -61,25 +107,26 @@ export function FeatureDatasetProperties({ row }: { row: ReportRow }) {
         <h2 className="text-base font-semibold text-slate-100">
           {de.feature.datasetPropertiesSectionTitle}
         </h2>
-        <p className="mt-2 max-w-4xl text-sm text-slate-400">
-          {de.feature.datasetPropertiesSectionLead}
-        </p>
       </div>
       <div className="border-t border-slate-700">
         <dl className="divide-y divide-slate-700/80">
           <div className="bg-blue-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt className="text-sm/6 font-medium text-slate-200">
-              {de.feature.datasetOfficialCardTitle}
+            <dt className="flex flex-col gap-1">
+              <span className="text-sm/6 font-medium text-slate-200">
+                {de.feature.datasetOfficialCardTitle}
+              </span>
+              <DatasetExtractDataDateCaption lines={officialDataLines} note={officialDataNote} />
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <DatasetPropertyCard properties={official} />
             </dd>
           </div>
           <div className="bg-red-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt className="flex flex-col gap-2 md:flex-row md:items-center md:justify-start md:gap-3">
+            <dt className="flex flex-col gap-2">
               <h3 className="text-sm/6 font-medium text-slate-200">
                 {de.feature.datasetOsmCardTitle}
               </h3>
+              <DatasetExtractDataDateCaption lines={osmDataLines} note={osmDataNote} />
               {osmHistoryUrl && (
                 <a
                   href={osmHistoryUrl}
