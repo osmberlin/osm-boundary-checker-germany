@@ -69,6 +69,25 @@ export const comparisonFilterConfigSummarySchema = z.object({
   osmMatchProperty: z.string().trim().min(1).optional(),
 })
 
+export const idNormalizationPresetSchema = z.enum([
+  'berlin-bezirk-ags',
+  'amtlicher-8',
+  'regional-12',
+  'brandenburg-gemeinden-8',
+  'plz-5',
+  'text',
+])
+
+export const osmMatchCriteriaSummarySchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('property') }).strict(),
+  z
+    .object({
+      kind: z.literal('relation_id'),
+      relationIds: z.array(z.string().trim().min(1)).min(1),
+    })
+    .strict(),
+])
+
 export const comparisonForReportSchema = z.object({
   area: z.string(),
   displayName: z.string().trim().min(1),
@@ -81,6 +100,10 @@ export const comparisonForReportSchema = z.object({
   tippecanoeLayer: z.string(),
   sourceMetadata: comparisonSourceMetadataEmbeddedSchema,
   filterConfigSummary: comparisonFilterConfigSummarySchema.optional(),
+  /** From `idNormalization.preset` in area config; embedded once per file. */
+  idNormalizationPreset: idNormalizationPresetSchema.optional(),
+  /** From optional `osm.matchCriteria` in area config. */
+  osmMatchCriteria: osmMatchCriteriaSummarySchema.optional(),
   ogcInspectSources: z.array(ogcWfsInspectSourceSchema).optional(),
   rows: z.array(reportRowSchema),
   unmatchedOsm: z.array(unmatchedOsmRowSchema),
@@ -113,5 +136,7 @@ export type ReportRow = z.infer<typeof reportRowSchema>
 export type UnmatchedOsmReportRow = z.infer<typeof unmatchedOsmRowSchema>
 export type ComparisonForReport = z.infer<typeof comparisonForReportSchema>
 export type ComparisonFilterConfigSummary = z.infer<typeof comparisonFilterConfigSummarySchema>
+export type IdNormalizationPreset = z.infer<typeof idNormalizationPresetSchema>
+export type OsmMatchCriteriaSummary = z.infer<typeof osmMatchCriteriaSummarySchema>
 export type FeatureDetailShard = z.infer<typeof featureDetailShardSchema>
 export type SnapshotsJson = z.infer<typeof snapshotsSchema>

@@ -11,6 +11,7 @@ import { join } from 'node:path'
 import { area, bbox, cleanCoords, featureCollection, simplify, truncate } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
+import type { CompareRulesSummary } from '../../shared/compareRulesSummary.ts'
 import type {
   ComparisonFilterConfigSummary,
   ComparisonForReport,
@@ -355,6 +356,7 @@ function buildStaticPayloadBase(
   sourceMetadata: ComparisonSourceMetadata,
   filterConfigSummary: ComparisonFilterConfigSummary | null,
   ogcInspectSources: OgcWfsInspectSource[],
+  compareRulesSummary: CompareRulesSummary | null,
 ): Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> {
   const out: Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> = {
     area: areaFolder,
@@ -373,6 +375,12 @@ function buildStaticPayloadBase(
   }
   if (filterConfigSummary != null) out.filterConfigSummary = filterConfigSummary
   if (ogcInspectSources.length > 0) out.ogcInspectSources = ogcInspectSources
+  if (compareRulesSummary != null) {
+    out.idNormalizationPreset = compareRulesSummary.idNormalizationPreset
+    if (compareRulesSummary.osmMatchCriteria != null) {
+      out.osmMatchCriteria = compareRulesSummary.osmMatchCriteria
+    }
+  }
   return out
 }
 
@@ -488,6 +496,7 @@ export function writeOutputs(
   sourceMetadata: ComparisonSourceMetadata,
   filterConfigSummary: ComparisonFilterConfigSummary | null = null,
   ogcInspectSources: OgcWfsInspectSource[] = [],
+  compareRulesSummary: CompareRulesSummary | null = null,
   phaseLogger?: ComparePhaseLogger,
   instrumentation?: CompareInstrumentation,
 ): { snapshotId: string } {
@@ -619,6 +628,7 @@ export function writeOutputs(
     sourceMetadata,
     filterConfigSummary,
     ogcInspectSources,
+    compareRulesSummary,
   )
   const payloadRows = rows.map((row) => comparisonRowToPayload(row, stemByKeyForOfficial))
   const payloadUnmatched = unmatchedOsm.map(unmatchedRowToPayload)

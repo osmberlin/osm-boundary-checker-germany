@@ -4,6 +4,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { areaConfigPathForDisplay, loadAreaConfig } from '../shared/areaConfig.ts'
 import { parseAreaDisplayName } from '../shared/areaConfigMetadata.ts'
+import { toCompareRulesSummary } from '../shared/compareRulesSummary.ts'
 import {
   comparisonForReportSchema,
   type ComparisonFilterConfigSummary,
@@ -238,6 +239,7 @@ async function main() {
     checkpoint('after_run_compare', { rows: rows.length, unmatched: unmatchedOsm.length })
     const meta = buildComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))
     const filterConfigSummary = toFilterConfigSummary(configRaw)
+    const compareRulesSummary = toCompareRulesSummary(configRaw)
     const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
     const overpassBoundaryTag = overpassBoundaryTagFromMatchProperty(config.osm.matchProperty)
     const displayName = parseAreaDisplayName(area, configRaw)
@@ -253,6 +255,7 @@ async function main() {
       meta,
       filterConfigSummary,
       ogcInspectSources,
+      compareRulesSummary,
       phaseLogger,
       {
         checkpoint: (name, cpMeta) => checkpoint(name, cpMeta),
