@@ -8,7 +8,7 @@ export function IssueBadge({ level }: { level: 'ok' | 'review' | 'issue' | undef
       ? 'border-emerald-400/40 bg-emerald-500/15 text-emerald-200'
       : level === 'review'
         ? 'border-amber-400/40 bg-amber-500/15 text-amber-200'
-        : 'border-rose-400/40 bg-rose-500/15 text-rose-200'
+        : 'border-rose-400/40 bg-rose-500/15 text-rose-300'
   return (
     <span className={`inline-flex rounded border px-2 py-0.5 text-xs font-medium ${classes}`}>
       {issueLevelLabelDe(level)}

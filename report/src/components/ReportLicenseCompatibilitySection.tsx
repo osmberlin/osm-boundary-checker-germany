@@ -9,7 +9,10 @@ function metadataOrUnknown(value: string | undefined): string {
 function CompatibilityValue({ value }: { value: string | undefined }) {
   const p = de.provenance
   const key = (value?.trim() || 'unknown') as keyof typeof p.osmCompatibilityLabel
-  return p.osmCompatibilityLabel[key] ?? p.osmCompatibilityLabel.unknown
+  const label = p.osmCompatibilityLabel[key] ?? p.osmCompatibilityLabel.unknown
+  return (
+    <span className={key === 'unknown' ? 'font-medium text-rose-300' : undefined}>{label}</span>
+  )
 }
 
 export function ReportLicenseCompatibilitySection({

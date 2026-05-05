@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { officialForEditGeojsonHref } from '../data/paths'
 import { de } from '../i18n/de'
 import {
@@ -7,6 +9,58 @@ import {
 } from '../lib/osmEditorLinks'
 import type { ReportRow } from '../types/report'
 import { sharedButtonClass } from './sharedButtonStyles'
+
+/** Stem + dot from Heroicons outline InformationCircleIcon (`circle` path removed; dot anchored at `M12 8.25…`). */
+function InfoGlyphOutlineIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className={className}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M12 8.25h.008v.008H12V8.25Z"
+      />
+    </svg>
+  )
+}
+
+function RevealInfoNote({
+  text,
+  ariaLabel,
+  children,
+}: {
+  text: string
+  ariaLabel: string
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="flex w-full min-w-0 flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {children}
+        {!open ? (
+          <button
+            type="button"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-600 text-slate-200 hover:border-slate-500 hover:text-slate-100"
+            aria-label={ariaLabel}
+            title={ariaLabel}
+            onClick={() => setOpen(true)}
+          >
+            <InfoGlyphOutlineIcon className="size-6 shrink-0" />
+          </button>
+        ) : null}
+      </div>
+      {open ? <p className="text-xs text-pretty text-slate-500">{text}</p> : null}
+    </div>
+  )
+}
 
 export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: ReportRow }) {
   const u = de.feature.updateMap
@@ -21,10 +75,9 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
   const canDownloadOfficial = officialHref != null
 
   return (
-    <section className="mt-12 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm">
+    <section className="mt-10 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm">
       <div className="px-4 py-6 sm:px-6">
         <h2 className="text-base font-semibold text-slate-100">{u.title}</h2>
-        <p className="mt-2 max-w-4xl text-sm text-slate-400">{u.lead}</p>
       </div>
 
       <div className="border-t border-slate-700">
@@ -36,13 +89,18 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <div className="flex flex-col gap-2">
                 {canDownloadOfficial && officialHref != null ? (
-                  <a
-                    href={officialHref}
-                    download={officialDownloadFilename}
-                    className={sharedButtonClass}
+                  <RevealInfoNote
+                    text={u.downloadOfficialPipelineHint}
+                    ariaLabel={u.revealHintAriaLabel}
                   >
-                    {u.downloadOfficial}
-                  </a>
+                    <a
+                      href={officialHref}
+                      download={officialDownloadFilename}
+                      className={sharedButtonClass}
+                    >
+                      {u.downloadOfficial}
+                    </a>
+                  </RevealInfoNote>
                 ) : (
                   <div className="flex items-center gap-3">
                     <button
@@ -57,9 +115,6 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
                   </div>
                 )}
               </div>
-              {canDownloadOfficial ? (
-                <p className="mt-3 text-xs text-slate-500">{u.downloadOfficialPipelineHint}</p>
-              ) : null}
             </dd>
           </div>
 
@@ -69,17 +124,18 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <div className="flex flex-col gap-2">
-                <a
-                  href={idUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={`${u.openId} — ${u.opensInNewWindowTitle}`}
-                  className={sharedButtonClass}
-                >
-                  {u.openId}
-                </a>
+                <RevealInfoNote text={u.idDisableFeaturesHint} ariaLabel={u.revealHintAriaLabel}>
+                  <a
+                    href={idUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${u.openId} — ${u.opensInNewWindowTitle}`}
+                    className={sharedButtonClass}
+                  >
+                    {u.openId}
+                  </a>
+                </RevealInfoNote>
               </div>
-              <p className="mt-3 text-xs text-slate-500">{u.idDisableFeaturesHint}</p>
             </dd>
           </div>
 
