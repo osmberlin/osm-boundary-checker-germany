@@ -22,6 +22,7 @@ import {
   IssueIndicatorInfoButton,
   SymDiffInfoButton,
 } from '../HausdorffInfoModal'
+import { InfoNotice } from '../InfoNotice'
 import { mapLayerColors } from '../mapLayerColors'
 import { hexToRgba } from '../MapLegend'
 
@@ -133,117 +134,116 @@ export function FeatureDetailStatsStrip({
         </StatBlocksRow>
       </section>
 
-      <section className="rounded border border-slate-700 bg-slate-900 p-4">
-        {m && (
-          <>
-            <StatBlocksRow
-              className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 max-lg:[&>*:nth-child(odd)]:border-l-0 max-lg:[&>*:nth-child(odd)]:pl-0"
-              aria-label={s.diffMetricsRowAria}
-            >
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span>{s.iou}</span>
-                    <IouInfoButton />
-                  </span>
-                }
-                value={formatDeIou(m.iou)}
-              />
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span>{s.areaDelta}</span>
-                    <AreaDeltaInfoButton />
-                  </span>
-                }
-                value={formatDePercentPoints(m.areaDiffPct)}
-              />
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span className="lg:hidden">{s.symDiff}</span>
-                    <span className="hidden lg:inline">{s.symDiffShort}</span>
-                    <SymDiffInfoButton />
-                  </span>
-                }
-                value={formatDePercentPoints(m.symmetricDiffPct)}
-              />
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span>{s.hausdorff}</span>
-                    <HausdorffInfoButton />
-                  </span>
-                }
-                value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
-              />
-              <StatBlock
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span>{s.hausdorffP95}</span>
-                    <HausdorffInfoButton />
-                  </span>
-                }
-                value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}
-              />
-            </StatBlocksRow>
+      {m ? (
+        <>
+          <StatBlocksRow
+            className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 max-lg:[&>*:nth-child(odd)]:border-l-0 max-lg:[&>*:nth-child(odd)]:pl-0"
+            aria-label={s.diffMetricsRowAria}
+          >
+            <StatBlock
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span>{s.iou}</span>
+                  <IouInfoButton />
+                </span>
+              }
+              value={formatDeIou(m.iou)}
+            />
+            <StatBlock
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span>{s.areaDelta}</span>
+                  <AreaDeltaInfoButton />
+                </span>
+              }
+              value={formatDePercentPoints(m.areaDiffPct)}
+            />
+            <StatBlock
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span className="lg:hidden">{s.symDiff}</span>
+                  <span className="hidden lg:inline">{s.symDiffShort}</span>
+                  <SymDiffInfoButton />
+                </span>
+              }
+              value={formatDePercentPoints(m.symmetricDiffPct)}
+            />
+            <StatBlock
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span>{s.hausdorff}</span>
+                  <HausdorffInfoButton />
+                </span>
+              }
+              value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
+            />
+            <StatBlock
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span>{s.hausdorffP95}</span>
+                  <HausdorffInfoButton />
+                </span>
+              }
+              value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}
+            />
+          </StatBlocksRow>
 
-            <StatBlocksRow className="mt-10 sm:mt-12 lg:mt-14" aria-label={s.layersRowAria}>
-              <LayerToggleStatBlock
-                inputId={`${layerId}-official`}
-                checked={mapLayers.showOfficial}
-                onChange={mapLayers.setShowOfficial}
-                label={s.areaOfficial}
-                value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
-                swatch={
-                  <div
-                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
-                    style={{
-                      borderColor: o.line,
-                      backgroundColor: hexToRgba(o.fill, o.fillOpacity),
-                    }}
-                    aria-hidden
-                  />
-                }
-              />
-              <LayerToggleStatBlock
-                inputId={`${layerId}-osm`}
-                checked={mapLayers.showOsm}
-                onChange={mapLayers.setShowOsm}
-                label={s.areaOsm}
-                value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
-                swatch={
-                  <div
-                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
-                    style={{
-                      borderColor: osmC.line,
-                      backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
-                    }}
-                    aria-hidden
-                  />
-                }
-              />
-              <LayerToggleStatBlock
-                inputId={`${layerId}-diff`}
-                checked={mapLayers.showDiff}
-                onChange={mapLayers.setShowDiff}
-                label={de.map.diff}
-                value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
-                swatch={
-                  <div
-                    className="h-full w-full shrink-0 rounded-[2px] border border-solid border-slate-500"
-                    style={{
-                      background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
-                    }}
-                    aria-hidden
-                  />
-                }
-              />
-            </StatBlocksRow>
-          </>
-        )}
-        {!m && <p className="text-sm text-amber-400">{de.feature.noMetrics}</p>}
-      </section>
+          <StatBlocksRow className="mt-10 sm:mt-12 lg:mt-14" aria-label={s.layersRowAria}>
+            <LayerToggleStatBlock
+              inputId={`${layerId}-official`}
+              checked={mapLayers.showOfficial}
+              onChange={mapLayers.setShowOfficial}
+              label={s.areaOfficial}
+              value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
+              swatch={
+                <div
+                  className="h-full w-full shrink-0 rounded-[2px] border border-solid"
+                  style={{
+                    borderColor: o.line,
+                    backgroundColor: hexToRgba(o.fill, o.fillOpacity),
+                  }}
+                  aria-hidden
+                />
+              }
+            />
+            <LayerToggleStatBlock
+              inputId={`${layerId}-osm`}
+              checked={mapLayers.showOsm}
+              onChange={mapLayers.setShowOsm}
+              label={s.areaOsm}
+              value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
+              swatch={
+                <div
+                  className="h-full w-full shrink-0 rounded-[2px] border border-solid"
+                  style={{
+                    borderColor: osmC.line,
+                    backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
+                  }}
+                  aria-hidden
+                />
+              }
+            />
+            <LayerToggleStatBlock
+              inputId={`${layerId}-diff`}
+              checked={mapLayers.showDiff}
+              onChange={mapLayers.setShowDiff}
+              label={de.map.diff}
+              value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
+              swatch={
+                <div
+                  className="h-full w-full shrink-0 rounded-[2px] border border-solid border-slate-500"
+                  style={{
+                    background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
+                  }}
+                  aria-hidden
+                />
+              }
+            />
+          </StatBlocksRow>
+        </>
+      ) : (
+        <InfoNotice>{de.feature.noMetrics}</InfoNotice>
+      )}
     </>
   )
 }
