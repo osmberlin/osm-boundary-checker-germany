@@ -6,6 +6,9 @@ const OSM_ID_EDITOR = 'https://ideditor.netlify.app/'
 export const ID_DISABLE_FEATURES =
   'address_points,points,service_roads,paths,buildings,building_parts,indoor,landuse,rail,pistes,aerialways,power,past_future'
 
+/** Preset OSM changeset hashtag for iD (`hashtags`) and JOSM (`changeset_hashtags`). */
+export const CHANGESET_HASHTAG_GRENZABGLEICH = 'grenzabgleich'
+
 const JOSM_REMOTE = 'http://127.0.0.1:8111'
 
 export function absoluteUrlFromPath(pathnameWithLeadingSlash: string): string {
@@ -49,6 +52,8 @@ export function buildOpenStreetMapIdEditUrl(
     hash.set('gpx', officialGeojsonAbsoluteUrl)
   }
 
+  hash.set('hashtags', CHANGESET_HASHTAG_GRENZABGLEICH)
+
   url.hash = hash.toString()
   return url.toString()
 }
@@ -62,11 +67,14 @@ export function buildJosmEditorLinks(
   row: ReportRow,
   officialGeojsonAbsoluteUrl: string | null,
 ): JosmEditorLinks {
+  const hashtagQs = `changeset_hashtags=${encodeURIComponent(CHANGESET_HASHTAG_GRENZABGLEICH)}`
   const id = row.osmRelationId.trim()
   const loadObject =
-    id !== '' ? `${JOSM_REMOTE}/load_object?relation_members=true&objects=r${id}` : null
+    id !== ''
+      ? `${JOSM_REMOTE}/load_object?relation_members=true&objects=r${id}&${hashtagQs}`
+      : null
   const importGeojson = officialGeojsonAbsoluteUrl
-    ? `${JOSM_REMOTE}/import?new_layer=true&url=${encodeURIComponent(officialGeojsonAbsoluteUrl)}`
+    ? `${JOSM_REMOTE}/import?new_layer=true&${hashtagQs}&url=${encodeURIComponent(officialGeojsonAbsoluteUrl)}`
     : null
   return { loadObject, importGeojson }
 }
