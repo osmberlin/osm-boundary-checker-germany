@@ -22,7 +22,6 @@ import {
   IssueIndicatorInfoButton,
   SymDiffInfoButton,
 } from '../HausdorffInfoModal'
-import { InfoNotice } from '../InfoNotice'
 import { mapLayerColors } from '../mapLayerColors'
 import { hexToRgba } from '../MapLegend'
 
@@ -37,6 +36,10 @@ type MapLayerControls = {
 
 function symmetricDiffAreaM2(m: NonNullable<ReportRow['metrics']>): number {
   return m.officialAreaM2 * (m.symmetricDiffPct / 100)
+}
+
+function isNonMatchedCategory(c: ReportRow['category']): c is 'official_only' | 'unmatched_osm' {
+  return c === 'official_only' || c === 'unmatched_osm'
 }
 
 export function FeatureDetailStatsStrip({
@@ -111,6 +114,8 @@ export function FeatureDetailStatsStrip({
               level={m.issueIndicator?.level}
               reasons={m.issueIndicator?.reasons}
             />
+          ) : isNonMatchedCategory(row.category) ? (
+            <NoMatchCategoryStatColumn label={s.unmatchedCompareLabel} category={row.category} />
           ) : null}
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingReport}
@@ -134,7 +139,7 @@ export function FeatureDetailStatsStrip({
         </StatBlocksRow>
       </section>
 
-      {m ? (
+      {m && (
         <>
           <StatBlocksRow
             className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 max-lg:[&>*:nth-child(odd)]:border-l-0 max-lg:[&>*:nth-child(odd)]:pl-0"
@@ -241,8 +246,6 @@ export function FeatureDetailStatsStrip({
             />
           </StatBlocksRow>
         </>
-      ) : (
-        <InfoNotice>{de.feature.noMetrics}</InfoNotice>
       )}
     </>
   )
@@ -280,6 +283,24 @@ function issueReasonLabelDe(
 }
 
 type IssueReasonCode = Parameters<typeof issueReasonLabelDe>[0]
+
+function NoMatchCategoryStatColumn({
+  label,
+  category,
+}: {
+  label: string
+  category: 'official_only' | 'unmatched_osm'
+}) {
+  const primaryText = categoryLabelDe(category)
+  return (
+    <div className="flex min-w-0 flex-col gap-y-1">
+      <dt className="text-sm font-medium text-slate-400">{label}</dt>
+      <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-amber-200 tabular-nums sm:text-3xl">
+        {primaryText}
+      </dd>
+    </div>
+  )
+}
 
 function IssueIndicatorStatColumn({
   label,

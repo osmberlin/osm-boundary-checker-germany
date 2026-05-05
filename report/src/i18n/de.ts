@@ -231,6 +231,8 @@ export const de = {
       hausdorff: 'Hausdorff-Abstand',
       hausdorffP95: 'Hausdorff P95',
       issueIndicator: 'Bewertungsampel',
+      /** KPI band: first column when there are no overlap metrics but the row is OSM-only or official-only. */
+      unmatchedCompareLabel: 'Zuordnung',
       areaOfficial: 'Amtliche Fläche',
       areaOsm: 'OSM-Fläche',
       diffMetricsRowAria: 'Differenz-Kennzahlen',
@@ -241,7 +243,6 @@ export const de = {
         metricsCrsLine: (crs: string) => `Projiziertes Metrik-Koordinatensystem: ${crs}`,
       },
     },
-    noMetrics: 'Keine Überlappungsmetriken (auf einer Seite fehlt die Geometrie).',
     noPmtiles:
       'Kein Kachel-Archiv (comparison.pmtiles) vorhanden — Vergleich mit Geometrien ausführen (tippecanoe erforderlich).',
     liveSourcesSectionAria: 'Live-Attribute von amtlichen Diensten und OSM',
