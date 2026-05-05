@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { StatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
+import { KpiCell, KpiRow } from '../components/FeatureStatBlocks'
 import { IssueBadge } from '../components/IssueBadge'
 import { ReportCategoryPill } from '../components/reportCategoryStyles'
 import { reviewQueue } from '../data/reviewQueue'
@@ -18,17 +18,17 @@ export function ReviewQueue() {
       <p className="mb-6 max-w-prose text-pretty text-slate-400">{de.review.intro}</p>
 
       <section className="mb-6 rounded border border-slate-700 bg-slate-900 p-4">
-        <StatBlocksRow aria-label={de.review.totalStatsAria}>
-          <StatBlock label={de.review.datasetCount} value={formatDeInteger(nonEmptyAreas.length)} />
-          <StatBlock
+        <KpiRow aria-label={de.review.totalStatsAria}>
+          <KpiCell label={de.review.datasetCount} value={formatDeInteger(nonEmptyAreas.length)} />
+          <KpiCell
             label={<span className="text-amber-200">{de.review.reviewsCount}</span>}
             value={<span className="text-amber-200">{formatDeInteger(totalReviews)}</span>}
           />
-          <StatBlock
-            label={<span className="text-rose-200">{de.review.issuesCount}</span>}
-            value={<span className="text-rose-200">{formatDeInteger(totalIssues)}</span>}
+          <KpiCell
+            label={<span className="text-rose-300">{de.review.issuesCount}</span>}
+            value={<span className="text-rose-300">{formatDeInteger(totalIssues)}</span>}
           />
-        </StatBlocksRow>
+        </KpiRow>
       </section>
 
       {nonEmptyAreas.length === 0 ? (

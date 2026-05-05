@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { StatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
+import { KpiCell, KpiRow } from '../components/FeatureStatBlocks'
 import { ReportCategoryPill, UnmatchedOsmStatPill } from '../components/reportCategoryStyles'
 import { areasIndex, type AreaLicenseSummary } from '../data/areasIndex'
 import { categoryLabelDe, de } from '../i18n/de'
@@ -101,12 +101,12 @@ export function Home() {
                         →
                       </span>
                     </div>
-                    <StatBlocksRow
+                    <KpiRow
                       className="mt-4"
                       narrowLayout="gridThreeTwoRows"
                       aria-label={de.home.categoryStatsAria}
                     >
-                      <StatBlock
+                      <KpiCell
                         label={
                           <ReportCategoryPill category="matched">
                             {categoryLabelDe('matched')}
@@ -114,7 +114,7 @@ export function Home() {
                         }
                         value={matched}
                       />
-                      <StatBlock
+                      <KpiCell
                         label={
                           <ReportCategoryPill category="official_only">
                             {categoryLabelDe('official_only')}
@@ -122,11 +122,11 @@ export function Home() {
                         }
                         value={officialOnly}
                       />
-                      <StatBlock
+                      <KpiCell
                         label={<UnmatchedOsmStatPill>{de.home.unmatchedStat}</UnmatchedOsmStatPill>}
                         value={unmatched}
                       />
-                      <StatBlock
+                      <KpiCell
                         label={
                           <span
                             className={reviewsCountRaw > 0 ? 'text-amber-200' : 'text-slate-400'}
@@ -140,19 +140,19 @@ export function Home() {
                           </span>
                         }
                       />
-                      <StatBlock
+                      <KpiCell
                         label={
-                          <span className={issuesCountRaw > 0 ? 'text-rose-200' : 'text-slate-400'}>
+                          <span className={issuesCountRaw > 0 ? 'text-rose-300' : 'text-slate-400'}>
                             {de.home.issuesStat}
                           </span>
                         }
                         value={
-                          <span className={issuesCountRaw > 0 ? 'text-rose-200' : undefined}>
+                          <span className={issuesCountRaw > 0 ? 'text-rose-300' : undefined}>
                             {issues}
                           </span>
                         }
                       />
-                    </StatBlocksRow>
+                    </KpiRow>
                   </Link>
                 </li>
               )

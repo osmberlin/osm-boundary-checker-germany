@@ -14,7 +14,7 @@ import { formatFreshnessDisplayDe } from '../../lib/formatSourceDownloadedAt'
 import { optionalSourceStatLines, sourceStatLines } from '../../lib/reportFreshnessLines'
 import { selectSourceDateForFreshness } from '../../lib/sourceFreshnessSelection'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
-import { LayerToggleStatBlock, StatBlock, StatBlocksRow } from '../FeatureStatBlocks'
+import { KpiCell, KpiRow, KpiSection, KpiToggleCell } from '../FeatureStatBlocks'
 import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
@@ -83,10 +83,6 @@ export function FeatureDetailStatsStrip({
           {`${titlePrefix} ${row.nameLabel}`.trim()}
         </h1>
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-slate-500 sm:justify-end">
-          <span className="font-mono">{row.canonicalMatchKey}</span>
-          <span className="text-slate-600" aria-hidden>
-            ·
-          </span>
           <span>{categoryLabelDe(row.category)}</span>
           {row.osmRelationId && (
             <>
@@ -107,7 +103,17 @@ export function FeatureDetailStatsStrip({
       </div>
 
       <section className="mb-6" aria-label={de.areaReport.stats.summaryStatRowAria}>
-        <StatBlocksRow className="mt-0">
+        <KpiRow
+          narrowLayout="none"
+          className={
+            'mt-0 grid min-w-0 grid-cols-2 gap-x-0 gap-y-4 ' +
+            '[&>*]:min-w-0 [&>*]:border-l [&>*]:border-white/15 [&>*]:pl-3 ' +
+            /* 2 columns: row starts 1,3 */
+            'max-md:[&>*:nth-child(2n+1)]:border-l-0 max-md:[&>*:nth-child(2n+1)]:pl-0 ' +
+            /* 4 columns (desktop): row starts 1 */
+            'md:grid-cols-4 md:gap-y-0 md:[&>*]:pl-6 md:[&>*:nth-child(4n+1)]:border-l-0 md:[&>*:nth-child(4n+1)]:pl-0'
+          }
+        >
           {m ? (
             <IssueIndicatorStatColumn
               label={s.issueIndicator}
@@ -136,16 +142,30 @@ export function FeatureDetailStatsStrip({
             absoluteLine={osmFresh.absoluteLine}
             isOld={osmIsOld}
           />
-        </StatBlocksRow>
+        </KpiRow>
       </section>
 
       {m && (
         <>
-          <StatBlocksRow
-            className="mt-0 flex-wrap gap-y-4 lg:flex-nowrap lg:gap-y-0 [&>*]:basis-1/2 lg:[&>*]:basis-0 max-lg:[&>*:nth-child(odd)]:border-l-0 max-lg:[&>*:nth-child(odd)]:pl-0"
+          <KpiRow
+            narrowLayout="none"
+            className={
+              'mt-0 grid min-w-0 grid-cols-2 gap-x-0 gap-y-4 ' +
+              '[&>*]:min-w-0 [&>*]:border-l [&>*]:border-white/15 [&>*]:pl-3 ' +
+              /* 2 columns: row starts 1,3,5 */
+              'max-md:[&>*:nth-child(2n+1)]:border-l-0 max-md:[&>*:nth-child(2n+1)]:pl-0 ' +
+              /* 3 columns (md–lg): row starts 1,4 */
+              'md:max-lg:[&>*:nth-child(3n+1)]:border-l-0 md:max-lg:[&>*:nth-child(3n+1)]:pl-0 ' +
+              'md:grid-cols-3 ' +
+              /* 1 row × 5 flex cells: only first has no left border */
+              'lg:flex lg:flex-row lg:flex-nowrap lg:gap-x-0 lg:gap-y-0 ' +
+              'lg:[&>*]:min-w-0 lg:[&>*]:flex-1 lg:[&>*]:basis-0 ' +
+              'lg:[&>*]:border-l lg:[&>*]:border-white/15 lg:[&>*]:pl-6 ' +
+              'lg:[&>*:nth-child(5n+1)]:border-l-0 lg:[&>*:nth-child(5n+1)]:pl-0'
+            }
             aria-label={s.diffMetricsRowAria}
           >
-            <StatBlock
+            <KpiCell
               label={
                 <span className="inline-flex items-center gap-1">
                   <span>{s.iou}</span>
@@ -154,7 +174,7 @@ export function FeatureDetailStatsStrip({
               }
               value={formatDeIou(m.iou)}
             />
-            <StatBlock
+            <KpiCell
               label={
                 <span className="inline-flex items-center gap-1">
                   <span>{s.areaDelta}</span>
@@ -163,7 +183,7 @@ export function FeatureDetailStatsStrip({
               }
               value={formatDePercentPoints(m.areaDiffPct)}
             />
-            <StatBlock
+            <KpiCell
               label={
                 <span className="inline-flex items-center gap-1">
                   <span className="lg:hidden">{s.symDiff}</span>
@@ -173,7 +193,7 @@ export function FeatureDetailStatsStrip({
               }
               value={formatDePercentPoints(m.symmetricDiffPct)}
             />
-            <StatBlock
+            <KpiCell
               label={
                 <span className="inline-flex items-center gap-1">
                   <span>{s.hausdorff}</span>
@@ -182,7 +202,7 @@ export function FeatureDetailStatsStrip({
               }
               value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
             />
-            <StatBlock
+            <KpiCell
               label={
                 <span className="inline-flex items-center gap-1">
                   <span>{s.hausdorffP95}</span>
@@ -191,60 +211,62 @@ export function FeatureDetailStatsStrip({
               }
               value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}
             />
-          </StatBlocksRow>
+          </KpiRow>
 
-          <StatBlocksRow className="mt-10 sm:mt-12 lg:mt-14" aria-label={s.layersRowAria}>
-            <LayerToggleStatBlock
-              inputId={`${layerId}-official`}
-              checked={mapLayers.showOfficial}
-              onChange={mapLayers.setShowOfficial}
-              label={s.areaOfficial}
-              value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
-              swatch={
-                <div
-                  className="h-full w-full shrink-0 rounded-[2px] border border-solid"
-                  style={{
-                    borderColor: o.line,
-                    backgroundColor: hexToRgba(o.fill, o.fillOpacity),
-                  }}
-                  aria-hidden
-                />
-              }
-            />
-            <LayerToggleStatBlock
-              inputId={`${layerId}-osm`}
-              checked={mapLayers.showOsm}
-              onChange={mapLayers.setShowOsm}
-              label={s.areaOsm}
-              value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
-              swatch={
-                <div
-                  className="h-full w-full shrink-0 rounded-[2px] border border-solid"
-                  style={{
-                    borderColor: osmC.line,
-                    backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
-                  }}
-                  aria-hidden
-                />
-              }
-            />
-            <LayerToggleStatBlock
-              inputId={`${layerId}-diff`}
-              checked={mapLayers.showDiff}
-              onChange={mapLayers.setShowDiff}
-              label={de.map.diff}
-              value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
-              swatch={
-                <div
-                  className="h-full w-full shrink-0 rounded-[2px] border border-solid border-slate-500"
-                  style={{
-                    background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
-                  }}
-                  aria-hidden
-                />
-              }
-            />
-          </StatBlocksRow>
+          <KpiSection className="mt-6" aria-label={s.layersRowAria}>
+            <KpiRow className="mt-0">
+              <KpiToggleCell
+                inputId={`${layerId}-official`}
+                checked={mapLayers.showOfficial}
+                onChange={mapLayers.setShowOfficial}
+                label={s.areaOfficial}
+                value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
+                swatch={
+                  <div
+                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
+                    style={{
+                      borderColor: o.line,
+                      backgroundColor: hexToRgba(o.fill, o.fillOpacity),
+                    }}
+                    aria-hidden
+                  />
+                }
+              />
+              <KpiToggleCell
+                inputId={`${layerId}-osm`}
+                checked={mapLayers.showOsm}
+                onChange={mapLayers.setShowOsm}
+                label={s.areaOsm}
+                value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
+                swatch={
+                  <div
+                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
+                    style={{
+                      borderColor: osmC.line,
+                      backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
+                    }}
+                    aria-hidden
+                  />
+                }
+              />
+              <KpiToggleCell
+                inputId={`${layerId}-diff`}
+                checked={mapLayers.showDiff}
+                onChange={mapLayers.setShowDiff}
+                label={de.map.diff}
+                value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
+                swatch={
+                  <div
+                    className="h-full w-full shrink-0 rounded-[2px] border border-solid border-slate-500"
+                    style={{
+                      background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
+                    }}
+                    aria-hidden
+                  />
+                }
+              />
+            </KpiRow>
+          </KpiSection>
         </>
       )}
     </>
@@ -317,7 +339,7 @@ function IssueIndicatorStatColumn({
       : level === 'review'
         ? 'text-amber-200'
         : level === 'issue'
-          ? 'text-rose-200'
+          ? 'text-rose-300'
           : 'text-slate-400'
   const primaryText = level ? issueLevelLabelDe(level) : EM_DASH
   const reasonsLine = reasons?.length

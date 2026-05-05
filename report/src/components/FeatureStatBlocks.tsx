@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-const statBlocksRowDefaultLayout = [
+const kpiRowDefaultLayout = [
   'flex min-w-0 flex-row flex-nowrap gap-x-0',
   '[&>*]:min-w-0 [&>*]:flex-1 [&>*]:basis-0',
   '[&>*]:border-white/15 [&>*]:border-l [&>*]:pl-3',
@@ -9,7 +9,7 @@ const statBlocksRowDefaultLayout = [
 ] as const
 
 /** Three columns then remainder: fits five home KPIs in two rows on narrow viewports. */
-const statBlocksRowNarrowGridLayout = [
+const kpiRowNarrowGridLayout = [
   'grid min-w-0 grid-cols-3 gap-x-3 gap-y-4',
   '[&>*]:min-w-0',
   'md:flex md:flex-row md:flex-nowrap md:gap-x-0 md:gap-y-0',
@@ -23,8 +23,9 @@ const statBlocksRowNarrowGridLayout = [
  * Single horizontal row of stat blocks (label on top, value below).
  * Children get equal flex width; left border between cells (not before first).
  * Use `narrowLayout="gridThreeTwoRows"` for a 3+2 grid below the `md` breakpoint.
+ * Use `narrowLayout="none"` when `className` fully defines layout (e.g. responsive grid + borders).
  */
-export function StatBlocksRow({
+export function KpiRow({
   children,
   className = '',
   'aria-label': ariaLabel,
@@ -33,10 +34,14 @@ export function StatBlocksRow({
   children: ReactNode
   className?: string
   'aria-label'?: string
-  narrowLayout?: 'default' | 'gridThreeTwoRows'
+  narrowLayout?: 'default' | 'gridThreeTwoRows' | 'none'
 }) {
   const layoutClasses =
-    narrowLayout === 'gridThreeTwoRows' ? statBlocksRowNarrowGridLayout : statBlocksRowDefaultLayout
+    narrowLayout === 'none'
+      ? (['min-w-0'] as const)
+      : narrowLayout === 'gridThreeTwoRows'
+        ? kpiRowNarrowGridLayout
+        : kpiRowDefaultLayout
 
   return (
     <dl aria-label={ariaLabel} className={[...layoutClasses, className].filter(Boolean).join(' ')}>
@@ -45,8 +50,33 @@ export function StatBlocksRow({
   )
 }
 
+/** Shared bordered wrapper used around stat/filter rows. */
+export function KpiSection({
+  children,
+  className = '',
+  'aria-label': ariaLabel,
+}: {
+  children: ReactNode
+  className?: string
+  'aria-label'?: string
+}) {
+  return (
+    <section
+      aria-label={ariaLabel}
+      className={[
+        'rounded border border-slate-700 bg-slate-900 p-4 transition-colors hover:bg-slate-800/40',
+        className,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {children}
+    </section>
+  )
+}
+
 /** KPI cell: label on top, large value underneath (optional unit). */
-export function StatBlock({
+export function KpiCell({
   label,
   value,
   unit,
@@ -71,7 +101,7 @@ export function StatBlock({
 /**
  * Layer toggle row cell: value on top; checkbox + swatch + label below.
  */
-export function LayerToggleStatBlock({
+export function KpiToggleCell({
   inputId,
   checked,
   onChange,
@@ -146,7 +176,7 @@ export function LayerToggleStatBlock({
   )
 }
 
-/** Empty fourth column; inherits cell layout from `StatBlocksRow` parent. */
-export function StatRowSpacer() {
+/** Empty fourth column; inherits cell layout from `KpiRow` parent. */
+export function KpiRowSpacer() {
   return <div aria-hidden />
 }

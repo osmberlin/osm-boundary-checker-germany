@@ -14,7 +14,7 @@ import {
 import { MapProvider } from 'react-map-gl/maplibre'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
-import { LayerToggleStatBlock, StatBlocksRow } from '../components/FeatureStatBlocks'
+import { KpiRow, KpiSection, KpiToggleCell } from '../components/FeatureStatBlocks'
 import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
@@ -303,7 +303,7 @@ export function AreaReport() {
         </div>
       ) : null}
       <section className="mb-6" aria-label={st.summaryStatRowAria}>
-        <StatBlocksRow className="mt-0">
+        <KpiRow className="mt-0">
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingReport}
             relativeLine={reportFresh.relativeLine ?? EM_DASH}
@@ -323,15 +323,12 @@ export function AreaReport() {
             absoluteLine={osmFresh.absoluteLine}
             isOld={osmIsOld}
           />
-        </StatBlocksRow>
+        </KpiRow>
       </section>
 
-      <section
-        className="mb-6 rounded border border-slate-700 bg-slate-900 p-4 transition-colors hover:bg-slate-800/40"
-        aria-label={st.summaryLegendRowAria}
-      >
-        <StatBlocksRow className="mt-0">
-          <LayerToggleStatBlock
+      <KpiSection className="mb-6" aria-label={st.summaryLegendRowAria}>
+        <KpiRow className="mt-0">
+          <KpiToggleCell
             inputId={`${statsInputId}-matched`}
             checked={catCounts.matched === 0 ? false : isCategoryEnabled('matched')}
             disabled={catCounts.matched === 0}
@@ -340,7 +337,7 @@ export function AreaReport() {
             value={formatDeInteger(catCounts.matched)}
             swatch={<ReportCategorySquareSwatch category="matched" />}
           />
-          <LayerToggleStatBlock
+          <KpiToggleCell
             inputId={`${statsInputId}-official`}
             checked={catCounts.official_only === 0 ? false : isCategoryEnabled('official_only')}
             disabled={catCounts.official_only === 0}
@@ -349,7 +346,7 @@ export function AreaReport() {
             value={formatDeInteger(catCounts.official_only)}
             swatch={<ReportCategorySquareSwatch category="official_only" />}
           />
-          <LayerToggleStatBlock
+          <KpiToggleCell
             inputId={`${statsInputId}-unmatched`}
             checked={catCounts.unmatched_osm === 0 ? false : isCategoryEnabled('unmatched_osm')}
             disabled={catCounts.unmatched_osm === 0}
@@ -358,8 +355,8 @@ export function AreaReport() {
             value={formatDeInteger(catCounts.unmatched_osm)}
             swatch={<ReportCategorySquareSwatch category="unmatched_osm" />}
           />
-        </StatBlocksRow>
-      </section>
+        </KpiRow>
+      </KpiSection>
 
       <div className="mb-8">
         <div className="w-full overflow-hidden rounded border border-slate-700">
