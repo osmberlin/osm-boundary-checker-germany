@@ -57,13 +57,35 @@ flowchart LR
   JSON --> SNAP
 ```
 
-Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `download` (BKG + optional HTTP official + OSM PBF/extract) then `compare` per `datasets/<area>/config.jsonc`. `**pipeline:nightly**` applies a daily refresh window policy per source: cache is reused within the same local refresh window, and re-download is allowed once per day after 01:00 (Europe/Berlin by default).
+Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `download` (BKG + optional HTTP official + OSM PBF/extract) then `compare` per `datasets/<area>/config.jsonc`. Official boundaries use **upstream metadata first**: each run resolves a canonical **`official.sourceUpdatedAt`** via `official.download.upstreamDateResolver` (BKG: GDZ HTML _Aktualitätsstand_; HTTP areas: e.g. `wfs_inspire_iso19139`, `iso19139_xml`, `ogc_api_features_temporal_end` — see [`scripts/shared/downloadOfficialConfig.ts`](../scripts/shared/downloadOfficialConfig.ts)). Geometry bytes (ZIP / GetFeature) are **skipped when `sourceUpdatedAt` is unchanged** and a prior FlatGeobuf exists, unless `--force`. OSM PBF caching keeps its own policy in [`scripts/osm/download-germany-pbf.ts`](../scripts/osm/download-germany-pbf.ts).
 
 Config ownership is explicit:
 
 - `datasets/<area>/config.jsonc` = human-authored setup (compare, profiles, optional direct official download/source facts).
-- `datasets/<area>/source/metadata.json` = runtime provenance written by pipeline scripts. The `official` block holds the amtliche Quelle (URLs, licence, download timestamps). The `osm` block is **slim** only: `downloadedAt` (from the Germany PBF header when `osm:extract` runs) and optional `sourceDateSource`. Geofabrik URLs and ODbL defaults are **not** duplicated here — they live in `GERMANY_OSM_SOURCE_DEFAULTS` in [`scripts/shared/germanyOsmPbf.ts`](../scripts/shared/germanyOsmPbf.ts) and are merged at compare / report time via [`scripts/shared/osmGermanyProvenance.ts`](../scripts/shared/osmGermanyProvenance.ts).
+- `datasets/<area>/source/metadata.json` = runtime provenance written by pipeline scripts. The `official` block holds the amtliche Quelle (URLs, licence, timestamps below). The `osm` block is **slim**: `downloadedAt` (PBF snapshot from header when applicable), optional `extractedAt` (when `osm:extract` rebuilt the shared FlatGeobuf), and optional `sourceDateSource`. Geofabrik URLs and ODbL defaults are **not** duplicated here — they live in `GERMANY_OSM_SOURCE_DEFAULTS` in [`scripts/shared/germanyOsmPbf.ts`](../scripts/shared/germanyOsmPbf.ts) and are merged at compare / report time via [`scripts/shared/osmGermanyProvenance.ts`](../scripts/shared/osmGermanyProvenance.ts).
 - Legacy config keys `sources` and `osmExtract` are not supported.
+
+### Source timestamp contract (`*At` fields)
+
+Single reference for pipeline authors and report UI (avoid duplicating this elsewhere):
+
+| Field                                       | Where written                            | Meaning                                                                                                                                            |
+| ------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`official.sourceUpdatedAt`**              | `bkg/extract.ts`, `download/official.ts` | **Amtlicher Datenstand** normalized to ISO (calendar reference from GDZ / capabilities / OGC API).                                                 |
+| **`official.sourceUpdatedAtVerifiedAt`**    | Same                                     | Wall-clock instant when upstream metadata was **successfully re-fetched** and `sourceUpdatedAt` confirmed (even if geometry download was skipped). |
+| **`official.downloadedAt`**                 | Same                                     | When **geometry bytes** were last fetched (ZIP / WFS response → FlatGeobuf), not the catalog check.                                                |
+| **`official.sourceDateSource`**             | Same                                     | Provenance enum: `bkg_gdz_aktualitaetsstand`, `wfs_capabilities`, `ogc_api_features_collection`, … (canonical values only).                        |
+| **`osm.downloadedAt`**                      | `osm/extract-osm.ts`                     | Snapshot time from **Germany PBF header** when `sourceDateSource === osm_pbf_header`.                                                              |
+| **`osm.extractedAt`**                       | `osm/extract-osm.ts`                     | When the **shared OSM FlatGeobuf** was rebuilt (wall clock).                                                                                       |
+| **BKG `.cache/bkg/download-metadata.json`** | `bkg/download.ts`                        | Same trio as official for VG25: `sourceUpdatedAt`, `sourceUpdatedAtVerifiedAt`, `downloadedAt` (+ paths).                                          |
+
+Canonical-only runtime rule: `bkgDownloadMetadataSchema` does not accept legacy `zipLastFetchedAt`. If an **old** `.cache/bkg/download-metadata.json` is restored (for example from GitHub Actions cache), normalize it with `bun run migrate:source-metadata` before BKG extract runs.
+
+CI enforcement: `data-refresh.yml` runs `migrate:source-metadata` after fallback artifacts are restored and before extract consumes BKG cache metadata. Checked-in `datasets/**/source/metadata.json` is validated by schema at read time; it is not rewritten by this migration.
+
+Report KPI “Amtliche Daten” turns **rose** when **`sourceUpdatedAtVerifiedAt`** is older than ~14 days (`OFFICIAL_VERIFICATION_STALE_DAYS` in [`report/src/lib/officialAreaSummaryFreshness.ts`](../report/src/lib/officialAreaSummaryFreshness.ts)), not when `sourceUpdatedAt` is a past calendar year.
+
+Embedded **`comparison_table.json`** carries the official/OSM metadata snapshot produced at compare time ([`scripts/compare/lib/writeOutputs.ts`](../scripts/compare/lib/writeOutputs.ts)); the UI reads **only** that payload — no runtime merge from `source/metadata.json`.
 
 ---
 

@@ -54,7 +54,7 @@ Legacy script names `download-bkg-vg25` and `extract-vg250` still map to `bkg:do
 
 - `.cache/bkg/vg25.utm32s.gpkg.zip`
 - `.cache/bkg/extract/…` (unzipped tree, often `…/daten/DE_VG25.gpkg`)
-- `.cache/bkg/download-metadata.json` — includes `downloadedAt`, `gpkgRelativePath`
+- `.cache/bkg/download-metadata.json` — `sourceUpdatedAt`, `sourceUpdatedAtVerifiedAt`, `downloadedAt`, paths (see **Source timestamp contract** in [`docs/processing-and-analysis.md`](./processing-and-analysis.md)).
 
 If you previously used `.cache/bkg-vg25/`, move that folder to `.cache/bkg/` or run `bkg:download` again so paths in `download-metadata.json` match.
 

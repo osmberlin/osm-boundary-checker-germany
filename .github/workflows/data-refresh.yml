@@ -142,6 +142,11 @@ jobs:
           FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
+      - name: Normalize runtime source metadata (single canonical state)
+        run: bun run migrate:source-metadata
+        env:
+          DATA_ROOT: ${{ github.workspace }}
+
       - name: Extract and prepare geometry
         timeout-minutes: 90
         run: bun run pipeline:nightly:extract

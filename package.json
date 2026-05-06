@@ -17,6 +17,7 @@
     "pipeline:nightly:download": "bun run --filter ./scripts pipeline:nightly:download",
     "pipeline:nightly:extract": "bun run --filter ./scripts pipeline:nightly:extract",
     "pipeline:nightly:compare": "bun run --filter ./scripts pipeline:nightly:compare",
+    "migrate:source-metadata": "bun run --filter ./scripts migrate:source-metadata",
     "berlin:download": "bun run --filter ./scripts berlin:download",
     "download": "bun run download:bkg && bun run download:official && bun run download:osm",
     "download:bkg": "bun run bkg:download && bun run bkg:extract",

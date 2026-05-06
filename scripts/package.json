@@ -10,6 +10,7 @@
     "pipeline:nightly:download": "bun run pipeline/nightly.ts --phase download",
     "pipeline:nightly:extract": "bun run pipeline/nightly.ts --phase extract",
     "pipeline:nightly:compare": "bun run pipeline/nightly.ts --phase compare",
+    "migrate:source-metadata": "bun run migrations/normalize-source-metadata.ts",
     "berlin:download": "bun run berlin/download-official.ts",
     "download": "bun run download:bkg && bun run download:official && bun run download:osm",
     "download:bkg": "bun run bkg:download && bun run bkg:extract",
