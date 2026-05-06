@@ -10,6 +10,7 @@ import { ReportLayout } from './App'
 import { comparisonQueryOptions, featureQueryOptions, snapshotsQueryOptions } from './data/load'
 import { routerBasePath } from './data/paths'
 import { de } from './i18n/de'
+import { validateFeatureDetailSearch } from './lib/featureDetailSearch'
 import { validateGermanKeySearch } from './lib/germanKeySearch'
 import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
 import { stringifySearchPretty } from './lib/routerSearchStringify'
@@ -124,6 +125,7 @@ const areaRoute = createRoute({
 const featureRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/$areaId/feature/$featureKey',
+  validateSearch: (search: Record<string, unknown>) => validateFeatureDetailSearch(search),
   loader: async ({ context, params }) => {
     return context.queryClient.ensureQueryData(
       featureQueryOptions(params.areaId, params.featureKey),

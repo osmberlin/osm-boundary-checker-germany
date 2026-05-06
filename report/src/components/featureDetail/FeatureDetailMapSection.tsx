@@ -1,15 +1,20 @@
-import { lazy, Suspense } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { lazy, Suspense, useState } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import type { ViewState } from 'react-map-gl/maplibre'
 import {
   comparisonPmtilesMaplibreUrl,
   comparisonUnmatchedPmtilesMaplibreUrl,
 } from '../../data/paths'
+import { useFeatureDetailMapBoundaryScope } from '../../hooks/useFeatureDetailMapBoundaryScope'
 import { de } from '../../i18n/de'
+import { handleComparisonMapFeatureClick } from '../../lib/comparisonMapFeatureClick'
 import type { MapViewQueryValue } from '../../lib/mapViewQueryParam'
 import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
+import { MapOverlapPickDialog } from '../map/MapOverlapPickDialog'
 import { InfoNotice } from '../InfoNotice'
+import { FeatureDetailBoundaryScopeToggle } from './FeatureDetailBoundaryScopeToggle'
 
 const ComparisonMapShell = lazy(() => import('../map/ComparisonMapShell'))
 const DETAIL_MAP_MAX_BOUNDS_SCALE = 4
@@ -65,6 +70,9 @@ export function FeatureDetailMapSection({
   overpassGeojson: OverpassGeoJsonFeatureCollection | null
   wfsGeojson: GeoJSON.FeatureCollection | null
 }) {
+  const navigate = useNavigate()
+  const { showOnlySelected } = useFeatureDetailMapBoundaryScope()
+  const [overlapPickKeys, setOverlapPickKeys] = useState<string[] | null>(null)
   const hasRowMapTiles =
     row.category === 'unmatched_osm' ? data.hasUnmatchedPmtiles === true : data.hasPmtiles
   const detailMaxBounds = toDetailMapMaxBounds(row.mapBbox)
@@ -74,50 +82,76 @@ export function FeatureDetailMapSection({
   }
 
   return (
-    <div className="mt-4 w-full overflow-hidden rounded border border-slate-700">
-      <div className="h-[480px] w-full">
-        <Suspense
-          fallback={
-            <div className="flex h-full items-center justify-center text-slate-500">
-              {de.feature.loadingMap}
-            </div>
-          }
-        >
-          <MapProvider>
-            <ComparisonMapShell
-              sources={{
-                primary: {
-                  pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
-                  sourceLayer: data.tippecanoeLayer,
-                },
-                unmatched: data.hasUnmatchedPmtiles
-                  ? {
-                      pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
-                      sourceLayer: data.tippecanoeLayer,
-                      visible: row.category === 'unmatched_osm',
-                    }
-                  : undefined,
-              }}
-              view={{
-                featureId: row.canonicalMatchKey,
-                mapBbox: row.mapBbox,
-                maxBounds: detailMaxBounds,
-                urlMapView: mapView.mapView,
-                onMoveEndCommitUrl: mapView.commitMapViewFromMap,
-              }}
-              layers={{
-                showOfficial: row.category === 'unmatched_osm' ? false : mapLayers.showOfficial,
-                showOsm: row.category === 'unmatched_osm' ? false : mapLayers.showOsm,
-                showDiff: row.category === 'unmatched_osm' ? false : mapLayers.showDiff,
-              }}
-              overlays={{
-                overpassGeojson,
-                wfsGeojson,
-              }}
-            />
-          </MapProvider>
-        </Suspense>
+    <>
+      <div className="mt-4 w-full overflow-hidden rounded border border-slate-700">
+        <div className="h-[480px] w-full">
+          <Suspense
+            fallback={
+              <div className="flex h-full items-center justify-center text-slate-500">
+                {de.feature.loadingMap}
+              </div>
+            }
+          >
+            <MapProvider>
+              <ComparisonMapShell
+                sources={{
+                  primary: {
+                    pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
+                    sourceLayer: data.tippecanoeLayer,
+                  },
+                  unmatched: data.hasUnmatchedPmtiles
+                    ? {
+                        pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
+                        sourceLayer: data.tippecanoeLayer,
+                        visible: row.category === 'unmatched_osm',
+                      }
+                    : undefined,
+                }}
+                view={{
+                  featureId: showOnlySelected ? row.canonicalMatchKey : null,
+                  mapBbox: row.mapBbox,
+                  maxBounds: showOnlySelected ? detailMaxBounds : undefined,
+                  urlMapView: mapView.mapView,
+                  onMoveEndCommitUrl: mapView.commitMapViewFromMap,
+                }}
+                layers={{
+                  showOfficial: row.category === 'unmatched_osm' ? false : mapLayers.showOfficial,
+                  showOsm: row.category === 'unmatched_osm' ? false : mapLayers.showOsm,
+                  showDiff: row.category === 'unmatched_osm' ? false : mapLayers.showDiff,
+                }}
+                overlays={{
+                  overpassGeojson,
+                  wfsGeojson,
+                }}
+                interaction={
+                  showOnlySelected
+                    ? undefined
+                    : {
+                        onFeatureClick: (featureKeys) =>
+                          handleComparisonMapFeatureClick({
+                            featureKeys,
+                            areaKey,
+                            data,
+                            navigate,
+                            onOverlapPick: setOverlapPickKeys,
+                          }),
+                      }
+                }
+              />
+            </MapProvider>
+          </Suspense>
+        </div>
+        <div className="border-t border-slate-700 px-3 py-2.5">
+          <FeatureDetailBoundaryScopeToggle />
+        </div>
       </div>
-    </div>
+      <MapOverlapPickDialog
+        open={overlapPickKeys !== null}
+        keys={overlapPickKeys}
+        areaKey={areaKey}
+        data={data}
+        onClose={() => setOverlapPickKeys(null)}
+      />
+    </>
   )
 }

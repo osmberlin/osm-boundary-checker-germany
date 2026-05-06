@@ -262,6 +262,10 @@ export const de = {
     compareFailedNotice:
       'Der Vergleich für dieses Gebiet ist im letzten Lauf fehlgeschlagen. Die Detailansicht kann unvollständig sein.',
     loadingMap: 'Karte wird geladen …',
+    /** Feature map: show only the selected boundary vs all boundaries in the tiles (URL `allBoundaries`). */
+    mapBoundaryScopeOnly: 'Nur ausgewählte Grenze zeigen',
+    mapBoundaryScopeAll: 'Alle Grenzen zeigen',
+    mapBoundaryScopeAria: 'Kartenausschnitt: nur ausgewählte Grenze oder alle Grenzen',
     osmRelation: 'OSM-Relation',
     stats: {
       /** Matches JSON field name; shown next to key value on the feature header row. */

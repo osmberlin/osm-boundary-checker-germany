@@ -106,6 +106,8 @@ export default function MapPane({
   onZoomChange?: (zoom: number) => void
 }) {
   const skipNextMoveEndCommitRef = useRef(false)
+  /** Skip duplicate `onLoad` bbox fits for the same view config (same bbox, still no URL camera). */
+  const lastInitialBboxFitKeyRef = useRef<string | null>(null)
   const onFeatureClick = interaction?.onFeatureClick
   const { primary, unmatched } = sources
   const { featureId, mapBbox, maxBounds, urlMapView, onMoveEndCommitUrl } = view
@@ -153,16 +155,18 @@ export default function MapPane({
     if (urlMapView) return
     if (!mapBbox) return
     const [w, s, east, n] = mapBbox
-    if (w < east && s < n) {
-      skipNextMoveEndCommitRef.current = true
-      e.target.fitBounds(
-        [
-          [w, s],
-          [east, n],
-        ],
-        { padding: 40, duration: 0 },
-      )
-    }
+    if (!(w < east && s < n)) return
+    const bboxKey = `${w},${s},${east},${n}`
+    if (lastInitialBboxFitKeyRef.current === bboxKey) return
+    lastInitialBboxFitKeyRef.current = bboxKey
+    skipNextMoveEndCommitRef.current = true
+    e.target.fitBounds(
+      [
+        [w, s],
+        [east, n],
+      ],
+      { padding: 40, duration: 0 },
+    )
   }
 
   function onMoveEnd(e: ViewStateChangeEvent) {
