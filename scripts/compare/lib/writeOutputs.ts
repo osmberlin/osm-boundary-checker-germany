@@ -60,6 +60,7 @@ function compactOfficialSource(
     'sourceDownloadUrl',
     'sourcePublishedAt',
     'sourceUpdatedAt',
+    'sourceUpdatedAtVerifiedAt',
     'sourceDateSource',
     'downloadedAt',
     'licenseId',

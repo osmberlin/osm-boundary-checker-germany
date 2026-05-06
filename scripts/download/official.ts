@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// Config-driven HTTP official boundaries (WFS GeoJSON / GML) → source/official.fgb. Requires ogr2ogr.
+// Config-driven HTTP official boundaries (WFS GeoJSON / GML, OGC API Features) → source/official.fgb.
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import {
@@ -8,7 +8,6 @@ import {
   readdirSync,
   renameSync,
   rmSync,
-  statSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
@@ -16,14 +15,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
 import { parseAreaOfficialSourceFacts } from '../shared/areaConfigMetadata.ts'
-import { emitCacheDecision, mapDailyRefreshReasonToCacheState } from '../shared/cacheDecision.ts'
-import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
+import { emitCacheDecision } from '../shared/cacheDecision.ts'
 import {
   DATASETS_DIRECTORY,
   OFFICIAL_SOURCE_RELATIVE_PATH,
   datasetFolderPath,
 } from '../shared/datasetPaths.ts'
 import { parseDownloadOfficial } from '../shared/downloadOfficialConfig.ts'
+import { resolveHttpOfficialUpstream } from '../shared/officialUpstreamResolution.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
   type AreaSourceMetadataFile,
@@ -35,7 +34,6 @@ import {
   readAreaSourceMetadataFile,
   writeAreaSourceMetadataFile,
 } from '../shared/sourceMetadataIo.ts'
-import { extractWfsDateMetadata } from '../shared/wfsSourceMetadata.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 function discoverAreas(repoRoot: string): string[] {
@@ -79,7 +77,6 @@ function runOgr2ogrToFgb(sourcePathOrUrl: string, outFgb: string): void {
     'FlatGeobuf',
     '-t_srs',
     'EPSG:4326',
-    // Turf/compare expects linear polygonal geometry, not CurvePolygon.
     '-nlt',
     'CONVERT_TO_LINEAR',
     '-nlt',
@@ -133,7 +130,7 @@ function inferOfficialLicenseDefaults(sourceUrl: string): {
     return {
       licenseId: 'dl_de_by_20',
       licenseLabel: datasetLicenseLabelForId('dl_de_by_20'),
-      licenseSourceUrl: 'https://api.hamburg.de/datasets/v1/schulen',
+      licenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
       osmCompatibility: 'no',
       osmCompatibilitySourceUrl: 'https://api.hamburg.de/datasets/v1/schulen',
     }
@@ -141,13 +138,79 @@ function inferOfficialLicenseDefaults(sourceUrl: string): {
   return {}
 }
 
+function buildOfficialPatchBase(params: {
+  prevOfficial: Partial<SourceMetadataSide>
+  defaults: Partial<SourceMetadataSide>
+  inferredLicense: ReturnType<typeof inferOfficialLicenseDefaults>
+  specUrl: string
+  specFormat: 'geojson' | 'gml'
+  specCrs?: string
+  area: string
+}): Omit<
+  SourceMetadataSide,
+  | 'sourceUpdatedAt'
+  | 'sourceUpdatedAtVerifiedAt'
+  | 'sourcePublishedAt'
+  | 'downloadedAt'
+  | 'sourceDateSource'
+> {
+  const { prevOfficial, defaults, inferredLicense, specUrl, specFormat, specCrs, area } = params
+  const sourcePublicUrl = prevOfficial.sourcePublicUrl ?? defaults.sourcePublicUrl
+  if (!sourcePublicUrl) {
+    throw new Error(
+      `Area "${area}": missing official.sourcePublicUrl in metadata/config — set official.source.sourcePublicUrl.`,
+    )
+  }
+  return {
+    layer: prevOfficial.layer ?? defaults.layer,
+    provider: prevOfficial.provider ?? defaults.provider ?? 'HTTP',
+    dataset:
+      prevOfficial.dataset ??
+      defaults.dataset ??
+      (specFormat === 'geojson' ? 'GeoJSON' : 'WFS GML'),
+    sourcePublicUrl,
+    sourceDownloadUrl: prevOfficial.sourceDownloadUrl ?? defaults.sourceDownloadUrl ?? specUrl,
+    licenseId:
+      prevOfficial.licenseId ?? defaults.licenseId ?? inferredLicense.licenseId ?? 'unknown',
+    licenseLabel:
+      prevOfficial.licenseLabel ??
+      defaults.licenseLabel ??
+      inferredLicense.licenseLabel ??
+      'unknown',
+    licenseSourceUrl:
+      prevOfficial.licenseSourceUrl ??
+      defaults.licenseSourceUrl ??
+      inferredLicense.licenseSourceUrl,
+    osmCompatibility:
+      prevOfficial.osmCompatibility ??
+      defaults.osmCompatibility ??
+      inferredLicense.osmCompatibility ??
+      'unknown',
+    osmCompatibilitySourceUrl:
+      prevOfficial.osmCompatibilitySourceUrl ??
+      defaults.osmCompatibilitySourceUrl ??
+      inferredLicense.osmCompatibilitySourceUrl,
+    osmCompatibilityComment:
+      prevOfficial.osmCompatibilityComment ?? defaults.osmCompatibilityComment,
+    note: prevOfficial.note ?? defaults.note ?? (specCrs ? `Declared CRS: ${specCrs}` : undefined),
+    license: prevOfficial.license ?? defaults.license,
+  }
+}
+
+type OfficialDownloadResult = 'ok' | 'skip' | 'fail' | 'fail_upstream'
+type DownloadFailure = {
+  area: string
+  reason: string
+  detail?: string
+}
+
 async function processArea(
   configRoot: string,
   runtimeRoot: string,
   area: string,
   force: boolean,
-  timezone: string,
-): Promise<'ok' | 'skip' | 'fail'> {
+  failures: DownloadFailure[],
+): Promise<OfficialDownloadResult> {
   const areaPath = datasetFolderPath(runtimeRoot, area)
   let raw: unknown
   try {
@@ -160,6 +223,7 @@ async function processArea(
       reason: 'config',
       detail: String(e),
     })
+    failures.push({ area, reason: 'config', detail: String(e) })
     return 'fail'
   }
 
@@ -174,6 +238,7 @@ async function processArea(
       reason: 'invalid_download_config',
       detail: String(e),
     })
+    failures.push({ area, reason: 'invalid_download_config', detail: String(e) })
     return 'fail'
   }
 
@@ -191,68 +256,103 @@ async function processArea(
   }
 
   const outAbs = join(areaPath, OFFICIAL_SOURCE_RELATIVE_PATH)
-  const cacheExists = existsSync(outAbs)
-  const cachedAt = cacheExists ? statSync(outAbs).mtime.toISOString() : undefined
-  const decision = decideDailyRefresh({
-    force,
-    cacheExists,
-    cachedAt,
-    timezone,
-  })
-  if (!decision.shouldDownload) {
+  const prev: AreaSourceMetadataFile = readAreaSourceMetadataFile(areaPath) ?? {}
+  const prevOfficial: Partial<SourceMetadataSide> = prev.official ?? {}
+  const inferredLicense = inferOfficialLicenseDefaults(spec.url)
+  const defaults = parseAreaOfficialSourceFacts(area, raw) ?? {}
+
+  let resolved
+  try {
+    resolved = await resolveHttpOfficialUpstream(spec)
+  } catch (error) {
+    logLine({
+      area,
+      source: 'official',
+      status: 'fail',
+      reason: 'upstream_resolve_failed',
+      detail: String(error),
+    })
+    failures.push({ area, reason: 'upstream_resolve_failed', detail: String(error) })
+    return 'fail_upstream'
+  }
+
+  const verifiedAt = new Date().toISOString()
+  const prevStand = prevOfficial.sourceUpdatedAt?.trim()
+  const geometryExists = existsSync(outAbs)
+  const standMatches = prevStand === resolved.sourceUpdatedAt.trim()
+  const hasPersistedGeometryFetchTime = Boolean(prevOfficial.downloadedAt?.trim())
+  const canReuseGeometry = !force && geometryExists && standMatches && hasPersistedGeometryFetchTime
+
+  if (canReuseGeometry) {
     emitCacheDecision({
       source: 'official',
       area,
-      decision: mapDailyRefreshReasonToCacheState(decision.reason),
-      reason: decision.reason,
+      decision: 'hit',
+      reason: 'source_updated_at_unchanged',
       action: 'reuse',
-      detail: decision.because,
-      timezone: decision.timezone,
-      currentWindow: decision.currentWindowKey,
-      cachedWindow: decision.cachedWindowKey,
+      detail: resolved.sourceDateSource,
     })
     logLine({
       area,
       source: 'official',
       status: 'skip',
-      reason: 'cache_used',
-      detail: decision.because,
-      timezone: decision.timezone,
-      currentWindow: decision.currentWindowKey,
-      cachedWindow: decision.cachedWindowKey,
+      reason: 'geometry_cache_hit',
+      detail: resolved.sourceDateSource,
     })
+
+    try {
+      const basePatch = buildOfficialPatchBase({
+        prevOfficial,
+        defaults,
+        inferredLicense,
+        specUrl: spec.url,
+        specFormat: spec.format,
+        specCrs: spec.crs,
+        area,
+      })
+      const patch: AreaSourceMetadataFile = {
+        official: {
+          ...basePatch,
+          sourceUpdatedAt: resolved.sourceUpdatedAt,
+          sourcePublishedAt: resolved.sourcePublishedAt ?? prevOfficial.sourcePublishedAt,
+          sourceUpdatedAtVerifiedAt: verifiedAt,
+          downloadedAt: prevOfficial.downloadedAt,
+          sourceDateSource: resolved.sourceDateSource,
+        },
+      }
+      writeAreaSourceMetadataFile(areaPath, mergeAreaSourceMetadata(prev, patch))
+    } catch (e) {
+      logLine({
+        area,
+        source: 'official',
+        status: 'fail',
+        reason: 'metadata_write',
+        detail: String(e),
+      })
+      failures.push({ area, reason: 'metadata_write', detail: String(e) })
+      return 'fail'
+    }
     return 'skip'
   }
+
   emitCacheDecision({
     source: 'official',
     area,
-    decision: mapDailyRefreshReasonToCacheState(decision.reason),
-    reason: decision.reason,
+    decision: force ? 'forced-refresh' : standMatches ? 'miss' : 'stale',
+    reason: force
+      ? 'force_flag'
+      : !geometryExists
+        ? 'missing_geometry'
+        : 'source_updated_at_changed',
     action: 'refresh',
-    detail: decision.because,
-    timezone: decision.timezone,
-    currentWindow: decision.currentWindowKey,
-    cachedWindow: decision.cachedWindowKey,
+    detail: resolved.sourceDateSource,
   })
-  if (decision.reason === 'cache_stale_previous_window') {
-    logLine({
-      area,
-      source: 'official',
-      status: 'info',
-      reason: 'download_required',
-      detail: decision.because,
-      timezone: decision.timezone,
-      currentWindow: decision.currentWindowKey,
-      cachedWindow: decision.cachedWindowKey,
-    })
-  }
 
   const t0 = Date.now()
   logLine({ area, source: 'official', status: 'start', format: spec.format })
 
   const tmpName = `official-${area}-${randomBytes(8).toString('hex')}.geojson`
   const tmpPath = join(tmpdir(), tmpName)
-  // Keep `.fgb` extension so GDAL always writes a FlatGeobuf file, not a directory datasource.
   const outTmp = `${outAbs}.tmp-${randomBytes(4).toString('hex')}.fgb`
 
   try {
@@ -270,110 +370,47 @@ async function processArea(
           ms: Date.now() - t0,
           reason: `http_${res.status}`,
         })
+        failures.push({ area, reason: `http_${res.status}` })
         return 'fail'
       }
       const buf = new Uint8Array(await res.arrayBuffer())
       writeFileSync(tmpPath, buf)
       runOgr2ogrToFgb(tmpPath, outTmp)
     } else {
-      // WFS GML responses are not always JSON-fetchable in-process; let GDAL read from URL directly.
       runOgr2ogrToFgb(spec.url, outTmp)
     }
     rmSync(outAbs, { recursive: true, force: true })
     renameSync(outTmp, outAbs)
 
-    const prev: AreaSourceMetadataFile = readAreaSourceMetadataFile(areaPath) ?? {}
-    let extractedWfsDates: Awaited<ReturnType<typeof extractWfsDateMetadata>> = {}
-    try {
-      extractedWfsDates = await extractWfsDateMetadata(spec.url)
-      if (extractedWfsDates.sourcePublishedAt || extractedWfsDates.sourceUpdatedAt) {
-        logLine({
-          area,
-          source: 'official',
-          status: 'info',
-          reason: 'wfs_dates_detected',
-          updatedAt: extractedWfsDates.sourceUpdatedAt,
-          publishedAt: extractedWfsDates.sourcePublishedAt,
-        })
-      }
-    } catch (error) {
-      logLine({
-        area,
-        source: 'official',
-        status: 'info',
-        reason: 'wfs_metadata_fetch_failed',
-        detail: String(error),
-      })
-    }
     const downloadedAt = new Date().toISOString()
-    const prevOfficial: Partial<SourceMetadataSide> = prev.official ?? {}
-    const inferredLicense = inferOfficialLicenseDefaults(spec.url)
-    const defaults = parseAreaOfficialSourceFacts(area, raw) ?? {}
-    const sourcePublicUrl = prevOfficial.sourcePublicUrl ?? defaults.sourcePublicUrl
-    if (!sourcePublicUrl) {
-      logLine({
-        area,
-        source: 'official',
-        status: 'fail',
-        reason: 'missing_source_public_url',
-        detail:
-          'Set official.sourcePublicUrl in source/metadata.json (or official.source.sourcePublicUrl).',
-      })
-      return 'fail'
-    }
-    const nextSourcePublishedAt =
-      prevOfficial.sourcePublishedAt ?? extractedWfsDates.sourcePublishedAt
-    const nextSourceUpdatedAt = prevOfficial.sourceUpdatedAt ?? extractedWfsDates.sourceUpdatedAt
-    const nextSourceDateSource =
-      prevOfficial.sourceDateSource ??
-      (nextSourcePublishedAt || nextSourceUpdatedAt
-        ? extractedWfsDates.sourceDateSource
-        : undefined)
-    const patch = {
+    const basePatch = buildOfficialPatchBase({
+      prevOfficial,
+      defaults,
+      inferredLicense,
+      specUrl: spec.url,
+      specFormat: spec.format,
+      specCrs: spec.crs,
+      area,
+    })
+    const patch: AreaSourceMetadataFile = {
       official: {
+        ...basePatch,
+        sourceUpdatedAt: resolved.sourceUpdatedAt,
+        sourcePublishedAt: resolved.sourcePublishedAt ?? prevOfficial.sourcePublishedAt,
+        sourceUpdatedAtVerifiedAt: verifiedAt,
         downloadedAt,
-        provider: prevOfficial.provider ?? defaults.provider ?? 'HTTP',
-        dataset:
-          prevOfficial.dataset ??
-          defaults.dataset ??
-          (spec.format === 'geojson' ? 'GeoJSON' : 'WFS GML'),
-        sourcePublicUrl,
-        sourceDownloadUrl: prevOfficial.sourceDownloadUrl ?? defaults.sourceDownloadUrl ?? spec.url,
-        sourcePublishedAt: nextSourcePublishedAt,
-        sourceUpdatedAt: nextSourceUpdatedAt,
-        sourceDateSource: nextSourceDateSource,
-        licenseId:
-          prevOfficial.licenseId ?? defaults.licenseId ?? inferredLicense.licenseId ?? 'unknown',
-        licenseLabel:
-          prevOfficial.licenseLabel ??
-          defaults.licenseLabel ??
-          inferredLicense.licenseLabel ??
-          'unknown',
-        licenseSourceUrl:
-          prevOfficial.licenseSourceUrl ??
-          defaults.licenseSourceUrl ??
-          inferredLicense.licenseSourceUrl,
-        osmCompatibility:
-          prevOfficial.osmCompatibility ??
-          defaults.osmCompatibility ??
-          inferredLicense.osmCompatibility ??
-          'unknown',
-        osmCompatibilitySourceUrl:
-          prevOfficial.osmCompatibilitySourceUrl ??
-          defaults.osmCompatibilitySourceUrl ??
-          inferredLicense.osmCompatibilitySourceUrl,
-        osmCompatibilityComment:
-          prevOfficial.osmCompatibilityComment ?? defaults.osmCompatibilityComment,
-        note:
-          prevOfficial.note ??
-          defaults.note ??
-          (spec.crs ? `Declared CRS: ${spec.crs}` : undefined),
-        license: prevOfficial.license ?? defaults.license,
+        sourceDateSource: resolved.sourceDateSource,
       },
     }
     writeAreaSourceMetadataFile(areaPath, mergeAreaSourceMetadata(prev, patch))
 
-    logLine({ area, source: 'official', status: 'ok', ms: Date.now() - t0 })
+    logLine({
+      area,
+      source: 'official',
+      status: 'ok',
+      ms: Date.now() - t0,
+      reason: resolved.sourceDateSource,
+    })
     return 'ok'
   } catch (e) {
     logLine({
@@ -383,6 +420,7 @@ async function processArea(
       ms: Date.now() - t0,
       detail: String(e),
     })
+    failures.push({ area, reason: 'geometry_fetch_or_convert', detail: String(e) })
     return 'fail'
   } finally {
     try {
@@ -402,7 +440,6 @@ async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { area: onlyArea, force } = parseArgs(process.argv.slice(2))
-  const timezone = resolveRefreshTimezone()
   const areas = discoverAreas(workspaceRoot)
   if (areas.length === 0) {
     console.error(`No areas with compare config under ${DATASETS_DIRECTORY}/`)
@@ -415,12 +452,25 @@ async function main() {
     process.exit(1)
   }
 
-  let code = 0
+  const failures: DownloadFailure[] = []
+  let hardFail = false
+  let upstreamFail = false
   for (const a of selected) {
-    const r = await processArea(workspaceRoot, runtimeRoot, a, force, timezone)
-    if (r === 'fail') code = 1
+    const r = await processArea(workspaceRoot, runtimeRoot, a, force, failures)
+    if (r === 'fail') hardFail = true
+    if (r === 'fail_upstream') upstreamFail = true
   }
-  process.exit(code)
+  if (failures.length > 0) {
+    const lines = failures.map(
+      (f) => `- ${f.area}: ${f.reason}${f.detail ? ` :: ${f.detail}` : ''}`,
+    )
+    console.error(
+      `[download:official] failed for ${failures.length} area(s):\n` +
+        `${lines.join('\n')}\n` +
+        'Hint: inspect official.download upstreamDateResolver strategies in scripts/shared/downloadOfficialConfig.ts.',
+    )
+  }
+  process.exit(hardFail || upstreamFail ? 1 : 0)
 }
 
 main().catch((e) => {

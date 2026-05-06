@@ -7,7 +7,7 @@ export type OfficialKeyTransposition = {
   sourceProperty?: string
   /** Only `de:regionalschluessel` is supported for compare today. */
   targetKey: 'de:regionalschluessel'
-  /** Official id (string) → raw Schlüssel string as tagged on OSM. */
+  /** Official id (string) → raw key string as tagged on OSM. */
   map: Record<string, string>
 }
 
