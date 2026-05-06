@@ -1,13 +1,14 @@
 #!/usr/bin/env bun
 import { spawnSync } from 'node:child_process'
 /**
- * Download BKG VG25 utm32s GeoPackage (ZIP) into `.cache/bkg/`, unzip, record `downloadedAt`.
- * Requires `unzip` on PATH (macOS/Linux). Use `--zip /path/to/vg25.utm32s.gpkg.zip` to seed from a local file instead of HTTP.
+ * BKG VG25: fetch GDZ **Aktualitätsstand**, optionally fetch ZIP when stand changed,
+ * unzip → `.cache/bkg/extract/…`, write `download-metadata.json`.
  */
 import {
   copyFileSync,
   existsSync,
   mkdirSync,
+  readFileSync,
   renameSync,
   readdirSync,
   rmSync,
@@ -22,18 +23,16 @@ import {
   BKG_ZIP_NAME,
   BKG_ZIP_URL,
 } from '../shared/bkg.ts'
-import { emitCacheDecision, mapDailyRefreshReasonToCacheState } from '../shared/cacheDecision.ts'
-import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
+import type { BkgDownloadMetadata } from '../shared/bkgDownloadMetadata.ts'
+import { bkgDownloadMetadataSchema } from '../shared/bkgDownloadMetadata.ts'
+import {
+  fetchBkgVg25GdzProductHtml,
+  parseBkgVg25AktualitaetsstandFromHtml,
+} from '../shared/bkgGdzCatalog.ts'
+import { emitCacheDecision } from '../shared/cacheDecision.ts'
+import { BKG_VG25_GDZ_PRODUCT_PAGE_URL } from '../shared/officialProfiles.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
-
-type DownloadMetadata = {
-  downloadedAt: string
-  sourceUrl: string
-  zipRelativePath: string
-  /** Path to `.gpkg` relative to workspace root. */
-  gpkgRelativePath: string
-}
 
 function parseArgs(argv: string[]) {
   let zipPath: string | null = null
@@ -62,7 +61,8 @@ function findGpkgFiles(dir: string): string[] {
 }
 
 function pickGpkg(paths: string[]): string {
-  const preferred = paths.find((p) => /DE_VG250\.gpkg$/i.test(p))
+  const preferred =
+    paths.find((p) => /DE_VG25\.gpkg$/i.test(p)) || paths.find((p) => /DE_VG250\.gpkg$/i.test(p))
   if (preferred) return preferred
   const fallback = paths[0]
   if (!fallback) {
@@ -133,6 +133,17 @@ async function downloadZipWithRetry(url: string): Promise<Buffer> {
   throw new Error('Failed to download BKG zip after retries')
 }
 
+function readPriorMeta(cacheDir: string): BkgDownloadMetadata | null {
+  const p = join(cacheDir, BKG_DOWNLOAD_METADATA)
+  if (!existsSync(p)) return null
+  try {
+    const raw = JSON.parse(readFileSync(p, 'utf-8')) as unknown
+    return bkgDownloadMetadataSchema.parse(raw)
+  } catch {
+    return null
+  }
+}
+
 async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
@@ -142,62 +153,32 @@ async function main() {
   const zipDest = join(cacheDir, BKG_ZIP_NAME)
   const extractDir = join(cacheDir, BKG_EXTRACT_SUBDIR)
   const extractTmp = `${extractDir}.tmp-${Date.now()}`
-  const timezone = resolveRefreshTimezone()
 
   mkdirSync(cacheDir, { recursive: true })
 
-  if (!localZip) {
-    const cacheExists = existsSync(zipDest)
-    const cachedAt = cacheExists ? statSync(zipDest).mtime.toISOString() : undefined
-    const decision = decideDailyRefresh({
-      force,
-      cacheExists,
-      cachedAt,
-      timezone,
-    })
-    if (!decision.shouldDownload) {
-      emitCacheDecision({
-        source: 'bkg',
-        decision: mapDailyRefreshReasonToCacheState(decision.reason),
-        reason: decision.reason,
-        action: 'reuse',
-        detail: decision.because,
-        timezone: decision.timezone,
-        currentWindow: decision.currentWindowKey,
-        cachedWindow: decision.cachedWindowKey,
-      })
-      console.log(
-        `Download skipped (cache used because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey ?? 'unknown'}; use --force to re-download): ${zipDest}`,
-      )
-    } else {
-      emitCacheDecision({
-        source: 'bkg',
-        decision: mapDailyRefreshReasonToCacheState(decision.reason),
-        reason: decision.reason,
-        action: 'refresh',
-        detail: decision.because,
-        timezone: decision.timezone,
-        currentWindow: decision.currentWindowKey,
-        cachedWindow: decision.cachedWindowKey,
-      })
-      if (decision.reason === 'cache_stale_previous_window') {
-        console.log(
-          `Download required (because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey})`,
-        )
-      }
-      console.log(`Fetching ${BKG_ZIP_URL}`)
-      const buf = await downloadZipWithRetry(BKG_ZIP_URL)
-      writeFileSync(zipDest, buf)
-      console.log(`Wrote ${zipDest} (${buf.length} bytes)`)
-    }
-  } else if (localZip) {
+  const html = await fetchBkgVg25GdzProductHtml(BKG_VG25_GDZ_PRODUCT_PAGE_URL)
+  const stand = parseBkgVg25AktualitaetsstandFromHtml(html)
+  if (!stand) {
+    console.error(
+      'Could not parse BKG VG25 Aktualitätsstand from GDZ product HTML. Regex/update page?',
+    )
+    process.exit(1)
+  }
+  const sourceUpdatedAt = new Date(`${stand.sourceDateIsoDate}T12:00:00.000Z`).toISOString()
+  const sourceUpdatedAtVerifiedAt = new Date().toISOString()
+
+  const prior = readPriorMeta(cacheDir)
+  const zipExists = existsSync(zipDest)
+
+  let fetchedZipBytes = false
+  if (localZip) {
     const absZip = resolve(process.cwd(), localZip)
     if (!existsSync(absZip)) {
       console.error(`File not found: ${absZip}`)
       process.exit(1)
     }
     copyFileSync(absZip, zipDest)
-    console.log(`Copied local ZIP to ${zipDest}`)
+    fetchedZipBytes = true
     emitCacheDecision({
       source: 'bkg',
       decision: 'forced-refresh',
@@ -205,6 +186,35 @@ async function main() {
       action: 'refresh',
       detail: 'provided via --zip',
     })
+    console.log(`Copied local ZIP to ${zipDest}`)
+  } else {
+    const standUnchanged = prior?.sourceUpdatedAt === sourceUpdatedAt
+    const skipZip = !force && standUnchanged && zipExists
+    if (skipZip) {
+      emitCacheDecision({
+        source: 'bkg',
+        decision: 'hit',
+        reason: 'source_updated_at_unchanged',
+        action: 'reuse',
+        detail: `Aktualitaetsstand ${stand.displayDe} unchanged`,
+      })
+      console.log(
+        `BKG ZIP skipped (Aktualitaetsstand unchanged ${stand.displayDe}; use --force to re-download): ${zipDest}`,
+      )
+    } else {
+      emitCacheDecision({
+        source: 'bkg',
+        decision: standUnchanged ? 'miss' : 'stale',
+        reason: force ? 'force_flag' : standUnchanged ? 'missing_zip' : 'source_updated_at_changed',
+        action: 'refresh',
+        detail: force ? 'force' : standUnchanged ? 'zip_missing' : 'new_stand',
+      })
+      console.log(`Fetching ${BKG_ZIP_URL}`)
+      const buf = await downloadZipWithRetry(BKG_ZIP_URL)
+      writeFileSync(zipDest, buf)
+      fetchedZipBytes = true
+      console.log(`Wrote ${zipDest} (${buf.length} bytes)`)
+    }
   }
 
   rmSync(extractTmp, { recursive: true, force: true })
@@ -231,10 +241,22 @@ async function main() {
   } finally {
     if (existsSync(extractTmp)) rmSync(extractTmp, { recursive: true, force: true })
   }
-  const gpkgRelativePath = relative(workspaceRoot, gpkgAbs)
 
-  const meta: DownloadMetadata = {
-    downloadedAt: new Date().toISOString(),
+  let downloadedAt: string
+  if (fetchedZipBytes) {
+    downloadedAt = new Date().toISOString()
+  } else if (prior?.downloadedAt) {
+    downloadedAt = prior.downloadedAt
+  } else if (zipExists) {
+    downloadedAt = statSync(zipDest).mtime.toISOString()
+  } else {
+    throw new Error('Internal error: no ZIP and no prior downloadedAt')
+  }
+
+  const meta: BkgDownloadMetadata = {
+    sourceUpdatedAt,
+    sourceUpdatedAtVerifiedAt,
+    downloadedAt,
     sourceUrl: BKG_ZIP_URL,
     zipRelativePath: relative(runtimeRoot, zipDest),
     gpkgRelativePath: relative(runtimeRoot, gpkgAbs),
@@ -242,7 +264,8 @@ async function main() {
   writeFileSync(join(cacheDir, BKG_DOWNLOAD_METADATA), JSON.stringify(meta, null, 2), 'utf-8')
 
   console.log('download-metadata.json updated.')
-  console.log('GPKG:', gpkgRelativePath)
+  console.log('GPKG:', relative(workspaceRoot, gpkgAbs))
+  console.log(`Aktualitaetsstand: ${stand.displayDe} (${sourceUpdatedAt})`)
 }
 
 main().catch((e) => {

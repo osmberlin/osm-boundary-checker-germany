@@ -12,6 +12,7 @@ import { dirname, join, resolve } from 'node:path'
 import * as p from '@clack/prompts'
 import { areaHasCompareConfig, loadAreaConfig } from '../shared/areaConfig.ts'
 import { BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA, BKG_ZIP_URL } from '../shared/bkg.ts'
+import { bkgDownloadMetadataSchema } from '../shared/bkgDownloadMetadata.ts'
 import { parseDatasetConfig } from '../shared/datasetConfig.ts'
 import {
   DATASETS_DIRECTORY,
@@ -251,15 +252,15 @@ async function main() {
   }
   const gpkgAbs = await ensureGpkgPath(workspaceRoot, runtimeRoot, cliGpkg)
 
-  let downloadedAt: string | undefined
   const metaPath = join(runtimeRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
-  if (existsSync(metaPath)) {
-    try {
-      downloadedAt = (JSON.parse(readFileSync(metaPath, 'utf-8')) as { downloadedAt: string })
-        .downloadedAt
-    } catch {
-      /* ignore */
-    }
+  if (!existsSync(metaPath)) {
+    throw new Error(`Missing ${metaPath}. Run bun run bkg:download first.`)
+  }
+  let bkgMeta
+  try {
+    bkgMeta = bkgDownloadMetadataSchema.parse(JSON.parse(readFileSync(metaPath, 'utf-8')))
+  } catch {
+    throw new Error(`Invalid ${metaPath}. Run bun run bkg:download to regenerate metadata.`)
   }
 
   const specs = discoverBkgAreaSpecs(workspaceRoot)
@@ -301,8 +302,10 @@ async function main() {
     const prev = readAreaSourceMetadataFile(areaPath) ?? {}
     const patch: AreaSourceMetadataFile = {
       official: {
-        downloadedAt,
-        sourceDateSource: 'bkg_download_metadata',
+        downloadedAt: bkgMeta.downloadedAt,
+        sourceUpdatedAt: bkgMeta.sourceUpdatedAt,
+        sourceUpdatedAtVerifiedAt: bkgMeta.sourceUpdatedAtVerifiedAt,
+        sourceDateSource: 'bkg_gdz_aktualitaetsstand',
         provider: profile.provider,
         dataset: profile.dataset,
         layer,

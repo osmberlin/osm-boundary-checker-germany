@@ -1,4 +1,4 @@
-/** BKG VG25 Ebenen (UTM32, GeoPackage inside ZIP). */
+/** BKG VG25 layers bundle (UTM32, GeoPackage inside ZIP). */
 export const BKG_ZIP_URL =
   'https://daten.gdz.bkg.bund.de/produkte/vg/vg25_ebenen/aktuell/vg25.utm32s.gpkg.zip'
 
