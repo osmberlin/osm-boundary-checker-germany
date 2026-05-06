@@ -5,6 +5,7 @@ import {
   featureDetailShardSchema,
   snapshotsSchema,
 } from '../../../scripts/shared/comparisonPayload.ts'
+import { germanKeyLookupBundleSchema } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import {
   fetchOverpassQuery,
   type OverpassBoundaryHit,
@@ -18,9 +19,17 @@ import {
   parseWfsFeatures,
   type WfsFeature,
 } from '../lib/wfsGetFeature'
+import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import type { ComparisonForReport, FeatureDetailShard, SnapshotsJson } from '../types/report'
 import { runStatusFileSchema, type RunStatusFile } from '../types/runStatus'
-import { changelogUrl, comparisonApiUrl, featureApiUrl, runStatusUrl, snapshotsUrl } from './paths'
+import {
+  changelogUrl,
+  comparisonApiUrl,
+  featureApiUrl,
+  germanKeyLookupUrl,
+  runStatusUrl,
+  snapshotsUrl,
+} from './paths'
 
 async function readJsonStrict(url: string, response: Response): Promise<unknown> {
   const bodyText = await response.text()
@@ -65,6 +74,13 @@ export async function loadSnapshots(area: string): Promise<SnapshotsJson | null>
   const r = await fetch(url)
   if (!r.ok) return null
   return snapshotsSchema.parse(await readJsonStrict(url, r))
+}
+
+export async function loadGermanKeyLookup(): Promise<GermanKeyLookupBundle> {
+  const url = germanKeyLookupUrl()
+  const r = await fetch(url)
+  if (!r.ok) throw new Error(`Failed to load ${url}: ${r.status}`)
+  return germanKeyLookupBundleSchema.parse(await readJsonStrict(url, r))
 }
 
 export async function loadRunStatus(): Promise<RunStatusFile | null> {
@@ -135,6 +151,13 @@ export function runStatusQueryOptions() {
   return queryOptions({
     queryKey: ['run-status'],
     queryFn: () => loadRunStatus(),
+  })
+}
+
+export function germanKeyLookupQueryOptions() {
+  return queryOptions({
+    queryKey: ['german-key-lookup'],
+    queryFn: () => loadGermanKeyLookup(),
   })
 }
 

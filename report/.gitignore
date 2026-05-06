@@ -12,7 +12,9 @@ dist
 dist-ssr
 *.local
 public/datasets
-public/data
+# Local pipeline outputs; ship `german-key-lookup.json` for static hosting (GitHub Pages).
+public/data/*
+!public/data/german-key-lookup.json
 
 # Editor directories and files
 .vscode/*

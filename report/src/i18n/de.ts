@@ -12,7 +12,8 @@ export const de = {
   },
 
   footer: {
-    germanKeyExplorerLink: 'Schlüssel-Explorer',
+    /** Same topic as `germanKeyExplorer.title` (amtlicher ARS / amtlicher AGS). */
+    germanKeyExplorerLink: 'Regional- und Gemeindeschlüssel-Explorer',
     geoDataLine: 'Geodaten: ',
     osmLinkHref: 'https://www.openstreetmap.org/copyright',
     osmLinkLabel: 'OpenStreetMap',
@@ -39,7 +40,9 @@ export const de = {
     sectionAria: 'Datenquellen und Datensatz-Abgleich',
     title: 'Datenquelle, Filter und Vergleichsregeln',
     reportCreatedLabel: 'Auswertung erstellt',
-    officialDownloadLabel: 'Amtliche Geometrien (Download/Stand)',
+    officialDownloadLabel: 'Amtliche Geometrie (letzter Bezug)',
+    officialSourceStandLabel: 'Amtlicher Datenstand',
+    officialSourceVerifiedLabel: 'Datenstand verifiziert',
     officialSourceUpdatedLabel: 'Amtliche Quelle aktualisiert',
     officialSourcePublishedLabel: 'Amtliche Quelle veröffentlicht',
     osmDownloadLabel: 'OSM-Geometrien (Download/Stand)',
@@ -74,7 +77,7 @@ export const de = {
     compareDataOsmLabel: 'OSM-Daten',
     compareDataOfficialLabel: 'Amtliche Daten',
     compareDataMissing: '(missing)',
-    compareDataExplorerLink: 'Schlüssel-Explorer öffnen',
+    compareDataExplorerLink: 'Regional- und Gemeindeschlüssel-Explorer',
     compareMappingLeadWithMetricsCrs: (crs: string) =>
       `Definiert, welche Felder aus amtlichen Daten und OSM einander zugeordnet werden und zu welchem gemeinsamen Schlüssel normalisiert wird. Metriken beziehen sich auf Projektion ${crs}.`,
     compareMappingEmpty:
@@ -100,7 +103,7 @@ export const de = {
       'Zusätzliches OSM-Match über Tag-Vergleich (matchCriteria.kind=property gemäß Konfiguration).',
     compareMatchCriteriaRelations: (ids: string) =>
       `Zusätzliches OSM-Match nur für Relation-ID(s): ${ids}.`,
-    /** Labels for idNormalization presets not covered by the Schlüssel-Explorer page. */
+    /** Labels for idNormalization presets not covered by the Regional- und Gemeindeschlüssel-Explorer page. */
     idNormalizationPresetExtraLabels: {
       'plz-5': 'Postleitzahl',
       text: 'Text (Name)',
@@ -329,12 +332,20 @@ export const de = {
     datasetPropertiesSectionTitle: 'Attribute zum Zeitpunkt des Vergleichs',
     datasetOfficialCardTitle: 'Amtliche Daten',
     datasetOsmCardTitle: 'OSM-Daten (Auszug)',
-    /** Snapshot / vendor date for the extract used in the compare (not necessarily download wall-clock). */
-    datasetExtractDataDateLabel: 'Datenstand',
-    datasetExtractOfficialPipelineFetchNote:
-      'Zeitpunkt des Datenbezugs — in den Quelldaten ist kein Aktualitäts- oder Veröffentlichungsdatum hinterlegt.',
+    /** `official.sourceUpdatedAt` / `sourcePublishedAt` (vendor reference date). */
+    datasetExtractSourceDateLabel: 'Referenzdatum (Anbieter)',
+    /** `official.sourceUpdatedAtVerifiedAt` (upstream metadata re-confirmed). */
+    datasetExtractCheckedDateLabel: 'Metadaten zuletzt geprüft',
+    /** `official.downloadedAt` (last geometry fetch). */
+    datasetExtractGeometryFetchedLabel: 'Geometrie zuletzt geladen',
+    datasetExtractOfficialDatesIntro:
+      'Drei getrennte Angaben zur Quelle: welches Stichtagsdatum veröffentlicht ist, wann die Anbieter-Metadaten zuletzt bestätigt wurden, und wann die Geometrie heruntergeladen wurde. Die Uhrzeiten können identisch sein.',
+    datasetExtractOsmSnapshotLabel: 'Planet-Stichtag (PBF-Kopf)',
+    datasetExtractOsmExtractLabel: 'Extrakt erzeugt (Pipeline)',
+    datasetExtractOsmDatesIntro:
+      'Zwei getrennte Angaben: Stichtag laut Planet-Datei-Header und Zeitpunkt, zu dem der lokale OSM-Extrakt erzeugt wurde. Die Werte können identisch sein.',
     datasetExtractOsmUncertainNote:
-      'Kein PBF-Datenstand ausgelesen — angezeigte Zeit kann vom Datenbezug stammen.',
+      'Planet-Stichtag steht nicht im PBF-Header — der zweite Zeitpunkt beschreibt den lokal erzeugten Extrakt, nicht den Planet-Stand.',
     datasetOsmOpenHistory: 'Auf osm.org anzeigen',
     datasetPropertiesEmpty: '—',
     datasetPropertiesLegacySnapshot:
@@ -394,18 +405,30 @@ export const de = {
   },
 
   germanKeyExplorer: {
-    metaTitle: 'Schlüssel-Explorer',
-    title: 'Gemeindeschlüssel verstehen',
-    lead: 'Diese Seite hilft, die Bestandteile des Gemeindeschlüssels zu verstehen. Sie zerlegt den Schlüssel in seine Teile und zeigt die Namen der zugehörigen Ebenen an.',
-    dataSourcePrefix:
-      'Datenquelle: Die Namen stammen aus der amtlichen TXT-Datei GV100AD des Gemeindeverzeichnisses (Bund und Länder).',
-    dataSourceLinkIntro: 'Weitere Informationen:',
-    dataSourceLinkLabel: 'Destatis Gemeindeverzeichnis',
-    dataSourceDateLabel: (dateLabel: string) =>
-      `Datenstand der eingebundenen Textdatei: ${dateLabel}.`,
-    datasetPickerAria: 'Destatis-Stichtag für Namen in diesem Explorer',
-    inputLabel: 'Gemeindeschlüssel',
-    inputPlaceholder: 'z. B. 11001, 11000001, 010515163022',
+    metaTitle: 'Regional- und Gemeindeschlüssel-Explorer',
+    title: 'Regional- und Gemeindeschlüssel-Explorer',
+    lead:
+      'Hier können Sie den amtlichen Regionalschlüssel (ARS) und den amtlichen Gemeindeschlüssel (AGS) nachvollziehen: Schlüssel in ihre Segmente zerlegen und die Bezeichnungen der Verwaltungsebenen aus dem Destatis-Gemeindeverzeichnis (GV100AD) anzeigen — in der amtlichen Terminologie von Bund und Ländern.',
+    loadingLookup: 'Gemeindeverzeichnis-Daten werden geladen …',
+    lookupErrorPrefix: 'Die Schlüssel-Daten konnten nicht geladen werden.',
+    sourcesIntroLead:
+      'Die Namen stammen aus der amtlichen GV100AD-Textdatei des Gemeindeverzeichnisses (Destatis).',
+    /** Prefix before comma-separated Destatis links in the explorer header. */
+    sourcesDataSourcesLabel: 'Datenquellen:',
+    sourcesIntroLatestSnapshot: (dateLabel: string) => `TXT-Stichtag in der gewählten Quartalsdatei: ${dateLabel}.`,
+    obsoleteNoticeLead:
+      'Mindestens ein angezeigter Name ist nur in einer älteren GV100ADJ-Jahresausgabe erhalten — in der aktuellen Quartalsdatei fehlt dieser Schlüssel.',
+    obsoleteNoticeYearBadge: (year: number) => `31.12.${year}:`,
+    obsoleteNoticePublicationLink: 'Destatis-Publikationsseite',
+    obsoleteYearSuffix: (year: number) => `nur GV100ADJ bis ${year}`,
+    nameSearchNoResults:
+      'Kein Gemeinde-/Gebietseintrag gefunden. Für Namenssuche mindestens zwei Zeichen eingeben; für Schlüssel die Ziffern nutzen.',
+    nameSearchPickTitle: 'Mehrere Treffer',
+    nameSearchPickLead: 'Bitte einen Eintrag auswählen — der Schlüssel wird für die Ansicht übernommen.',
+    nameSearchPickApply: 'Übernehmen',
+    nameSearchPickClose: 'Schließen',
+    inputLabel: 'Schlüssel oder Gemeinde-Name',
+    inputPlaceholder: 'z. B. 11001, Flensburg, 010515163022',
     presetLabel: 'Preset hervorheben',
     presetHint:
       'Nur Presets für AGS/ARS und verwandte Schlüssel (wie idNormalization.preset in der Datensatz-Konfiguration). „Alle“ hebt keine Zeile in der Tabelle hervor.',
@@ -446,7 +469,7 @@ export const de = {
     colCanonical: 'matchKey',
     colName: 'Name',
     colNotes: 'Anmerkungen',
-    /** Matches `notes` tokens from `normalizeOsmValue` (Schlüssel-Explorer UI only). */
+    /** Matches `notes` tokens from `normalizeOsmValue` (Regional- und Gemeindeschlüssel-Explorer UI only). */
     normalizationNoteUnexpectedDigitLength: (digitCount: string) =>
       `Unerwartete Ziffernlänge (${digitCount} Ziffern); dieses Preset sieht andere Längen vor.`,
     normalizationNotesUi: {
@@ -460,7 +483,8 @@ export const de = {
       'plz-5-truncated': 'Mehr als 5 Ziffern — auf 5 Stellen gekürzt',
       'plz-5-left-padded': 'Weniger als 5 Ziffern — links mit Nullen auf 5 Stellen',
     },
-    emptyState: 'Bitte einen Schlüssel eingeben oder per URL-Parameter ?key= übergeben.',
+    emptyState:
+      'Bitte einen Schlüssel oder einen Suchbegriff (Name) eingeben oder per URL ?key= übergeben.',
     keyOverviewTitle: 'Schlüssel in OSM und BKG',
     keyOverviewLead:
       'Je nach Datensatz wird mit 12-stelligem ARS oder 8-stelligem AGS gearbeitet. Diese Tabelle zeigt die gebräuchlichen Schlüssel und Bezeichnungen.',

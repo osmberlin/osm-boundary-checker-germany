@@ -7,7 +7,7 @@ import {
 import type { IdNormalizationPreset } from '../../../scripts/shared/comparisonPayload.ts'
 import { de } from '../i18n/de'
 
-/** GV100AD-derived lookup maps for one Destatis dataset (from germanKeyLookup.gen). */
+/** GV100AD-derived lookup maps merged from latest + obsolete shards (`german-key-lookup.json`). */
 export type GermanKeyLookupTables = {
   bundeslaender: Record<string, string>
   regierungsbezirke: Record<string, string>
@@ -128,7 +128,7 @@ export function normalizationsForSchluesselPresets(raw: string): PresetNormaliza
 }
 
 /**
- * Rows for the Schlüssel-Explorer normalization table only.
+ * Rows for the Regional- und Gemeindeschlüssel-Explorer normalization table only.
  * Omits `berlin-bezirk-ags`: that preset targets 5-digit Berlin Bezirk codes (and passthrough 8-digit);
  * full 12-digit ARS inputs only produce a misleading `unexpected-digit-length` note there, while
  * Berlin expansion is shown in the dedicated block when applicable (`tryBerlinBezirkCanonical5`).

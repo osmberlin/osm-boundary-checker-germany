@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import germanKeyLookupBundle from '../data/germanKeyLookup.gen'
+import { germanKeyLookupBundleSchema } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import {
   ags8FromArs12Digits,
   brandenburgGemeinden8From12,
@@ -16,17 +16,76 @@ import {
   tryBerlinBezirkCanonical5,
   type GermanKeyLookupTables,
 } from './germanKeyExplorer'
+import {
+  mergeGermanKeyLookupTables,
+  resolveGemeindeNameByAgs,
+  searchGermanKeyDisplayNames,
+} from './germanKeyLookupBundle'
 
-function lookupTablesDefault(): GermanKeyLookupTables {
-  const ds = germanKeyLookupBundle.datasets[germanKeyLookupBundle.defaultDatasetId]
-  return {
-    bundeslaender: ds.bundeslaender,
-    regierungsbezirke: ds.regierungsbezirke,
-    kreise: ds.kreise,
-    gemeindeverbaende: ds.gemeindeverbaende,
-    gemeindenByAgs: ds.gemeindenByAgs,
-    gemeindenByArs: ds.gemeindenByArs,
-  }
+const minimalLookupBundle = germanKeyLookupBundleSchema.parse({
+  checkedAt: '2026-01-01T00:00:00.000Z',
+  generatedAt: '2026-01-01T00:00:00.000Z',
+  latest: {
+    id: 'latest',
+    label: 'Test latest',
+    provenanceLines: [],
+    sourcePublicUrl: 'https://example.invalid/latest',
+    source: {
+      downloadUrl: 'https://example.invalid/latest.zip',
+      archiveEntry: 'GV100AD_01012026.txt',
+      snapshotDate: '2026-01-01',
+    },
+    bundeslaender: { '01': 'Schleswig-Holstein' },
+    regierungsbezirke: {},
+    kreise: { '01001': 'Flensburg, Stadt' },
+    gemeindeverbaende: { '010010000': 'Flensburg, Stadt' },
+    gemeindenByAgs: { '01001000': 'Flensburg, Stadt' },
+    gemeindenByArs: { '010010000000': 'Flensburg, Stadt' },
+  },
+  annualSourcePublicUrlsByYear: {
+    '2020': 'https://example.invalid/2020',
+  },
+  obsolete: {
+    maps: {
+      bundeslaender: {},
+      regierungsbezirke: {},
+      kreise: {},
+      gemeindeverbaende: {},
+      gemeindenByAgs: { '99999999': 'Altstadt Obacht' },
+      gemeindenByArs: {},
+    },
+    lastContainedInYear: {
+      bundeslaender: {},
+      regierungsbezirke: {},
+      kreise: {},
+      gemeindeverbaende: {},
+      gemeindenByAgs: { '99999999': 2020 },
+      gemeindenByArs: {},
+    },
+  },
+})
+
+/** Obsolete ARS only (reassigned key in latest): digit lookup must not require substring match in name. */
+const bundleObsoleteArsOnly = germanKeyLookupBundleSchema.parse({
+  ...minimalLookupBundle,
+  obsolete: {
+    maps: {
+      ...minimalLookupBundle.obsolete.maps,
+      gemeindenByArs: {
+        '071405006112': 'Oberwesel, Stadt',
+      },
+    },
+    lastContainedInYear: {
+      ...minimalLookupBundle.obsolete.lastContainedInYear,
+      gemeindenByArs: {
+        '071405006112': 2020,
+      },
+    },
+  },
+})
+
+function mergedTables(): GermanKeyLookupTables {
+  return mergeGermanKeyLookupTables(minimalLookupBundle)
 }
 
 describe('germanKeyExplorer', () => {
@@ -89,8 +148,8 @@ describe('germanKeyExplorer', () => {
     expect(formatNormalizationNotesForExplorerUi(['unknown-token'])).toBe('unknown-token')
   })
 
-  test('lookup helpers resolve official names', () => {
-    const tables = lookupTablesDefault()
+  test('lookup helpers resolve official names from merged tables', () => {
+    const tables = mergedTables()
     expect(lookupGemeindeNameByAgs(tables, '01001000')).toBe('Flensburg, Stadt')
     expect(lookupNameForNormalizedPresetKey(tables, 'regional-12', '010010000000')).toBe(
       'Flensburg, Stadt',
@@ -102,5 +161,23 @@ describe('germanKeyExplorer', () => {
       gemeindeverband: 'Flensburg, Stadt',
       gemeinde: 'Flensburg, Stadt',
     })
+  })
+
+  test('obsolete AGS resolves via bundle helper', () => {
+    const r = resolveGemeindeNameByAgs(minimalLookupBundle, '99999999')
+    expect(r.value).toBe('Altstadt Obacht')
+    expect(r.obsolete?.year).toBe(2020)
+  })
+
+  test('searchGermanKeyDisplayNames: digit-only query finds obsolete ARS without name substring', () => {
+    const hits = searchGermanKeyDisplayNames(bundleObsoleteArsOnly, '071405006112')
+    const ars = hits.find((h) => h.kind === 'ars' && h.id === '071405006112')
+    expect(ars?.displayName).toBe('Oberwesel, Stadt')
+    expect(ars?.obsolete?.year).toBe(2020)
+  })
+
+  test('searchGermanKeyDisplayNames: name query finds obsolete ARS alongside latest', () => {
+    const hits = searchGermanKeyDisplayNames(bundleObsoleteArsOnly, 'Oberwesel')
+    expect(hits.some((h) => h.kind === 'ars' && h.id === '071405006112')).toBe(true)
   })
 })

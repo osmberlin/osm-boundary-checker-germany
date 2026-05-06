@@ -20,6 +20,10 @@ export function runStatusUrl(): string {
   return withSiteBasePath('/data/run-status.json')
 }
 
+export function germanKeyLookupUrl(): string {
+  return withSiteBasePath('/data/german-key-lookup.json')
+}
+
 export function changelogUrl(): string {
   return withSiteBasePath('/changelog.gen.json')
 }

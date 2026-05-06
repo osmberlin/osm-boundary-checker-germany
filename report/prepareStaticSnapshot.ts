@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs'
-import { cp, mkdir, readdir, rm, stat } from 'node:fs/promises'
+import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
 import { assertDatasetsRootExists, resolveRuntimeRoot } from './runtimeDataRoot.ts'
@@ -27,6 +27,12 @@ async function main() {
     throw new Error(
       `[prepare-static-snapshot] No area folders found under ${srcDatasetsRoot}. Did you run the processing pipeline?`,
     )
+  }
+
+  const germanKeyLookupPath = join(destDataRoot, 'german-key-lookup.json')
+  let germanKeyLookupBackup: Buffer | null = null
+  if (existsSync(germanKeyLookupPath)) {
+    germanKeyLookupBackup = await readFile(germanKeyLookupPath)
   }
 
   await rm(destDatasetsRoot, { recursive: true, force: true })
@@ -79,6 +85,11 @@ async function main() {
     join(runtimeRoot, 'data', 'run-status.json'),
     join(destDataRoot, 'run-status.json'),
   )
+
+  if (germanKeyLookupBackup !== null) {
+    await mkdir(destDataRoot, { recursive: true })
+    await writeFile(germanKeyLookupPath, germanKeyLookupBackup)
+  }
 
   console.log(
     `[prepare-static-snapshot] Wrote public datasets from ${runtimeRoot} (${comparisonTableCount} areas with comparison_table.json)`,

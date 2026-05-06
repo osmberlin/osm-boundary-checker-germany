@@ -6,7 +6,8 @@ dist/
 *.log
 .env
 .env.local
-data/
+# Large downloaded artifacts at repo root only (not `report/public/data/` for static assets).
+/data/
 !report/src/data/
 !report/src/data/**
 report/src/data/reviewQueue.gen.ts

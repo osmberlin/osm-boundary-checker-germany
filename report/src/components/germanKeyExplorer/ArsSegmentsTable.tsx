@@ -1,44 +1,89 @@
 import { de } from '../../i18n/de'
-import type { Ars12Segments, ArsSegmentNames } from '../../lib/germanKeyExplorer'
+import type { Ars12Segments } from '../../lib/germanKeyExplorer'
+import type { ArsSegmentNameCells } from '../../lib/germanKeyLookupBundle'
+
+function CellName({
+  resolved,
+  fallbackLabel,
+}: {
+  resolved: { value: string | null; obsolete?: { year: number } }
+  fallbackLabel: string | null
+}) {
+  const name = resolved.value ?? fallbackLabel
+  if (name === null) return <span className="text-slate-500">—</span>
+  return (
+    <span>
+      <span className={resolved.obsolete ? 'text-amber-200/95' : undefined}>{name}</span>
+      {resolved.obsolete ? (
+        <span className="ml-1 text-xs font-normal text-amber-400/90">
+          ({de.germanKeyExplorer.obsoleteYearSuffix(resolved.obsolete.year)})
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
+const emptyCells = (): ArsSegmentNameCells => ({
+  bundesland: { value: null },
+  regierungsbezirk: { value: null },
+  kreis: { value: null },
+  gemeindeverband: { value: null },
+  gemeinde: { value: null },
+})
 
 export function ArsSegmentsTable({
   segments,
-  names,
+  nameCells,
 }: {
   segments: Ars12Segments | null
-  names: ArsSegmentNames | null
+  nameCells: ArsSegmentNameCells | null
 }) {
   const t = de.germanKeyExplorer
-  const rows: Array<{ label: string; value: string; span: string; name: string | null }> = segments
+  const cells = nameCells ?? emptyCells()
+  const rows: Array<{
+    label: string
+    value: string
+    span: string
+    resolved: ArsSegmentNameCells[keyof ArsSegmentNameCells]
+    fallbackLabel: string | null
+  }> = segments
     ? [
         {
           label: t.segmentBl,
           value: segments.bundesland,
           span: '1–2',
-          name: names?.bundesland ?? null,
+          resolved: cells.bundesland,
+          fallbackLabel: null,
         },
         {
           label: t.segmentRb,
           value: segments.regierungsbezirk,
           span: '3',
-          name:
-            names?.regierungsbezirk ??
-            (segments.regierungsbezirk === '0' ? t.noRegierungsbezirk : null),
+          resolved: cells.regierungsbezirk,
+          fallbackLabel:
+            segments.regierungsbezirk === '0' ? t.noRegierungsbezirk : null,
         },
-        { label: t.segmentKreis, value: segments.kreis, span: '4–5', name: names?.kreis ?? null },
+        {
+          label: t.segmentKreis,
+          value: segments.kreis,
+          span: '4–5',
+          resolved: cells.kreis,
+          fallbackLabel: null,
+        },
         {
           label: t.segmentVg,
           value: segments.gemeindeverband,
           span: '6–9',
-          name:
-            names?.gemeindeverband ??
-            (segments.gemeindeverband === '0000' ? t.noGemeindeverband : null),
+          resolved: cells.gemeindeverband,
+          fallbackLabel:
+            segments.gemeindeverband === '0000' ? t.noGemeindeverband : null,
         },
         {
           label: t.segmentGem,
           value: segments.gemeinde,
           span: '10–12',
-          name: names?.gemeinde ?? null,
+          resolved: cells.gemeinde,
+          fallbackLabel: null,
         },
       ]
     : []
@@ -69,7 +114,9 @@ export function ArsSegmentsTable({
                 <td className="px-3 py-2">{row.label}</td>
                 <td className="px-3 py-2 text-slate-400">{row.span}</td>
                 <td className="px-3 py-2 font-mono text-slate-100">{row.value}</td>
-                <td className="px-3 py-2 text-slate-300">{row.name ?? '—'}</td>
+                <td className="px-3 py-2 text-slate-300">
+                  <CellName resolved={row.resolved} fallbackLabel={row.fallbackLabel} />
+                </td>
               </tr>
             ))
           )}
