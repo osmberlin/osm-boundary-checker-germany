@@ -143,6 +143,7 @@ export const de = {
     reviewQueueLinkLabel: 'Prüfliste: Ampel nicht ok',
     githubCodeLinkLabel: 'Code auf GitHub',
     githubIssuesLinkLabel: 'Issue melden',
+    launchBlogpostLinkLabel: 'Mehr im Launch-Blogpost…',
     introHeading: 'OpenStreetMap und Daten zu amtlichen Grenzen',
     introLead:
       'Diese Anwendung vergleicht verschiedene amtliche Datensätze zu Grenzen und PLZ-Bereichen mit OSM-Daten. Das Ziel ist Transparenz über die Qualität der Daten in OSM und Hilfsmittel zur Verbesserung der Datenqualität.',

@@ -8,6 +8,8 @@ import { withSiteBasePath } from '../lib/siteBasePath'
 
 const GITHUB_REPO_ROOT = 'https://github.com/osmberlin/osm-boundary-checker-germany'
 const GITHUB_ISSUES_NEW_URL = `${GITHUB_REPO_ROOT}/issues/new`
+const LAUNCH_BLOGPOST_URL =
+  'https://www.osm-verkehrswende.org/grenzabgleich/posts/grenzabgleich/'
 
 const homeLinkClass =
   'font-medium text-sky-400 underline decoration-sky-400/30 underline-offset-2 hover:text-sky-300 hover:decoration-sky-300/40'
@@ -28,6 +30,16 @@ export function Home() {
             {de.home.introHeading}
           </h1>
           <p className="mb-3 max-w-prose text-pretty text-slate-400">{de.home.introLead}</p>
+          <p className="mb-3 max-w-prose text-slate-400">
+            <a
+              href={LAUNCH_BLOGPOST_URL}
+              className={homeLinkClass}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {de.home.launchBlogpostLinkLabel}
+            </a>
+          </p>
           <p className="text-slate-400">
             <a href={GITHUB_REPO_ROOT} className={homeLinkClass} target="_blank" rel="noreferrer">
               {de.home.githubCodeLinkLabel}
