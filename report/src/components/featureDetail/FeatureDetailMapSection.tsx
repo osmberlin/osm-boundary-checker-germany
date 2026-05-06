@@ -12,8 +12,8 @@ import { handleComparisonMapFeatureClick } from '../../lib/comparisonMapFeatureC
 import type { MapViewQueryValue } from '../../lib/mapViewQueryParam'
 import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
-import { MapOverlapPickDialog } from '../map/MapOverlapPickDialog'
 import { InfoNotice } from '../InfoNotice'
+import { MapOverlapPickDialog } from '../map/MapOverlapPickDialog'
 import { FeatureDetailBoundaryScopeToggle } from './FeatureDetailBoundaryScopeToggle'
 
 const ComparisonMapShell = lazy(() => import('../map/ComparisonMapShell'))

@@ -1,4 +1,8 @@
 import { Link } from '@tanstack/react-router'
+import { de, categoryLabelDe } from '../../i18n/de'
+import { resolveFeatureRowMeta } from '../../lib/comparisonMapFeatureClick'
+import type { ComparisonForReport } from '../../types/report'
+import { ReportCategoryPill } from '../reportCategoryStyles'
 import {
   AppDialogActions,
   AppDialogBody,
@@ -6,10 +10,6 @@ import {
   AppDialogTitle,
   Dialog,
 } from '../ui/Dialog'
-import { ReportCategoryPill } from '../reportCategoryStyles'
-import { de, categoryLabelDe } from '../../i18n/de'
-import { resolveFeatureRowMeta } from '../../lib/comparisonMapFeatureClick'
-import type { ComparisonForReport } from '../../types/report'
 
 const st = de.areaReport.stats
 

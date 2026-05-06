@@ -23,10 +23,10 @@ import {
   MeanIouInfoButton,
 } from '../components/HausdorffInfoModal'
 import { IssueBadge } from '../components/IssueBadge'
+import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
-import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
 import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
@@ -34,6 +34,7 @@ import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaR
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { categoryLabelDe, de } from '../i18n/de'
+import { handleComparisonMapFeatureClick } from '../lib/comparisonMapFeatureClick'
 import { isOlderThanDays } from '../lib/dataAge'
 import {
   EM_DASH,
@@ -45,7 +46,6 @@ import {
   formatDePercentPoints,
 } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
-import { handleComparisonMapFeatureClick } from '../lib/comparisonMapFeatureClick'
 import { officialAreaSummaryFreshness } from '../lib/officialAreaSummaryFreshness'
 import { sourceStatLines } from '../lib/reportFreshnessLines'
 import { areaDisplayNameForId } from '../lib/reportLookups'

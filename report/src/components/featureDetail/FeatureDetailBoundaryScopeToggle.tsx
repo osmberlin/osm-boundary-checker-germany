@@ -1,12 +1,14 @@
+import { useFeatureDetailMapBoundaryScope } from '../../hooks/useFeatureDetailMapBoundaryScope'
 import { de } from '../../i18n/de'
 import { cn } from '../../lib/cn'
-import { useFeatureDetailMapBoundaryScope } from '../../hooks/useFeatureDetailMapBoundaryScope'
 
 export function FeatureDetailBoundaryScopeToggle({ className }: { className?: string }) {
   const { showOnlySelected, setShowOnlySelected } = useFeatureDetailMapBoundaryScope()
 
   return (
-    <div className={cn('flex flex-wrap items-center justify-center gap-3 sm:justify-start', className)}>
+    <div
+      className={cn('flex flex-wrap items-center justify-center gap-3 sm:justify-start', className)}
+    >
       <span
         className={cn(
           'max-w-[11rem] text-xs leading-snug sm:max-w-none',
