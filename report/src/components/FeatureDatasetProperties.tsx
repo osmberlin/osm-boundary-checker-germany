@@ -63,7 +63,6 @@ function DatasetExtractDataDateCaption({
   hasMetadata,
   note,
   labels,
-  intro,
 }: {
   sourceDateRaw: string | undefined
   checkedAtRaw: string | undefined
@@ -72,8 +71,6 @@ function DatasetExtractDataDateCaption({
   hasMetadata: boolean
   note?: string | null
   labels?: { source: string; checked: string; geometryFetched?: string }
-  /** Optional one-line context above the timestamp rows (e.g. official: three independent meanings). */
-  intro?: string | null
 }) {
   if (!hasMetadata) {
     return (
@@ -98,7 +95,6 @@ function DatasetExtractDataDateCaption({
 
   return (
     <div className="flex flex-col gap-0.5">
-      {intro ? <p className="text-[11px] leading-snug text-slate-500">{intro}</p> : null}
       <p className="text-xs leading-normal text-slate-400">
         <span className="text-slate-500">{sourceLb}:</span> <span>{sourceValue}</span>
       </p>
@@ -158,7 +154,6 @@ export function FeatureDatasetProperties({
                 {de.feature.datasetOfficialCardTitle}
               </span>
               <DatasetExtractDataDateCaption
-                intro={de.feature.datasetExtractOfficialDatesIntro}
                 sourceDateRaw={officialPick.sourceDateRaw}
                 checkedAtRaw={officialPick.checkedAtRaw}
                 geometryFetchedAtRaw={officialPick.geometryFetchedAtRaw}
@@ -175,7 +170,6 @@ export function FeatureDatasetProperties({
                 {de.feature.datasetOsmCardTitle}
               </h3>
               <DatasetExtractDataDateCaption
-                intro={de.feature.datasetExtractOsmDatesIntro}
                 sourceDateRaw={osmPick.sourceDateRaw}
                 checkedAtRaw={osmPick.checkedAtRaw}
                 hasMetadata

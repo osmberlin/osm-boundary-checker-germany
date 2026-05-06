@@ -343,12 +343,8 @@ export const de = {
     datasetExtractCheckedDateLabel: 'Metadaten zuletzt geprüft',
     /** `official.downloadedAt` (last geometry fetch). */
     datasetExtractGeometryFetchedLabel: 'Geometrie zuletzt geladen',
-    datasetExtractOfficialDatesIntro:
-      'Drei getrennte Angaben zur Quelle: welches Stichtagsdatum veröffentlicht ist, wann die Anbieter-Metadaten zuletzt bestätigt wurden, und wann die Geometrie heruntergeladen wurde. Die Uhrzeiten können identisch sein.',
     datasetExtractOsmSnapshotLabel: 'Planet-Stichtag (PBF-Kopf)',
     datasetExtractOsmExtractLabel: 'Extrakt erzeugt (Pipeline)',
-    datasetExtractOsmDatesIntro:
-      'Zwei getrennte Angaben: Stichtag laut Planet-Datei-Header und Zeitpunkt, zu dem der lokale OSM-Extrakt erzeugt wurde. Die Werte können identisch sein.',
     datasetExtractOsmUncertainNote:
       'Planet-Stichtag steht nicht im PBF-Header — der zweite Zeitpunkt beschreibt den lokal erzeugten Extrakt, nicht den Planet-Stand.',
     datasetOsmOpenHistory: 'Auf osm.org anzeigen',
@@ -393,7 +389,7 @@ export const de = {
       opensInNewWindowTitle: 'Öffnet in einem neuen Browser-Tab',
       openId: 'In iD öffnen mit amtlicher Grenze (GeoJSON)',
       idDisableFeaturesHint:
-        'Hinweis: In iD werden u. a. Gebäude, Wege und Bahn usw. ausgeblendet; Grenzen, Gewässer und übergeordnete Straßen bleiben sichtbar.',
+        'Hinweis: In iD werden u. a. Gebäude, Wege und Bahn usw. ausgeblendet; Grenzen, Gewässer und übergeordnete Straßen bleiben sichtbar. Wichtig: Es kann sein, dass einzelne Punkte in dieser Ansicht nicht verschoben werden können. Wenn das passiert, musst du die Filtereinstellungen ändern und bspw. die Landnutzung einschalten. Denn diese Situation bedeutet, dass die Grenze mit einem Element verklebt ist, das zur Zeit versteckt ist — und daher darf sie nicht „blind“ verschoben werden. In diesem Fall dann die Verklebung lösen und die Elemente getrennt voneinander behandeln.',
       josmRemoteLead:
         'Remote Control in den JOSM-Einstellungen aktivieren. Links rufen JOSM lokal auf (Port 8111).',
       josmLoadObject: 'OSM Relation in JOSM laden',
