@@ -10,6 +10,7 @@
       "kind": "http",
       "url": "https://gdi.berlin.de/services/wfs/alkis_ortsteile?service=WFS&version=2.0.0&request=GetFeature&typeNames=alkis_ortsteile%3Aortsteile&outputFormat=application%2Fjson&count=1000000&srsName=EPSG%3A4326",
       "format": "geojson",
+      "upstreamDateResolver": "wfs_inspire_iso19139",
       "crs": "EPSG:4326",
     },
     "source": {

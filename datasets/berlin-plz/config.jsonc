@@ -10,6 +10,7 @@
       "kind": "http",
       "url": "https://gdi.berlin.de/services/wfs/postleitzahlen?service=WFS&version=2.0.0&request=GetFeature&typeNames=postleitzahlen%3Apostleitzahlen&outputFormat=application%2Fjson&srsName=EPSG%3A4326&count=1000000",
       "format": "geojson",
+      "upstreamDateResolver": "wfs_inspire_iso19139",
       "crs": "EPSG:4326",
     },
     "source": {

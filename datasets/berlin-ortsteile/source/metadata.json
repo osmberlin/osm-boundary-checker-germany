@@ -1,6 +1,10 @@
 {
   "official": {
-    "downloadedAt": "2026-04-24T07:00:15.053Z",
+    "downloadedAt": "2026-05-06T13:36:27.540Z",
+    "sourcePublishedAt": "2025-02-15T00:00:00.000Z",
+    "sourceUpdatedAt": "2026-04-10T00:00:00.000Z",
+    "sourceUpdatedAtVerifiedAt": "2026-05-06T14:05:42.681Z",
+    "sourceDateSource": "wfs_capabilities",
     "provider": "HTTP",
     "dataset": "GeoJSON",
     "sourcePublicUrl": "https://daten.berlin.de/datensaetze/alkis-berlin-ortsteile-wfs-61bd3084",
@@ -14,7 +18,7 @@
     "osmCompatibilityComment": "Berlin veroeffentlicht diese Datengrundlage unter DL-DE-ZERO-2.0 mit dokumentierter OSM-Freigabe."
   },
   "osm": {
-    "downloadedAt": "2026-04-21T20:20:22Z",
+    "downloadedAt": "2026-04-21T20:20:22.000Z",
     "sourceDateSource": "osm_pbf_header"
   }
 }

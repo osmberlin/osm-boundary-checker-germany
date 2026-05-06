@@ -1,7 +1,7 @@
 {
   "official": {
     "downloadedAt": "2026-04-24T07:00:05.202Z",
-    "sourceDateSource": "bkg_download_metadata",
+    "sourceDateSource": "bkg_gdz_aktualitaetsstand",
     "provider": "BKG",
     "dataset": "VG25",
     "layer": "vg25_gem",

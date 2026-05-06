@@ -9,6 +9,9 @@
       "kind": "http",
       "url": "https://ogc-api.geobasis-bb.de/datasets/plz/collections/plz_bebb/items?bulk=true&f=json",
       "format": "geojson",
+      "upstreamDateResolver": "iso19139_xml",
+      "upstreamMetadataUrl": "https://geoportal.brandenburg.de/gs-json/xml?fileid=b90acca9-e512-4c6c-a45e-ecc04a1e580c",
+      "upstreamDateSourceKind": "ogc_api_features_collection",
       "crs": "EPSG:4326",
     },
     "source": {

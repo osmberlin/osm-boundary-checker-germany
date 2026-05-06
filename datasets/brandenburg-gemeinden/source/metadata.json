@@ -1,6 +1,10 @@
 {
   "official": {
-    "downloadedAt": "2026-04-24T15:48:09.701Z",
+    "downloadedAt": "2026-05-06T13:42:41.661Z",
+    "sourcePublishedAt": "2004-06-25T00:00:00.000Z",
+    "sourceUpdatedAt": "2014-10-22T21:00:00.000Z",
+    "sourceUpdatedAtVerifiedAt": "2026-05-06T14:05:44.541Z",
+    "sourceDateSource": "wfs_capabilities",
     "provider": "HTTP",
     "dataset": "WFS GML",
     "sourcePublicUrl": "https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Ded6ab7a1-7a64-4ceb-8d37-2e156b7f4546",
@@ -14,7 +18,7 @@
     "osmCompatibilityComment": "Brandenburg-Daten mit dokumentierter OSM-Freigabe laut OSM-Wiki."
   },
   "osm": {
-    "downloadedAt": "2026-04-21T20:20:22Z",
+    "downloadedAt": "2026-04-21T20:20:22.000Z",
     "sourceDateSource": "osm_pbf_header"
   }
 }
