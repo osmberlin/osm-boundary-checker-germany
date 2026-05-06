@@ -12,8 +12,8 @@ describe('isOlderThanDays', () => {
     expect(isOlderThanDays(oneDayAgo, 5)).toBe(false)
   })
 
-  it('returns false for invalid values', () => {
+  it('returns false for missing values and throws for invalid timestamps', () => {
     expect(isOlderThanDays(null, 5)).toBe(false)
-    expect(isOlderThanDays('invalid', 5)).toBe(false)
+    expect(() => isOlderThanDays('invalid', 5)).toThrow(/Invalid ISO timestamp/)
   })
 })

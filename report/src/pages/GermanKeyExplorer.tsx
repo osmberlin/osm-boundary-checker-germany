@@ -37,7 +37,9 @@ export function GermanKeyExplorer() {
         ) : lookupQuery.isError ? (
           <p className="mt-4 text-sm text-amber-300">
             {de.germanKeyExplorer.lookupErrorPrefix}{' '}
-            {lookupQuery.error instanceof Error ? lookupQuery.error.message : String(lookupQuery.error)}
+            {lookupQuery.error instanceof Error
+              ? lookupQuery.error.message
+              : String(lookupQuery.error)}
           </p>
         ) : lookupQuery.data ? (
           <>

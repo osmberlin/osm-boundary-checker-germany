@@ -60,8 +60,7 @@ export function ArsSegmentsTable({
           value: segments.regierungsbezirk,
           span: '3',
           resolved: cells.regierungsbezirk,
-          fallbackLabel:
-            segments.regierungsbezirk === '0' ? t.noRegierungsbezirk : null,
+          fallbackLabel: segments.regierungsbezirk === '0' ? t.noRegierungsbezirk : null,
         },
         {
           label: t.segmentKreis,
@@ -75,8 +74,7 @@ export function ArsSegmentsTable({
           value: segments.gemeindeverband,
           span: '6–9',
           resolved: cells.gemeindeverband,
-          fallbackLabel:
-            segments.gemeindeverband === '0000' ? t.noGemeindeverband : null,
+          fallbackLabel: segments.gemeindeverband === '0000' ? t.noGemeindeverband : null,
         },
         {
           label: t.segmentGem,

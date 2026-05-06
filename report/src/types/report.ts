@@ -35,9 +35,11 @@ export type SourceMetadataSide = {
   downloadedAt?: string
   sourcePublishedAt?: string
   sourceUpdatedAt?: string
+  sourceUpdatedAtVerifiedAt?: string
   sourceDateSource?:
     | 'wfs_capabilities'
-    | 'bkg_download_metadata'
+    | 'bkg_gdz_aktualitaetsstand'
+    | 'ogc_api_features_collection'
     | 'osm_pbf_header'
     | 'manual_override'
     | 'unknown'
@@ -101,7 +103,7 @@ export type ReportRow = {
   mapBbox: [number, number, number, number] | null
   /** Relative to the dataset folder: `output/official_for_edit/<basename>.geojson` or null. */
   officialForEditPath: string | null
-  /** GeoJSON properties from the compare merge (amtlich). */
+  /** GeoJSON properties from the compare merge (official side). */
   officialProperties: Record<string, unknown> | null
   /** GeoJSON properties from the compare merge (OSM). */
   osmProperties: Record<string, unknown> | null
@@ -134,8 +136,8 @@ export type ComparisonForReport = {
   /** MapLibre `source-layer` name (matches tippecanoe `-l`). */
   tippecanoeLayer: string
   /**
-   * Embedded at compare time. `official` is full provenance from the amtliche Quelle.
-   * `osm` is slim (`downloadedAt`, `sourceDateSource` only); URLs and licence come from
+   * Embedded at compare time. `official` is full provenance from the official vendor source.
+   * `osm` is slim (`downloadedAt`, optional `extractedAt`, `sourceDateSource`); URLs and licence come from
    * `GERMANY_OSM_SOURCE_DEFAULTS` — merge in the UI via `buildResolvedOsmSourceSide` (see
    * `scripts/shared/osmGermanyProvenance.ts`).
    */

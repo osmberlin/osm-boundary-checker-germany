@@ -7,38 +7,54 @@ function normalized(raw: string | undefined): string | undefined {
 }
 
 export type OfficialDatasetDatePick = {
-  raw: string | undefined
-  /** Only amtlicher Bezugszeitpunkt — no sourcePublishedAt / sourceUpdatedAt. */
-  isPipelineFetchFallback: boolean
+  /** Vendor reference date (`sourceUpdatedAt`, else `sourcePublishedAt`). */
+  sourceDateRaw: string | undefined
+  /** `sourceUpdatedAtVerifiedAt` — upstream metadata successfully re-checked. */
+  checkedAtRaw: string | undefined
+  /** Last geometry fetch (`official.downloadedAt`). */
+  geometryFetchedAtRaw: string | undefined
 }
 
 /**
- * Prefer vendor/source timestamps from capabilities or manual metadata; otherwise the
- * pipeline fetch time stored as `downloadedAt` (labeled separately in the UI).
+ * Feature-detail caption fields for official provenance.
+ * See `docs/processing-and-analysis.md` (“Source timestamp contract”).
  */
 export function pickOfficialDatasetExtractDate(
   side: SourceMetadataSide | null | undefined,
 ): OfficialDatasetDatePick {
-  const updated = normalized(side?.sourceUpdatedAt)
-  const published = normalized(side?.sourcePublishedAt)
-  const downloaded = normalized(side?.downloadedAt)
-  if (updated) return { raw: updated, isPipelineFetchFallback: false }
-  if (published) return { raw: published, isPipelineFetchFallback: false }
+  if (!side) {
+    return {
+      sourceDateRaw: undefined,
+      checkedAtRaw: undefined,
+      geometryFetchedAtRaw: undefined,
+    }
+  }
+  const updated = normalized(side.sourceUpdatedAt)
+  const published = normalized(side.sourcePublishedAt)
+  const verified = normalized(side.sourceUpdatedAtVerifiedAt)
+  const downloaded = normalized(side.downloadedAt)
   return {
-    raw: downloaded,
-    isPipelineFetchFallback: downloaded !== undefined,
+    sourceDateRaw: updated ?? published,
+    checkedAtRaw: verified,
+    geometryFetchedAtRaw: downloaded,
   }
 }
 
 export type OsmDatasetDatePick = {
-  raw: string | undefined
-  /** Set by `osm:extract` when `osmium fileinfo … header.option.timestamp` succeeds. */
+  /** Planet snapshot when `sourceDateSource === osm_pbf_header` (`downloadedAt` from PBF header). */
+  sourceDateRaw: string | undefined
+  /** Extract wall-clock (`extractedAt` when PBF header path; otherwise `downloadedAt`). */
+  checkedAtRaw: string | undefined
   snapshotFromPbfHeader: boolean
 }
 
 export function pickOsmDatasetExtractDate(side: OsmSourceMetadataSide): OsmDatasetDatePick {
+  const raw = normalized(side.downloadedAt)
+  const fromHeader = side.sourceDateSource === 'osm_pbf_header'
+  const extracted = normalized(side.extractedAt)
   return {
-    raw: normalized(side.downloadedAt),
-    snapshotFromPbfHeader: side.sourceDateSource === 'osm_pbf_header',
+    sourceDateRaw: fromHeader ? raw : undefined,
+    checkedAtRaw: fromHeader ? (extracted ?? raw) : raw,
+    snapshotFromPbfHeader: fromHeader,
   }
 }

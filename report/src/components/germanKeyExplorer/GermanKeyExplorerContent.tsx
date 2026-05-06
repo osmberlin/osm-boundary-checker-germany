@@ -1,13 +1,5 @@
 import { useId, useState } from 'react'
 import type { GermanKeyLookupBundle } from '../../../../scripts/shared/germanKeyLookupPayload.ts'
-import { AlertNotice } from '../AlertNotice'
-import {
-  AppDialogActions,
-  AppDialogBody,
-  AppDialogDescription,
-  AppDialogTitle,
-  Dialog,
-} from '../ui/Dialog'
 import { de } from '../../i18n/de'
 import {
   ags8FromArs12Digits,
@@ -33,6 +25,14 @@ import {
   type GermanKeyNameSearchHit,
 } from '../../lib/germanKeyLookupBundle'
 import type { GermanKeySearch } from '../../lib/germanKeySearch'
+import { AlertNotice } from '../AlertNotice'
+import {
+  AppDialogActions,
+  AppDialogBody,
+  AppDialogDescription,
+  AppDialogTitle,
+  Dialog,
+} from '../ui/Dialog'
 import { ArsSegmentsTable } from './ArsSegmentsTable'
 
 function presetLabel(p: GermanSchluesselExplorerPreset): string {
@@ -77,7 +77,9 @@ export function GermanKeyExplorerContent({
   const rows = raw !== '' ? normalizationsForSchluesselExplorerTable(raw) : []
 
   const arsResolved =
-    padded12.length >= 12 ? resolveGemeindeNameByArs(bundle, padded12) : { value: null as string | null }
+    padded12.length >= 12
+      ? resolveGemeindeNameByArs(bundle, padded12)
+      : { value: null as string | null }
   const agsResolved =
     ags8From12 !== null && ags8From12.length === 8
       ? resolveGemeindeNameByAgs(bundle, ags8From12)
@@ -120,9 +122,7 @@ export function GermanKeyExplorerContent({
   function apply(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault()
     setNameSearchFeedback(null)
-    const submitted = String(
-      new FormData(ev.currentTarget).get(explorerKeyFieldName) ?? '',
-    ).trim()
+    const submitted = String(new FormData(ev.currentTarget).get(explorerKeyFieldName) ?? '').trim()
     if (submitted === '') {
       applyKeyToSearch('')
       return
@@ -176,9 +176,7 @@ export function GermanKeyExplorerContent({
         </div>
       </form>
 
-      {nameSearchFeedback ? (
-        <p className="text-sm text-slate-400">{nameSearchFeedback}</p>
-      ) : null}
+      {nameSearchFeedback ? <p className="text-sm text-slate-400">{nameSearchFeedback}</p> : null}
 
       {search.area ? (
         <p className="rounded-md border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-400">
@@ -251,9 +249,7 @@ export function GermanKeyExplorerContent({
                         {row.resolved.value !== null ? (
                           <span>
                             <span
-                              className={
-                                row.resolved.obsolete ? 'text-amber-200/95' : undefined
-                              }
+                              className={row.resolved.obsolete ? 'text-amber-200/95' : undefined}
                             >
                               {row.resolved.value}
                             </span>
@@ -266,10 +262,7 @@ export function GermanKeyExplorerContent({
                         ) : (
                           '—'
                         )}
-                        {row.bkgKey === 'AGS' &&
-                        row.resolved.value &&
-                        bb8 &&
-                        bbResolved?.value ? (
+                        {row.bkgKey === 'AGS' && row.resolved.value && bb8 && bbResolved?.value ? (
                           <span className="text-slate-500">
                             {' '}
                             · BB:{' '}

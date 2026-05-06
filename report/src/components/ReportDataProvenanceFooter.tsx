@@ -5,7 +5,10 @@ import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyPr
 import { areasIndex } from '../data/areasIndex'
 import { de } from '../i18n/de'
 import { EM_DASH } from '../lib/formatDe'
-import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
+import {
+  formatFreshnessDisplayDe,
+  formatIsoTimestampToDateOnlyDe,
+} from '../lib/formatSourceDownloadedAt'
 import { isSchluesselExplorerPreset } from '../lib/germanKeyExplorer'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
 import type { ComparisonFilterConfigSummary, ComparisonForReport, ReportRow } from '../types/report'
@@ -258,7 +261,7 @@ function compareFilterItems(
   return { osmItems, officialItems }
 }
 
-/** Three `dl` rows: Vergleichsregeln, OSM-Filter, amtliche Filter — headings in `dt` like source rows. */
+/** Three `dl` rows: compare rules, OSM filter, official filter — headings in `dt` like source rows. */
 function compareProvenanceDlRows(
   data: ComparisonForReport,
   row: ReportRow | undefined,
@@ -432,9 +435,18 @@ export function ReportDataProvenanceFooter({
   const filter = data.filterConfigSummary
 
   const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
-  const officialFresh = sourceStatLines(official.downloadedAt, true)
-  const officialUpdatedFresh = optionalSourceStatLines(official.sourceUpdatedAt)
-  const officialPublishedFresh = optionalSourceStatLines(official.sourcePublishedAt)
+  const officialGeomFresh = sourceStatLines(official.downloadedAt, true)
+  const officialStandRaw = official.sourceUpdatedAt?.trim()
+  const officialStandAbs =
+    officialStandRaw && officialStandRaw !== ''
+      ? formatIsoTimestampToDateOnlyDe(officialStandRaw)
+      : EM_DASH
+  const officialVerifiedFresh = optionalSourceStatLines(official.sourceUpdatedAtVerifiedAt?.trim())
+  const officialPublishedRaw = official.sourcePublishedAt?.trim()
+  const officialPublishedFresh =
+    officialPublishedRaw && officialPublishedRaw !== '' && officialPublishedRaw !== officialStandRaw
+      ? optionalSourceStatLines(officialPublishedRaw)
+      : null
   const osmFresh = sourceStatLines(osm.downloadedAt, true)
 
   const officialDownloadDetails = deriveDownloadDetails(
@@ -464,11 +476,12 @@ export function ReportDataProvenanceFooter({
             abs={reportFresh.absoluteLine || EM_DASH}
             rel={reportFresh.relativeLine ?? EM_DASH}
           />
-          {officialUpdatedFresh ? (
+          <DateLine label={p.officialSourceStandLabel} abs={officialStandAbs} rel={EM_DASH} />
+          {officialVerifiedFresh ? (
             <DateLine
-              label={p.officialSourceUpdatedLabel}
-              abs={officialUpdatedFresh.absoluteLine}
-              rel={officialUpdatedFresh.relativeLine}
+              label={p.officialSourceVerifiedLabel}
+              abs={officialVerifiedFresh.absoluteLine}
+              rel={officialVerifiedFresh.relativeLine}
             />
           ) : null}
           {officialPublishedFresh ? (
@@ -480,8 +493,8 @@ export function ReportDataProvenanceFooter({
           ) : null}
           <DateLine
             label={p.officialDownloadLabel}
-            abs={officialFresh.absoluteLine}
-            rel={officialFresh.relativeLine}
+            abs={officialGeomFresh.absoluteLine}
+            rel={officialGeomFresh.relativeLine}
           />
           <DateLine
             label={p.osmDownloadLabel}

@@ -407,15 +407,15 @@ export const de = {
   germanKeyExplorer: {
     metaTitle: 'Regional- und Gemeindeschlüssel-Explorer',
     title: 'Regional- und Gemeindeschlüssel-Explorer',
-    lead:
-      'Hier können Sie den amtlichen Regionalschlüssel (ARS) und den amtlichen Gemeindeschlüssel (AGS) nachvollziehen: Schlüssel in ihre Segmente zerlegen und die Bezeichnungen der Verwaltungsebenen aus dem Destatis-Gemeindeverzeichnis (GV100AD) anzeigen — in der amtlichen Terminologie von Bund und Ländern.',
+    lead: 'Hier können Sie den amtlichen Regionalschlüssel (ARS) und den amtlichen Gemeindeschlüssel (AGS) nachvollziehen: Schlüssel in ihre Segmente zerlegen und die Bezeichnungen der Verwaltungsebenen aus dem Destatis-Gemeindeverzeichnis (GV100AD) anzeigen — in der amtlichen Terminologie von Bund und Ländern.',
     loadingLookup: 'Gemeindeverzeichnis-Daten werden geladen …',
     lookupErrorPrefix: 'Die Schlüssel-Daten konnten nicht geladen werden.',
     sourcesIntroLead:
       'Die Namen stammen aus der amtlichen GV100AD-Textdatei des Gemeindeverzeichnisses (Destatis).',
     /** Prefix before comma-separated Destatis links in the explorer header. */
     sourcesDataSourcesLabel: 'Datenquellen:',
-    sourcesIntroLatestSnapshot: (dateLabel: string) => `TXT-Stichtag in der gewählten Quartalsdatei: ${dateLabel}.`,
+    sourcesIntroLatestSnapshot: (dateLabel: string) =>
+      `TXT-Stichtag in der gewählten Quartalsdatei: ${dateLabel}.`,
     obsoleteNoticeLead:
       'Mindestens ein angezeigter Name ist nur in einer älteren GV100ADJ-Jahresausgabe erhalten — in der aktuellen Quartalsdatei fehlt dieser Schlüssel.',
     obsoleteNoticeYearBadge: (year: number) => `31.12.${year}:`,
@@ -424,7 +424,8 @@ export const de = {
     nameSearchNoResults:
       'Kein Gemeinde-/Gebietseintrag gefunden. Für Namenssuche mindestens zwei Zeichen eingeben; für Schlüssel die Ziffern nutzen.',
     nameSearchPickTitle: 'Mehrere Treffer',
-    nameSearchPickLead: 'Bitte einen Eintrag auswählen — der Schlüssel wird für die Ansicht übernommen.',
+    nameSearchPickLead:
+      'Bitte einen Eintrag auswählen — der Schlüssel wird für die Ansicht übernommen.',
     nameSearchPickApply: 'Übernehmen',
     nameSearchPickClose: 'Schließen',
     inputLabel: 'Schlüssel oder Gemeinde-Name',

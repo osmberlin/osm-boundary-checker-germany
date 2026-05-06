@@ -6,6 +6,7 @@ import {
   snapshotsSchema,
 } from '../../../scripts/shared/comparisonPayload.ts'
 import { germanKeyLookupBundleSchema } from '../../../scripts/shared/germanKeyLookupPayload.ts'
+import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import {
   fetchOverpassQuery,
   type OverpassBoundaryHit,
@@ -19,7 +20,6 @@ import {
   parseWfsFeatures,
   type WfsFeature,
 } from '../lib/wfsGetFeature'
-import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import type { ComparisonForReport, FeatureDetailShard, SnapshotsJson } from '../types/report'
 import { runStatusFileSchema, type RunStatusFile } from '../types/runStatus'
 import {

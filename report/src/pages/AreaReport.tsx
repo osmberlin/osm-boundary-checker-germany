@@ -51,9 +51,9 @@ import {
   formatDePercentPoints,
 } from '../lib/formatDe'
 import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
-import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
+import { officialAreaSummaryFreshness } from '../lib/officialAreaSummaryFreshness'
+import { sourceStatLines } from '../lib/reportFreshnessLines'
 import { areaDisplayNameForId } from '../lib/reportLookups'
-import { selectSourceDateForFreshness } from '../lib/sourceFreshnessSelection'
 import type {
   AreaReportRow,
   ComparisonForReport,
@@ -260,22 +260,20 @@ export function AreaReport() {
 
   const st = de.areaReport.stats
   const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
-  const officialRaw = data.sourceMetadata?.official?.downloadedAt
+  const officialSide = data.sourceMetadata?.official
   const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
   const osmRaw = osmResolved.downloadedAt
-  const hasOfficialMetadata = data.sourceMetadata?.official != null
-  const officialDateChoice = selectSourceDateForFreshness(data.sourceMetadata?.official)
-  const officialUpdatedFresh = optionalSourceStatLines(officialDateChoice.primaryRaw)
-  const officialDownloadedFresh = sourceStatLines(officialRaw, hasOfficialMetadata)
-  const officialFresh = officialUpdatedFresh ?? officialDownloadedFresh
-  const officialSecondaryLine =
-    officialDateChoice.secondaryDownloadedRaw && hasOfficialMetadata
-      ? `${de.areaReport.freshnessSecondaryDownloadedPrefix}: ${officialDownloadedFresh.absoluteLine}`
-      : null
+  const officialFresh = officialAreaSummaryFreshness(officialSide)
+  const officialSecondaryLine = officialFresh.detailLine
   const osmFresh = sourceStatLines(osmRaw, true)
   const reportIsOld = isOlderThanDays(data.generatedAt, 5)
-  const officialIsOld = isOlderThanDays(officialDateChoice.primaryRaw, 5)
-  const osmIsOld = isOlderThanDays(osmRaw, 5)
+  const officialIsOld = officialFresh.isOld
+  /** KPI copy stays snapshot (`downloadedAt`); rose “check” age uses extract wall-clock when source is header snapshot. */
+  const osmCheckRawForRose =
+    osmResolved.sourceDateSource === 'osm_pbf_header'
+      ? osmResolved.extractedAt?.trim() || osmRaw
+      : osmRaw
+  const osmIsOld = isOlderThanDays(osmCheckRawForRose, 5)
   const iouMax = maxFiniteValue(sortedRows.map((row) => row.metrics?.iou))
   const areaDiffAbsMax = maxFiniteValue(
     sortedRows.map((row) => absOrNull(row.metrics?.areaDiffPct)),
@@ -312,8 +310,8 @@ export function AreaReport() {
           />
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingOfficial}
-            relativeLine={officialFresh.relativeLine}
-            absoluteLine={officialFresh.absoluteLine}
+            relativeLine={officialFresh.relativeLine ?? EM_DASH}
+            absoluteLine={officialFresh.absoluteLine || EM_DASH}
             detailLine={officialSecondaryLine}
             isOld={officialIsOld}
           />

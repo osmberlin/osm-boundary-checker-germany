@@ -5,7 +5,7 @@ import {
   pickOsmDatasetExtractDate,
 } from '../lib/datasetExtractDataDates'
 import { EM_DASH } from '../lib/formatDe'
-import { sourceStatLines } from '../lib/reportFreshnessLines'
+import { formatIsoTimestampToAbsoluteDe } from '../lib/formatSourceDownloadedAt'
 import type { ComparisonForReport, ReportRow } from '../types/report'
 
 function formatPropertyValue(value: unknown): string {
@@ -50,22 +50,67 @@ function DatasetPropertyCard({ properties }: { properties: Record<string, unknow
   )
 }
 
+function formatCaptionDate(raw: string | undefined): string {
+  if (!raw?.trim()) return EM_DASH
+  const s = formatIsoTimestampToAbsoluteDe(raw)
+  return s || EM_DASH
+}
+
 function DatasetExtractDataDateCaption({
-  lines,
+  sourceDateRaw,
+  checkedAtRaw,
+  geometryFetchedAtRaw,
+  hasMetadata,
   note,
+  labels,
+  intro,
 }: {
-  lines: ReturnType<typeof sourceStatLines>
+  sourceDateRaw: string | undefined
+  checkedAtRaw: string | undefined
+  /** Official: `official.downloadedAt`. OSM: omit for two-line snapshot / extract layout. */
+  geometryFetchedAtRaw?: string | undefined
+  hasMetadata: boolean
   note?: string | null
+  labels?: { source: string; checked: string; geometryFetched?: string }
+  /** Optional one-line context above the timestamp rows (e.g. official: three independent meanings). */
+  intro?: string | null
 }) {
+  if (!hasMetadata) {
+    return (
+      <p className="text-xs leading-normal text-slate-400">{de.areaReport.sourceDateUnknown}</p>
+    )
+  }
+
+  const checkedTrim = checkedAtRaw?.trim() ?? ''
+  const geometryFetchedTrim = geometryFetchedAtRaw?.trim() ?? ''
+  const showGeometryFetchedLine = geometryFetchedAtRaw !== undefined
+
+  const sourceLb = labels?.source ?? de.feature.datasetExtractSourceDateLabel
+  const checkedLb = labels?.checked ?? de.feature.datasetExtractCheckedDateLabel
+  const geometryFetchedLb = labels?.geometryFetched ?? de.feature.datasetExtractGeometryFetchedLabel
+
+  const sourceValue = sourceDateRaw
+    ? formatCaptionDate(sourceDateRaw)
+    : de.areaReport.sourceDateUnknown
+  const checkedValue = checkedTrim !== '' ? formatCaptionDate(checkedAtRaw) : EM_DASH
+  const geometryFetchedValue =
+    geometryFetchedTrim !== '' ? formatCaptionDate(geometryFetchedAtRaw) : EM_DASH
+
   return (
     <div className="flex flex-col gap-0.5">
+      {intro ? <p className="text-[11px] leading-snug text-slate-500">{intro}</p> : null}
       <p className="text-xs leading-normal text-slate-400">
-        <span className="text-slate-500">{de.feature.datasetExtractDataDateLabel}:</span>{' '}
-        <span>{lines.absoluteLine}</span>
-        {lines.relativeLine !== EM_DASH ? (
-          <span className="text-slate-500"> · {lines.relativeLine}</span>
-        ) : null}
+        <span className="text-slate-500">{sourceLb}:</span> <span>{sourceValue}</span>
       </p>
+      <p className="text-xs leading-normal text-slate-400">
+        <span className="text-slate-500">{checkedLb}:</span> <span>{checkedValue}</span>
+      </p>
+      {showGeometryFetchedLine ? (
+        <p className="text-xs leading-normal text-slate-400">
+          <span className="text-slate-500">{geometryFetchedLb}:</span>{' '}
+          <span>{geometryFetchedValue}</span>
+        </p>
+      ) : null}
       {note ? <p className="text-[11px] leading-snug text-slate-500">{note}</p> : null}
     </div>
   )
@@ -82,16 +127,13 @@ export function FeatureDatasetProperties({
   const osm = forDisplay(row.osmProperties)
   const hasOfficialMeta = data.sourceMetadata?.official != null
   const officialPick = pickOfficialDatasetExtractDate(data.sourceMetadata?.official)
-  const officialDataLines = sourceStatLines(officialPick.raw, hasOfficialMeta)
-  const officialDataNote = officialPick.isPipelineFetchFallback
-    ? de.feature.datasetExtractOfficialPipelineFetchNote
-    : null
 
   const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
   const osmPick = pickOsmDatasetExtractDate(osmResolved)
-  const osmDataLines = sourceStatLines(osmPick.raw, true)
   const osmDataNote =
-    osmPick.raw && !osmPick.snapshotFromPbfHeader ? de.feature.datasetExtractOsmUncertainNote : null
+    osmPick.checkedAtRaw && !osmPick.snapshotFromPbfHeader
+      ? de.feature.datasetExtractOsmUncertainNote
+      : null
   const osmRelationId = row.osmRelationId.trim()
   const osmHistoryUrl =
     osmRelationId === '' ? null : `https://www.openstreetmap.org/relation/${osmRelationId}/history`
@@ -115,7 +157,13 @@ export function FeatureDatasetProperties({
               <span className="text-sm/6 font-medium text-slate-200">
                 {de.feature.datasetOfficialCardTitle}
               </span>
-              <DatasetExtractDataDateCaption lines={officialDataLines} note={officialDataNote} />
+              <DatasetExtractDataDateCaption
+                intro={de.feature.datasetExtractOfficialDatesIntro}
+                sourceDateRaw={officialPick.sourceDateRaw}
+                checkedAtRaw={officialPick.checkedAtRaw}
+                geometryFetchedAtRaw={officialPick.geometryFetchedAtRaw}
+                hasMetadata={hasOfficialMeta}
+              />
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <DatasetPropertyCard properties={official} />
@@ -126,7 +174,17 @@ export function FeatureDatasetProperties({
               <h3 className="text-sm/6 font-medium text-slate-200">
                 {de.feature.datasetOsmCardTitle}
               </h3>
-              <DatasetExtractDataDateCaption lines={osmDataLines} note={osmDataNote} />
+              <DatasetExtractDataDateCaption
+                intro={de.feature.datasetExtractOsmDatesIntro}
+                sourceDateRaw={osmPick.sourceDateRaw}
+                checkedAtRaw={osmPick.checkedAtRaw}
+                hasMetadata
+                note={osmDataNote}
+                labels={{
+                  source: de.feature.datasetExtractOsmSnapshotLabel,
+                  checked: de.feature.datasetExtractOsmExtractLabel,
+                }}
+              />
               {osmHistoryUrl && (
                 <a
                   href={osmHistoryUrl}

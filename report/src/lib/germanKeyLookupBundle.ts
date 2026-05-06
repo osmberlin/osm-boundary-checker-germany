@@ -71,14 +71,8 @@ export function mergeGermanKeyLookupTables(bundle: GermanKeyLookupBundle): Germa
       bundle.latest.gemeindeverbaende,
       bundle.obsolete.maps.gemeindeverbaende,
     ),
-    gemeindenByAgs: mergeRecord(
-      bundle.latest.gemeindenByAgs,
-      bundle.obsolete.maps.gemeindenByAgs,
-    ),
-    gemeindenByArs: mergeRecord(
-      bundle.latest.gemeindenByArs,
-      bundle.obsolete.maps.gemeindenByArs,
-    ),
+    gemeindenByAgs: mergeRecord(bundle.latest.gemeindenByAgs, bundle.obsolete.maps.gemeindenByAgs),
+    gemeindenByArs: mergeRecord(bundle.latest.gemeindenByArs, bundle.obsolete.maps.gemeindenByArs),
   }
 }
 
@@ -103,7 +97,9 @@ export function lookupArsSegmentNameCells(
 }
 
 /** Plain names-only view (backward compatible with older callers). */
-export function arsSegmentNamesFromCells(cells: ArsSegmentNameCells | null): ArsSegmentNames | null {
+export function arsSegmentNamesFromCells(
+  cells: ArsSegmentNameCells | null,
+): ArsSegmentNames | null {
   if (!cells) return null
   return {
     bundesland: cells.bundesland.value,
@@ -340,8 +336,8 @@ export function germanKeyExplorerHeaderSources(
       href: bundle.latest.sourcePublicUrl,
     },
   ]
-  const years = Object.keys(bundle.annualSourcePublicUrlsByYear).sort((a, b) =>
-    Number(a) - Number(b),
+  const years = Object.keys(bundle.annualSourcePublicUrlsByYear).sort(
+    (a, b) => Number(a) - Number(b),
   )
   for (const y of years) {
     const href = bundle.annualSourcePublicUrlsByYear[y]
