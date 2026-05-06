@@ -26,12 +26,13 @@ const officialProfileSchema = z.object({
 })
 export type OfficialProfile = z.infer<typeof officialProfileSchema>
 
-const BKG_SOURCE_PUBLIC_URL =
+/** GDZ HTML page listing VG25 **Aktualitätsstand** (parsed by `bkgGdzCatalog.ts`). */
+export const BKG_VG25_GDZ_PRODUCT_PAGE_URL =
   'https://gdz.bkg.bund.de/index.php/default/digitale-geodaten/verwaltungsgebiete/verwaltungsgebiete-1-25-000-stand-31-12-vg25.html'
 const BKG_PROFILE_COMMON = {
   provider: 'BKG',
   dataset: 'VG25',
-  sourcePublicUrl: BKG_SOURCE_PUBLIC_URL,
+  sourcePublicUrl: BKG_VG25_GDZ_PRODUCT_PAGE_URL,
   sourceDownloadUrl: BKG_ZIP_URL,
   licenseId: 'cc_by_40',
   licenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',

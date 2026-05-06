@@ -1,9 +1,14 @@
+/**
+ * Zod schemas for `datasets/<area>/source/metadata.json` and embedded compare metadata.
+ * Timestamp semantics (`sourceUpdatedAt`, `sourceUpdatedAtVerifiedAt`, `downloadedAt`, …): see
+ * **[`docs/processing-and-analysis.md`](../../docs/processing-and-analysis.md)** → “Source timestamp contract”.
+ */
 import { z } from 'zod'
 
 export const SOURCE_METADATA_FILE = 'metadata.json'
 
 const requiredTrimmedString = z.string().trim().min(1)
-const requiredTrimmedUrl = z.string().trim().pipe(z.url())
+const requiredUrl = z.url()
 
 const emptyStringToUndefined = z
   .string()
@@ -13,14 +18,34 @@ const emptyStringToUndefined = z
 
 const optionalTrimmedString = z.union([requiredTrimmedString, emptyStringToUndefined]).optional()
 
-const optionalTrimmedUrl = z.union([requiredTrimmedUrl, emptyStringToUndefined]).optional()
+const optionalUrl = z.union([requiredUrl, emptyStringToUndefined]).optional()
 
 const unknownDefaultString = optionalTrimmedString.transform((value) => value ?? 'unknown')
+
+/** Calendar day (`YYYY-MM-DD`) or full ISO datetime; `{ offset: true }` allows `±HH:MM`. */
+const isoDateOrDateTimeSchema = z.union([z.iso.date(), z.iso.datetime({ offset: true })])
+
+/**
+ * JSON stores instants as strings: validate with `z.iso.*`, normalize to UTC via `Date.prototype.toISOString`.
+ */
+export const optionalIsoInstantStringSchema = z
+  .union([
+    emptyStringToUndefined,
+    z
+      .string()
+      .trim()
+      .pipe(isoDateOrDateTimeSchema)
+      .transform((s) => new Date(s).toISOString()),
+  ])
+  .optional()
 
 export const sourceDateSourceSchema = z
   .enum([
     'wfs_capabilities',
-    'bkg_download_metadata',
+    /** VG25 reference date parsed from GDZ HTML (`bkgGdzCatalog.ts`). */
+    'bkg_gdz_aktualitaetsstand',
+    /** Hamburg etc.: `extent.temporal.interval` from OGC API Features collection JSON. */
+    'ogc_api_features_collection',
     'osm_pbf_header',
     'manual_override',
     'unknown',
@@ -57,33 +82,38 @@ export function datasetLicenseLabelForId(id: DatasetLicenseId): string {
 export const osmLicenseCompatibilitySchema = z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver'])
 
 const sourceMetadataCommonSideSchema = z.object({
-  downloadedAt: optionalTrimmedString,
-  sourcePublishedAt: optionalTrimmedString,
-  sourceUpdatedAt: optionalTrimmedString,
+  downloadedAt: optionalIsoInstantStringSchema,
+  sourcePublishedAt: optionalIsoInstantStringSchema,
+  sourceUpdatedAt: optionalIsoInstantStringSchema,
+  /** Instant when **`sourceUpdatedAt`** was last confirmed against upstream metadata (GDZ / WFS capabilities / OGC API). */
+  sourceUpdatedAtVerifiedAt: optionalIsoInstantStringSchema,
   sourceDateSource: sourceDateSourceSchema,
   provider: optionalTrimmedString,
   dataset: optionalTrimmedString,
   layer: optionalTrimmedString,
   /** Public dataset page where download/API links are documented. */
-  sourcePublicUrl: requiredTrimmedUrl,
+  sourcePublicUrl: requiredUrl,
   /** Direct machine-readable download/API URL used by the pipeline. */
-  sourceDownloadUrl: requiredTrimmedUrl,
+  sourceDownloadUrl: requiredUrl,
   note: optionalTrimmedString,
   licenseId: datasetLicenseIdSchema.default('unknown'),
   licenseLabel: unknownDefaultString,
-  licenseSourceUrl: optionalTrimmedUrl,
+  licenseSourceUrl: optionalUrl,
   /** Optional licence or terms line for attribution (set in source/metadata.json when known). */
   license: optionalTrimmedString,
 })
 /** One official-data side in `source/metadata.json` (includes OSM-compatibility assessment). */
 export const sourceMetadataSideSchema = sourceMetadataCommonSideSchema.extend({
   osmCompatibility: osmLicenseCompatibilitySchema.default('unknown'),
-  osmCompatibilitySourceUrl: optionalTrimmedUrl,
+  osmCompatibilitySourceUrl: optionalUrl,
   osmCompatibilityComment: optionalTrimmedString,
 })
 export type SourceMetadataSide = z.infer<typeof sourceMetadataSideSchema>
 /** One OSM side in `source/metadata.json` (no self-compatibility fields). */
-export const osmSourceMetadataSideSchema = sourceMetadataCommonSideSchema
+export const osmSourceMetadataSideSchema = sourceMetadataCommonSideSchema.extend({
+  /** Wall-clock instant when OSM FlatGeobuf was last rebuilt (`osm:extract`); distinct from snapshot `downloadedAt` when source is `osm_pbf_header`. */
+  extractedAt: optionalIsoInstantStringSchema,
+})
 export type OsmSourceMetadataSide = z.infer<typeof osmSourceMetadataSideSchema>
 
 /**
@@ -93,7 +123,8 @@ export type OsmSourceMetadataSide = z.infer<typeof osmSourceMetadataSideSchema>
  * ([osmGermanyProvenance.ts](./osmGermanyProvenance.ts)).
  */
 export const osmSourceMetadataPersistedSchema = z.object({
-  downloadedAt: optionalTrimmedString,
+  downloadedAt: optionalIsoInstantStringSchema,
+  extractedAt: optionalIsoInstantStringSchema,
   sourceDateSource: sourceDateSourceSchema,
 })
 export type OsmSourceMetadataPersisted = z.infer<typeof osmSourceMetadataPersistedSchema>
@@ -123,6 +154,7 @@ export function buildComparisonSourceMetadata(
   const official = sourceMetadataSideSchema.parse(file.official)
   const osm = osmSourceMetadataPersistedSchema.parse({
     downloadedAt: file.osm?.downloadedAt,
+    extractedAt: file.osm?.extractedAt,
     sourceDateSource: file.osm?.sourceDateSource,
   })
   return {

@@ -14,6 +14,7 @@ export function buildResolvedOsmSourceSide(
     ...GERMANY_OSM_SOURCE_DEFAULTS,
     licenseLabel: datasetLicenseLabelForId(GERMANY_OSM_SOURCE_DEFAULTS.licenseId),
     downloadedAt: p.downloadedAt,
+    extractedAt: p.extractedAt,
     sourceDateSource: p.sourceDateSource,
   }
 }

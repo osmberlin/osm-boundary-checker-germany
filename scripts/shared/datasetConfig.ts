@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { officialHttpDownloadSchema } from './downloadOfficialConfig.ts'
 import { officialProfileIdSchema, resolveOfficialProfile } from './officialProfiles.ts'
 import { osmProfileIdSchema } from './osmProfiles.ts'
 import { datasetLicenseIdSchema, osmLicenseCompatibilitySchema } from './sourceMetadata.ts'
@@ -32,14 +33,7 @@ const officialSourceSchema = z
   })
   .strict()
 
-const officialDownloadSchema = z
-  .object({
-    kind: z.literal('http').default('http'),
-    url: trimmedString,
-    format: z.enum(['geojson', 'gml']).default('geojson'),
-    crs: trimmedString.optional(),
-  })
-  .strict()
+const officialDownloadSchema = officialHttpDownloadSchema
 
 const compareSchema = z
   .object({

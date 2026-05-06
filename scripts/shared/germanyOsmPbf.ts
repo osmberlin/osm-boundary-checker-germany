@@ -39,7 +39,7 @@ export type GermanyOsmSourceDefaults = z.infer<typeof germanyOsmSourceDefaultsSc
 /**
  * App-level OSM provenance defaults shared by all datasets (Geofabrik Germany extract).
  * Per-area `source/metadata.json` and `comparison_table.json` only persist runtime fields
- * under `osm` (`downloadedAt`, `sourceDateSource`); merge with `buildResolvedOsmSourceSide`
+ * under `osm` (`downloadedAt`, `extractedAt`, `sourceDateSource`); merge with `buildResolvedOsmSourceSide`
  * in [osmGermanyProvenance.ts](./osmGermanyProvenance.ts) / the report UI for full provenance.
  */
 export const GERMANY_OSM_SOURCE_DEFAULTS: GermanyOsmSourceDefaults = {
