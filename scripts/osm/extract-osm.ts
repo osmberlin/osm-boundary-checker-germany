@@ -24,6 +24,7 @@ import {
   GERMANY_OSM_SHARED_FGB_BASENAME,
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
 } from '../shared/germanyOsmPbf.ts'
+import { checkOsmPbfIntegrity } from '../shared/osmPbfIntegrity.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { type AreaSourceMetadataFile, mergeAreaSourceMetadata } from '../shared/sourceMetadata.ts'
 import {
@@ -292,6 +293,16 @@ function main() {
           `Download with:\n  bun run osm:download\n` +
           `Or set OSM_GERMANY_PBF / pass --pbf /path/to/germany-latest.osm.pbf`,
       )
+      process.exit(1)
+    }
+  } else if (!dryRun) {
+    const integ = checkOsmPbfIntegrity(inputPbf)
+    if (!integ.ok) {
+      const fix =
+        integ.canDeleteCorruptCache === true
+          ? `Re-download with:\n  bun run osm:download -- --force`
+          : `Install osmium on PATH, or use a machine where \`osmium fileinfo -e\` works on this file.`
+      console.error(`Germany PBF could not be validated:\n  ${inputPbf}\n${integ.detail}\n\n${fix}`)
       process.exit(1)
     }
   }
