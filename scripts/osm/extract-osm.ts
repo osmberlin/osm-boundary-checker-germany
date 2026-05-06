@@ -248,6 +248,7 @@ function writeOsmSourceMetadataForAreas(
     )
   }
 
+  const extractedAtWall = dryRun ? undefined : new Date().toISOString()
   for (const area of areas) {
     const areaPath = datasetFolderPath(runtimeRoot, area)
     const prev: AreaSourceMetadataFile = readAreaSourceMetadataFile(areaPath) ?? {}
@@ -255,11 +256,12 @@ function writeOsmSourceMetadataForAreas(
       osm: {
         downloadedAt: downloadedAt ?? prev.osm?.downloadedAt,
         sourceDateSource: downloadedAt ? 'osm_pbf_header' : prev.osm?.sourceDateSource,
+        ...(extractedAtWall ? { extractedAt: extractedAtWall } : {}),
       },
     }
     if (dryRun) {
       console.log(
-        `[dry-run] update ${DATASETS_DIRECTORY}/${area}/source/metadata.json (osm.downloadedAt=${patch.osm?.downloadedAt ?? 'unchanged'})`,
+        `[dry-run] update ${DATASETS_DIRECTORY}/${area}/source/metadata.json (osm.downloadedAt=${patch.osm?.downloadedAt ?? 'unchanged'}, osm.extractedAt=would-write)`,
       )
       continue
     }

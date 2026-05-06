@@ -384,6 +384,11 @@ async function main() {
         console.log(
           `[pipeline] ${stepStatus === 'ok' ? 'finished' : stepStatus === 'skipped' ? 'reused cache for' : 'failed'} ${phaseStep.step} in ${formatDuration(durationMs)} (exit ${finalExitCode})`,
         )
+        if (phaseStep.step === 'download:official' && finalExitCode !== 0) {
+          console.error(
+            '[pipeline] download:official failed. See per-area reasons above from scripts/download/official.ts (reason/detail).',
+          )
+        }
 
         const branchStatus = branchStatusFromStepResult(stepStatus, usedCache, phaseStep.step)
         upsertSharedBranchStatus(processingDir, phaseStep.step, {

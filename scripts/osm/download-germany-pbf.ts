@@ -3,6 +3,10 @@ import { spawnSync } from 'node:child_process'
 /**
  * Download Geofabrik `germany-latest.osm.pbf` into `.cache/osm/` (gitignored).
  * Uses `curl` on PATH. Override URL with `--url` or `GERMANY_OSM_PBF_URL`.
+ *
+ * Set **`OSM_SKIP_PBF_DOWNLOAD=1`** (or `true`) to never hit the network here — use when the PBF
+ * is already present and you want `pipeline:nightly` / `osm:download` to leave it unchanged
+ * (e.g. local runs across calendar-day refresh windows).
  */
 import { existsSync, mkdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
@@ -36,6 +40,18 @@ function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { force, url: urlArg } = parseArgs(process.argv.slice(2))
+  const skipEnv = process.env.OSM_SKIP_PBF_DOWNLOAD?.trim().toLowerCase()
+  if (skipEnv === '1' || skipEnv === 'true' || skipEnv === 'yes') {
+    emitCacheDecision({
+      source: 'osm',
+      decision: 'hit',
+      reason: 'skip_env',
+      action: 'reuse',
+      detail: 'OSM_SKIP_PBF_DOWNLOAD',
+    })
+    console.log('OSM PBF download skipped (OSM_SKIP_PBF_DOWNLOAD set).')
+    return
+  }
   const downloadUrl =
     urlArg?.trim() || process.env.GERMANY_OSM_PBF_URL?.trim() || GERMANY_OSM_PBF_URL
 
