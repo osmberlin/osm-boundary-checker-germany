@@ -6,7 +6,6 @@ const areasIndex = {
     'berlin-plz',
     'brandenburg-berlin-plz',
     'brandenburg-gemeinden',
-    'de-gemeinden',
     'de-gemeinden-bb',
     'de-gemeinden-be',
     'de-gemeinden-bw',
@@ -81,15 +80,6 @@ const areasIndex = {
       reviews: 40,
       issues: 24,
       osmMatchProperty: 'de:regionalschluessel',
-    },
-    {
-      area: 'de-gemeinden',
-      displayName: 'Deutschland Gemeinden',
-      matched: 10499,
-      officialOnly: 482,
-      unmatchedOsm: 2003,
-      reviews: 0,
-      issues: 0,
     },
     {
       area: 'de-gemeinden-bb',
@@ -438,16 +428,6 @@ const areasIndex = {
         'https://wiki.openstreetmap.org/wiki/Brandenburg/Geoportal#Rechtliche_Grundlagen',
       officialOsmCompatibilityComment:
         'Brandenburg-Daten mit dokumentierter OSM-Freigabe laut OSM-Wiki.',
-    },
-    {
-      area: 'de-gemeinden',
-      displayName: 'Deutschland Gemeinden',
-      officialLicenseLabel: 'CC-BY-4.0',
-      officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
     },
     {
       area: 'de-gemeinden-bb',
