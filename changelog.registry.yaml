@@ -46,4 +46,45 @@ entries:
       Wenn zwei Flächen in der Karte übereinander liegen aber kein match sind, wird jetzt ein Dialog angezeigt über dem man beide Detailseiten öffnen kann. Auf der Detailseite der amtlichen Daten (nicht nicht gematched wurden) steht zudem, welche Tags nötig wären in OSM, um die Fläche zu matchen.
   - refs:
       - '98872ee'
+      - '3917fd9'
+      - '9a1a98d'
+      - 'c323e69'
     hide: true
+  - refs:
+      - '8fd952e'
+      - 'd340945'
+    descriptionMd: |
+      Bessere Darstellung der Regeln, die beim Vergleich der Grenzen angewendet werden.
+  - refs:
+      - '7b4309a'
+      - '741b621'
+      - '8fd017c'
+      - '5754fdf'
+      - '5135821'
+    descriptionMd: |
+      Hilfswerkzeug [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) hat eine statische (per Skript manuell zu aktualisierende) Liste aller Schlüssel die wir zum Datenabgleich nutzen. Einschließlich einiger historischer Daten, die nicht mehr aktuell sind, aber in OSM noch in Verwendung sein können.
+  - refs:
+      - 'f6ad863'
+      - 'e712d51'
+      - '31cb300'
+      - 'c03bbcf'
+      - '602ea38'
+      - 'e26f71a'
+    descriptionMd: |
+      Pro Datensatz extrahieren wir jetzt ein Datum der offiziellen letzten Aktualisierung. Das ist wichtig um die Daten einzuschätzen. Bspw. sind in den BKG Daten die Schlüssel von Anfang des Jahres verwendet, aber inzwischen gibt es neuere Datensätze zu den Schlüsseln. Genau Daten helfen solche Sonderfälle zu erkennen.
+  - refs:
+      - '3a05a13'
+      - '17ea4e2'
+      - 'd9a7094'
+      - 'ca249bf'
+      - '3f9d8b2'
+    hide: true
+  - refs:
+      - '038fa9f'
+    descriptionMd: |
+      Die iD- und JOSM-Editor-Links enthalten jetzt auch das Hashtag `#grenzabgleich` als Vorschlag für das Changeset.
+  - refs:
+      - '5a370a1'
+      - '22ad7ab'
+    descriptionMd: |
+      Auf der Karte der Detailseite kann man jetzt die Anzeige zwischen der ausgewählten Grenze und allen Grenzen wechseln. Das erlaubt den Wechsel zu benachbarten Detailansichten sowie besser zu verstehen, wie man Grenzen präzisieren muss im Editor, wenn mehrere Grenzen aufeinander treffen. Denn die Editor-Grenzen enthalten immer nur den ausgewählten Datensatz, nicht die Nachbarn.

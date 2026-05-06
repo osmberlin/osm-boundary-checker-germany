@@ -1,9 +1,44 @@
 {
-  "generatedAt": "2026-05-04T20:46:11.640Z",
+  "generatedAt": "2026-05-06T20:59:25.592Z",
   "months": [
     {
       "month": "2026-05",
       "entries": [
+        {
+          "refs": ["5a370a1", "22ad7ab"],
+          "descriptionMd": "Auf der Karte der Detailseite kann man jetzt die Anzeige zwischen der ausgewählten Grenze und allen Grenzen wechseln. Das erlaubt den Wechsel zu benachbarten Detailansichten sowie besser zu verstehen, wie man Grenzen präzisieren muss im Editor, wenn mehrere Grenzen aufeinander treffen. Denn die Editor-Grenzen enthalten immer nur den ausgewählten Datensatz, nicht die Nachbarn.",
+          "committedAtIso": "2026-05-06T23:19:45+03:00",
+          "committedAtShort": "2026-05-06",
+          "refsDisplay": ["5a370a1", "22ad7ab"]
+        },
+        {
+          "refs": ["8fd952e", "d340945"],
+          "descriptionMd": "Bessere Darstellung der Regeln, die beim Vergleich der Grenzen angewendet werden.",
+          "committedAtIso": "2026-05-06T22:22:33+03:00",
+          "committedAtShort": "2026-05-06",
+          "refsDisplay": ["8fd952e", "d340945"]
+        },
+        {
+          "refs": ["7b4309a", "741b621", "8fd017c", "5754fdf", "5135821"],
+          "descriptionMd": "Hilfswerkzeug [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) hat eine statische (per Skript manuell zu aktualisierende) Liste aller Schlüssel die wir zum Datenabgleich nutzen. Einschließlich einiger historischer Daten, die nicht mehr aktuell sind, aber in OSM noch in Verwendung sein können.",
+          "committedAtIso": "2026-05-06T22:22:33+03:00",
+          "committedAtShort": "2026-05-06",
+          "refsDisplay": ["7b4309a", "741b621", "8fd017c", "5754fdf", "5135821"]
+        },
+        {
+          "refs": ["f6ad863", "e712d51", "31cb300", "c03bbcf", "602ea38", "e26f71a"],
+          "descriptionMd": "Pro Datensatz extrahieren wir jetzt ein Datum der offiziellen letzten Aktualisierung. Das ist wichtig um die Daten einzuschätzen. Bspw. sind in den BKG Daten die Schlüssel von Anfang des Jahres verwendet, aber inzwischen gibt es neuere Datensätze zu den Schlüsseln. Genau Daten helfen solche Sonderfälle zu erkennen.",
+          "committedAtIso": "2026-05-06T22:22:33+03:00",
+          "committedAtShort": "2026-05-06",
+          "refsDisplay": ["f6ad863", "e712d51", "31cb300", "c03bbcf", "602ea38", "e26f71a"]
+        },
+        {
+          "refs": ["038fa9f"],
+          "descriptionMd": "Die iD- und JOSM-Editor-Links enthalten jetzt auch das Hashtag `#grenzabgleich` als Vorschlag für das Changeset.",
+          "committedAtIso": "2026-05-06T22:22:33+03:00",
+          "committedAtShort": "2026-05-06",
+          "refsDisplay": ["038fa9f"]
+        },
         {
           "refs": ["062d511", "acb6ffc"],
           "descriptionMd": "Wenn zwei Flächen in der Karte übereinander liegen aber kein match sind, wird jetzt ein Dialog angezeigt über dem man beide Detailseiten öffnen kann. Auf der Detailseite der amtlichen Daten (nicht nicht gematched wurden) steht zudem, welche Tags nötig wären in OSM, um die Fläche zu matchen.",
