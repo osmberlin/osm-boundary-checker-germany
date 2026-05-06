@@ -3,7 +3,7 @@
     "downloadedAt": "2026-05-06T13:43:09.786Z",
     "sourcePublishedAt": "2017-01-10T22:00:00.000Z",
     "sourceUpdatedAt": "2025-07-18T11:54:08.000Z",
-    "sourceUpdatedAtVerifiedAt": "2026-05-06T14:05:45.000Z",
+    "sourceUpdatedAtVerifiedAt": "2026-05-06T20:43:34.973Z",
     "sourceDateSource": "ogc_api_features_collection",
     "provider": "HTTP",
     "dataset": "GeoJSON",
@@ -18,7 +18,8 @@
     "osmCompatibilityComment": "Brandenburg-Daten mit dokumentierter OSM-Freigabe laut OSM-Wiki."
   },
   "osm": {
-    "downloadedAt": "2026-04-21T20:20:22.000Z",
+    "downloadedAt": "2026-05-05T20:21:15.000Z",
+    "extractedAt": "2026-05-06T21:09:16.956Z",
     "sourceDateSource": "osm_pbf_header"
   }
 }

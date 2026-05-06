@@ -3,7 +3,7 @@
     "downloadedAt": "2026-05-06T13:36:29.286Z",
     "sourcePublishedAt": "2019-10-01T00:00:00.000Z",
     "sourceUpdatedAt": "2025-12-31T00:00:00.000Z",
-    "sourceUpdatedAtVerifiedAt": "2026-05-06T14:05:43.461Z",
+    "sourceUpdatedAtVerifiedAt": "2026-05-06T20:43:34.407Z",
     "sourceDateSource": "wfs_capabilities",
     "provider": "HTTP",
     "dataset": "GeoJSON",
@@ -18,7 +18,8 @@
     "osmCompatibilityComment": "Berlin veroeffentlicht diese Datengrundlage unter DL-DE-ZERO-2.0 mit dokumentierter OSM-Freigabe."
   },
   "osm": {
-    "downloadedAt": "2026-04-21T20:20:22.000Z",
+    "downloadedAt": "2026-05-05T20:21:15.000Z",
+    "extractedAt": "2026-05-06T21:09:16.956Z",
     "sourceDateSource": "osm_pbf_header"
   }
 }

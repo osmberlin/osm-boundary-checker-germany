@@ -2,7 +2,7 @@
   "official": {
     "downloadedAt": "2026-05-06T13:43:32.257Z",
     "sourceUpdatedAt": "2024-12-31T00:00:00.000Z",
-    "sourceUpdatedAtVerifiedAt": "2026-05-06T14:05:45.333Z",
+    "sourceUpdatedAtVerifiedAt": "2026-05-06T20:43:35.541Z",
     "sourceDateSource": "ogc_api_features_collection",
     "provider": "HTTP",
     "dataset": "GeoJSON",
@@ -17,7 +17,8 @@
     "osmCompatibilityComment": "Aktuell keine dokumentierte Zusatzfreigabe fuer OSM."
   },
   "osm": {
-    "downloadedAt": "2026-04-21T20:20:22.000Z",
+    "downloadedAt": "2026-05-05T20:21:15.000Z",
+    "extractedAt": "2026-05-06T21:09:16.956Z",
     "sourceDateSource": "osm_pbf_header"
   }
 }

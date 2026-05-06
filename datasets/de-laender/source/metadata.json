@@ -2,7 +2,7 @@
   "official": {
     "downloadedAt": "2026-05-06T04:43:44.797Z",
     "sourceUpdatedAt": "2024-12-31T12:00:00.000Z",
-    "sourceUpdatedAtVerifiedAt": "2026-05-06T14:07:08.441Z",
+    "sourceUpdatedAtVerifiedAt": "2026-05-06T20:43:30.755Z",
     "sourceDateSource": "bkg_gdz_aktualitaetsstand",
     "provider": "BKG",
     "dataset": "VG25",
@@ -17,7 +17,8 @@
     "osmCompatibilityComment": "Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen."
   },
   "osm": {
-    "downloadedAt": "2026-04-21T20:20:22.000Z",
+    "downloadedAt": "2026-05-05T20:21:15.000Z",
+    "extractedAt": "2026-05-06T21:09:16.956Z",
     "sourceDateSource": "osm_pbf_header"
   }
 }
