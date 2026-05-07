@@ -13,6 +13,7 @@ import { germanKeyExplorerLinkValueOrNull } from '../lib/germanKeyExplorer'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
 import type { ComparisonFilterConfigSummary, ComparisonForReport, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
+import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
 
 export type ReportDataProvenanceFooterProps = {
   data: ComparisonForReport
@@ -503,8 +504,9 @@ export function ReportDataProvenanceFooter({
           {compareProvenanceDlRows(data, row, filter)}
 
           <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt>
+            <dt className="flex flex-col gap-1">
               <h3 className="text-sm/6 font-medium text-slate-200">{p.officialSourceHeading}</h3>
+              <OfficialDatasetAgeInfoLink side={official} />
             </dt>
             <dd className="mt-3 md:col-span-2 md:mt-0">
               <ul className="list-disc space-y-2 pl-5 text-slate-300 marker:text-slate-500">

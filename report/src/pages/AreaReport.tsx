@@ -25,9 +25,11 @@ import {
 import { IssueBadge } from '../components/IssueBadge'
 import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
+import { OfficialDatasetAgeInfoButton } from '../components/OfficialDatasetAgeInfoModal'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { RouteLoadingPane } from '../components/RouteLoadingPane'
+import { SummaryStatColumn } from '../components/SummaryStatColumn'
 import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
@@ -46,9 +48,8 @@ import {
   formatDeOrDash,
   formatDePercentPoints,
 } from '../lib/formatDe'
-import { formatFreshnessDisplayDe } from '../lib/formatSourceDownloadedAt'
 import { officialAreaSummaryFreshness } from '../lib/officialAreaSummaryFreshness'
-import { sourceStatLines } from '../lib/reportFreshnessLines'
+import { kpiFreshnessLinesFromIso } from '../lib/reportFreshnessLines'
 import { areaDisplayNameForId } from '../lib/reportLookups'
 import type { AreaReportRow, ComparisonForReport, SnapshotsJson } from '../types/report'
 
@@ -211,13 +212,12 @@ export function AreaReport() {
   }
 
   const st = de.areaReport.stats
-  const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
+  const reportFresh = kpiFreshnessLinesFromIso(data.generatedAt.trim())
   const officialSide = data.sourceMetadata?.official
   const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
   const osmRaw = osmResolved.downloadedAt
   const officialFresh = officialAreaSummaryFreshness(officialSide)
-  const officialSecondaryLine = officialFresh.detailLine
-  const osmFresh = sourceStatLines(osmRaw, true)
+  const osmFresh = kpiFreshnessLinesFromIso(osmRaw)
   const reportIsOld = isOlderThanDays(data.generatedAt, 5)
   const officialIsOld = officialFresh.isOld
   /** KPI copy stays snapshot (`downloadedAt`); rose “check” age uses extract wall-clock when source is header snapshot. */
@@ -263,9 +263,10 @@ export function AreaReport() {
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingOfficial}
             relativeLine={officialFresh.relativeLine ?? EM_DASH}
-            absoluteLine={officialFresh.absoluteLine || EM_DASH}
-            detailLine={officialSecondaryLine}
+            absoluteLine={officialFresh.pairedAbsoluteLine}
             isOld={officialIsOld}
+            headingAdornment={<OfficialDatasetAgeInfoButton side={officialSide} />}
+            hideDetailLine
           />
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingOsm}
@@ -641,67 +642,6 @@ function maxFiniteValue(values: Array<number | null | undefined>): number {
 function absOrNull(value: number | null | undefined): number | null {
   if (value == null) return null
   return Number.isFinite(value) ? Math.abs(value) : null
-}
-
-/** Row 1: heading, relative age (large), absolute datetime (small). */
-function SummaryStatColumn({
-  heading,
-  relativeLine,
-  absoluteLine,
-  detailLine,
-  isOld = false,
-}: {
-  heading: string
-  relativeLine: string
-  absoluteLine: string
-  detailLine?: string | null
-  isOld?: boolean
-}) {
-  const compactRelativeLine = relativeLine.replace(/\bStunden?\b/g, 'Std.')
-  const mobileAbsoluteLine = toNumericMonthAbsoluteDe(absoluteLine)
-
-  return (
-    <div className="flex min-w-0 flex-col gap-y-1">
-      <dt className="text-sm font-medium text-slate-400">{heading}</dt>
-      <dd
-        className={`m-0 text-2xl font-semibold tracking-tight text-pretty tabular-nums sm:text-3xl ${isOld ? 'text-rose-300' : 'text-slate-400'}`}
-      >
-        <span className="sm:hidden">{compactRelativeLine}</span>
-        <span className="hidden sm:inline">{compactRelativeLine}</span>
-      </dd>
-      <dd className={`m-0 text-sm ${isOld ? 'text-rose-300' : 'text-slate-400'}`}>
-        <span className="sm:hidden">{mobileAbsoluteLine}</span>
-        <span className="hidden sm:inline">{absoluteLine}</span>
-      </dd>
-      {detailLine ? <dd className="m-0 text-xs text-slate-500">{detailLine}</dd> : null}
-    </div>
-  )
-}
-
-function toNumericMonthAbsoluteDe(value: string): string {
-  const monthByName: Record<string, string> = {
-    Januar: '01',
-    Februar: '02',
-    März: '03',
-    April: '04',
-    Mai: '05',
-    Juni: '06',
-    Juli: '07',
-    August: '08',
-    September: '09',
-    Oktober: '10',
-    November: '11',
-    Dezember: '12',
-  }
-  const m = value.match(/^(\d{1,2})\.\s+([A-Za-zÄÖÜäöüß]+)\s+(\d{4})\s+(\d{2}:\d{2})$/)
-  if (!m) return value
-  const day = m[1]?.padStart(2, '0')
-  const monthName = m[2]
-  const year = m[3]
-  const time = m[4]
-  const month = monthName ? monthByName[monthName] : null
-  if (!day || !month || !year || !time) return value
-  return `${day}.${month}.${year} ${time}`
 }
 
 function formatHeadlineSourceLabel(
