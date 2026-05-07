@@ -1,5 +1,6 @@
 import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import {
+  ags8FromArs12Digits,
   digitsOnly,
   type ArsSegmentNames,
   type GermanKeyLookupTables,
@@ -14,6 +15,19 @@ export type ObsoleteMeta = {
 export type ResolvedField = {
   value: string | null
   obsolete?: ObsoleteMeta
+  /** AGS view (8-digit input): VVVV row, reverse lookup did not find a matching ARS. */
+  notInKey?: true
+  /**
+   * AGS view (8-digit input): VVVV row, value/digits came from the AGS→ARS reverse lookup.
+   * Renderer should display them in a muted style with the "(aufgelöst aus Gemeindeverzeichnis)" caption.
+   */
+  fromAgsResolution?: true
+  /**
+   * Override the digits shown in the segments-table Ziffern column for this cell.
+   * Only used by the AGS view's VVVV row when reverse lookup succeeded; otherwise the
+   * digits come from the segments object passed to the table.
+   */
+  digits?: string
 }
 
 export type ArsSegmentNameCells = {
@@ -117,6 +131,107 @@ export function resolveGemeindeNameByAgs(
   const d = digitsOnly(ags8)
   if (d.length < 8) return { value: null }
   return resolveMapField(bundle, 'gemeindenByAgs', d.slice(0, 8))
+}
+
+type ArsByAgsIndex = {
+  latest: Map<string, string>
+  obsolete: Map<string, { ars12: string; year: number }>
+}
+
+/**
+ * Reverse index `AGS-8 → ARS-12` built from `gemeindenByArs`. The AGS-from-ARS projection is
+ * `ars.slice(0,5) + ars.slice(9,12)` (see `ags8FromArs12Digits`). Latest precedes obsolete.
+ *
+ * Built lazily, once per bundle instance, and cached via WeakMap so repeated calls in the same
+ * session share the work. Iteration cost: O(n) over ~10k entries — acceptable in the browser.
+ */
+const ARS_BY_AGS_CACHE = new WeakMap<GermanKeyLookupBundle, ArsByAgsIndex>()
+
+function buildArsByAgs(bundle: GermanKeyLookupBundle): ArsByAgsIndex {
+  const cached = ARS_BY_AGS_CACHE.get(bundle)
+  if (cached) return cached
+  const latest = new Map<string, string>()
+  for (const ars12 of Object.keys(bundle.latest.gemeindenByArs)) {
+    const ags8 = ags8FromArs12Digits(ars12)
+    if (ags8 !== null) latest.set(ags8, ars12)
+  }
+  const obsolete = new Map<string, { ars12: string; year: number }>()
+  for (const ars12 of Object.keys(bundle.obsolete.maps.gemeindenByArs)) {
+    const ags8 = ags8FromArs12Digits(ars12)
+    if (ags8 === null) continue
+    if (latest.has(ags8)) continue
+    const year = bundle.obsolete.lastContainedInYear.gemeindenByArs[ars12]
+    if (year === undefined) continue
+    const prev = obsolete.get(ags8)
+    if (prev !== undefined && prev.year >= year) continue
+    obsolete.set(ags8, { ars12, year })
+  }
+  const index: ArsByAgsIndex = { latest, obsolete }
+  ARS_BY_AGS_CACHE.set(bundle, index)
+  return index
+}
+
+/** Resolve an 8-digit AGS to its full 12-digit ARS via reverse lookup. Latest first, then obsolete. */
+export function resolveArsFromAgs(
+  bundle: GermanKeyLookupBundle,
+  ags8: string,
+): { ars12: string; obsolete?: ObsoleteMeta } | null {
+  const d = digitsOnly(ags8)
+  if (d.length !== 8) return null
+  const index = buildArsByAgs(bundle)
+  const latest = index.latest.get(d)
+  if (latest !== undefined) return { ars12: latest }
+  const obs = index.obsolete.get(d)
+  if (obs !== undefined) {
+    return {
+      ars12: obs.ars12,
+      obsolete: { year: obs.year, sourcePublicUrl: publicationUrlForYear(bundle, obs.year) },
+    }
+  }
+  return null
+}
+
+/**
+ * AGS-view segment cells (8-digit input). BL/RB/Kreis come from AGS positions 1-5; the Gemeinde
+ * row comes from `gemeindenByAgs` (positions 6-8 of the AGS form the GGG slot).
+ *
+ * The Gemeindeverband row is special:
+ * - When `resolvedArs` is provided (reverse lookup succeeded), VVVV is filled with the looked-up
+ *   digits/name and flagged `fromAgsResolution: true` so the renderer shows it muted with the
+ *   "(aufgelöst aus Gemeindeverzeichnis)" caption.
+ * - Otherwise, VVVV is flagged `notInKey: true` so the renderer shows
+ *   "Gemeindeverband nicht im AGS enthalten" with no digits.
+ */
+export function agsSegmentCells(
+  bundle: GermanKeyLookupBundle,
+  ags8: string,
+  resolvedArs: { ars12: string; obsolete?: ObsoleteMeta } | null,
+): ArsSegmentNameCells | null {
+  const d = digitsOnly(ags8)
+  if (d.length !== 8) return null
+
+  let gemeindeverband: ResolvedField
+  if (resolvedArs) {
+    const gvCell = resolveMapField(bundle, 'gemeindeverbaende', resolvedArs.ars12.slice(0, 9))
+    gemeindeverband = {
+      ...gvCell,
+      fromAgsResolution: true,
+      digits: resolvedArs.ars12.slice(5, 9),
+      ...(resolvedArs.obsolete && gvCell.obsolete === undefined
+        ? { obsolete: resolvedArs.obsolete }
+        : {}),
+    }
+  } else {
+    gemeindeverband = { value: null, notInKey: true }
+  }
+
+  return {
+    bundesland: resolveMapField(bundle, 'bundeslaender', d.slice(0, 2)),
+    regierungsbezirk: resolveMapField(bundle, 'regierungsbezirke', d.slice(0, 3)),
+    kreis: resolveMapField(bundle, 'kreise', d.slice(0, 5)),
+    gemeindeverband,
+    gemeinde: resolveMapField(bundle, 'gemeindenByAgs', d),
+  }
 }
 
 export function resolveGemeindeNameByArs(

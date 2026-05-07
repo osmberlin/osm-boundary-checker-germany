@@ -452,6 +452,8 @@ export const de = {
     presetOptionAll: 'Alle Presets',
     submitUrl: 'Aktualisieren',
     arsTableTitle: 'Regionalschlüssel (12 Stellen, ARS)',
+    /** Headline used when the input is exactly 8 digits and the segments table renders the AGS view. */
+    agsTableTitle: 'Gemeindeschlüssel / AGS (8 Stellen)',
     segmentBl: 'Bundesland',
     segmentRb: 'Regierungsbezirk',
     segmentKreis: 'Kreis / kreisfreie Stadt',
@@ -459,6 +461,28 @@ export const de = {
     segmentGem: 'Gemeinde',
     noRegierungsbezirk: 'Kein Regierungsbezirk',
     noGemeindeverband: 'Kein Gemeindeverband',
+    /** Segments table: cell labels for partially padded / out-of-input slots and lookup misses. */
+    segmentNotInKey: 'Ebene nicht im Schlüssel enthalten',
+    segmentNoNameFound: 'Kein Name gefunden',
+    /** AGS view (8-digit input): VVVV row when reverse lookup did not find a matching ARS. */
+    agsViewVvvvNotInAgs: 'Gemeindeverband nicht im AGS enthalten',
+    /** AGS view (8-digit input): VVVV row caption when reverse lookup did find the full ARS. */
+    agsViewVvvvFromLookup: '(aufgelöst aus Gemeindeverzeichnis)',
+    /** Amber alert above the segments table when an 8-digit AGS could not be resolved. */
+    agsNotResolvable: (ags8: string) =>
+      `AGS ${ags8} ist nicht im Gemeindeverzeichnis enthalten. Der Gemeindeverband (VVVV) kann aus dem 8-stelligen Schlüssel allein nicht abgeleitet werden.`,
+    /** keyOverviewRows ARS row suffix when input is an 8-digit AGS and reverse lookup failed. */
+    arsNotDerivableFromAgs: '(aus 8-stelligem AGS nicht ableitbar)',
+    /** Layout explainer block under the keyOverview table (Part C). */
+    explainerLayoutTitle: 'Aufbau von AGS und ARS',
+    explainerLayoutSlotsAgs: 'AGS = LL R KK GGG',
+    explainerLayoutSlotsArs: 'ARS = LL R KK VVVV GGG',
+    explainerWikiAgsLinkLabel: 'OSM-Wiki: de:amtlicher_gemeindeschluessel',
+    explainerWikiArsLinkLabel: 'OSM-Wiki: de:regionalschluessel',
+    explainerPaddingArtifactPara1:
+      'Der ARS enthält zusätzlich zum AGS einen 4-stelligen Gemeindeverband (VVVV).',
+    explainerPaddingArtifactPara2:
+      'Das Padding gilt nur für die Normalisierung regional-12: 8 Ziffern werden dort rechts auf 12 Stellen mit Nullen ergänzt. Dadurch wirken die letzten 3 AGS-Ziffern im ARS-Schema so, als lägen sie im VVVV-Bereich. In der Segmente-Tabelle hier wird stattdessen der AGS direkt verwendet bzw. (falls verfügbar) über das Gemeindeverzeichnis zum vollständigen ARS aufgelöst.',
     agsTitle: 'Amtlicher Gemeindeschlüssel (8 Stellen, AGS)',
     agsLead:
       'Aus einer vollständigen 12-stelligen ARS ergibt sich der AGS aus LLRKK + GGG (also ohne die 4 Stellen des Gemeindeverbands).',

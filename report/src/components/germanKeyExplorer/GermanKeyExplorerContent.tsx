@@ -15,14 +15,18 @@ import {
   type GermanSchluesselExplorerPreset,
 } from '../../lib/germanKeyExplorer'
 import {
+  agsSegmentCells,
   collectObsoleteFields,
   isGermanKeyDigitHeavyInput,
   lookupArsSegmentNameCells,
   mergeGermanKeyLookupTables,
+  resolveArsFromAgs,
   resolveGemeindeNameByAgs,
   resolveGemeindeNameByArs,
   searchGermanKeyDisplayNames,
+  type ArsSegmentNameCells,
   type GermanKeyNameSearchHit,
+  type ObsoleteMeta,
 } from '../../lib/germanKeyLookupBundle'
 import type { GermanKeySearch } from '../../lib/germanKeySearch'
 import { AlertNotice } from '../AlertNotice'
@@ -33,7 +37,181 @@ import {
   AppDialogTitle,
   Dialog,
 } from '../ui/Dialog'
-import { ArsSegmentsTable } from './ArsSegmentsTable'
+import { ArsSegmentsTable, type SegmentsTableRow } from './ArsSegmentsTable'
+
+type SegmentsBase =
+  | { kind: 'ars12'; ars12: string }
+  | {
+      kind: 'ags8'
+      ags8: string
+      resolvedArs: { ars12: string; obsolete?: ObsoleteMeta } | null
+    }
+  | null
+
+function buildArsViewRows(ars12: string, cells: ArsSegmentNameCells): SegmentsTableRow[] {
+  const t = de.germanKeyExplorer
+  const segments = parseArs12Segments(ars12)
+  if (!segments) return []
+  return [
+    {
+      label: t.segmentBl,
+      shortCode: 'LL',
+      digits: segments.bundesland,
+      span: '1–2',
+      startPos: 1,
+      endPos: 2,
+      resolved: cells.bundesland,
+      fallbackLabel: null,
+    },
+    {
+      label: t.segmentRb,
+      shortCode: 'R',
+      digits: segments.regierungsbezirk,
+      span: '3',
+      startPos: 3,
+      endPos: 3,
+      resolved: cells.regierungsbezirk,
+      fallbackLabel: segments.regierungsbezirk === '0' ? t.noRegierungsbezirk : null,
+    },
+    {
+      label: t.segmentKreis,
+      shortCode: 'KK',
+      digits: segments.kreis,
+      span: '4–5',
+      startPos: 4,
+      endPos: 5,
+      resolved: cells.kreis,
+      fallbackLabel: null,
+    },
+    {
+      label: t.segmentVg,
+      shortCode: 'VVVV',
+      digits: segments.gemeindeverband,
+      span: '6–9',
+      startPos: 6,
+      endPos: 9,
+      resolved: cells.gemeindeverband,
+      fallbackLabel: segments.gemeindeverband === '0000' ? t.noGemeindeverband : null,
+    },
+    {
+      label: t.segmentGem,
+      shortCode: 'GGG',
+      digits: segments.gemeinde,
+      span: '10–12',
+      startPos: 10,
+      endPos: 12,
+      resolved: cells.gemeinde,
+      fallbackLabel: null,
+    },
+  ]
+}
+
+function buildAgsViewRows(
+  ags8: string,
+  cells: ArsSegmentNameCells,
+  resolvedArs: { ars12: string } | null,
+): SegmentsTableRow[] {
+  const t = de.germanKeyExplorer
+  return [
+    {
+      label: t.segmentBl,
+      shortCode: 'LL',
+      digits: ags8.slice(0, 2),
+      span: '1–2',
+      startPos: 1,
+      endPos: 2,
+      resolved: cells.bundesland,
+      fallbackLabel: null,
+    },
+    {
+      label: t.segmentRb,
+      shortCode: 'R',
+      digits: ags8.slice(2, 3),
+      span: '3',
+      startPos: 3,
+      endPos: 3,
+      resolved: cells.regierungsbezirk,
+      fallbackLabel: ags8.slice(2, 3) === '0' ? t.noRegierungsbezirk : null,
+    },
+    {
+      label: t.segmentKreis,
+      shortCode: 'KK',
+      digits: ags8.slice(3, 5),
+      span: '4–5',
+      startPos: 4,
+      endPos: 5,
+      resolved: cells.kreis,
+      fallbackLabel: null,
+    },
+    {
+      label: t.segmentVg,
+      shortCode: 'VVVV',
+      digits: resolvedArs ? resolvedArs.ars12.slice(5, 9) : null,
+      span: resolvedArs ? '6–9 (ARS)' : '—',
+      startPos: 9,
+      endPos: 9,
+      resolved: cells.gemeindeverband,
+      fallbackLabel: null,
+      agsView: resolvedArs ? 'from-lookup' : 'not-in-ags',
+    },
+    {
+      label: t.segmentGem,
+      shortCode: 'GGG',
+      digits: ags8.slice(5, 8),
+      span: '6–8',
+      startPos: 6,
+      endPos: 8,
+      resolved: cells.gemeinde,
+      fallbackLabel: null,
+    },
+  ]
+}
+
+/** Pretty layout line for the explainer block: groups slots with single-space separators. */
+function formatLayoutDigits(parts: string[]): string {
+  return parts.join(' ')
+}
+
+function explainerAgsLine(d: string, agsFromInput: string | null): string {
+  const ags = agsFromInput ?? (d.length >= 8 ? d.slice(0, 8) : d)
+  const padded = ags.padEnd(8, '?')
+  return formatLayoutDigits([
+    padded.slice(0, 2),
+    padded.slice(2, 3),
+    padded.slice(3, 5),
+    padded.slice(5, 8),
+  ])
+}
+
+function explainerArsLine(
+  d: string,
+  padded12: string,
+  resolvedArs: { ars12: string } | null,
+): string {
+  let ars: string
+  if (d.length >= 12) {
+    ars = d.slice(0, 12)
+  } else if (d.length === 8) {
+    if (resolvedArs) {
+      ars = resolvedArs.ars12
+    } else {
+      ars = `${d.slice(0, 5)}????${d.slice(5, 8)}`
+    }
+  } else if (d.length > 0) {
+    const real = padded12.slice(0, d.length)
+    const padding = '?'.repeat(12 - d.length)
+    ars = `${real}${padding}`
+  } else {
+    ars = '????????????'
+  }
+  return formatLayoutDigits([
+    ars.slice(0, 2),
+    ars.slice(2, 3),
+    ars.slice(3, 5),
+    ars.slice(5, 9),
+    ars.slice(9, 12),
+  ])
+}
 
 function presetLabel(p: GermanSchluesselExplorerPreset): string {
   return de.germanKeyExplorer.presets[p]
@@ -64,8 +242,38 @@ export function GermanKeyExplorerContent({
       ? (normalizationsForSchluesselPresets(raw).find((r) => r.preset === 'regional-12')?.result
           .canonicalMatchKey ?? '')
       : ''
-  const segments = padded12.length >= 12 ? parseArs12Segments(padded12) : null
-  const segmentCells = padded12.length >= 12 ? lookupArsSegmentNameCells(bundle, padded12) : null
+
+  /**
+   * Reverse lookup AGS → full ARS for 8-digit input. Avoids the right-padding bug that maps
+   * the AGS's GGG into the ARS's VVVV slot. See `resolveArsFromAgs` and Part A of the explorer plan.
+   */
+  const resolvedFromAgs = d.length === 8 ? resolveArsFromAgs(bundle, d) : null
+
+  const segmentsBase: SegmentsBase =
+    d.length >= 12
+      ? { kind: 'ars12', ars12: d.slice(0, 12) }
+      : d.length === 8
+        ? { kind: 'ags8', ags8: d, resolvedArs: resolvedFromAgs }
+        : d.length > 0
+          ? { kind: 'ars12', ars12: padded12 }
+          : null
+
+  const segmentCells: ArsSegmentNameCells | null =
+    segmentsBase === null
+      ? null
+      : segmentsBase.kind === 'ars12'
+        ? lookupArsSegmentNameCells(bundle, segmentsBase.ars12)
+        : agsSegmentCells(bundle, segmentsBase.ags8, segmentsBase.resolvedArs)
+
+  const segmentRows: SegmentsTableRow[] =
+    segmentsBase === null || segmentCells === null
+      ? []
+      : segmentsBase.kind === 'ars12'
+        ? buildArsViewRows(segmentsBase.ars12, segmentCells)
+        : buildAgsViewRows(segmentsBase.ags8, segmentCells, segmentsBase.resolvedArs)
+
+  const segmentsTitle = segmentsBase?.kind === 'ags8' ? t.agsTableTitle : t.arsTableTitle
+
   const ags8From12 = d.length >= 12 ? ags8FromArs12Digits(d) : d.length >= 8 ? d.slice(0, 8) : null
   const bb8 = d.length >= 12 ? brandenburgGemeinden8From12(d) : null
   const agsForPortal =
@@ -76,10 +284,28 @@ export function GermanKeyExplorerContent({
 
   const rows = raw !== '' ? normalizationsForSchluesselExplorerTable(raw) : []
 
-  const arsResolved =
-    padded12.length >= 12
-      ? resolveGemeindeNameByArs(bundle, padded12)
-      : { value: null as string | null }
+  /**
+   * For the keyOverview ARS row: when input is 8-digit AGS, prefer the resolved ARS (so the user
+   * never sees the bogus right-padded `120735320000`). For all other lengths, use `padded12` as today.
+   */
+  const arsRowDisplay: {
+    value: string
+    resolved: { value: string | null; obsolete?: ObsoleteMeta }
+  } =
+    d.length === 8
+      ? resolvedFromAgs
+        ? {
+            value: resolvedFromAgs.ars12,
+            resolved: resolveGemeindeNameByArs(bundle, resolvedFromAgs.ars12),
+          }
+        : { value: '—', resolved: { value: null } }
+      : padded12.length >= 12
+        ? {
+            value: padded12,
+            resolved: resolveGemeindeNameByArs(bundle, padded12),
+          }
+        : { value: padded12 || '—', resolved: { value: null } }
+
   const agsResolved =
     ags8From12 !== null && ags8From12.length === 8
       ? resolveGemeindeNameByAgs(bundle, ags8From12)
@@ -89,24 +315,26 @@ export function GermanKeyExplorerContent({
 
   const obsoleteMetaFields = [
     ...(segmentCells ? Object.values(segmentCells) : []),
-    ...(arsResolved.value !== null ? [arsResolved] : []),
+    ...(arsRowDisplay.resolved.value !== null ? [arsRowDisplay.resolved] : []),
     ...(agsResolved.value !== null ? [agsResolved] : []),
   ]
   const obsoletePublications = collectObsoleteFields(obsoleteMetaFields)
 
   const keyOverviewRows = [
     {
-      value: padded12 || '—',
+      value: arsRowDisplay.value,
+      valueSuffix: d.length === 8 && !resolvedFromAgs ? t.arsNotDerivableFromAgs : null,
       osmKey: 'de:regionalschluessel',
       bkgKey: 'ARS',
-      length: '12 Ziffern',
-      resolved: arsResolved,
+      length: '12',
+      resolved: arsRowDisplay.resolved,
     },
     {
       value: ags8From12 ?? '—',
+      valueSuffix: null as string | null,
       osmKey: 'de:amtlicher_gemeindeschluessel',
       bkgKey: 'AGS',
-      length: '8 Ziffern',
+      length: '8',
       resolved: agsResolved,
     },
   ]
@@ -204,8 +432,13 @@ export function GermanKeyExplorerContent({
           ) : null}
 
           <section className="space-y-3">
-            <h2 className="text-base font-semibold text-slate-100">{t.arsTableTitle}</h2>
-            <ArsSegmentsTable segments={segments} nameCells={segmentCells} />
+            <h2 className="text-base font-semibold text-slate-100">{segmentsTitle}</h2>
+            {segmentsBase?.kind === 'ags8' && !segmentsBase.resolvedArs ? (
+              <AlertNotice>
+                <p>{t.agsNotResolvable(segmentsBase.ags8)}</p>
+              </AlertNotice>
+            ) : null}
+            <ArsSegmentsTable rows={segmentRows} originalDigitsLen={d.length} />
           </section>
 
           <section className="space-y-3">
@@ -233,7 +466,14 @@ export function GermanKeyExplorerContent({
                 <tbody className="divide-y divide-slate-700/80">
                   {keyOverviewRows.map((row) => (
                     <tr key={row.bkgKey} className="text-slate-200 hover:bg-slate-800/50">
-                      <td className="px-3 py-2 font-mono text-xs text-slate-100">{row.value}</td>
+                      <td className="px-3 py-2 font-mono text-xs text-slate-100">
+                        {row.value}
+                        {row.valueSuffix ? (
+                          <span className="ml-2 font-sans text-[11px] text-slate-500 italic">
+                            {row.valueSuffix}
+                          </span>
+                        ) : null}
+                      </td>
                       <td className="px-3 py-2 font-mono text-xs text-slate-100">{row.osmKey}</td>
                       <td className="px-3 py-2 font-mono text-xs text-slate-100">{row.bkgKey}</td>
                       <td className="px-3 py-2 text-slate-300">{row.length}</td>
@@ -280,6 +520,44 @@ export function GermanKeyExplorerContent({
                 {t.berlinExpanded}: <span className="font-mono">{berlin.value}</span>
               </p>
             ) : null}
+
+            <section className="space-y-3">
+              <h2 className="text-base font-semibold text-slate-100">{t.explainerLayoutTitle}</h2>
+              <ul className="space-y-2 text-sm">
+                <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-mono text-slate-300">{t.explainerLayoutSlotsAgs}</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="font-mono text-slate-100">
+                    {explainerAgsLine(d, ags8From12)}
+                  </span>
+                  <a
+                    href="https://wiki.openstreetmap.org/wiki/DE:Key:de:amtlicher_gemeindeschluessel"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-xs text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+                  >
+                    {t.explainerWikiAgsLinkLabel}
+                  </a>
+                </li>
+                <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-mono text-slate-300">{t.explainerLayoutSlotsArs}</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="font-mono text-slate-100">
+                    {explainerArsLine(d, padded12, resolvedFromAgs)}
+                  </span>
+                  <a
+                    href="https://wiki.openstreetmap.org/wiki/DE:Key:de:regionalschluessel"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-xs text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+                  >
+                    {t.explainerWikiArsLinkLabel}
+                  </a>
+                </li>
+              </ul>
+              <p className="text-sm text-slate-400">{t.explainerPaddingArtifactPara1}</p>
+              <p className="text-sm text-slate-400">{t.explainerPaddingArtifactPara2}</p>
+            </section>
           </section>
 
           <section className="space-y-3">
@@ -331,10 +609,10 @@ export function GermanKeyExplorerContent({
             </div>
           </section>
 
-          <section className="space-y-2">
-            <h2 className="text-base font-semibold text-slate-100">{t.linksTitle}</h2>
-            <ul className="list-inside list-disc space-y-1 text-sm text-slate-300">
-              {agsForPortal ? (
+          {agsForPortal ? (
+            <section className="space-y-2">
+              <h2 className="text-base font-semibold text-slate-100">{t.linksTitle}</h2>
+              <ul className="list-inside list-disc space-y-1 text-sm text-slate-300">
                 <li>
                   <span className="text-slate-400">{t.linksDetailPage}: </span>
                   <a
@@ -346,31 +624,9 @@ export function GermanKeyExplorerContent({
                     statistikportal.de/de/gemeindeverzeichnis/{agsForPortal}
                   </a>
                 </li>
-              ) : null}
-              <li>
-                <span className="text-slate-400">{t.linksWikiKeyPrefix}: </span>
-                <a
-                  href="https://wiki.openstreetmap.org/wiki/DE:Key:de:regionalschluessel"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-                >
-                  key:de:regionalschluessel
-                </a>
-              </li>
-              <li>
-                <span className="text-slate-400">{t.linksWikiKeyPrefix}: </span>
-                <a
-                  href="https://wiki.openstreetmap.org/wiki/DE:Key:de:amtlicher_gemeindeschluessel"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-                >
-                  key:de:amtlicher_gemeindeschluessel
-                </a>
-              </li>
-            </ul>
-          </section>
+              </ul>
+            </section>
+          ) : null}
         </>
       )}
 
