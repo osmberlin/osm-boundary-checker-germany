@@ -1,9 +1,6 @@
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import { de } from '../i18n/de'
-import {
-  pickOfficialDatasetExtractDate,
-  pickOsmDatasetExtractDate,
-} from '../lib/datasetExtractDataDates'
+import { pickOsmDatasetExtractDate } from '../lib/datasetExtractDataDates'
 import { EM_DASH } from '../lib/formatDe'
 import { formatIsoTimestampToAbsoluteDe } from '../lib/formatSourceDownloadedAt'
 import {
@@ -12,6 +9,7 @@ import {
 } from '../lib/germanKeyExplorer'
 import type { ComparisonForReport, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
+import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
 
 function formatPropertyValue(value: unknown): string {
   if (value === null || value === undefined) return de.feature.datasetPropertiesEmpty
@@ -141,8 +139,6 @@ export function FeatureDatasetProperties({
 }) {
   const official = forDisplay(row.officialProperties)
   const osm = forDisplay(row.osmProperties)
-  const hasOfficialMeta = data.sourceMetadata?.official != null
-  const officialPick = pickOfficialDatasetExtractDate(data.sourceMetadata?.official)
 
   const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
   const osmPick = pickOsmDatasetExtractDate(osmResolved)
@@ -173,12 +169,7 @@ export function FeatureDatasetProperties({
               <span className="text-sm/6 font-medium text-slate-200">
                 {de.feature.datasetOfficialCardTitle}
               </span>
-              <DatasetExtractDataDateCaption
-                sourceDateRaw={officialPick.sourceDateRaw}
-                checkedAtRaw={officialPick.checkedAtRaw}
-                geometryFetchedAtRaw={officialPick.geometryFetchedAtRaw}
-                hasMetadata={hasOfficialMeta}
-              />
+              <OfficialDatasetAgeInfoLink side={data.sourceMetadata?.official} />
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
               <DatasetPropertyCard properties={official} />

@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns'
+import { differenceInMonths, format, formatDistanceToNow, isValid, parseISO } from 'date-fns'
 import { de as deLocale } from 'date-fns/locale'
 
 /** Calendar date only (no time), e.g. "29. März 2026". */
@@ -35,8 +35,24 @@ export function formatIsoTimestampToAbsoluteDe(raw: string): string {
   return formatReportAbsoluteDe(d)
 }
 
-/** Relative age, e.g. "4 Stunden alt" (no "vor etwa"). */
+/**
+ * Relative age for KPI rows, e.g. "4 Stunden alt" (no leading "etwa").
+ * Ages from 12 full months onward use month counts ("13 Monate alt") so labels stay short
+ * and never use year-based phrases from `formatDistanceToNow` ("mehr als 1 Jahr …").
+ */
 export function formatRelativeAgeAltDe(d: Date): string {
+  const now = new Date()
+  if (d.getTime() > now.getTime()) {
+    let s = formatDistanceToNow(d, { locale: deLocale, addSuffix: false })
+    s = s.replace(/^etwa\s+/i, '').trim()
+    return `${s} alt`
+  }
+
+  const fullMonths = differenceInMonths(now, d)
+  if (fullMonths >= 12) {
+    return `${fullMonths} Monate alt`
+  }
+
   let s = formatDistanceToNow(d, { locale: deLocale, addSuffix: false })
   s = s.replace(/^etwa\s+/i, '').trim()
   return `${s} alt`

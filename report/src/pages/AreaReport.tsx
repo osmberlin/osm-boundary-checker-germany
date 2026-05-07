@@ -27,6 +27,7 @@ import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
+import { RouteLoadingPane } from '../components/RouteLoadingPane'
 import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
@@ -192,16 +193,10 @@ export function AreaReport() {
   }
   if (comparisonQuery.isPending || !data) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
-        {areaDisplayName ? (
-          <AreaHeadlineRow
-            title={areaDisplayName}
-            sourceName={pageSourceName}
-            sourceHref={pageSourceHref}
-          />
-        ) : null}
-        <p className="text-slate-400">{de.areaReport.loading}</p>
-      </div>
+      <RouteLoadingPane
+        title={de.routeLoading.area(areaDisplayName, null)}
+        subtitle={de.routeLoading.areaSubtitle}
+      />
     )
   }
 

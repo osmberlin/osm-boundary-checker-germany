@@ -59,7 +59,7 @@ export function AppDialogTitle({
   return (
     <DialogTitle
       {...props}
-      className={cn(className, 'text-lg font-semibold text-balance text-slate-100 sm:text-base')}
+      className={cn('text-lg font-semibold text-balance text-slate-100 sm:text-base', className)}
     />
   )
 }

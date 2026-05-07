@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { buildResolvedOsmSourceSide } from '../../../../scripts/shared/osmGermanyProvenance.ts'
 import { categoryLabelDe, de, issueLevelLabelDe } from '../../i18n/de'
 import { isOlderThanDays } from '../../lib/dataAge'
@@ -10,9 +10,8 @@ import {
   formatDePercentPoints,
   formatDeSquareKilometersFromM2,
 } from '../../lib/formatDe'
-import { formatFreshnessDisplayDe } from '../../lib/formatSourceDownloadedAt'
 import { officialAreaSummaryFreshness } from '../../lib/officialAreaSummaryFreshness'
-import { sourceStatLines } from '../../lib/reportFreshnessLines'
+import { kpiFreshnessLinesFromIso } from '../../lib/reportFreshnessLines'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { KpiCell, KpiRow, KpiSection, KpiToggleCell } from '../FeatureStatBlocks'
 import {
@@ -24,6 +23,7 @@ import {
 } from '../HausdorffInfoModal'
 import { mapLayerColors } from '../mapLayerColors'
 import { hexToRgba } from '../MapLegend'
+import { OfficialDatasetAgeInfoButton } from '../OfficialDatasetAgeInfoModal'
 
 type MapLayerControls = {
   showOfficial: boolean
@@ -57,13 +57,12 @@ export function FeatureDetailStatsStrip({
   const o = mapLayerColors.official
   const osmC = mapLayerColors.osm
   const d = mapLayerColors.diff
-  const reportFresh = formatFreshnessDisplayDe(data.generatedAt.trim())
+  const reportFresh = kpiFreshnessLinesFromIso(data.generatedAt)
   const officialSide = data.sourceMetadata?.official
   const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
   const osmRaw = osmResolved.downloadedAt
   const officialFresh = officialAreaSummaryFreshness(officialSide)
-  const officialSecondaryLine = officialFresh.detailLine
-  const osmFresh = sourceStatLines(osmRaw, true)
+  const osmFresh = kpiFreshnessLinesFromIso(osmRaw)
   const reportIsOld = isOlderThanDays(data.generatedAt, 5)
   const officialIsOld = officialFresh.isOld
   const osmCheckRawForRose =
@@ -134,9 +133,10 @@ export function FeatureDetailStatsStrip({
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingOfficial}
             relativeLine={officialFresh.relativeLine ?? EM_DASH}
-            absoluteLine={officialFresh.absoluteLine || EM_DASH}
-            detailLine={officialSecondaryLine}
+            absoluteLine={officialFresh.pairedAbsoluteLine}
             isOld={officialIsOld}
+            headingAdornment={<OfficialDatasetAgeInfoButton side={officialSide} />}
+            hideDetailLine
           />
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingOsm}
@@ -383,19 +383,33 @@ function SummaryStatColumn({
   absoluteLine,
   detailLine,
   isOld = false,
+  headingAdornment,
+  hideDetailLine = false,
 }: {
   heading: string
   relativeLine: string
   absoluteLine: string
   detailLine?: string | null
   isOld?: boolean
+  headingAdornment?: ReactNode
+  /** When true, hide the tertiary "Download:" line (official column shows reference date only). */
+  hideDetailLine?: boolean
 }) {
   const compactRelativeLine = relativeLine.replace(/\bStunden?\b/g, 'Std.')
   const mobileAbsoluteLine = toNumericMonthAbsoluteDe(absoluteLine)
 
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
-      <dt className="text-sm font-medium text-slate-400">{heading}</dt>
+      <dt className="text-sm font-medium text-slate-400">
+        {headingAdornment ? (
+          <span className="inline-flex items-center gap-1">
+            <span>{heading}</span>
+            {headingAdornment}
+          </span>
+        ) : (
+          heading
+        )}
+      </dt>
       <dd
         className={`m-0 text-2xl font-semibold tracking-tight text-pretty tabular-nums sm:text-3xl ${isOld ? 'text-rose-300' : 'text-slate-400'}`}
       >
@@ -406,7 +420,9 @@ function SummaryStatColumn({
         <span className="sm:hidden">{mobileAbsoluteLine}</span>
         <span className="hidden sm:inline">{absoluteLine}</span>
       </dd>
-      {detailLine ? <dd className="m-0 text-xs text-slate-500">{detailLine}</dd> : null}
+      {hideDetailLine || !detailLine ? null : (
+        <dd className="m-0 text-xs text-slate-500">{detailLine}</dd>
+      )}
     </div>
   )
 }

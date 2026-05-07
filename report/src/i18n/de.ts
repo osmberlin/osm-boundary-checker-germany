@@ -1,4 +1,5 @@
 import { meanIouChartDe } from '@compare-metrics/modalCopyDe.ts'
+import { formatDeInteger } from '../lib/formatDe'
 import type { ReportRow } from '../types/report'
 
 /** UI copy (German). Metric modal copy lives in scripts/compare/lib/metrics/ (per-metric folder, de.ts). */
@@ -348,6 +349,19 @@ export const de = {
     datasetExtractOsmExtractLabel: 'Extrakt erzeugt (Pipeline)',
     datasetExtractOsmUncertainNote:
       'Planet-Stichtag steht nicht im PBF-Header — der zweite Zeitpunkt beschreibt den lokal erzeugten Extrakt, nicht den Planet-Stand.',
+    /** Modal: official dataset age, opened from the summary info button or "Alter anzeigen" in dataset properties. */
+    officialDatasetAge: {
+      triggerAria: 'Datenstand der amtlichen Daten anzeigen',
+      linkLabel: 'Alter anzeigen',
+      modalTitle: 'Datenstand: Amtliche Daten',
+      sourceDateExplanation:
+        'Vom Anbieter angegebenes Referenzdatum des Datensatzes (z. B. Stand 31.12. eines Jahres).',
+      checkedDateExplanation:
+        'Zeitpunkt, zu dem die Pipeline zuletzt geprüft hat, ob beim Anbieter ein neueres Referenzdatum vorliegt.',
+      geometryFetchedExplanation:
+        'Zeitpunkt, zu dem die Geometrie des Datensatzes zuletzt heruntergeladen und in die Auswertung übernommen wurde.',
+      close: 'Schließen',
+    },
     datasetOsmOpenHistory: 'Auf osm.org anzeigen',
     datasetPropertiesEmpty: '—',
     datasetPropertiesLegacySnapshot:
@@ -516,6 +530,24 @@ export const de = {
       'Geometrien werden bis Zoom 15 wahrscheinlich vereinfacht dargestellt.',
     fullDetailFromZoom15: 'Geometrien sollten volle Details haben.',
     zoomInForFullDetail: 'Auf Zoom 15 wechseln',
+  },
+
+  /** Copy shown by route-level `pendingComponent` while the loader fetches data. */
+  routeLoading: {
+    generic: 'Lade Daten…',
+    /** Area page: "Lade Vergleichsdaten für <name> (ca. <count> Datensätze)…". `count` omitted if not in bundled index. */
+    area: (displayName: string, count: number | null) =>
+      count == null
+        ? `Lade Vergleichsdaten für ${displayName}…`
+        : `Lade Vergleichsdaten für ${displayName} (ca. ${formatDeInteger(count)} Datensätze)…`,
+    areaSubtitle:
+      'Auswertungsdaten enthalten alle verglichenen Grenzen mit Geometrie- und Kennzahlen-Snippets.',
+    /** Feature detail page: short label = decoded canonicalMatchKey. */
+    feature: (label: string) => `Lade Detaildaten für ${label}…`,
+    changelog: 'Lade Changelog…',
+    review: 'Lade Prüfliste…',
+    status: 'Lade Verarbeitungsstatus…',
+    germanKey: 'Lade Schlüssel-Explorer…',
   },
 } as const
 
