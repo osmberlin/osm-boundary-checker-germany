@@ -212,7 +212,7 @@ async function processArea(
   failures: DownloadFailure[],
 ): Promise<OfficialDownloadResult> {
   const areaPath = datasetFolderPath(runtimeRoot, area)
-  let raw: unknown
+  let raw: ReturnType<typeof loadAreaConfig>
   try {
     raw = loadAreaConfig(configRoot, area)
   } catch (e) {
@@ -243,15 +243,22 @@ async function processArea(
   }
 
   if (!spec) {
+    const bkgManaged =
+      raw.officialMode === 'profile' ||
+      (raw.officialMode === 'direct' && raw.official.extractFilter !== undefined)
+    const skipReason = bkgManaged ? 'official_managed_via_bkg_extract' : 'no_download_config'
+    const skipDetail = bkgManaged
+      ? 'area is sourced via BKG extract/profile; HTTP official.download is intentionally absent'
+      : 'area has compare config but no official.download source configured'
     emitCacheDecision({
       source: 'official',
       area,
       decision: 'not-found',
-      reason: 'no_download_config',
+      reason: skipReason,
       action: 'skip',
-      detail: 'area has compare config but no official.download source configured',
+      detail: skipDetail,
     })
-    logLine({ area, source: 'official', status: 'skip', reason: 'no_download_config' })
+    logLine({ area, source: 'official', status: 'skip', reason: skipReason })
     return 'skip'
   }
 

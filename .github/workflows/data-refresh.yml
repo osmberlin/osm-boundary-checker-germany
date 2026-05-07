@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -45,7 +45,7 @@ jobs:
       - name: Download previous rust sidecar metadata
         id: previous-rust-metadata
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v21
         with:
           workflow: data-refresh.yml
           branch: main
@@ -60,7 +60,7 @@ jobs:
 
       - name: Restore rust sidecar cache
         id: rust-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -93,23 +93,29 @@ jobs:
           echo "RUST_SIDECAR_BUILD_SECONDS=${build_seconds}" >> "$GITHUB_ENV"
           echo "Rust sidecar build duration: ${build_seconds}s" | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # Phase 1: attempt source downloads without fallback artifacts to minimize cache transfers.
       - name: Download pipeline sources (fresh-first)
         id: download-phase
         continue-on-error: true
         timeout-minutes: 180
         run: |
+          echo "### Fresh-first source download attempt" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Goal: complete downloads from upstream sources without restoring fallback artifacts." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Why: avoid unnecessary artifact downloads when upstream fetch succeeds." >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### Download cache decisions" >> "$GITHUB_STEP_SUMMARY"
           bun run pipeline:nightly:download
         env:
           CI: '1'
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
-      # Download fallback scopes only if fresh-first download failed.
+      # Phase 2 (conditional): restore minimal fallback inputs needed for a retry.
+      # These are intentionally split by source scope (OSM + official) so we keep artifact transfer bounded.
       - name: Download previous OSM cache scope
         if: steps.download-phase.outcome == 'failure'
         id: previous-osm-cache
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v21
         with:
           workflow: data-refresh.yml
           branch: main
@@ -122,7 +128,7 @@ jobs:
         if: steps.download-phase.outcome == 'failure'
         id: previous-official-cache
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v21
         with:
           workflow: data-refresh.yml
           branch: main
@@ -131,11 +137,15 @@ jobs:
           path: .previous-artifact
           if_no_artifact_found: fail
 
+      # Phase 3 (conditional): rerun the download phase with restored fallback scopes available.
+      # This preserves fresh-first behavior while still allowing resilient continuation when upstream fetches fail.
       - name: Retry download pipeline sources with fallback scopes
         if: steps.download-phase.outcome == 'failure'
         timeout-minutes: 180
         run: |
-          echo "Fresh-first download failed; retrying with fallback scopes." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "### Fallback-assisted retry" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- Trigger: fresh-first attempt failed." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "- Action: restore scoped cache artifacts and retry download phase." | tee -a "$GITHUB_STEP_SUMMARY"
           bun run pipeline:nightly:download
         env:
           CI: '1'
@@ -182,9 +192,12 @@ jobs:
           echo "- start_utc: ${COMPARE_START_UTC:-unknown}" >> "$GITHUB_STEP_SUMMARY"
           echo "- end_utc: $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_STEP_SUMMARY"
           if [ -n "${COMPARE_START_EPOCH:-}" ]; then
-            echo "- approx_seconds: $((compare_end_epoch - COMPARE_START_EPOCH))" >> "$GITHUB_STEP_SUMMARY"
+            elapsed_seconds="$((compare_end_epoch - COMPARE_START_EPOCH))"
+            elapsed_minutes="$((elapsed_seconds / 60))"
+            elapsed_remainder_seconds="$((elapsed_seconds % 60))"
+            echo "- approx_duration: ${elapsed_minutes}m ${elapsed_remainder_seconds}s (${elapsed_seconds}s)" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "- approx_seconds: unknown" >> "$GITHUB_STEP_SUMMARY"
+            echo "- approx_duration: unknown" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Verify temporary cleanup
@@ -236,7 +249,7 @@ jobs:
           fi
 
       - name: Upload report runtime artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.REPORT_RUNTIME_ARTIFACT_NAME }}
           path: .artifact-runtime-report
@@ -245,7 +258,7 @@ jobs:
           retention-days: 4
 
       - name: Upload scoped OSM source cache artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: source-cache-osm-last-good
           path: .artifact-runtime/scopes/source-cache-osm
@@ -254,7 +267,7 @@ jobs:
           retention-days: 3
 
       - name: Upload scoped official source cache artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: source-cache-official-last-good
           path: .artifact-runtime/scopes/source-cache-official
@@ -263,7 +276,7 @@ jobs:
           retention-days: 4
 
       - name: Upload rust sidecar metadata artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rust-sidecar-metadata-last-good
           path: rust-sidecar-metadata.json
@@ -272,6 +285,8 @@ jobs:
 
       - name: Final run diagnostics
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           echo "### Run context diagnostics" >> "$GITHUB_STEP_SUMMARY"
           echo "- run_id: $GITHUB_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
