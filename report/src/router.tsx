@@ -5,8 +5,11 @@ import {
   createRouter,
   defaultParseSearch,
   redirect,
+  useParams,
 } from '@tanstack/react-router'
 import { ReportLayout } from './App'
+import { RouteLoadingPane } from './components/RouteLoadingPane'
+import { areasIndex } from './data/areasIndex'
 import { comparisonQueryOptions, featureQueryOptions, snapshotsQueryOptions } from './data/load'
 import { routerBasePath } from './data/paths'
 import { de } from './i18n/de'
@@ -14,6 +17,7 @@ import { validateFeatureDetailSearch } from './lib/featureDetailSearch'
 import { validateGermanKeySearch } from './lib/germanKeySearch'
 import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
 import { stringifySearchPretty } from './lib/routerSearchStringify'
+import { safeDecodeURIComponent } from './lib/safeDecodeURIComponent'
 import { socialSharingImageAbsoluteUrl } from './lib/siteBasePath'
 import { AreaReport } from './pages/AreaReport'
 import { Changelog } from './pages/Changelog'
@@ -31,6 +35,28 @@ export type RouterContext = {
 function featureTitleFromData(data: ComparisonForReport | undefined, featureKey: string): string {
   if (!data) return featureKey
   return `${data.titlePrefix} ${featureNameLabelFromData(data, featureKey) ?? featureKey}`.trim()
+}
+
+/** Pending UI for `/$areaId`: shows area name + total row count from the bundled `areasIndex`. */
+function AreaPendingPane() {
+  const { areaId } = useParams({ strict: false })
+  const areaKey = areaId ?? ''
+  const summary = areasIndex.summaries.find((entry) => entry.area === areaKey)
+  const displayName = summary?.displayName ?? areaDisplayNameForId(areaKey)
+  const totalRows = summary ? summary.matched + summary.officialOnly + summary.unmatchedOsm : null
+  return (
+    <RouteLoadingPane
+      title={de.routeLoading.area(displayName, totalRows)}
+      subtitle={de.routeLoading.areaSubtitle}
+    />
+  )
+}
+
+/** Pending UI for `/$areaId/feature/$featureKey`: decoded canonicalMatchKey only. */
+function FeaturePendingPane() {
+  const { featureKey } = useParams({ strict: false })
+  const decoded = featureKey ? safeDecodeURIComponent(featureKey) : ''
+  return <RouteLoadingPane title={de.routeLoading.feature(decoded)} />
 }
 
 const socialImageUrl = socialSharingImageAbsoluteUrl()
@@ -113,6 +139,7 @@ const areaRoute = createRoute({
       context.queryClient.ensureQueryData(snapshotsQueryOptions(params.areaId)),
     ])
   },
+  pendingComponent: AreaPendingPane,
   head: ({ params }) => ({
     meta: [
       { title: `${areaDisplayNameForId(params.areaId)} | ${de.appTitle}` },
@@ -131,6 +158,7 @@ const featureRoute = createRoute({
       featureQueryOptions(params.areaId, params.featureKey),
     )
   },
+  pendingComponent: FeaturePendingPane,
   head: ({ params, loaderData }) => ({
     meta: [{ title: `${featureTitleFromData(loaderData, params.featureKey)} | ${de.appTitle}` }],
   }),
@@ -162,6 +190,10 @@ export function createAppRouter(queryClient: QueryClient) {
     routeTree,
     context: { queryClient },
     defaultPreload: 'intent',
+    /** Show route-level `pendingComponent` immediately (default is 1000ms). */
+    defaultPendingMs: 0,
+    /** Once shown, hold the spinner ≥300ms to avoid a flash on fast networks. */
+    defaultPendingMinMs: 300,
     basepath: routerBasePath(),
     parseSearch: defaultParseSearch,
     stringifySearch: stringifySearchPretty,

@@ -8,6 +8,7 @@ import { MatcherContextSection } from '../components/featureDetail/MatcherContex
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
+import { RouteLoadingPane } from '../components/RouteLoadingPane'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
 import { featureQueryOptions, runStatusQueryOptions } from '../data/load'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
@@ -16,6 +17,7 @@ import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { de } from '../i18n/de'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
+import { safeDecodeURIComponent } from '../lib/safeDecodeURIComponent'
 
 export function FeatureDetail() {
   const { areaId, featureKey } = useParams({ strict: false })
@@ -46,9 +48,13 @@ export function FeatureDetail() {
     )
   }
   if (featureQuery.isPending || !data || !row) {
+    if (!data) {
+      const decoded = featureKey ? safeDecodeURIComponent(featureKey) : ''
+      return <RouteLoadingPane title={de.routeLoading.feature(decoded)} />
+    }
     return (
       <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
-        <p className="text-slate-400">{!data ? de.feature.loading : de.feature.notFound}</p>
+        <p className="text-slate-400">{de.feature.notFound}</p>
       </div>
     )
   }

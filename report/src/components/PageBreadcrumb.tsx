@@ -1,10 +1,11 @@
 import { useRouterState } from '@tanstack/react-router'
 import { de } from '../i18n/de'
 import { areaDisplayNameForId } from '../lib/reportLookups'
+import { safeDecodeURIComponent } from '../lib/safeDecodeURIComponent'
 import { AppBreadcrumb, type AppBreadcrumbCrumb } from './AppBreadcrumb'
 
 function shortFeatureKey(encoded: string) {
-  const d = decodeURIComponent(encoded)
+  const d = safeDecodeURIComponent(encoded)
   return d.length > 40 ? `${d.slice(0, 37)}…` : d
 }
 

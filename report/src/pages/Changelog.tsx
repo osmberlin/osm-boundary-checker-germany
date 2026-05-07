@@ -1,11 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { ChangelogList } from '@tordans/changelog-kit/react'
+import { RouteLoadingPane } from '../components/RouteLoadingPane'
 import { changelogQueryOptions } from '../data/load'
 import { de } from '../i18n/de'
 import { githubCommitUrl } from '../lib/githubRepo'
 
 export function Changelog() {
   const q = useQuery(changelogQueryOptions())
+
+  if (q.isLoading) {
+    return <RouteLoadingPane title={de.routeLoading.changelog} />
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 sm:px-6 lg:px-8">
@@ -15,7 +20,6 @@ export function Changelog() {
         </h1>
       </header>
 
-      {q.isLoading ? <p className="text-slate-400">{de.changelog.loading}</p> : null}
       {q.isError ? <p className="text-amber-200">{de.changelog.error}</p> : null}
       {q.isSuccess && q.data == null ? (
         <p className="text-slate-400">{de.changelog.empty}</p>
