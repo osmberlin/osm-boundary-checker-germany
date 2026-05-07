@@ -72,6 +72,9 @@ export function FeatureDetailStatsStrip({
       : osmRaw
   const osmIsOld = isOlderThanDays(osmCheckRawForRose, 5)
   const titlePrefix = data.titlePrefix
+  const showHeaderCategory = row.category === 'matched'
+  const showHeaderOsmLink = Boolean(row.osmRelationId)
+  const showHeaderMeta = showHeaderCategory || showHeaderOsmLink
 
   return (
     <>
@@ -79,13 +82,15 @@ export function FeatureDetailStatsStrip({
         <h1 className="min-w-0 text-2xl font-semibold tracking-tight text-slate-100">
           {`${titlePrefix} ${row.nameLabel}`.trim()}
         </h1>
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-slate-500 sm:justify-end">
-          <span>{categoryLabelDe(row.category)}</span>
-          {row.osmRelationId && (
-            <>
+        {showHeaderMeta ? (
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-slate-500 sm:justify-end">
+            {showHeaderCategory ? <span>{categoryLabelDe(row.category)}</span> : null}
+            {showHeaderCategory && showHeaderOsmLink ? (
               <span className="text-slate-600" aria-hidden>
                 ·
               </span>
+            ) : null}
+            {showHeaderOsmLink ? (
               <a
                 className="text-slate-400 underline decoration-slate-500/60 underline-offset-2 hover:text-slate-300"
                 href={`https://www.openstreetmap.org/relation/${row.osmRelationId}`}
@@ -94,9 +99,9 @@ export function FeatureDetailStatsStrip({
               >
                 {de.feature.osmRelation} {row.osmRelationId}
               </a>
-            </>
-          )}
-        </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <section className="mb-6" aria-label={de.areaReport.stats.summaryStatRowAria}>
