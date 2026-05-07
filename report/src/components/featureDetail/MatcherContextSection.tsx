@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { areasIndex } from '../../data/areasIndex'
 import { de } from '../../i18n/de'
-import { isSchluesselExplorerPreset } from '../../lib/germanKeyExplorer'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -56,14 +55,7 @@ export function MatcherContextSection({
           <p className="mt-3">
             <Link
               to="/tools/german-key"
-              search={{
-                key: row.canonicalMatchKey,
-                ...(data.idNormalizationPreset &&
-                isSchluesselExplorerPreset(data.idNormalizationPreset)
-                  ? { preset: data.idNormalizationPreset }
-                  : {}),
-                area: areaKey,
-              }}
+              search={{ key: row.canonicalMatchKey }}
               className="text-sm font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
             >
               {s.matcherDecodeKeyLink}

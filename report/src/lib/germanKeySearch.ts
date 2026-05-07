@@ -1,12 +1,5 @@
-import {
-  coerceSchluesselExplorerPreset,
-  type GermanSchluesselExplorerPreset,
-} from './germanKeyExplorer.ts'
-
 export type GermanKeySearch = {
   key?: string
-  preset?: GermanSchluesselExplorerPreset
-  area?: string
 }
 
 function coerceSearchString(value: unknown): string | undefined {
@@ -16,15 +9,10 @@ function coerceSearchString(value: unknown): string | undefined {
   return undefined
 }
 
-/** TanStack Router `validateSearch`: tolerant parsing + Zod preset validation. */
+/** TanStack Router `validateSearch`: tolerant parsing for the `key` param only. */
 export function validateGermanKeySearch(raw: Record<string, unknown>): GermanKeySearch {
   const key = coerceSearchString(raw.key)
-  const area = coerceSearchString(raw.area)
-  const presetRaw = coerceSearchString(raw.preset)
-  const presetCoerced = presetRaw !== undefined ? coerceSchluesselExplorerPreset(presetRaw) : ''
   const out: GermanKeySearch = {}
   if (key !== undefined) out.key = key
-  if (area !== undefined) out.area = area
-  if (presetCoerced !== '') out.preset = presetCoerced
   return out
 }

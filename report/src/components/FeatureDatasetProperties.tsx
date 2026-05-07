@@ -6,7 +6,12 @@ import {
 } from '../lib/datasetExtractDataDates'
 import { EM_DASH } from '../lib/formatDe'
 import { formatIsoTimestampToAbsoluteDe } from '../lib/formatSourceDownloadedAt'
+import {
+  germanKeyExplorerLinkValueOrNull,
+  isGermanKeyExplorerDisplayKey,
+} from '../lib/germanKeyExplorer'
 import type { ComparisonForReport, ReportRow } from '../types/report'
+import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 
 function formatPropertyValue(value: unknown): string {
   if (value === null || value === undefined) return de.feature.datasetPropertiesEmpty
@@ -33,6 +38,8 @@ function forDisplay(props: Record<string, unknown> | null | undefined): Record<s
 
 function DatasetPropertyCard({ properties }: { properties: Record<string, unknown> }) {
   const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
+  const verifyLinkClass =
+    'shrink-0 text-xs font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 
   if (entries.length === 0) {
     return <p className="text-sm text-slate-400">{de.feature.datasetPropertiesEmpty}</p>
@@ -40,12 +47,25 @@ function DatasetPropertyCard({ properties }: { properties: Record<string, unknow
 
   return (
     <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-      {entries.map(([k, v]) => (
-        <div key={k} className="contents">
-          <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
-          <dd className="break-words text-slate-100">{formatPropertyValue(v)}</dd>
-        </div>
-      ))}
+      {entries.map(([k, v]) => {
+        const linkVal =
+          isGermanKeyExplorerDisplayKey(k) && (typeof v === 'string' || typeof v === 'number')
+            ? germanKeyExplorerLinkValueOrNull(v)
+            : null
+        return (
+          <div key={k} className="contents">
+            <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
+            <dd className="min-w-0 break-words text-slate-100">
+              <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <span className="min-w-0">{formatPropertyValue(v)}</span>
+                {linkVal ? (
+                  <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />
+                ) : null}
+              </span>
+            </dd>
+          </div>
+        )
+      })}
     </dl>
   )
 }

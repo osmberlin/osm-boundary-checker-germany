@@ -6,6 +6,8 @@ import {
   coerceSchluesselExplorerPreset,
   digitsOnly,
   formatNormalizationNotesForExplorerUi,
+  germanKeyExplorerLinkValueOrNull,
+  isGermanKeyExplorerDisplayKey,
   isSchluesselExplorerPreset,
   lookupArsSegmentNames,
   lookupGemeindeNameByAgs,
@@ -179,5 +181,26 @@ describe('germanKeyExplorer', () => {
   test('searchGermanKeyDisplayNames: name query finds obsolete ARS alongside latest', () => {
     const hits = searchGermanKeyDisplayNames(bundleObsoleteArsOnly, 'Oberwesel')
     expect(hits.some((h) => h.kind === 'ars' && h.id === '071405006112')).toBe(true)
+  })
+
+  test('isGermanKeyExplorerDisplayKey accepts RS/AGS tag keys and amtliche ARS/AGS labels', () => {
+    expect(isGermanKeyExplorerDisplayKey('de:regionalschluessel')).toBe(true)
+    expect(isGermanKeyExplorerDisplayKey('de:amtlicher_gemeindeschluessel')).toBe(true)
+    expect(isGermanKeyExplorerDisplayKey('ARS')).toBe(true)
+    expect(isGermanKeyExplorerDisplayKey('AGS')).toBe(true)
+    expect(isGermanKeyExplorerDisplayKey('postal_code')).toBe(false)
+    expect(isGermanKeyExplorerDisplayKey('name')).toBe(false)
+  })
+
+  test('germanKeyExplorerLinkValueOrNull coerces strings/numbers, rejects empty / digit-less / non-finite', () => {
+    expect(germanKeyExplorerLinkValueOrNull('012345678901')).toBe('012345678901')
+    expect(germanKeyExplorerLinkValueOrNull('  07233004  ')).toBe('07233004')
+    expect(germanKeyExplorerLinkValueOrNull(7233004)).toBe('7233004')
+    expect(germanKeyExplorerLinkValueOrNull('')).toBeNull()
+    expect(germanKeyExplorerLinkValueOrNull('   ')).toBeNull()
+    expect(germanKeyExplorerLinkValueOrNull('Berlin')).toBeNull()
+    expect(germanKeyExplorerLinkValueOrNull('--------')).toBeNull()
+    expect(germanKeyExplorerLinkValueOrNull(Number.NaN)).toBeNull()
+    expect(germanKeyExplorerLinkValueOrNull(Number.POSITIVE_INFINITY)).toBeNull()
   })
 })

@@ -77,7 +77,6 @@ export const de = {
     compareDataOsmLabel: 'OSM-Daten',
     compareDataOfficialLabel: 'Amtliche Daten',
     compareDataMissing: '(missing)',
-    compareDataExplorerLink: 'Regional- und Gemeindeschlüssel-Explorer',
     compareMappingLeadWithMetricsCrs: (crs: string) =>
       `Definiert, welche Felder aus amtlichen Daten und OSM einander zugeordnet werden und zu welchem gemeinsamen Schlüssel normalisiert wird. Metriken beziehen sich auf Projektion ${crs}.`,
     compareMappingEmpty:
@@ -268,6 +267,8 @@ export const de = {
     mapBoundaryScopeAll: 'Alle Grenzen zeigen',
     mapBoundaryScopeAria: 'Kartenausschnitt: nur ausgewählte Grenze oder alle Grenzen',
     osmRelation: 'OSM-Relation',
+    /** Deep link to Schlüssel-Explorer from property rows and provenance. */
+    germanKeyVerifyLink: 'Schlüssel prüfen',
     stats: {
       /** Matches JSON field name; shown next to key value on the feature header row. */
       canonicalMatchKeyField: 'canonicalMatchKey',
@@ -435,7 +436,6 @@ export const de = {
     presetHint:
       'Nur Presets für AGS/ARS und verwandte Schlüssel (wie idNormalization.preset in der Datensatz-Konfiguration). „Alle“ hebt keine Zeile in der Tabelle hervor.',
     presetOptionAll: 'Alle Presets',
-    areaBadge: (area: string) => `Datensatz: ${area}`,
     submitUrl: 'Aktualisieren',
     arsTableTitle: 'Regionalschlüssel (12 Stellen, ARS)',
     segmentBl: 'Bundesland',

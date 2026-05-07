@@ -114,8 +114,6 @@ export function GermanKeyExplorerContent({
   function applyKeyToSearch(keyValue: string) {
     const next: GermanKeySearch = {}
     if (keyValue.trim() !== '') next.key = keyValue.trim()
-    if (search.area) next.area = search.area
-    if (search.preset) next.preset = search.preset
     onApplySearch(next)
   }
 
@@ -177,12 +175,6 @@ export function GermanKeyExplorerContent({
       </form>
 
       {nameSearchFeedback ? <p className="text-sm text-slate-400">{nameSearchFeedback}</p> : null}
-
-      {search.area ? (
-        <p className="rounded-md border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-400">
-          {t.areaBadge(search.area)}
-        </p>
-      ) : null}
 
       {raw === '' ? (
         <p className="text-sm text-slate-500">{t.emptyState}</p>

@@ -1,8 +1,12 @@
 import { Link } from '@tanstack/react-router'
 import { areasIndex } from '../../data/areasIndex'
 import { de } from '../../i18n/de'
-import { isSchluesselExplorerPreset } from '../../lib/germanKeyExplorer'
+import {
+  germanKeyExplorerLinkValueOrNull,
+  isGermanKeyExplorerDisplayKey,
+} from '../../lib/germanKeyExplorer'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
+import { GermanKeyVerifyLink } from '../GermanKeyVerifyLink'
 
 function TagRows({
   boundaryValue,
@@ -32,14 +36,28 @@ function TagRows({
     })
   }
 
+  const verifyLinkClass =
+    'shrink-0 text-xs font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
+
   return (
     <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-      {rows.map(({ key, value, reactKey }) => (
-        <div key={reactKey} className="contents">
-          <dt className="font-mono text-xs break-words text-slate-400">{key}</dt>
-          <dd className="break-words text-slate-100">{value}</dd>
-        </div>
-      ))}
+      {rows.map(({ key, value, reactKey }) => {
+        const keyForLink = germanKeyExplorerLinkValueOrNull(value)
+        const showVerify = isGermanKeyExplorerDisplayKey(key) && keyForLink !== null
+        return (
+          <div key={reactKey} className="contents">
+            <dt className="font-mono text-xs break-words text-slate-400">{key}</dt>
+            <dd className="min-w-0 break-words text-slate-100">
+              <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <span className="min-w-0">{value}</span>
+                {showVerify && keyForLink ? (
+                  <GermanKeyVerifyLink keyValue={keyForLink} className={verifyLinkClass} />
+                ) : null}
+              </span>
+            </dd>
+          </div>
+        )
+      })}
     </dl>
   )
 }
@@ -80,14 +98,7 @@ export function ExpectedOsmTagsSection({
           <p className="mt-3">
             <Link
               to="/tools/german-key"
-              search={{
-                key: row.canonicalMatchKey,
-                ...(data.idNormalizationPreset &&
-                isSchluesselExplorerPreset(data.idNormalizationPreset)
-                  ? { preset: data.idNormalizationPreset }
-                  : {}),
-                area: areaKey,
-              }}
+              search={{ key: row.canonicalMatchKey }}
               className="text-sm font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
             >
               {de.feature.decodeKeyExplorerLink}

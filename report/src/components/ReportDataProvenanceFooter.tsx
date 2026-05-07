@@ -9,9 +9,10 @@ import {
   formatFreshnessDisplayDe,
   formatIsoTimestampToDateOnlyDe,
 } from '../lib/formatSourceDownloadedAt'
-import { isSchluesselExplorerPreset } from '../lib/germanKeyExplorer'
+import { germanKeyExplorerLinkValueOrNull } from '../lib/germanKeyExplorer'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
 import type { ComparisonFilterConfigSummary, ComparisonForReport, ReportRow } from '../types/report'
+import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 
 export type ReportDataProvenanceFooterProps = {
   data: ComparisonForReport
@@ -270,6 +271,7 @@ function compareProvenanceDlRows(
   const p = de.provenance
   const mappingItems = compareMappingItems(data, filter)
   const { osmItems, officialItems } = compareFilterItems(data, filter)
+  const explorerKey = row == null ? null : germanKeyExplorerLinkValueOrNull(row.canonicalMatchKey)
   const compareDataItems =
     row == null
       ? []
@@ -281,6 +283,7 @@ function compareProvenanceDlRows(
                 ? p.compareDataMissing
                 : row.canonicalMatchKey || EM_DASH,
             label: p.compareDataOsmLabel,
+            showExplorerLink: row.category !== 'official_only' && explorerKey != null,
           },
           {
             key: 'compare-data-official',
@@ -289,24 +292,9 @@ function compareProvenanceDlRows(
                 ? p.compareDataMissing
                 : row.canonicalMatchKey || EM_DASH,
             label: p.compareDataOfficialLabel,
+            showExplorerLink: row.category !== 'unmatched_osm' && explorerKey != null,
           },
         ]
-  const compareDataExplorerHref =
-    row == null
-      ? null
-      : (() => {
-          const params = new URLSearchParams({
-            key: row.canonicalMatchKey,
-            area: data.area,
-          })
-          if (
-            data.idNormalizationPreset &&
-            isSchluesselExplorerPreset(data.idNormalizationPreset)
-          ) {
-            params.set('preset', data.idNormalizationPreset)
-          }
-          return `http://127.0.0.1:5174/tools/german-key?${params.toString()}`
-        })()
 
   if (mappingItems.length === 0 && osmItems.length === 0 && officialItems.length === 0) {
     return (
@@ -329,23 +317,29 @@ function compareProvenanceDlRows(
             <h3 className="text-sm/6 font-medium text-slate-200">{p.compareDataHeading}</h3>
           </dt>
           <dd className="mt-3 md:col-span-2 md:mt-0">
-            {compareDataExplorerHref ? (
-              <p className="mb-2">
-                <a
-                  className="text-sm font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-                  href={compareDataExplorerHref}
-                >
-                  {p.compareDataExplorerLink}
-                </a>
-              </p>
-            ) : null}
             <p className="text-xs text-slate-400">{p.compareDataLead}</p>
             <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
               {compareDataItems.map((item) => (
                 <li key={item.key}>
-                  <span className="inline-flex flex-wrap items-baseline gap-x-2">
-                    <code className="break-all text-slate-500">{item.code}</code>
-                    <span>{item.label}</span>
+                  <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-2">
+                      <code
+                        className={
+                          item.code === p.compareDataMissing
+                            ? 'font-medium break-all text-rose-300'
+                            : 'break-all text-slate-500'
+                        }
+                      >
+                        {item.code}
+                      </code>
+                      <span>{item.label}</span>
+                    </span>
+                    {row != null && item.showExplorerLink && explorerKey != null ? (
+                      <GermanKeyVerifyLink
+                        keyValue={explorerKey}
+                        className="shrink-0 text-sm font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+                      />
+                    ) : null}
                   </span>
                 </li>
               ))}

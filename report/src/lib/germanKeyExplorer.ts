@@ -223,3 +223,33 @@ export function tryBerlinBezirkCanonical5(
     return { ok: false }
   }
 }
+
+/**
+ * OSM tag keys whose values the Schlüssel-Explorer can decode (RS / AGS).
+ * Mirrors `MatcherContextSection` gating for the "decode key" link.
+ */
+export const GERMAN_KEY_EXPLORER_DISPLAY_KEYS = [
+  'de:regionalschluessel',
+  'de:amtlicher_gemeindeschluessel',
+  'AGS',
+  'ARS',
+] as const
+
+export function isGermanKeyExplorerDisplayKey(key: string): boolean {
+  return (GERMAN_KEY_EXPLORER_DISPLAY_KEYS as readonly string[]).includes(key)
+}
+
+/**
+ * Coerce a GeoJSON-style tag value (string or finite number) into a value suitable for the
+ * `/tools/german-key` `key` search param: trimmed non-empty string with at least one digit.
+ * Callers with `Record<string, unknown>` should narrow to `string | number` before calling;
+ * the explorer route performs fuller validation.
+ */
+export function germanKeyExplorerLinkValueOrNull(value: string | number): string | null {
+  const raw = typeof value === 'number' ? (Number.isFinite(value) ? String(value) : null) : value
+  if (raw === null) return null
+  const trimmed = raw.trim()
+  if (trimmed === '') return null
+  if (digitsOnly(trimmed) === '') return null
+  return trimmed
+}
