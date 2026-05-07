@@ -12,7 +12,12 @@ import {
 } from 'node:fs'
 import { join } from 'node:path'
 import { areaHasCompareConfig } from '../shared/areaConfig.ts'
-import { DATASETS_DIRECTORY } from '../shared/datasetPaths.ts'
+import {
+  DATASETS_DIRECTORY,
+  OFFICIAL_SOURCE_RELATIVE_PATH,
+  SOURCE_METADATA_RELATIVE_PATH,
+  datasetFolderPath,
+} from '../shared/datasetPaths.ts'
 import {
   readCompareGeneratedAt,
   resolveFallbackRuntimeRoot,
@@ -130,6 +135,18 @@ function discoverAreas(workspaceRoot: string): string[] {
     if (areaHasCompareConfig(workspaceRoot, entry.name)) out.push(entry.name)
   }
   return out.sort()
+}
+
+/**
+ * Only restore official fallback when essential source inputs are missing for an area.
+ * This prevents stale fallback metadata from overwriting fresh metadata for areas that
+ * already downloaded successfully in the current run.
+ */
+function officialSourceNeedsFallback(runtimeRoot: string, area: string): boolean {
+  const areaRoot = datasetFolderPath(runtimeRoot, area)
+  const officialGeometry = join(areaRoot, OFFICIAL_SOURCE_RELATIVE_PATH)
+  const sourceMetadata = join(areaRoot, SOURCE_METADATA_RELATIVE_PATH)
+  return !existsSync(officialGeometry) || !existsSync(sourceMetadata)
 }
 
 async function runCommand(
@@ -293,6 +310,7 @@ async function main() {
                 const areas = discoverAreas(workspaceRoot)
                 let restoredAny = false
                 for (const area of areas) {
+                  if (!officialSourceNeedsFallback(runtimeRoot, area)) continue
                   const restored = restoreOfficialSourceFromFallback(
                     runtimeRoot,
                     fallbackRuntimeRoot,
@@ -336,6 +354,7 @@ async function main() {
                 const areas = discoverAreas(workspaceRoot)
                 let restoredAny = false
                 for (const area of areas) {
+                  if (!officialSourceNeedsFallback(runtimeRoot, area)) continue
                   const restored = restoreOfficialSourceFromFallback(
                     runtimeRoot,
                     fallbackRuntimeRoot,
