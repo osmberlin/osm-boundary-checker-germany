@@ -62,6 +62,7 @@ entries:
       - '5754fdf'
       - '5135821'
       - '4e7c048'
+      - '491a7ba'
     descriptionMd: |
       Hilfswerkzeug [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) hat eine statische (per Skript manuell zu aktualisierende) Liste aller Schlüssel die wir zum Datenabgleich nutzen. Einschließlich einiger historischer Daten, die nicht mehr aktuell sind, aber in OSM noch in Verwendung sein können.
   - refs:
