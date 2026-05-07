@@ -1,9 +1,15 @@
 import { useCallback, useState } from 'react'
 import { de } from '../i18n/de'
+import { cn } from '../lib/cn'
+import {
+  germanKeyExplorerLinkValueOrNull,
+  isGermanKeyExplorerDisplayKey,
+} from '../lib/germanKeyExplorer'
 import { buildOverpassBoundaryQuery, type OverpassBoundaryHit } from '../lib/overpassBbox'
 import { DEFAULT_OVERPASS_INTERPRETER_URL, OVERPASS_INSTANCES } from '../lib/overpassServers'
 import { padMapBbox, type WfsFeature } from '../lib/wfsGetFeature'
 import type { ComparisonForReport, OgcWfsInspectSource, ReportRow } from '../types/report'
+import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { mapLayerColors } from './mapLayerColors'
 import { sharedButtonClass } from './sharedButtonStyles'
 
@@ -20,7 +26,7 @@ type OsmSlot =
   | { status: 'done' }
 
 function formatPropertyValue(value: unknown): string {
-  if (value === null || value === undefined) return '—'
+  if (value === null || value === undefined) return de.feature.datasetPropertiesEmpty
   if (typeof value === 'object') {
     try {
       return JSON.stringify(value)
@@ -31,19 +37,64 @@ function formatPropertyValue(value: unknown): string {
   return String(value)
 }
 
+/** Same key filtering as dataset property cards (`@id` is redundant with OSM identity elsewhere). */
+function datasetPropsForMatch(
+  props: Record<string, unknown> | null | undefined,
+): Record<string, unknown> {
+  if (!props) return {}
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(props)) {
+    if (k === '@id') continue
+    out[k] = v
+  }
+  return out
+}
+
+/** Values displayed as placeholders in VG250-style extracts should not light up live rows. */
+function isExcludedDatasetMatchToken(s: string): boolean {
+  if (s === '') return true
+  if (s === de.feature.datasetPropertiesEmpty) return true
+  if (s.toUpperCase() === 'NAN') return true
+  return /^-+$/.test(s)
+}
+
+function buildDatasetSnapshotValueMatchSet(row: ReportRow): ReadonlySet<string> {
+  const set = new Set<string>()
+  for (const block of [
+    datasetPropsForMatch(row.officialProperties),
+    datasetPropsForMatch(row.osmProperties),
+  ]) {
+    for (const v of Object.values(block)) {
+      const s = formatPropertyValue(v).trim()
+      if (!isExcludedDatasetMatchToken(s)) set.add(s)
+    }
+  }
+  return set
+}
+
 function PropertyCard({
   title,
   properties,
   variant,
+  osmBrowseLink,
+  germanKeyContext,
+  datasetSnapshotValueMatches,
 }: {
   title: string
   properties: Record<string, unknown>
   variant: 'official' | 'osm'
+  /** When set (Overpass hit), the title links to osm.org for this object. */
+  osmBrowseLink?: { type: string; id: number }
+  germanKeyContext?: { data: ComparisonForReport }
+  /** Serialized values from VG250/OSM snapshot cards; matching live rows use Overpass magenta. */
+  datasetSnapshotValueMatches?: ReadonlySet<string>
 }) {
   const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
   const color = variant === 'official' ? mapLayerColors.wfs : mapLayerColors.overpass
   const keyText = variant === 'official' ? 'text-slate-400' : 'text-violet-200/75'
   const valueText = variant === 'official' ? 'text-slate-100' : 'text-violet-100'
+  const verifyLinkClass =
+    'shrink-0 text-xs font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
   const cardStyle = {
     borderColor: color.line,
     backgroundColor:
@@ -54,17 +105,56 @@ function PropertyCard({
 
   return (
     <article className="rounded-lg border p-3 shadow-sm" style={cardStyle}>
-      <h3 className="mb-2 text-sm/6 font-medium text-slate-100">{title}</h3>
+      <h3 className="mb-2 text-sm/6 font-medium text-slate-100">
+        {osmBrowseLink ? (
+          <a
+            href={`https://www.openstreetmap.org/${osmBrowseLink.type}/${osmBrowseLink.id}`}
+            target="_blank"
+            rel="noreferrer noopener"
+            title={de.feature.updateMap.opensInNewWindowTitle}
+            className="text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+          >
+            {title}
+          </a>
+        ) : (
+          title
+        )}
+      </h3>
       {entries.length === 0 ? (
         <p className="text-sm text-slate-400">{de.feature.liveOsmHitNoTags}</p>
       ) : (
         <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-          {entries.map(([k, v]) => (
-            <div key={k} className="contents">
-              <dt className={`font-mono text-xs break-words ${keyText}`}>{k}</dt>
-              <dd className={`break-words ${valueText}`}>{formatPropertyValue(v)}</dd>
-            </div>
-          ))}
+          {entries.map(([k, v]) => {
+            const linkVal =
+              germanKeyContext &&
+              isGermanKeyExplorerDisplayKey(k) &&
+              (typeof v === 'string' || typeof v === 'number')
+                ? germanKeyExplorerLinkValueOrNull(v)
+                : null
+            const displayValue = formatPropertyValue(v)
+            const matchesSnapshot = datasetSnapshotValueMatches?.has(displayValue.trim()) ?? false
+            return (
+              <div key={k} className="contents">
+                <dt className={`font-mono text-xs break-words ${keyText}`}>{k}</dt>
+                <dd className={`min-w-0 break-words ${valueText}`}>
+                  <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <span
+                      className={cn(
+                        'min-w-0 rounded-sm text-inherit',
+                        /* mapLayerColors.overpass: fill #701a75, line #86198f → fuchsia-900/800 */
+                        matchesSnapshot && 'bg-fuchsia-800 outline outline-4 outline-fuchsia-800',
+                      )}
+                    >
+                      {displayValue}
+                    </span>
+                    {linkVal && germanKeyContext ? (
+                      <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />
+                    ) : null}
+                  </span>
+                </dd>
+              </div>
+            )
+          })}
         </dl>
       )}
     </article>
@@ -102,6 +192,8 @@ export function LiveSourceProperties({
   const sources = data.ogcInspectSources ?? []
   const bbox = row.mapBbox ? padMapBbox(row.mapBbox) : null
   const overpassBoundaryTag = data.overpassBoundaryTag ?? 'administrative'
+
+  const datasetSnapshotValueMatches = buildDatasetSnapshotValueMatchSet(row)
 
   const [osm, setOsm] = useState<OsmSlot>({ status: 'idle' })
   const osmHits = overpass.hits
@@ -215,6 +307,8 @@ export function LiveSourceProperties({
                                 title={title}
                                 properties={props}
                                 variant="official"
+                                germanKeyContext={{ data }}
+                                datasetSnapshotValueMatches={datasetSnapshotValueMatches}
                               />
                             )
                           })}
@@ -371,8 +465,11 @@ export function LiveSourceProperties({
                       <PropertyCard
                         key={`${hit.type}-${hit.id}`}
                         title={de.feature.liveOsmHitTitle(hit.type, hit.id)}
+                        osmBrowseLink={{ type: hit.type, id: hit.id }}
                         properties={withoutNameStarTags(hit.tags) as Record<string, unknown>}
                         variant="osm"
+                        germanKeyContext={{ data }}
+                        datasetSnapshotValueMatches={datasetSnapshotValueMatches}
                       />
                     ))}
                   </div>
