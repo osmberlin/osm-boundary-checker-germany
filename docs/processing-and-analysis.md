@@ -103,7 +103,7 @@ Embedded **`comparison_table.json`** carries the official/OSM metadata snapshot 
 - Official side uses `**compare.officialMatchProperty**` in that area’s `config.jsonc` (e.g. BKG ARS column, Berlin Bezirke `name`, Berlin Ortsteile `sch`).
 - Optional `**official.constantMatchKey**` can pin a dataset to one stable join key regardless of source column quirks (used by `de-staat`).
 - Optional `**official.keyTransposition**`: when the official dataset has no compatible Schlüssel, map values from `**compare.officialMatchProperty**` to raw OSM Schlüssel strings, then normalize (`[scripts/compare/lib/officialKeyTransposition.ts](../scripts/compare/lib/officialKeyTransposition.ts)`).
-- Values are normalized with a **preset** (`berlin-bezirk-ags`, `amtlicher-8`, `regional-12`, `plz-5`) in `[scripts/compare/lib/normalizeGermanKey.ts](../scripts/compare/lib/normalizeGermanKey.ts)` so key formats align where intended.
+- Values are normalized with a **preset** (`berlin-bezirk-rs5`, `amtlicher-8`, `regional-12`, `plz-5`) in `[scripts/compare/lib/normalizeGermanKey.ts](../scripts/compare/lib/normalizeGermanKey.ts)` so key formats align where intended.
 
 2b. **Explicit spatial scope (per dataset)**  
  Compare reads explicit enum decisions from `compare`:
@@ -139,7 +139,7 @@ With `bboxFilter=official_bbox_overlap`, compare derives a union bbox from offic
 ## Berlin data (Bezirke example)
 
 - **Official:** Berlin ALKIS Bezirke via WFS GeoJSON, fetched by `download:official` into `datasets/berlin-bezirke/source/official.fgb` (see `[datasets/berlin-bezirke/config.jsonc](../datasets/berlin-bezirke/config.jsonc)` and `[datasets/berlin-bezirke/README.md](../datasets/berlin-bezirke/README.md)`).
-- **Matching:** `compare.officialMatchProperty` is `name` with preset `**berlin-bezirk-ags`\*\* so Berlin district names align with `de:regionalschluessel` on OSM.
+- **Matching:** `compare.officialMatchProperty` is `name` with preset `**berlin-bezirk-rs5`\*\* so Berlin district names align with `de:regionalschluessel` on OSM (5-digit Berlin RS expanded to an 8-digit canonical form for matching).
 - **Metrics CRS:** `EPSG:32633` (UTM zone 33N), chosen for that dataset.
 - **OSM input:** still the **shared** Germany admin-boundaries FlatGeobuf — there is no separate per-area OSM file in the compare step.
 - **OSM provenance defaults:** Geofabrik provider/licence metadata is centralized in `scripts/shared/germanyOsmPbf.ts`.

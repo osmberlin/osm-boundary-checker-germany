@@ -404,6 +404,7 @@ function comparisonRowToPayload(
     officialForEditPath,
     officialProperties: row.officialProperties,
     osmProperties: row.osmProperties,
+    ...(row.osmMatchDiagnostics ? { osmMatchDiagnostics: row.osmMatchDiagnostics } : {}),
   }
 }
 

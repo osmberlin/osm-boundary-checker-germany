@@ -3,7 +3,6 @@ import type { GermanKeyLookupBundle } from '../../../../scripts/shared/germanKey
 import { de } from '../../i18n/de'
 import {
   ags8FromArs12Digits,
-  brandenburgGemeinden8From12,
   digitsOnly,
   lookupNameForNormalizedPresetKey,
   formatNormalizationNotesForExplorerUi,
@@ -275,11 +274,9 @@ export function GermanKeyExplorerContent({
   const segmentsTitle = segmentsBase?.kind === 'ags8' ? t.agsTableTitle : t.arsTableTitle
 
   const ags8From12 = d.length >= 12 ? ags8FromArs12Digits(d) : d.length >= 8 ? d.slice(0, 8) : null
-  const bb8 = d.length >= 12 ? brandenburgGemeinden8From12(d) : null
   const agsForPortal =
     ags8From12 !== null && ags8From12.length === 8 ? ags8From12 : d.length === 8 ? d : null
 
-  const bbResolved = bb8 ? resolveGemeindeNameByAgs(bundle, bb8) : null
   const berlin = tryBerlinBezirkCanonical5(raw)
 
   const rows = raw !== '' ? normalizationsForSchluesselExplorerTable(raw) : []
@@ -494,21 +491,6 @@ export function GermanKeyExplorerContent({
                         ) : (
                           '—'
                         )}
-                        {row.bkgKey === 'AGS' && row.resolved.value && bb8 && bbResolved?.value ? (
-                          <span className="text-slate-500">
-                            {' '}
-                            · BB:{' '}
-                            <span className={bbResolved.obsolete ? 'text-amber-200/90' : undefined}>
-                              {bbResolved.value}
-                            </span>
-                            {bbResolved.obsolete ? (
-                              <span className="text-xs text-amber-400/85">
-                                {' '}
-                                ({t.obsoleteYearSuffix(bbResolved.obsolete.year)})
-                              </span>
-                            ) : null}
-                          </span>
-                        ) : null}
                       </td>
                     </tr>
                   ))}

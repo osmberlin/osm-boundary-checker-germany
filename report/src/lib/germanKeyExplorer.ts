@@ -59,22 +59,24 @@ export function statistikportalGemeindeUrl(ags8: string): string {
   return `${STATISTIKPORTAL_GEMEINDEVERZEICHNIS}/${d.slice(0, 8)}`
 }
 
-/** Brandenburg compare preset: first 5 + last 3 of 12-digit RS. */
-export function brandenburgGemeinden8From12(digits12: string): string | null {
+/**
+ * AGS-from-ARS derivation (LLRKK + GGG) used as fallback compare key for Gemeinde-level AGS datasets
+ * when a relation has no canonical `de:amtlicher_gemeindeschluessel`.
+ */
+export function agsFromArs12(digits12: string): string | null {
   const d = digitsOnly(digits12)
   if (d.length < 12) return null
   return `${d.slice(0, 5)}${d.slice(9, 12)}`
 }
 
 /**
- * Presets this page documents: AGS / ARS / Berlin / Brandenburg Schlüssel — not PLZ or
- * text-based matching (see dataset `idNormalization` for those).
+ * Presets this page documents: AGS / ARS / Berlin Schlüssel — not PLZ or text-based matching
+ * (see dataset `idNormalization` for those).
  */
 export const GERMAN_SCHLUESSEL_EXPLORER_PRESETS = [
-  'berlin-bezirk-ags',
+  'berlin-bezirk-rs5',
   'amtlicher-8',
   'regional-12',
-  'brandenburg-gemeinden-8',
 ] as const
 
 export type GermanSchluesselExplorerPreset = (typeof GERMAN_SCHLUESSEL_EXPLORER_PRESETS)[number]
@@ -129,12 +131,12 @@ export function normalizationsForSchluesselPresets(raw: string): PresetNormaliza
 
 /**
  * Rows for the Regional- und Gemeindeschlüssel-Explorer normalization table only.
- * Omits `berlin-bezirk-ags`: that preset targets 5-digit Berlin Bezirk codes (and passthrough 8-digit);
+ * Omits `berlin-bezirk-rs5`: that preset targets 5-digit Berlin Bezirk codes (and passthrough 8-digit);
  * full 12-digit ARS inputs only produce a misleading `unexpected-digit-length` note there, while
  * Berlin expansion is shown in the dedicated block when applicable (`tryBerlinBezirkCanonical5`).
  */
 export function normalizationsForSchluesselExplorerTable(raw: string): PresetNormalizationRow[] {
-  return normalizationsForSchluesselPresets(raw).filter((r) => r.preset !== 'berlin-bezirk-ags')
+  return normalizationsForSchluesselPresets(raw).filter((r) => r.preset !== 'berlin-bezirk-rs5')
 }
 
 const UNEXPECTED_DIGIT_LENGTH_NOTE = /^unexpected-digit-length:(\d+)$/
@@ -205,9 +207,8 @@ export function lookupNameForNormalizedPresetKey(
     case 'regional-12':
       return lookupGemeindeNameByArs(tables, canonicalKey)
     case 'amtlicher-8':
-    case 'brandenburg-gemeinden-8':
       return lookupGemeindeNameByAgs(tables, canonicalKey)
-    case 'berlin-bezirk-ags':
+    case 'berlin-bezirk-rs5':
       return null
   }
 }

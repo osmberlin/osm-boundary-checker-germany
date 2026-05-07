@@ -32,6 +32,14 @@ export const reportMetricsSchema = z.object({
 
 export const bboxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()])
 
+export const osmMatchDiagnosticsSchema = z.object({
+  matchPath: z.enum(['ags_direct', 'ags_from_rs_fallback', 'none']),
+  agsRaw: z.string().nullable(),
+  rsRaw: z.string().nullable(),
+  agsFromRs: z.string().nullable(),
+  missingRecommendedTags: z.array(z.string()),
+})
+
 export const reportRowSchema = z.object({
   canonicalMatchKey: z.string(),
   nameLabel: z.string(),
@@ -42,6 +50,8 @@ export const reportRowSchema = z.object({
   officialForEditPath: z.string().nullable(),
   officialProperties: z.record(z.string(), z.unknown()).nullable(),
   osmProperties: z.record(z.string(), z.unknown()).nullable(),
+  /** Per-row OSM match diagnostics (only emitted for AGS-mode datasets). */
+  osmMatchDiagnostics: osmMatchDiagnosticsSchema.nullable().optional(),
 })
 
 export const unmatchedOsmRowSchema = z.object({
@@ -70,10 +80,9 @@ export const comparisonFilterConfigSummarySchema = z.object({
 })
 
 export const idNormalizationPresetSchema = z.enum([
-  'berlin-bezirk-ags',
+  'berlin-bezirk-rs5',
   'amtlicher-8',
   'regional-12',
-  'brandenburg-gemeinden-8',
   'plz-5',
   'text',
 ])
@@ -133,6 +142,7 @@ export const snapshotsSchema = z.object({
 
 export type ReportMetrics = z.infer<typeof reportMetricsSchema>
 export type ReportRow = z.infer<typeof reportRowSchema>
+export type OsmMatchDiagnostics = z.infer<typeof osmMatchDiagnosticsSchema>
 export type UnmatchedOsmReportRow = z.infer<typeof unmatchedOsmRowSchema>
 export type ComparisonForReport = z.infer<typeof comparisonForReportSchema>
 export type ComparisonFilterConfigSummary = z.infer<typeof comparisonFilterConfigSummarySchema>

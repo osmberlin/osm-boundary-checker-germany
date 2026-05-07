@@ -10,10 +10,9 @@ import {
 } from './officialKeyTransposition.ts'
 
 export type IdNormalizationPreset =
-  | 'berlin-bezirk-ags'
+  | 'berlin-bezirk-rs5'
   | 'amtlicher-8'
   | 'regional-12'
-  | 'brandenburg-gemeinden-8'
   | 'plz-5'
   | 'text'
 

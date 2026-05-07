@@ -1,6 +1,7 @@
 import type {
   IdNormalizationPreset,
   OsmMatchCriteriaSummary,
+  OsmMatchDiagnostics,
 } from '../../../scripts/shared/comparisonPayload.ts'
 import type { OsmSourceMetadataPersisted } from '../../../scripts/shared/sourceMetadata.ts'
 
@@ -107,6 +108,8 @@ export type ReportRow = {
   officialProperties: Record<string, unknown> | null
   /** GeoJSON properties from the compare merge (OSM). */
   osmProperties: Record<string, unknown> | null
+  /** Per-row OSM match diagnostics (only emitted for AGS-mode datasets). */
+  osmMatchDiagnostics?: OsmMatchDiagnostics | null
 }
 
 /** OSM polygon whose normalized `de:regionalschluessel` has no row in this area’s official export. */

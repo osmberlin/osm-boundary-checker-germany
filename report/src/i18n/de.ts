@@ -236,6 +236,10 @@ export const de = {
       issueIndicator: 'Bewertung',
       map: 'Karte',
       view: 'Detail',
+      /** Inline badge in the name cell when AGS-mode matched via RS-derived fallback. */
+      agsFromRsBadge: 'AGS aus RS',
+      agsFromRsBadgeTitle:
+        'Treffer über Fallback: AGS aus de:regionalschluessel abgeleitet — de:amtlicher_gemeindeschluessel fehlt an der OSM-Geometrie.',
     },
     chartTooltipIou: meanIouChartDe.chartTooltipIou,
     unmatchedCountLabel: 'OSM ohne Treffer in offiziellen Daten (gesamt)',
@@ -389,6 +393,22 @@ export const de = {
     matcherCriteriaRelations: (ids: string) => `Relation-ID(s): ${ids}`,
     matcherDecodeKeyLink: 'Schlüssel dekodieren',
 
+    /** AGS-first match diagnostics shown for AGS-Datasets (e.g. brandenburg-gemeinden). */
+    osmKeyDiagnosticsSectionAria: 'OSM-Schlüssel-Tags und Match-Pfad',
+    osmKeyDiagnosticsSectionTitle: 'OSM-Schlüssel-Tags',
+    osmKeyDiagnosticsSectionLead:
+      'Wir matchen zuerst auf den AGS (`de:amtlicher_gemeindeschluessel`). Fehlt dieser, wird ersatzweise ein AGS aus dem kanonischen ARS (`de:regionalschluessel`, erste 5 + letzte 3 Ziffern) abgeleitet. Beide Tags sollten an der OSM-Geometrie gepflegt sein.',
+    osmKeyDiagnosticsAgsLabel: 'de:amtlicher_gemeindeschluessel',
+    osmKeyDiagnosticsRsLabel: 'de:regionalschluessel',
+    osmKeyDiagnosticsAgsFromRsLabel: 'AGS aus ARS abgeleitet',
+    osmKeyDiagnosticsMatchPathLabel: 'Match-Pfad',
+    osmKeyDiagnosticsMatchPathAgsDirect: 'AGS direkt (de:amtlicher_gemeindeschluessel)',
+    osmKeyDiagnosticsMatchPathAgsFromRs:
+      'AGS abgeleitet aus de:regionalschluessel (Fallback — bitte de:amtlicher_gemeindeschluessel ergänzen)',
+    osmKeyDiagnosticsMatchPathNone: 'Kein passender Schlüssel an der OSM-Geometrie',
+    osmKeyDiagnosticsMissingTagsLabel: 'Fehlende Tags (empfohlen)',
+    osmKeyDiagnosticsValueAbsent: '— (nicht gesetzt)',
+
     updateMap: {
       title: 'Daten in OSM bearbeiten',
       downloadOfficialHeading: 'Amtliches GeoJSON',
@@ -487,11 +507,10 @@ export const de = {
     agsLead:
       'Aus einer vollständigen 12-stelligen ARS ergibt sich der AGS aus LLRKK + GGG (also ohne die 4 Stellen des Gemeindeverbands).',
     agsFromArs: 'Aus 12-stelligem Schlüssel',
-    derivedBb: 'Brandenburg-Preset (erste 5 + letzte 3 Ziffern der ARS)',
     berlinTitle: 'Berlin Bezirk',
     berlinLead:
       'Kurzform mit fünf Ziffern (z. B. 11001) wird im Vergleich auf acht Stellen expandiert.',
-    berlinExpanded: 'Expandiert (berlin-bezirk-ags)',
+    berlinExpanded: 'Expandiert (berlin-bezirk-rs5)',
     statistikportalTitle: 'Gemeindeverzeichnis',
     statistikportalLead:
       'Onlineabfrage des Statistikportals (Stichtag und Hinweise siehe dort). Deep-Link mit 8-stelligem AGS:',
@@ -513,13 +532,10 @@ export const de = {
     normalizationNoteUnexpectedDigitLength: (digitCount: string) =>
       `Unerwartete Ziffernlänge (${digitCount} Ziffern); dieses Preset sieht andere Längen vor.`,
     normalizationNotesUi: {
-      'berlin-5-digit→8-digit-ags':
-        'Berlin: 5-stellige Bezirksnummer zur AGS-8-Darstellung erweitert',
+      'berlin-5-digit→8-digit-rs':
+        'Berlin: 5-stelliger Regionalschlüssel zur 8-stelligen Kanonform erweitert',
       'already-8-digit': 'Bereits 8-stellig (keine Änderung)',
       'regional-12-padded': 'Weniger als 12 Ziffern — rechts mit Nullen auf 12 Stellen ergänzt',
-      'bb-gemeinden-first5-plus-last3':
-        'Brandenburg: erste 5 und letzte 3 Ziffern der 12-stelligen ARS → 8-stellig',
-      'bb-gemeinden-already-8': 'Bereits 8-stellig im Sinne des Brandenburg-Presets',
       'plz-5-truncated': 'Mehr als 5 Ziffern — auf 5 Stellen gekürzt',
       'plz-5-left-padded': 'Weniger als 5 Ziffern — links mit Nullen auf 5 Stellen',
     },
@@ -538,10 +554,9 @@ export const de = {
     linksDetailPage: 'Detailseite Statistikportal',
     linksWikiKeyPrefix: 'OSM Wiki',
     presets: {
-      'berlin-bezirk-ags': 'Berlin Bezirk → AGS-8',
+      'berlin-bezirk-rs5': 'Berlin Bezirk → RS-5 → 8-stellig',
       'amtlicher-8': 'Amtlicher 8-stellig',
       'regional-12': 'Regionalschlüssel 12-stellig',
-      'brandenburg-gemeinden-8': 'Brandenburg Gemeinden',
     },
   },
 

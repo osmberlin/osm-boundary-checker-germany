@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import { germanKeyLookupBundleSchema } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import {
+  agsFromArs12,
   ags8FromArs12Digits,
-  brandenburgGemeinden8From12,
   coerceSchluesselExplorerPreset,
   digitsOnly,
   formatNormalizationNotesForExplorerUi,
@@ -109,8 +109,9 @@ describe('germanKeyExplorer', () => {
     expect(ags8FromArs12Digits('145213040530')).toBe('14521530')
   })
 
-  test('brandenburgGemeinden8From12', () => {
-    expect(brandenburgGemeinden8From12('120605003024')).toBe('12060024')
+  test('agsFromArs12 derives LLRKK + GGG from full ARS', () => {
+    expect(agsFromArs12('120735051532')).toBe('12073532')
+    expect(agsFromArs12('120605003024')).toBe('12060024')
   })
 
   test('statistikportalGemeindeUrl', () => {
@@ -143,9 +144,7 @@ describe('germanKeyExplorer', () => {
   })
 
   test('formatNormalizationNotesForExplorerUi maps known tokens', () => {
-    expect(formatNormalizationNotesForExplorerUi(['bb-gemeinden-first5-plus-last3'])).toContain(
-      'Brandenburg',
-    )
+    expect(formatNormalizationNotesForExplorerUi(['berlin-5-digit→8-digit-rs'])).toContain('Berlin')
     expect(formatNormalizationNotesForExplorerUi(['unexpected-digit-length:9'])).toContain('9')
     expect(formatNormalizationNotesForExplorerUi(['unknown-token'])).toBe('unknown-token')
   })

@@ -14,9 +14,9 @@ describe('berlinBezirkToCanonical', () => {
   })
 })
 
-describe('normalizeOsmValue berlin-bezirk-ags', () => {
+describe('normalizeOsmValue berlin-bezirk-rs5', () => {
   test('5-digit regionalschlüssel', () => {
-    const n = normalizeOsmValue('de:regionalschluessel', '11001', 'berlin-bezirk-ags')
+    const n = normalizeOsmValue('de:regionalschluessel', '11001', 'berlin-bezirk-rs5')
     expect(n.canonicalMatchKey).toBe('11000001')
     expect(n.notes.some((x) => x.includes('berlin'))).toBe(true)
   })
@@ -24,7 +24,7 @@ describe('normalizeOsmValue berlin-bezirk-ags', () => {
 
 describe('normalizeOfficialValue', () => {
   test('strips to digits', () => {
-    expect(normalizeOfficialValue('11000001', 'berlin-bezirk-ags')).toBe('11000001')
+    expect(normalizeOfficialValue('11000001', 'berlin-bezirk-rs5')).toBe('11000001')
   })
   test('regional-12 pads short BKG ARS to 12 digits', () => {
     expect(normalizeOfficialValue('01001', 'regional-12')).toBe('010010000000')
@@ -33,9 +33,8 @@ describe('normalizeOfficialValue', () => {
   test('regional-12 truncates long ARS', () => {
     expect(normalizeOfficialValue('1200000000001', 'regional-12')).toBe('120000000000')
   })
-  test('brandenburg-gemeinden-8 converts semicolon key to LLRKKGGG', () => {
-    expect(normalizeOfficialValue('12;0;60;280', 'brandenburg-gemeinden-8')).toBe('12060280')
-    expect(normalizeOfficialValue('12;0;51;000', 'brandenburg-gemeinden-8')).toBe('12051000')
+  test('amtlicher-8 keeps 8-digit AGS as canonical key', () => {
+    expect(normalizeOfficialValue('12073532', 'amtlicher-8')).toBe('12073532')
   })
   test('plz-5 normalizes official values to 5 digits', () => {
     expect(normalizeOfficialValue('13585', 'plz-5')).toBe('13585')
@@ -52,11 +51,10 @@ describe('normalizeOsmValue regional-12', () => {
   })
 })
 
-describe('normalizeOsmValue brandenburg-gemeinden-8', () => {
-  test('derives LLRKKGGG from 12-digit de:regionalschluessel', () => {
-    const n = normalizeOsmValue('de:regionalschluessel', '120605003024', 'brandenburg-gemeinden-8')
-    expect(n.canonicalMatchKey).toBe('12060024')
-    expect(n.notes.some((x) => x.includes('first5-plus-last3'))).toBe(true)
+describe('normalizeOsmValue amtlicher-8', () => {
+  test('keeps 8-digit AGS unchanged', () => {
+    const n = normalizeOsmValue('de:amtlicher_gemeindeschluessel', '12073532', 'amtlicher-8')
+    expect(n.canonicalMatchKey).toBe('12073532')
   })
 })
 

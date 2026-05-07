@@ -18,7 +18,7 @@
     },
   },
   "idNormalization": {
-    "preset": "berlin-bezirk-ags",
+    "preset": "berlin-bezirk-rs5",
   },
   "metricsCrs": "EPSG:32633",
 

@@ -63,14 +63,7 @@ const compareSchema = z
   })
 
 const idNormalizationSchema = z.object({
-  preset: z.enum([
-    'berlin-bezirk-ags',
-    'amtlicher-8',
-    'regional-12',
-    'brandenburg-gemeinden-8',
-    'plz-5',
-    'text',
-  ]),
+  preset: z.enum(['berlin-bezirk-rs5', 'amtlicher-8', 'regional-12', 'plz-5', 'text']),
 })
 
 const ogcInspectSourceSchema = z
