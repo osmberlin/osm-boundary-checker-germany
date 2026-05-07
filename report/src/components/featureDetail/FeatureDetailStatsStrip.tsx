@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react'
+import { useId } from 'react'
 import { buildResolvedOsmSourceSide } from '../../../../scripts/shared/osmGermanyProvenance.ts'
 import { categoryLabelDe, de, issueLevelLabelDe } from '../../i18n/de'
 import { isOlderThanDays } from '../../lib/dataAge'
