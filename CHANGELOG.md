@@ -4,6 +4,14 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-05
 
+### `7873f42`
+
+Die Seiten zeigen jetzt einen Lade-Spinner, wenn sie geladen werden. Einige Seiten sind leider sehr groß und laden daher länger.
+
+### `9015e77`
+
+Wenn man die Live OSM Daten anzeigen lässt, verlinken die Ergebnisse jetzt auf osm.org. Und es gibt Hilfs-Links zum Schlüssel-Explorer. Und die Werte aus den Referenzdaten, werden in den OSM Daten gesucht und hervorgehoben. Damit ist es einfacher zu verstehen, welche OSM Daten editiert werden müssen um ein Match zu erhalten.
+
 ### `5a370a1`, `22ad7ab`
 
 Auf der Karte der Detailseite kann man jetzt die Anzeige zwischen der ausgewählten Grenze und allen Grenzen wechseln. Das erlaubt den Wechsel zu benachbarten Detailansichten sowie besser zu verstehen, wie man Grenzen präzisieren muss im Editor, wenn mehrere Grenzen aufeinander treffen. Denn die Editor-Grenzen enthalten immer nur den ausgewählten Datensatz, nicht die Nachbarn.
@@ -12,11 +20,11 @@ Auf der Karte der Detailseite kann man jetzt die Anzeige zwischen der ausgewähl
 
 Bessere Darstellung der Regeln, die beim Vergleich der Grenzen angewendet werden.
 
-### `7b4309a`, `741b621`, `8fd017c`, `5754fdf`, `5135821`
+### `7b4309a`, `741b621`, `8fd017c`, `5754fdf`, `5135821`, `4e7c048`
 
 Hilfswerkzeug [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) hat eine statische (per Skript manuell zu aktualisierende) Liste aller Schlüssel die wir zum Datenabgleich nutzen. Einschließlich einiger historischer Daten, die nicht mehr aktuell sind, aber in OSM noch in Verwendung sein können.
 
-### `f6ad863`, `e712d51`, `31cb300`, `c03bbcf`, `602ea38`, `e26f71a`
+### `f6ad863`, `e712d51`, `31cb300`, `c03bbcf`, `602ea38`, `e26f71a`, `76074f3`
 
 Pro Datensatz extrahieren wir jetzt ein Datum der offiziellen letzten Aktualisierung. Das ist wichtig um die Daten einzuschätzen. Bspw. sind in den BKG Daten die Schlüssel von Anfang des Jahres verwendet, aber inzwischen gibt es neuere Datensätze zu den Schlüsseln. Genau Daten helfen solche Sonderfälle zu erkennen.
 
