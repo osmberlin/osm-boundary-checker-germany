@@ -233,7 +233,11 @@ function runOgr2ogr(gpkg: string, layer: string, outFgb: string, where?: string)
   if (where) {
     args.push('-where', where)
   }
-  const r = spawnSync('ogr2ogr', args, { encoding: 'utf-8', stdio: ['ignore', 'inherit', 'pipe'] })
+  const r = spawnSync('ogr2ogr', args, {
+    encoding: 'utf-8',
+    stdio: ['ignore', 'inherit', 'pipe'],
+    env: { ...process.env, OGR_GEOMETRY_ACCEPT_UNCLOSED_RING: 'YES' },
+  })
   if (r.status !== 0) {
     const detail = (r.stderr ?? '').trim() || '(no stderr)'
     throw new Error(
