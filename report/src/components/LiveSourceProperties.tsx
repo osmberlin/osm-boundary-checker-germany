@@ -14,6 +14,7 @@ import {
 } from '../lib/liveRowKey'
 import { buildOverpassBoundaryQuery, type OverpassBoundaryHit } from '../lib/overpassBbox'
 import { DEFAULT_OVERPASS_INTERPRETER_URL, OVERPASS_INSTANCES } from '../lib/overpassServers'
+import { withSiteBasePath } from '../lib/siteBasePath'
 import { padMapBbox, type WfsFeature } from '../lib/wfsGetFeature'
 import {
   useHiddenLiveRowKeys,
@@ -94,6 +95,7 @@ function PropertyCard({
   properties,
   variant,
   osmBrowseLink,
+  boundaryCheckerLink,
   germanKeyContext,
   datasetSnapshotValueMatches,
   disclosure,
@@ -103,6 +105,8 @@ function PropertyCard({
   variant: 'official' | 'osm'
   /** When set (Overpass hit), an icon link to osm.org is rendered on the right of the summary row. */
   osmBrowseLink?: { type: string; id: number }
+  /** Optional deep link to this app's relation resolver route. */
+  boundaryCheckerLink?: string
   germanKeyContext?: { data: ComparisonForReport }
   /** Serialized values from VG250/OSM snapshot cards; matching live rows use Overpass magenta. */
   datasetSnapshotValueMatches?: ReadonlySet<string>
@@ -159,18 +163,37 @@ function PropertyCard({
             </span>
           </span>
           {osmBrowseLink ? (
-            <a
-              href={`https://www.openstreetmap.org/${osmBrowseLink.type}/${osmBrowseLink.id}`}
-              target="_blank"
-              rel="noreferrer noopener"
-              title={de.feature.updateMap.opensInNewWindowTitle}
-              aria-label={de.feature.liveOsmHitOpenLinkAria(osmBrowseLink.type, osmBrowseLink.id)}
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex shrink-0 items-center gap-1 text-xs text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-            >
-              {de.feature.liveOsmHitOpenLink}
-              <ArrowTopRightOnSquareIcon aria-hidden="true" className="h-3.5 w-3.5" />
-            </a>
+            <span className="inline-flex shrink-0 items-center gap-3 text-xs">
+              <a
+                href={`https://www.openstreetmap.org/${osmBrowseLink.type}/${osmBrowseLink.id}`}
+                target="_blank"
+                rel="noreferrer noopener"
+                title={de.feature.updateMap.opensInNewWindowTitle}
+                aria-label={de.feature.liveOsmHitOpenLinkAria(osmBrowseLink.type, osmBrowseLink.id)}
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+              >
+                {de.feature.liveOsmHitOpenLink}
+                <ArrowTopRightOnSquareIcon aria-hidden="true" className="h-3.5 w-3.5" />
+              </a>
+              {boundaryCheckerLink ? (
+                <a
+                  href={boundaryCheckerLink}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  title={de.feature.updateMap.opensInNewWindowTitle}
+                  aria-label={de.feature.liveOsmHitOpenBoundaryCheckerAria(
+                    osmBrowseLink.type,
+                    osmBrowseLink.id,
+                  )}
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+                >
+                  {de.feature.liveOsmHitOpenBoundaryChecker(osmBrowseLink.id)}
+                  <ArrowTopRightOnSquareIcon aria-hidden="true" className="h-3.5 w-3.5" />
+                </a>
+              ) : null}
+            </span>
           ) : null}
         </div>
       </summary>
@@ -320,6 +343,18 @@ export function LiveSourceProperties({
 
   const [osm, setOsm] = useState<OsmSlot>({ status: 'idle' })
   const osmHits = overpass.hits
+  const datasetForResolver = data.area.trim()
+
+  const buildBoundaryCheckerResolverLink = useCallback(
+    (relationId: number) => {
+      const query = new URLSearchParams()
+      if (datasetForResolver !== '') query.set('dataset', datasetForResolver)
+      const search = query.toString()
+      const path = `/resolve/relation/${relationId}${search ? `?${search}` : ''}`
+      return withSiteBasePath(path)
+    },
+    [datasetForResolver],
+  )
 
   // Row keys for each section's "hide all / show all" toggle.
   // Computed inline (not memoized) because `wfs.getStatus` returns fresh values on each render
@@ -608,6 +643,7 @@ export function LiveSourceProperties({
                         rowKey={overpassLiveRowKey(hit.type, hit.id)}
                         title={de.feature.liveOsmHitTitle(hit.type, hit.id)}
                         osmBrowseLink={{ type: hit.type, id: hit.id }}
+                        boundaryCheckerLink={buildBoundaryCheckerResolverLink(hit.id)}
                         properties={withoutNameStarTags(hit.tags) as Record<string, unknown>}
                         variant="osm"
                         germanKeyContext={{ data }}

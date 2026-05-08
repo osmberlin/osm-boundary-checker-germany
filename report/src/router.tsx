@@ -11,10 +11,12 @@ import { ReportLayout } from './App'
 import { RouteLoadingPane } from './components/RouteLoadingPane'
 import { areasIndex } from './data/areasIndex'
 import { comparisonQueryOptions, featureQueryOptions, snapshotsQueryOptions } from './data/load'
-import { routerBasePath } from './data/paths'
+import { relationResolverIndexUrl, routerBasePath } from './data/paths'
 import { de } from './i18n/de'
 import { validateFeatureDetailSearch } from './lib/featureDetailSearch'
 import { validateGermanKeySearch } from './lib/germanKeySearch'
+import { decideRelationResolution, type RelationResolverCandidate } from './lib/relationResolver'
+import { validateRelationResolverSearch } from './lib/relationResolverSearch'
 import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
 import { stringifySearchPretty } from './lib/routerSearchStringify'
 import { safeDecodeURIComponent } from './lib/safeDecodeURIComponent'
@@ -25,6 +27,7 @@ import { FeatureDetail } from './pages/FeatureDetail'
 import { GermanKeyExplorer } from './pages/GermanKeyExplorer'
 import { Home } from './pages/Home'
 import { ProcessingStatus } from './pages/ProcessingStatus'
+import { RelationResolver } from './pages/RelationResolver'
 import { ReviewQueue } from './pages/ReviewQueue'
 import type { ComparisonForReport } from './types/report'
 
@@ -165,6 +168,46 @@ const featureRoute = createRoute({
   component: FeatureDetail,
 })
 
+const relationResolverRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/resolve/relation/$relationId',
+  validateSearch: (search: Record<string, unknown>) => validateRelationResolverSearch(search),
+  loaderDeps: ({ search }) => ({ dataset: search.dataset }),
+  loader: async ({ params, deps }) => {
+    const relationId = params.relationId
+    const response = await fetch(relationResolverIndexUrl())
+    if (!response.ok) {
+      throw new Error(`Failed to load relation resolver index: ${response.status}`)
+    }
+    const resolverIndex = (await response.json()) as {
+      byRelationId?: Record<string, readonly RelationResolverCandidate[]>
+    }
+    const candidates = [...(resolverIndex.byRelationId?.[relationId] ?? [])]
+    const decision = decideRelationResolution({
+      candidates,
+      dataset: deps.dataset,
+    })
+    if (decision.kind === 'redirect') {
+      throw redirect({
+        to: '/$areaId/feature/$featureKey',
+        params: {
+          areaId: decision.candidate.areaId,
+          featureKey: decision.candidate.featureKey,
+        },
+      })
+    }
+    return {
+      relationId,
+      candidates: decision.candidates,
+      requestedDataset: decision.requestedDataset,
+    }
+  },
+  head: ({ params }) => ({
+    meta: [{ title: `${de.relationResolver.metaTitle(params.relationId)} | ${de.appTitle}` }],
+  }),
+  component: RelationResolver,
+})
+
 const fallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/*',
@@ -182,6 +225,7 @@ const routeTree = rootRoute.addChildren([
   germanKeyExplorerRoute,
   areaRoute,
   featureRoute,
+  relationResolverRoute,
   fallbackRoute,
 ])
 

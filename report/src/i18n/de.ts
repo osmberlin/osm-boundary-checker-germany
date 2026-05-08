@@ -346,6 +346,10 @@ export const de = {
     liveSectionShowAllAria: 'Alle Treffer auf der Karte einblenden',
     liveOsmHitOpenLink: 'osm.org',
     liveOsmHitOpenLinkAria: (osmType: string, id: number) => `${osmType} ${id} auf osm.org öffnen`,
+    liveOsmHitOpenBoundaryChecker: (relationId: number) =>
+      `Grenzabgleich für Relation ${relationId} öffnen`,
+    liveOsmHitOpenBoundaryCheckerAria: (osmType: string, id: number) =>
+      `${osmType} ${id} im Grenzabgleich öffnen`,
 
     datasetPropertiesSectionAria: 'Attribute aus dem Vergleich (amtlich und OSM)',
     datasetPropertiesSectionTitle: 'Attribute zum Zeitpunkt des Vergleichs',
@@ -400,12 +404,41 @@ export const de = {
     /** 3rd column status: key from filtered official is missing in OSM live. Renders <code>{wert}</code> between prefix and suffix. */
     datasetOsmLiveCompareMissingPrefix: 'Wert',
     datasetOsmLiveCompareMissingSuffix: 'der amtlichen Daten könnte ergänzt werden.',
+    /** Separate informational block for official indicators that help verification but are not 1:1 OSM tags. */
+    datasetIndicatorsHeading: 'Hinweise zur Verifizierung',
+    datasetIndicatorsLead:
+      'Diese Felder werden nicht direkt gegen OSM-Tags verglichen, können aber zur Plausibilitätsprüfung genutzt werden.',
+    datasetIndicatorDescBEM:
+      'Bemerkung zur administrativen Einordnung (z. B. kreisfrei) als Kontext für die Prüfung.',
+    datasetIndicatorDescBEZ:
+      'Bezeichnung der Verwaltungseinheit (z. B. Stadt/Gemeinde/Landkreis) zur Typ-Validierung.',
+    datasetIndicatorDescBSG:
+      'Sondergebiets-Kennzeichnung (z. B. Bodensee/Hoheitsgebiet) für Ausnahmefälle.',
+    datasetIndicatorDescNBD:
+      'Kennzeichnet, ob die Bezeichnung Bestandteil des amtlichen Namens ist (Namensprüfung).',
 
     expectedOsmTagsSectionAria: 'Erwartete OSM-Tags für den Abgleich',
     expectedOsmTagsSectionTitle: 'Erwartete OSM-Tags',
     expectedOsmTagsSectionLead:
       'Diese Grenze ist in OpenStreetMap bisher nicht zugeordnet. Damit der Abgleich greift, sollte die passende Grenz-Relation folgende Tags enthalten (laut aktueller Datensatz-Konfiguration):',
     decodeKeyExplorerLink: 'Schlüssel-Felder dekodieren',
+
+    candidatesSectionAria: 'OSM-Kandidaten für diese amtliche Grenze',
+    candidatesSectionTitle: 'OSM-Kandidaten',
+    candidatesSectionLead:
+      'Kandidaten sind OSM-Objekte, die zum amtlichen Datensatz passen könnten, aber nicht über das konfigurierte Schlüssel-Tag zugeordnet werden konnten. Geprüft wird: gleiches boundary/admin_level- bzw. postal_code-Schema, der Mittelpunkt liegt im amtlichen Polygon (auf 70 % verkleinert). So lassen sich fehlende oder fehlerhafte Schlüssel-Tags schneller finden, ohne die strenge Schlüssel-Logik der Pipeline aufzuweichen.',
+    candidatesEmpty: 'Keine Kandidaten gefunden.',
+    candidatesColumnObject: 'OSM-Objekt',
+    candidatesColumnName: 'Name',
+    candidatesColumnAdminLevel: 'admin_level',
+    candidatesColumnPostalCode: 'postal_code',
+    candidatesColumnDeRs: 'de:regionalschluessel',
+    candidatesColumnDeAgs: 'de:amtlicher_gemeindeschluessel',
+    candidatesColumnActions: 'Aktionen',
+    candidatesEditLink: 'In iD bearbeiten',
+    candidatesViewLink: 'Auf osm.org',
+    candidatesNoName: '(ohne Name)',
+    candidatesEmptyValue: '–',
     matcherContextSectionAria: 'Vergleichsregeln für diesen Datensatz',
     matcherContextSectionTitle: 'Abgleich: OSM-Referenz und Filter',
     matcherContextSectionLead:
@@ -599,6 +632,18 @@ export const de = {
       'Geometrien werden bis Zoom 15 wahrscheinlich vereinfacht dargestellt.',
     fullDetailFromZoom15: 'Geometrien sollten volle Details haben.',
     zoomInForFullDetail: 'Auf Zoom 15 wechseln',
+  },
+
+  relationResolver: {
+    metaTitle: (relationId: string) => `Grenzabgleich für Relation ${relationId} öffnen`,
+    title: (relationId: string) => `Grenzabgleich für Relation ${relationId} öffnen`,
+    requestedDataset: (dataset: string) => `Dataset-Filter: ${dataset}`,
+    notFound: 'Für diese Relation wurde kein Ziel im aktuellen Grenzvergleich gefunden.',
+    listLead:
+      'Mehrere oder keine passenden Ziele für den Dataset-Filter gefunden. Bitte Ziel auswählen:',
+    datasetLabel: (dataset: string) => `Datensatz: ${dataset}`,
+    mismatchedDatasetHint: 'Anderer Datensatz als im Filter angefragt.',
+    openFeature: 'Detailansicht öffnen',
   },
 
   /** Copy shown by route-level `pendingComponent` while the loader fetches data. */

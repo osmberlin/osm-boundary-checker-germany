@@ -85,6 +85,10 @@ async function main() {
     join(runtimeRoot, 'data', 'run-status.json'),
     join(destDataRoot, 'run-status.json'),
   )
+  await copyIfExists(
+    join(runtimeRoot, 'data', 'relation-resolver-index.json'),
+    join(destDataRoot, 'relation-resolver-index.json'),
+  )
 
   if (germanKeyLookupBackup !== null) {
     await mkdir(destDataRoot, { recursive: true })

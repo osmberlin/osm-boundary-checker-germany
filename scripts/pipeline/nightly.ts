@@ -103,6 +103,8 @@ type PipelineStepName =
   | 'extract:bkg'
   | 'extract:osm'
   | 'extract:osm:plz'
+  | 'extract:osm:admin_candidates'
+  | 'extract:osm:plz_candidates'
 type PipelineStep = { step: PipelineStepName; args: string[] }
 
 function nowIso(): string {
@@ -262,6 +264,8 @@ async function main() {
   let skipExtractBkg = false
   let skipExtractOsmAdmin = false
   let skipExtractOsmPlz = false
+  let skipExtractOsmAdminCandidates = false
+  let skipExtractOsmPlzCandidates = false
 
   try {
     const downloadSteps: PipelineStep[] = [
@@ -275,6 +279,16 @@ async function main() {
       { step: 'extract:osm', args: ['run', 'osm:extract'] },
       // `brandenburg-berlin-plz` uses `.cache/osm/germany-postal-code-boundaries.fgb` from the same filtered PBF.
       { step: 'extract:osm:plz', args: ['run', 'osm:extract', '--', '--kind', 'plz'] },
+      // Points-only candidates FGBs feed the additive `match_candidates` compare phase. They reuse
+      // the same filtered PBF as their polygon counterparts, so they typically run in <10 s combined.
+      {
+        step: 'extract:osm:admin_candidates',
+        args: ['run', 'osm:extract', '--', '--kind', 'admin_candidates'],
+      },
+      {
+        step: 'extract:osm:plz_candidates',
+        args: ['run', 'osm:extract', '--', '--kind', 'plz_candidates'],
+      },
     ]
 
     const runPhaseSteps = async (phaseSteps: PipelineStep[]) => {
@@ -290,7 +304,9 @@ async function main() {
         const shouldSkipFromFallback =
           (phaseStep.step === 'extract:bkg' && skipExtractBkg) ||
           (phaseStep.step === 'extract:osm' && skipExtractOsmAdmin) ||
-          (phaseStep.step === 'extract:osm:plz' && skipExtractOsmPlz)
+          (phaseStep.step === 'extract:osm:plz' && skipExtractOsmPlz) ||
+          (phaseStep.step === 'extract:osm:admin_candidates' && skipExtractOsmAdminCandidates) ||
+          (phaseStep.step === 'extract:osm:plz_candidates' && skipExtractOsmPlzCandidates)
         let commandExitCode = 0
         if (shouldSkipFromFallback) {
           stepStatus = 'skipped'
@@ -345,6 +361,8 @@ async function main() {
                   finalExitCode = 0
                   skipExtractOsmAdmin = true
                   skipExtractOsmPlz = true
+                  skipExtractOsmAdminCandidates = true
+                  skipExtractOsmPlzCandidates = true
                 } else {
                   stepStatus = 'fail'
                 }
@@ -383,6 +401,8 @@ async function main() {
               case 'extract:bkg':
               case 'extract:osm':
               case 'extract:osm:plz':
+              case 'extract:osm:admin_candidates':
+              case 'extract:osm:plz_candidates':
                 stepStatus = 'fail'
                 break
             }
@@ -503,6 +523,33 @@ async function main() {
         })
         failed = true
       }
+
+      const relationIndexStep = 'pipeline:relation-resolver-index'
+      const relationIndexT0 = Date.now()
+      appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step: relationIndexStep })
+      const relationIndexExitCode = await runCommand(
+        'bun',
+        ['run', 'scripts/pipeline/generate-relation-resolver-index.ts'],
+        workspaceRoot,
+        relationIndexStep,
+      )
+      const relationIndexDurationMs = Date.now() - relationIndexT0
+      appendJsonl(logPath, {
+        kind: 'step_end',
+        runId,
+        at: nowIso(),
+        step: relationIndexStep,
+        status: relationIndexExitCode === 0 ? 'ok' : 'fail',
+        durationMs: relationIndexDurationMs,
+        exitCode: relationIndexExitCode,
+      })
+      upsertSharedBranchStatus(processingDir, relationIndexStep, {
+        status: relationIndexExitCode === 0 ? 'success' : 'failed_no_cache',
+        usedCache: false,
+        errorCode: relationIndexExitCode === 0 ? undefined : String(relationIndexExitCode),
+        retryHint: relationIndexExitCode === 0 ? undefined : 'automatic retry next nightly run',
+      })
+      if (relationIndexExitCode !== 0) failed = true
     }
 
     const finalStatus = failed ? 'fail' : 'ok'
