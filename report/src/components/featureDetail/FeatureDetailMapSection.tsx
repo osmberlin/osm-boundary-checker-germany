@@ -180,7 +180,7 @@ export function FeatureDetailMapSection({
         open={overlapPickKeys !== null}
         keys={overlapPickKeys}
         areaKey={areaKey}
-        data={data}
+        data={interactionData}
         onClose={() => setOverlapPickKeys(null)}
       />
     </>
