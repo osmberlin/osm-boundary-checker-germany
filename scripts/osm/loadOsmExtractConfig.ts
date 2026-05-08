@@ -5,7 +5,10 @@ import { loadBoundaryConfig } from '../compare/lib/config.ts'
 import { loadAreaConfig } from '../shared/areaConfig.ts'
 import type { DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
-import { DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS } from '../shared/germanyOsmPbf.ts'
+import {
+  DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS,
+  GERMANY_OSM_SHARED_FGB_BASENAME,
+} from '../shared/germanyOsmPbf.ts'
 
 export type OsmExtractOverrideConfig = {
   selectProperties?: string[]
@@ -85,7 +88,10 @@ export function loadSharedAdminOsmExtractConfig(
   for (const area of discoverAreaFolders(workspaceRoot)) {
     const rawDoc = loadAreaConfig(workspaceRoot, area)
     const boundary = loadBoundaryConfig(rawDoc, area)
-    const usesSharedAdminFgb = boundary.osm.profileId === 'admin_rs'
+    // `admin_ags` / `admin_name` use the same shared FGB basename as `admin_rs` but were
+    // previously skipped here, so `de:amtlicher_gemeindeschluessel` never got SELECTed into
+    // the FlatGeobuf and AGS-first compares always saw an empty AGS tag.
+    const usesSharedAdminFgb = boundary.osm.sharedFgbBasename === GERMANY_OSM_SHARED_FGB_BASENAME
     if (!usesSharedAdminFgb) continue
 
     if (boundary.osm.matchCriteria?.kind !== 'relation_id') {

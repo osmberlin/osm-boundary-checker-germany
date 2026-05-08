@@ -2,7 +2,9 @@
 import { spawnSync } from 'node:child_process'
 /**
  * Build one shared OSM FlatGeobuf for all compare runs:
- * administrative boundaries with non-empty `de:regionalschluessel`.
+ * administrative boundaries matching any configured inclusion tag on shared-FGB datasets
+ * (typically non-empty `de:regionalschluessel`, plus e.g. `de:amtlicher_gemeindeschluessel`
+ * where `admin_ags` areas are configured).
  *
  * Outputs:
  * - admin (`--kind admin`, default): `.cache/osm/germany-admin-boundaries-rs.fgb`
