@@ -28,8 +28,8 @@ const areaHomeSummarySchema = z.object({
   unmatchedOsm: z.number(),
   reviews: z.number(),
   issues: z.number(),
-  /** From area `config.jsonc` + osmProfile (for report UI; not from comparison_table). */
-  osmMatchProperty: z.string().min(1).optional(),
+  /** Ordered OSM match keys from area config/osmProfile (primary first). */
+  osmMatchProperties: z.array(z.string().min(1)).min(1).optional(),
   osmAdminLevels: z.array(z.string().min(1)).optional(),
 })
 export type AreaHomeSummary = z.infer<typeof areaHomeSummarySchema>
@@ -37,16 +37,20 @@ export type AreaHomeSummary = z.infer<typeof areaHomeSummarySchema>
 function osmMatchRulesFromAreaConfig(
   workspaceRoot: string,
   area: string,
-): { osmMatchProperty?: string; osmAdminLevels?: string[] } {
+): { osmMatchProperties?: string[]; osmAdminLevels?: string[] } {
   try {
     const cfg = loadAreaConfig(workspaceRoot, area)
     const matchProperty = resolveOsmProfile(cfg.osmProfile).matchProperty
+    const osmMatchProperties =
+      cfg.osmProfile === 'admin_ags'
+        ? ['de:amtlicher_gemeindeschluessel', 'de:regionalschluessel']
+        : [matchProperty]
     const adminLevels =
       cfg.osm?.adminLevels != null && cfg.osm.adminLevels.length > 0
         ? [...cfg.osm.adminLevels]
         : undefined
     return {
-      osmMatchProperty: matchProperty,
+      osmMatchProperties,
       ...(adminLevels ? { osmAdminLevels: adminLevels } : {}),
     }
   } catch {
@@ -257,7 +261,9 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
         unmatchedOsm: unmatched,
         reviews,
         issues,
-        ...(fromConfig.osmMatchProperty ? { osmMatchProperty: fromConfig.osmMatchProperty } : {}),
+        ...(fromConfig.osmMatchProperties
+          ? { osmMatchProperties: fromConfig.osmMatchProperties }
+          : {}),
         ...(fromConfig.osmAdminLevels ? { osmAdminLevels: fromConfig.osmAdminLevels } : {}),
       }
       out.push(summary)

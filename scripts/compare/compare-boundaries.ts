@@ -49,6 +49,10 @@ function nowIso(): string {
 
 function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfigSummary {
   const osmProfile = resolveOsmProfile(configRaw.osmProfile)
+  const osmMatchProperties =
+    configRaw.osmProfile === 'admin_ags'
+      ? ['de:amtlicher_gemeindeschluessel', 'de:regionalschluessel']
+      : [osmProfile.matchProperty]
   return {
     officialMatchProperty: configRaw.compare.officialMatchProperty,
     bboxFilter: configRaw.compare.bboxFilter,
@@ -56,7 +60,7 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
       ? { bboxBufferDegrees: configRaw.compare.bboxBufferDegrees }
       : {}),
     osmScopeFilter: configRaw.compare.osmScopeFilter,
-    osmMatchProperty: osmProfile.matchProperty,
+    osmMatchProperties,
     ...(configRaw.osm?.adminLevels?.length ? { adminLevels: [...configRaw.osm.adminLevels] } : {}),
     ...(configRaw.osm?.ignoreRelationIds?.length
       ? { ignoreRelationIds: [...configRaw.osm.ignoreRelationIds] }

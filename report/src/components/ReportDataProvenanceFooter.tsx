@@ -124,13 +124,23 @@ function matchCriteriaLine(mc: OsmMatchCriteriaSummary): { code: string; descrip
       }
 }
 
+function resolvedOsmMatchProperties(
+  data: ComparisonForReport,
+  filter: ComparisonFilterConfigSummary | undefined,
+): string[] {
+  const summary = areasIndex.summaries.find((x) => x.area === data.area)
+  const fromFilter =
+    filter?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ?? []
+  if (fromFilter.length > 0) return fromFilter
+  return summary?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ?? []
+}
+
 function compareMappingItems(
   data: ComparisonForReport,
   filter: ComparisonFilterConfigSummary | undefined,
 ) {
   const p = de.provenance
-  const summary = areasIndex.summaries.find((x) => x.area === data.area)
-  const osmMatchProp = filter?.osmMatchProperty?.trim() || summary?.osmMatchProperty
+  const osmMatchProps = resolvedOsmMatchProperties(data, filter)
   const preset = data.idNormalizationPreset
   const mc = data.osmMatchCriteria
 
@@ -151,11 +161,12 @@ function compareMappingItems(
     )
   }
 
-  if (osmMatchProp) {
+  for (let i = 0; i < osmMatchProps.length; i++) {
+    const osmMatchProp = osmMatchProps[i]!
     items.push(
       <FilterItem
-        key="compare-osm-tag"
-        code={`osmMatchTag=${osmMatchProp}`}
+        key={`compare-osm-tag-${i}-${osmMatchProp}`}
+        code={`osmMatchTag[${i}]=${osmMatchProp}`}
         description={p.compareOsmMatchTag(osmMatchProp)}
       />,
     )

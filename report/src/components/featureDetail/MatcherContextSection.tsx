@@ -29,7 +29,11 @@ export function MatcherContextSection({
   const f = data.filterConfigSummary
   const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
   const officialProp = f?.officialMatchProperty ?? '—'
-  const osmProp = f?.osmMatchProperty ?? summary?.osmMatchProperty ?? '—'
+  const osmMatchProperties =
+    f?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
+    summary?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
+    []
+  const osmProp = osmMatchProperties.length > 0 ? osmMatchProperties.join(', ') : '—'
   const adminLevels = f?.adminLevels?.join(', ') ?? summary?.osmAdminLevels?.join(', ') ?? '—'
   const bbox =
     f?.bboxFilter === 'official_bbox_overlap'
@@ -40,8 +44,9 @@ export function MatcherContextSection({
   const idPreset = data.idNormalizationPreset ?? '—'
   const mc = data.osmMatchCriteria
 
-  const mp = osmProp.trim()
-  const showKeyExplorer = mp === 'de:regionalschluessel' || mp === 'de:amtlicher_gemeindeschluessel'
+  const showKeyExplorer = osmMatchProperties.some(
+    (mp) => mp === 'de:regionalschluessel' || mp === 'de:amtlicher_gemeindeschluessel',
+  )
 
   return (
     <section

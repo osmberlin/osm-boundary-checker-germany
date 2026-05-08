@@ -38,7 +38,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 0,
       issues: 0,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
     },
     {
       area: 'berlin-ortsteile',
@@ -48,7 +48,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 6,
       issues: 0,
-      osmMatchProperty: 'name',
+      osmMatchProperties: ['name'],
       osmAdminLevels: ['10'],
     },
     {
@@ -59,7 +59,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 29,
       issues: 102,
-      osmMatchProperty: 'postal_code',
+      osmMatchProperties: ['postal_code'],
     },
     {
       area: 'brandenburg-berlin-plz',
@@ -69,27 +69,28 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 54,
       issues: 149,
-      osmMatchProperty: 'postal_code',
+      osmMatchProperties: ['postal_code'],
     },
     {
       area: 'brandenburg-gemeinden',
       displayName: 'Brandenburg Gemeinden',
-      matched: 409,
-      officialOnly: 4,
-      unmatchedOsm: 65,
-      reviews: 40,
+      matched: 407,
+      officialOnly: 6,
+      unmatchedOsm: 0,
+      reviews: 41,
       issues: 24,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:amtlicher_gemeindeschluessel', 'de:regionalschluessel'],
+      osmAdminLevels: ['8'],
     },
     {
       area: 'de-gemeinden-bb',
       displayName: 'Deutschland Gemeinden (Brandenburg)',
-      matched: 400,
-      officialOnly: 13,
-      unmatchedOsm: 5,
-      reviews: 42,
+      matched: 407,
+      officialOnly: 6,
+      unmatchedOsm: 0,
+      reviews: 43,
       issues: 26,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:amtlicher_gemeindeschluessel', 'de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -100,7 +101,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 0,
       issues: 0,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -111,7 +112,7 @@ const areasIndex = {
       unmatchedOsm: 1,
       reviews: 33,
       issues: 16,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -122,7 +123,7 @@ const areasIndex = {
       unmatchedOsm: 2,
       reviews: 112,
       issues: 94,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -133,7 +134,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 0,
       issues: 0,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -144,7 +145,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 8,
       issues: 1,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -155,7 +156,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 0,
       issues: 0,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -166,7 +167,7 @@ const areasIndex = {
       unmatchedOsm: 2,
       reviews: 133,
       issues: 259,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -177,7 +178,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 58,
       issues: 127,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -188,7 +189,7 @@ const areasIndex = {
       unmatchedOsm: 3,
       reviews: 8,
       issues: 6,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -199,7 +200,7 @@ const areasIndex = {
       unmatchedOsm: 374,
       reviews: 279,
       issues: 1017,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -210,7 +211,7 @@ const areasIndex = {
       unmatchedOsm: 2,
       reviews: 184,
       issues: 648,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -221,7 +222,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 11,
       issues: 6,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -232,7 +233,7 @@ const areasIndex = {
       unmatchedOsm: 2,
       reviews: 55,
       issues: 88,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -243,7 +244,7 @@ const areasIndex = {
       unmatchedOsm: 1,
       reviews: 20,
       issues: 24,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -254,7 +255,7 @@ const areasIndex = {
       unmatchedOsm: 54,
       reviews: 61,
       issues: 422,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['8'],
     },
     {
@@ -265,7 +266,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 0,
       issues: 0,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['4'],
     },
     {
@@ -276,7 +277,7 @@ const areasIndex = {
       unmatchedOsm: 1,
       reviews: 3,
       issues: 6,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['6', '4'],
     },
     {
@@ -287,7 +288,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 0,
       issues: 0,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['5'],
     },
     {
@@ -298,7 +299,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 0,
       issues: 0,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
     },
     {
       area: 'de-verwaltungsgemeinschaften',
@@ -308,7 +309,7 @@ const areasIndex = {
       unmatchedOsm: 12,
       reviews: 75,
       issues: 97,
-      osmMatchProperty: 'de:regionalschluessel',
+      osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['7'],
     },
     {
@@ -319,7 +320,7 @@ const areasIndex = {
       unmatchedOsm: 0,
       reviews: 0,
       issues: 1,
-      osmMatchProperty: 'name',
+      osmMatchProperties: ['name'],
       osmAdminLevels: ['9'],
     },
   ],

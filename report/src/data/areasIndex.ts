@@ -8,8 +8,8 @@ export type AreaSummary = {
   unmatchedOsm: number
   reviews: number
   issues: number
-  /** OSM tag used as match key (from area config at `generate-areas` time). */
-  osmMatchProperty?: string
+  /** Ordered OSM match keys (from area config at `generate-areas` time). */
+  osmMatchProperties?: string[]
   /** OSM admin_level filter from area config (same source as compare). */
   osmAdminLevels?: string[]
 }
@@ -41,9 +41,11 @@ function parseAreaSummary(raw: unknown): AreaSummary | null {
   const rec = raw as Record<string, unknown>
   const area = typeof rec.area === 'string' ? rec.area : null
   if (!area) return null
-  const osmMatchProperty =
-    typeof rec.osmMatchProperty === 'string' && rec.osmMatchProperty.trim() !== ''
-      ? rec.osmMatchProperty.trim()
+  const rawMatchProps = rec.osmMatchProperties
+  const osmMatchProperties =
+    Array.isArray(rawMatchProps) &&
+    rawMatchProps.every((x) => typeof x === 'string' && x.trim() !== '')
+      ? (rawMatchProps as string[]).map((x) => x.trim())
       : undefined
   const rawAdmin = rec.osmAdminLevels
   const osmAdminLevels =
@@ -61,7 +63,7 @@ function parseAreaSummary(raw: unknown): AreaSummary | null {
     unmatchedOsm: typeof rec.unmatchedOsm === 'number' ? rec.unmatchedOsm : 0,
     reviews: typeof rec.reviews === 'number' ? rec.reviews : 0,
     issues: typeof rec.issues === 'number' ? rec.issues : 0,
-    ...(osmMatchProperty ? { osmMatchProperty } : {}),
+    ...(osmMatchProperties ? { osmMatchProperties } : {}),
     ...(osmAdminLevels ? { osmAdminLevels } : {}),
   }
 }

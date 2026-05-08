@@ -11,12 +11,12 @@ import { GermanKeyVerifyLink } from '../GermanKeyVerifyLink'
 function TagRows({
   boundaryValue,
   adminLevels,
-  matchProperty,
+  matchProperties,
   matchValue,
 }: {
   boundaryValue: string
   adminLevels: string[] | undefined
-  matchProperty: string | undefined
+  matchProperties: string[]
   matchValue: string
 }) {
   const rows: Array<{ key: string; value: string; reactKey: string }> = [
@@ -28,11 +28,12 @@ function TagRows({
       rows.push({ key: 'admin_level', value: level, reactKey: `admin_level-${i}-${level}` })
     }
   }
-  if (matchProperty?.trim()) {
+  for (let i = 0; i < matchProperties.length; i++) {
+    const matchProperty = matchProperties[i]!
     rows.push({
-      key: matchProperty.trim(),
+      key: matchProperty,
       value: matchValue,
-      reactKey: `match-${matchProperty.trim()}`,
+      reactKey: `match-${i}-${matchProperty}`,
     })
   }
 
@@ -77,10 +78,15 @@ export function ExpectedOsmTagsSection({
   const summary = areasIndex.summaries.find((s) => s.area === areaKey)
   const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
   const adminLevels = summary?.osmAdminLevels ?? data.filterConfigSummary?.adminLevels
-  const matchProperty = summary?.osmMatchProperty ?? data.filterConfigSummary?.osmMatchProperty
-  const mpTrim = matchProperty?.trim() ?? ''
-  const showKeyExplorer =
-    mpTrim === 'de:regionalschluessel' || mpTrim === 'de:amtlicher_gemeindeschluessel'
+  const matchProperties =
+    data.filterConfigSummary?.osmMatchProperties
+      ?.map((x) => x.trim())
+      .filter((x) => x.length > 0) ??
+    summary?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
+    []
+  const showKeyExplorer = matchProperties.some(
+    (mp) => mp === 'de:regionalschluessel' || mp === 'de:amtlicher_gemeindeschluessel',
+  )
 
   return (
     <section
@@ -114,7 +120,7 @@ export function ExpectedOsmTagsSection({
               <TagRows
                 boundaryValue={boundaryValue}
                 adminLevels={adminLevels}
-                matchProperty={matchProperty}
+                matchProperties={matchProperties}
                 matchValue={row.canonicalMatchKey}
               />
             </dd>

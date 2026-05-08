@@ -75,8 +75,8 @@ export type ComparisonFilterConfigSummary = {
   adminLevels?: string[]
   ignoreRelationIds?: string[]
   officialExtractLayer?: string
-  /** OSM tag used as match key (from osmProfile, e.g. de:regionalschluessel). */
-  osmMatchProperty?: string
+  /** Ordered OSM tags used as match keys (primary first; e.g. AGS then RS fallback). */
+  osmMatchProperties?: string[]
 }
 
 /** WFS source for live property loading (mirrors `ogcInspectSources` in area config). */
