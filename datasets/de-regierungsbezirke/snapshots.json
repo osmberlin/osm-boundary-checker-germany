@@ -88,7 +88,7 @@
       "id": "2026-05-08",
       "summary": {
         "totalRows": 19,
-        "meanIou": 0.9997309063939117,
+        "meanIou": 0.9997309063939508,
         "matched": 19,
         "unmatchedOsm": 0,
         "reviews": 0,

@@ -61,10 +61,10 @@
       "id": "2026-05-08",
       "summary": {
         "totalRows": 413,
-        "meanIou": 0.9942091585466521,
-        "matched": 400,
-        "unmatchedOsm": 5,
-        "reviews": 42,
+        "meanIou": 0.9942468674977443,
+        "matched": 407,
+        "unmatchedOsm": 0,
+        "reviews": 43,
         "issues": 26
       }
     },

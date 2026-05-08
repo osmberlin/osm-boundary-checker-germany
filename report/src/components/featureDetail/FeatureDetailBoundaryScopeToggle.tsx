@@ -27,10 +27,10 @@ export function FeatureDetailBoundaryScopeToggle({ className }: { className?: st
         <span className="relative inline-flex h-5 w-9 shrink-0 items-center">
           <input
             type="checkbox"
-            checked={showOnlySelected}
+            checked={!showOnlySelected}
             aria-label={de.feature.mapBoundaryScopeAria}
             className="peer sr-only"
-            onChange={(e) => setShowOnlySelected(e.target.checked)}
+            onChange={(e) => setShowOnlySelected(!e.target.checked)}
           />
           <span className="peer-checked:ring-brand-500/50 absolute inset-0 rounded-full bg-brand-950/90 ring-1 ring-brand-800/60 transition-colors duration-200 ease-in-out ring-inset peer-checked:bg-brand-800 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-500" />
           <span className="pointer-events-none absolute top-0.5 left-0.5 size-4 rounded-full bg-brand-50 shadow-sm ring-1 ring-brand-900/35 transition-transform duration-200 ease-in-out peer-checked:translate-x-4" />

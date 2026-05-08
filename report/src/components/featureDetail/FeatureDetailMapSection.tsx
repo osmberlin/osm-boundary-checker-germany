@@ -53,6 +53,7 @@ type MapLayerControls = {
 export function FeatureDetailMapSection({
   areaKey,
   data,
+  interactionData,
   row,
   mapLayers,
   mapView,
@@ -61,6 +62,7 @@ export function FeatureDetailMapSection({
 }: {
   areaKey: string
   data: ComparisonForReport
+  interactionData: ComparisonForReport
   row: ReportRow
   mapLayers: MapLayerControls
   mapView: {
@@ -101,11 +103,14 @@ export function FeatureDetailMapSection({
                   primary: {
                     pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
                     sourceLayer: data.tippecanoeLayer,
+                    allowedFeatureIds: showOnlySelected
+                      ? [row.canonicalMatchKey]
+                      : interactionData.rows.map((r) => r.canonicalMatchKey),
                     officialOnlyFeatureIds: showOnlySelected
                       ? row.category === 'official_only'
                         ? [row.canonicalMatchKey]
                         : []
-                      : data.rows
+                      : interactionData.rows
                           .filter((r) => r.category === 'official_only')
                           .map((r) => r.canonicalMatchKey),
                   },
@@ -113,7 +118,14 @@ export function FeatureDetailMapSection({
                     ? {
                         pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
                         sourceLayer: data.tippecanoeLayer,
-                        visible: row.category === 'unmatched_osm',
+                        allowedFeatureIds: showOnlySelected
+                          ? row.category === 'unmatched_osm'
+                            ? [row.canonicalMatchKey]
+                            : []
+                          : interactionData.unmatchedOsm.map((r) => r.canonicalMatchKey),
+                        visible:
+                          (row.category === 'unmatched_osm' || !showOnlySelected) &&
+                          mapLayers.showOsm,
                       }
                     : undefined,
                 }}
@@ -125,9 +137,18 @@ export function FeatureDetailMapSection({
                   onMoveEndCommitUrl: mapView.commitMapViewFromMap,
                 }}
                 layers={{
-                  showOfficial: row.category === 'unmatched_osm' ? false : mapLayers.showOfficial,
-                  showOsm: row.category === 'unmatched_osm' ? false : mapLayers.showOsm,
-                  showDiff: row.category === 'unmatched_osm' ? false : mapLayers.showDiff,
+                  showOfficial:
+                    row.category === 'unmatched_osm' && showOnlySelected
+                      ? false
+                      : mapLayers.showOfficial,
+                  showOsm:
+                    row.category === 'unmatched_osm' && showOnlySelected
+                      ? false
+                      : mapLayers.showOsm,
+                  showDiff:
+                    row.category === 'unmatched_osm' && showOnlySelected
+                      ? false
+                      : mapLayers.showDiff,
                 }}
                 overlays={{
                   overpassGeojson,
@@ -141,7 +162,7 @@ export function FeatureDetailMapSection({
                           handleComparisonMapFeatureClick({
                             featureKeys,
                             areaKey,
-                            data,
+                            data: interactionData,
                             navigate,
                             onOverlapPick: setOverlapPickKeys,
                           }),

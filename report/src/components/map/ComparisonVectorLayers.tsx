@@ -16,6 +16,7 @@ export function ComparisonVectorLayers({
   showDiff,
   osmOverlay,
   osmStripePatternId,
+  stripePatternReady = true,
 }: {
   sourceId?: string
   pmtilesUrl: string
@@ -27,15 +28,16 @@ export function ComparisonVectorLayers({
   showOfficial: boolean
   showOsm: boolean
   showDiff: boolean
-  osmOverlay: (typeof mapLayerColors)['osmPaired']
+  osmOverlay: (typeof mapLayerColors)['osmPaired' | 'osmUnmatched']
   osmStripePatternId: string
+  stripePatternReady?: boolean
 }) {
   const o = mapLayerColors.officialMatched
   const s = osmOverlay
   const d = mapLayerColors.diff
 
   const hoveredExpr: ExpressionSpecification = ['boolean', ['feature-state', 'hover'], false]
-  const useStripeFill = sourceId === UNMATCHED_SOURCE_ID
+  const useStripeFill = sourceId === UNMATCHED_SOURCE_ID && stripePatternReady
   const useSolidOsmFill = !useStripeFill
 
   return (

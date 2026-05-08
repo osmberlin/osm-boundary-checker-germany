@@ -1,6 +1,6 @@
 import maplibregl from 'maplibre-gl'
 import type { ExpressionSpecification } from 'maplibre-gl'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
 import { Layer } from 'react-map-gl/maplibre'
 import MapLibre from 'react-map-gl/maplibre'
@@ -113,6 +113,7 @@ export default function MapPane({
   onZoomChange?: (zoom: number) => void
 }) {
   const skipNextMoveEndCommitRef = useRef(false)
+  const [isStripePatternReady, setIsStripePatternReady] = useState(false)
   const onFeatureClick = interaction?.onFeatureClick
   const { primary, unmatched } = sources
   const { featureId, mapBbox, maxBounds, urlMapView, onMoveEndCommitUrl } = view
@@ -177,6 +178,7 @@ export default function MapPane({
 
   function onLoad(e: { target: maplibregl.Map }) {
     ensureComparisonMapSprites(e.target)
+    setIsStripePatternReady(true)
     onZoomChange?.(e.target.getZoom())
     if (urlMapView) return
     if (!mapBbox) return
@@ -282,6 +284,7 @@ export default function MapPane({
         showDiff={showDiff}
         osmOverlay={mapLayerColors.osmPaired}
         osmStripePatternId={OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID}
+        stripePatternReady={isStripePatternReady}
       />
       <Layer
         id={`${SOURCE_ID}-overlay-official-only-fill`}
@@ -329,6 +332,7 @@ export default function MapPane({
           showDiff={false}
           osmOverlay={mapLayerColors.osmUnmatched}
           osmStripePatternId={OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID}
+          stripePatternReady={isStripePatternReady}
         />
       ) : null}
       <WfsOverlayLayers geojson={wfsGeojson} />

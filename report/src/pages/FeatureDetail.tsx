@@ -11,7 +11,7 @@ import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFo
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { RouteLoadingPane } from '../components/RouteLoadingPane'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
-import { featureQueryOptions, runStatusQueryOptions } from '../data/load'
+import { comparisonQueryOptions, featureQueryOptions, runStatusQueryOptions } from '../data/load'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useFeatureDetailOverpass } from '../hooks/useFeatureDetailOverpass'
 import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
@@ -29,6 +29,10 @@ export function FeatureDetail() {
   const featureQuery = useQuery({
     ...featureQueryOptions(areaKey, featureLookupKey),
     enabled: areaId != null && featureKey != null,
+  })
+  const comparisonQuery = useQuery({
+    ...comparisonQueryOptions(areaKey),
+    enabled: areaId != null,
   })
   const runStatusQuery = useQuery(runStatusQueryOptions())
   const data = featureQuery.data ?? null
@@ -72,6 +76,7 @@ export function FeatureDetail() {
       <FeatureDetailMapSection
         areaKey={areaKey}
         data={data}
+        interactionData={comparisonQuery.data ?? data}
         row={row}
         mapLayers={mapLayers}
         mapView={mapViewParam}
