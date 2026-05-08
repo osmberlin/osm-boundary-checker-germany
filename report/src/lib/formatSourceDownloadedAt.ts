@@ -1,6 +1,7 @@
 import {
   differenceInHours,
   differenceInMonths,
+  differenceInYears,
   format,
   formatDistanceToNow,
   isValid,
@@ -15,6 +16,12 @@ import { de as deLocale } from 'date-fns/locale'
  * day has clearly passed.
  */
 const HOUR_DAY_THRESHOLD = 26
+
+/**
+ * Above this many full months we switch from "X Monate alt" to year counts
+ * so labels do not grow into nonsensical values like "138 Monate alt".
+ */
+const MONTH_YEAR_THRESHOLD = 13
 
 /** Calendar date only (no time), e.g. "29. März 2026". */
 export function formatReportDateOnlyDe(d: Date): string {
@@ -53,9 +60,10 @@ export function formatIsoTimestampToAbsoluteDe(raw: string): string {
 /**
  * Relative age for KPI rows, e.g. "4 Stunden alt" (no leading "etwa").
  * Below `HOUR_DAY_THRESHOLD` full hours we always show hours so a ~1-day-old
- * report does not collapse to "1 Tag alt". Ages from 12 full months onward
- * use month counts ("13 Monate alt") so labels stay short and never use
- * year-based phrases from `formatDistanceToNow` ("mehr als 1 Jahr …").
+ * report does not collapse to "1 Tag alt". From 12 up to `MONTH_YEAR_THRESHOLD`
+ * full months we render month counts ("13 Monate alt"); beyond that we switch
+ * to year counts so labels stay short and never use year-based phrases from
+ * `formatDistanceToNow` ("mehr als 1 Jahr …").
  */
 export function formatRelativeAgeAltDe(d: Date): string {
   const now = new Date()
@@ -71,6 +79,10 @@ export function formatRelativeAgeAltDe(d: Date): string {
   }
 
   const fullMonths = differenceInMonths(now, d)
+  if (fullMonths > MONTH_YEAR_THRESHOLD) {
+    const fullYears = differenceInYears(now, d)
+    return `${fullYears} ${fullYears === 1 ? 'Jahr' : 'Jahre'} alt`
+  }
   if (fullMonths >= 12) {
     return `${fullMonths} Monate alt`
   }
