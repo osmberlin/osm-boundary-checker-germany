@@ -1,88 +1,176 @@
 {
-  "generatedAt": "2026-05-08T21:37:17.422Z",
+  "generatedAt": "2026-05-08T21:47:48.813Z",
   "months": [
     {
       "month": "2026-05",
       "entries": [
         {
-          "refs": ["95eb7f9"],
+          "refs": [
+            "198e9ff"
+          ],
           "descriptionMd": "Gemeinde-Abgleich (`admin_rs`) erfolgt nur noch über `de:regionalschluessel` und das amtliche Schlüsselfeld (ARS bzw. LGB `ars`); das Profil `admin_ags` und AGS-/Fallback-Logik entfallen. `de-gemeinden-bb` und `brandenburg-gemeinden` nutzen damit dieselbe RS/ARS-Achse wie die übrigen Gemeinde-Datensätze. Bestehende `comparison_table.json`-Dateien bitte neu erzeugen (`bun run compare`).",
-          "committedAtIso": "2026-05-08T22:25:52+02:00",
+          "committedAtIso": "2026-05-08T23:47:42+02:00",
           "committedAtShort": "2026-05-08",
-          "refsDisplay": ["95eb7f9"]
+          "refsDisplay": [
+            "198e9ff"
+          ]
         },
         {
-          "refs": ["a99c98a"],
+          "refs": [
+            "a99c98a"
+          ],
           "descriptionMd": "Kreisfreie Städte und Stadtstaaten werden jetzt korrekt gematcht, auch wenn ihre OSM-Grenze auf einer anderen `admin_level` liegt. Zusätzlich zeigt die Detailseite Vorschläge für mögliche OSM-Grenzen an, wenn eine amtliche Grenze nicht gematcht wurde.",
           "committedAtIso": "2026-05-08T17:23:54+02:00",
           "committedAtShort": "2026-05-08",
-          "refsDisplay": ["a99c98a"]
+          "refsDisplay": [
+            "a99c98a"
+          ]
         },
         {
-          "refs": ["fcc1d53", "5ce83d0"],
+          "refs": [
+            "fcc1d53",
+            "5ce83d0"
+          ],
           "descriptionMd": "Die Sektion \"Live-Daten anzeigen\" kann jetzt gefiltert werden, was auch die Kartenansicht beeinflusst. Außerdem werden die OSM-Daten dort mit den Referenzdaten verglichen und betont, wenn sie sich unterscheiden.",
           "committedAtIso": "2026-05-08T12:43:56+02:00",
           "committedAtShort": "2026-05-08",
-          "refsDisplay": ["fcc1d53", "5ce83d0"]
+          "refsDisplay": [
+            "fcc1d53",
+            "5ce83d0"
+          ]
         },
         {
-          "refs": ["74baef3"],
+          "refs": [
+            "74baef3"
+          ],
           "descriptionMd": "Hilfswerkzeug [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) korrigiert. Die 8-stelligen Gemeindeschlüssel werden jetzt korrekt verarbeitet. Außerdem gibt es Erklärung wie die Schlüssel funktionieren.",
           "committedAtIso": "2026-05-08T12:43:55+02:00",
           "committedAtShort": "2026-05-08",
-          "refsDisplay": ["74baef3"]
+          "refsDisplay": [
+            "74baef3"
+          ]
         },
         {
-          "refs": ["73b8cdf", "709871b", "7f3f475"],
+          "refs": [
+            "73b8cdf",
+            "709871b",
+            "7f3f475"
+          ],
           "descriptionMd": "Alle Gemeinde-Datensätze werden jetzt sowohl mit dem `de:amtlicher_gemeindeschluessel` als auch mit dem `de:regionalschluessel` (transformiert) verglichen. Die Anzeige wie der Vergleich funktioniert, ist darauf angepasst. Und es gibt eine neue Sektion die darauf hinweißt, dass ein `de:amtlicher_gemeindeschluessel` fehlt, wenn das der Fall ist.",
           "committedAtIso": "2026-05-08T12:43:55+02:00",
           "committedAtShort": "2026-05-08",
-          "refsDisplay": ["73b8cdf", "709871b", "7f3f475"]
+          "refsDisplay": [
+            "73b8cdf",
+            "709871b",
+            "7f3f475"
+          ]
         },
         {
-          "refs": ["37403de", "384184d", "a40e807", "955e2cf", "1aaada0", "5751cda"],
+          "refs": [
+            "37403de",
+            "384184d",
+            "a40e807",
+            "955e2cf",
+            "1aaada0",
+            "5751cda"
+          ],
           "descriptionMd": "Interface verbessert: Datums-Anzeige; Filter-Anzeige über den Karten; Anzeige-Toggle unter der Karte; uvm. Man kann unter anderem in der Detailansicht Nachbar-Grenzen anzeigen und dort hin navigieren.",
           "committedAtIso": "2026-05-08T12:43:55+02:00",
           "committedAtShort": "2026-05-08",
-          "refsDisplay": ["37403de", "384184d", "a40e807", "955e2cf", "1aaada0", "5751cda"]
+          "refsDisplay": [
+            "37403de",
+            "384184d",
+            "a40e807",
+            "955e2cf",
+            "1aaada0",
+            "5751cda"
+          ]
         },
         {
-          "refs": ["7873f42"],
+          "refs": [
+            "7873f42"
+          ],
           "descriptionMd": "Die Seiten zeigen jetzt einen Lade-Spinner, wenn sie geladen werden. Einige Seiten sind leider sehr groß und laden daher länger.",
           "committedAtIso": "2026-05-07T08:16:05+03:00",
           "committedAtShort": "2026-05-07",
-          "refsDisplay": ["7873f42"]
+          "refsDisplay": [
+            "7873f42"
+          ]
         },
         {
-          "refs": ["9015e77", "0c3351f", "57c1f81", "e93040e"],
+          "refs": [
+            "9015e77",
+            "0c3351f",
+            "57c1f81",
+            "e93040e"
+          ],
           "descriptionMd": "Wenn man die Live OSM Daten anzeigen lässt, verlinken die Ergebnisse jetzt auf osm.org. Und es gibt Hilfs-Links zum Schlüssel-Explorer. Und die Werte aus den Referenzdaten, werden in den OSM Daten gesucht und hervorgehoben. Damit ist es einfacher zu verstehen, welche OSM Daten editiert werden müssen um ein Match zu erhalten.\nDie URL `/resolve/relation/ID` erzeugt einen intelligenten Deeplink in den Grenzabgleich. Die Seite leitet entweder direkt zum Ergebnis in der App weiter oder zeigt eine Liste, wenn es mehrere mögliche Ergebnisse gibt.",
           "committedAtIso": "2026-05-07T07:47:05+03:00",
           "committedAtShort": "2026-05-07",
-          "refsDisplay": ["9015e77", "0c3351f", "57c1f81", "e93040e"]
+          "refsDisplay": [
+            "9015e77",
+            "0c3351f",
+            "57c1f81",
+            "e93040e"
+          ]
         },
         {
-          "refs": ["5a370a1", "22ad7ab"],
+          "refs": [
+            "5a370a1",
+            "22ad7ab"
+          ],
           "descriptionMd": "Auf der Karte der Detailseite kann man jetzt die Anzeige zwischen der ausgewählten Grenze und allen Grenzen wechseln. Das erlaubt den Wechsel zu benachbarten Detailansichten sowie besser zu verstehen, wie man Grenzen präzisieren muss im Editor, wenn mehrere Grenzen aufeinander treffen. Denn die Editor-Grenzen enthalten immer nur den ausgewählten Datensatz, nicht die Nachbarn.",
           "committedAtIso": "2026-05-06T23:19:45+03:00",
           "committedAtShort": "2026-05-06",
-          "refsDisplay": ["5a370a1", "22ad7ab"]
+          "refsDisplay": [
+            "5a370a1",
+            "22ad7ab"
+          ]
         },
         {
-          "refs": ["8fd952e", "d340945"],
+          "refs": [
+            "8fd952e",
+            "d340945"
+          ],
           "descriptionMd": "Bessere Darstellung der Regeln, die beim Vergleich der Grenzen angewendet werden.",
           "committedAtIso": "2026-05-06T22:22:33+03:00",
           "committedAtShort": "2026-05-06",
-          "refsDisplay": ["8fd952e", "d340945"]
+          "refsDisplay": [
+            "8fd952e",
+            "d340945"
+          ]
         },
         {
-          "refs": ["7b4309a", "741b621", "8fd017c", "5754fdf", "5135821", "4e7c048"],
+          "refs": [
+            "7b4309a",
+            "741b621",
+            "8fd017c",
+            "5754fdf",
+            "5135821",
+            "4e7c048"
+          ],
           "descriptionMd": "Hilfswerkzeug [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) hat eine statische (per Skript manuell zu aktualisierende) Liste aller Schlüssel die wir zum Datenabgleich nutzen. Einschließlich einiger historischer Daten, die nicht mehr aktuell sind, aber in OSM noch in Verwendung sein können.",
           "committedAtIso": "2026-05-06T22:22:33+03:00",
           "committedAtShort": "2026-05-06",
-          "refsDisplay": ["7b4309a", "741b621", "8fd017c", "5754fdf", "5135821", "4e7c048"]
+          "refsDisplay": [
+            "7b4309a",
+            "741b621",
+            "8fd017c",
+            "5754fdf",
+            "5135821",
+            "4e7c048"
+          ]
         },
         {
-          "refs": ["f6ad863", "e712d51", "31cb300", "c03bbcf", "602ea38", "e26f71a", "76074f3"],
+          "refs": [
+            "f6ad863",
+            "e712d51",
+            "31cb300",
+            "c03bbcf",
+            "602ea38",
+            "e26f71a",
+            "76074f3"
+          ],
           "descriptionMd": "Pro Datensatz extrahieren wir jetzt ein Datum der offiziellen letzten Aktualisierung. Das ist wichtig um die Daten einzuschätzen. Bspw. sind in den BKG Daten die Schlüssel von Anfang des Jahres verwendet, aber inzwischen gibt es neuere Datensätze zu den Schlüsseln. Genau Daten helfen solche Sonderfälle zu erkennen.",
           "committedAtIso": "2026-05-06T22:22:33+03:00",
           "committedAtShort": "2026-05-06",
@@ -97,18 +185,28 @@
           ]
         },
         {
-          "refs": ["038fa9f"],
+          "refs": [
+            "038fa9f"
+          ],
           "descriptionMd": "Die iD- und JOSM-Editor-Links enthalten jetzt auch das Hashtag `#grenzabgleich` als Vorschlag für das Changeset.",
           "committedAtIso": "2026-05-06T22:22:33+03:00",
           "committedAtShort": "2026-05-06",
-          "refsDisplay": ["038fa9f"]
+          "refsDisplay": [
+            "038fa9f"
+          ]
         },
         {
-          "refs": ["062d511", "acb6ffc"],
+          "refs": [
+            "062d511",
+            "acb6ffc"
+          ],
           "descriptionMd": "Wenn zwei Flächen in der Karte übereinander liegen aber kein match sind, wird jetzt ein Dialog angezeigt über dem man beide Detailseiten öffnen kann. Auf der Detailseite der amtlichen Daten (nicht nicht gematched wurden) steht zudem, welche Tags nötig wären in OSM, um die Fläche zu matchen.",
           "committedAtIso": "2026-05-04T22:14:59+03:00",
           "committedAtShort": "2026-05-04",
-          "refsDisplay": ["062d511", "acb6ffc"]
+          "refsDisplay": [
+            "062d511",
+            "acb6ffc"
+          ]
         },
         {
           "refs": [
@@ -140,11 +238,19 @@
           ]
         },
         {
-          "refs": ["4a505d3", "3f88c2c33da4af97965430c95b60f1234b764a0d", "a34e3e4"],
+          "refs": [
+            "4a505d3",
+            "3f88c2c33da4af97965430c95b60f1234b764a0d",
+            "a34e3e4"
+          ],
           "descriptionMd": "Auf der `/status`-Seite wird erklärt an welchen Tagen und Zeiten die Daten aktualisiert werden.",
           "committedAtIso": "2026-05-04T21:25:27+03:00",
           "committedAtShort": "2026-05-04",
-          "refsDisplay": ["4a505d3", "3f88c2c", "a34e3e4"]
+          "refsDisplay": [
+            "4a505d3",
+            "3f88c2c",
+            "a34e3e4"
+          ]
         }
       ]
     },
@@ -152,32 +258,48 @@
       "month": "2026-04",
       "entries": [
         {
-          "refs": ["6483d38"],
+          "refs": [
+            "6483d38"
+          ],
           "descriptionMd": "Unter `/review` gibt es jetzt eine Übersichter aller Grenzen, die als \"zu prüfen\" oder (wahrscheinlich) \"fehlerhaft\" markiert sind.",
           "committedAtIso": "2026-04-30T15:04:12+03:00",
           "committedAtShort": "2026-04-30",
-          "refsDisplay": ["6483d38"]
+          "refsDisplay": [
+            "6483d38"
+          ]
         },
         {
-          "refs": ["4ed60e25445e844174ac33b4f574b0fc1e5de8e5"],
+          "refs": [
+            "4ed60e25445e844174ac33b4f574b0fc1e5de8e5"
+          ],
           "descriptionMd": "Der iD-Editor-Link hat jetzt andere Einstellungen, so dass die Grenzen nicht mehr verschwinden, wenn man sie verschiebt. Das ist ein iD-Editor-Bug den wir jetzt umgehen, in dem wir für unseren UseCase nicht relevante Daten angezeigt lassen (nicht verstecken).",
           "committedAtIso": "2026-04-29T23:44:37+03:00",
           "committedAtShort": "2026-04-29",
-          "refsDisplay": ["4ed60e2"]
+          "refsDisplay": [
+            "4ed60e2"
+          ]
         },
         {
-          "refs": ["5b636c276db11b23f5ecc62bcbc84fb59a6d9525"],
+          "refs": [
+            "5b636c276db11b23f5ecc62bcbc84fb59a6d9525"
+          ],
           "descriptionMd": "Bisher haben die KPI immer nur eine Fläche bewertet. Große Flächen konnten dann bpsw. sehr hohe Werte bekommen – aber nicht weil der Unterschied groß ist, sondern wegen der großen Fläche. Jetzt gibt es KPI die die Fläche mit berücksichtigen. Außerdem gibt es eine Bewertung (und Begründung der Bewertung) ob eine Zeile geprüft werden muss oder nicht, die alle Indikatoren betrachtet.",
           "committedAtIso": "2026-04-29T23:44:37+03:00",
           "committedAtShort": "2026-04-29",
-          "refsDisplay": ["5b636c2"]
+          "refsDisplay": [
+            "5b636c2"
+          ]
         },
         {
-          "refs": ["1b69c86"],
+          "refs": [
+            "1b69c86"
+          ],
           "descriptionMd": "Unter `/changelog` gibt es eine Übersicht von Änderungen für die Nuzter:innen der App relevant sein könnten.",
           "committedAtIso": "2026-04-28T09:20:43+03:00",
           "committedAtShort": "2026-04-28",
-          "refsDisplay": ["1b69c86"]
+          "refsDisplay": [
+            "1b69c86"
+          ]
         }
       ]
     }

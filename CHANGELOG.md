@@ -4,7 +4,7 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-05
 
-### `95eb7f9`
+### `198e9ff`
 
 Gemeinde-Abgleich (`admin_rs`) erfolgt nur noch über `de:regionalschluessel` und das amtliche Schlüsselfeld (ARS bzw. LGB `ars`); das Profil `admin_ags` und AGS-/Fallback-Logik entfallen. `de-gemeinden-bb` und `brandenburg-gemeinden` nutzen damit dieselbe RS/ARS-Achse wie die übrigen Gemeinde-Datensätze. Bestehende `comparison_table.json`-Dateien bitte neu erzeugen (`bun run compare`).
 
