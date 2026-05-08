@@ -151,74 +151,75 @@ export function FeatureDetailStatsStrip({
 
       {m && (
         <>
-          <KpiRow
-            narrowLayout="none"
-            className={
-              'mt-0 grid min-w-0 grid-cols-2 gap-x-0 gap-y-4 ' +
-              '[&>*]:min-w-0 [&>*]:border-l [&>*]:border-white/15 [&>*]:pl-3 ' +
-              /* 2 columns: row starts 1,3,5 */
-              'max-md:[&>*:nth-child(2n+1)]:border-l-0 max-md:[&>*:nth-child(2n+1)]:pl-0 ' +
-              /* 3 columns (md–lg): row starts 1,4 */
-              'md:max-lg:[&>*:nth-child(3n+1)]:border-l-0 md:max-lg:[&>*:nth-child(3n+1)]:pl-0 ' +
-              'md:grid-cols-3 ' +
-              /* 1 row × 5 flex cells: only first has no left border */
-              'lg:flex lg:flex-row lg:flex-nowrap lg:gap-x-0 lg:gap-y-0 ' +
-              'lg:[&>*]:min-w-0 lg:[&>*]:flex-1 lg:[&>*]:basis-0 ' +
-              'lg:[&>*]:border-l lg:[&>*]:border-white/15 lg:[&>*]:pl-6 ' +
-              'lg:[&>*:nth-child(5n+1)]:border-l-0 lg:[&>*:nth-child(5n+1)]:pl-0'
-            }
-            aria-label={s.diffMetricsRowAria}
-          >
-            <KpiCell
-              label={
-                <span className="inline-flex items-center gap-1">
-                  <span>{s.iou}</span>
-                  <IouInfoButton />
-                </span>
+          <KpiSection className="mb-6" aria-label={s.diffMetricsRowAria}>
+            <KpiRow
+              narrowLayout="none"
+              className={
+                'mt-0 grid min-w-0 grid-cols-2 gap-x-0 gap-y-4 ' +
+                '[&>*]:min-w-0 [&>*]:border-l [&>*]:border-white/15 [&>*]:pl-3 ' +
+                /* 2 columns: row starts 1,3,5 */
+                'max-md:[&>*:nth-child(2n+1)]:border-l-0 max-md:[&>*:nth-child(2n+1)]:pl-0 ' +
+                /* 3 columns (md–lg): row starts 1,4 */
+                'md:max-lg:[&>*:nth-child(3n+1)]:border-l-0 md:max-lg:[&>*:nth-child(3n+1)]:pl-0 ' +
+                'md:grid-cols-3 ' +
+                /* 1 row × 5 flex cells: only first has no left border */
+                'lg:flex lg:flex-row lg:flex-nowrap lg:gap-x-0 lg:gap-y-0 ' +
+                'lg:[&>*]:min-w-0 lg:[&>*]:flex-1 lg:[&>*]:basis-0 ' +
+                'lg:[&>*]:border-l lg:[&>*]:border-white/15 lg:[&>*]:pl-6 ' +
+                'lg:[&>*:nth-child(5n+1)]:border-l-0 lg:[&>*:nth-child(5n+1)]:pl-0'
               }
-              value={formatDeIou(m.iou)}
-            />
-            <KpiCell
-              label={
-                <span className="inline-flex items-center gap-1">
-                  <span>{s.areaDelta}</span>
-                  <AreaDeltaInfoButton />
-                </span>
-              }
-              value={formatDePercentPoints(m.areaDiffPct)}
-            />
-            <KpiCell
-              label={
-                <span className="inline-flex items-center gap-1">
-                  <span className="lg:hidden">{s.symDiff}</span>
-                  <span className="hidden lg:inline">{s.symDiffShort}</span>
-                  <SymDiffInfoButton />
-                </span>
-              }
-              value={formatDePercentPoints(m.symmetricDiffPct)}
-            />
-            <KpiCell
-              label={
-                <span className="inline-flex items-center gap-1">
-                  <span>{s.hausdorff}</span>
-                  <HausdorffInfoButton />
-                </span>
-              }
-              value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
-            />
-            <KpiCell
-              label={
-                <span className="inline-flex items-center gap-1">
-                  <span>{s.hausdorffP95}</span>
-                  <HausdorffInfoButton />
-                </span>
-              }
-              value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}
-            />
-          </KpiRow>
+            >
+              <KpiCell
+                label={
+                  <span className="inline-flex items-center gap-1">
+                    <span>{s.iou}</span>
+                    <IouInfoButton />
+                  </span>
+                }
+                value={formatDeIou(m.iou)}
+              />
+              <KpiCell
+                label={
+                  <span className="inline-flex items-center gap-1">
+                    <span>{s.areaDelta}</span>
+                    <AreaDeltaInfoButton />
+                  </span>
+                }
+                value={formatDePercentPoints(m.areaDiffPct)}
+              />
+              <KpiCell
+                label={
+                  <span className="inline-flex items-center gap-1">
+                    <span className="lg:hidden">{s.symDiff}</span>
+                    <span className="hidden lg:inline">{s.symDiffShort}</span>
+                    <SymDiffInfoButton />
+                  </span>
+                }
+                value={formatDePercentPoints(m.symmetricDiffPct)}
+              />
+              <KpiCell
+                label={
+                  <span className="inline-flex items-center gap-1">
+                    <span>{s.hausdorff}</span>
+                    <HausdorffInfoButton />
+                  </span>
+                }
+                value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
+              />
+              <KpiCell
+                label={
+                  <span className="inline-flex items-center gap-1">
+                    <span>{s.hausdorffP95}</span>
+                    <HausdorffInfoButton />
+                  </span>
+                }
+                value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}
+              />
+            </KpiRow>
+          </KpiSection>
 
           <KpiSection
-            className="mt-6 mb-0 rounded-t-md rounded-b-none border-x border-t border-b-0 border-slate-500 !bg-[#F2F3F1] text-slate-900 hover:!bg-[#eaede7]"
+            className="mb-0 rounded-t-md rounded-b-none border-x border-t border-b-0 border-slate-500 !bg-[#F2F3F1] text-slate-900 hover:!bg-[#eaede7]"
             aria-label={s.layersRowAria}
           >
             <KpiRow className="mt-0 [&>*]:!border-l [&>*]:!border-slate-500 [&>*]:pl-3 [&>*]:first:!border-l-0 [&>*]:first:pl-0 [&>*]:lg:pl-6">

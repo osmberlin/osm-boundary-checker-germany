@@ -67,7 +67,7 @@ export function KpiSection({
     <section
       aria-label={ariaLabel}
       className={[
-        'rounded border border-slate-700 bg-slate-900 p-4 transition-colors hover:bg-slate-800/40',
+        'overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 px-4 py-6 shadow-sm sm:px-6',
         className,
       ]
         .filter(Boolean)

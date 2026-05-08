@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { KpiCell, KpiRow } from '../components/FeatureStatBlocks'
+import { KpiCell, KpiRow, KpiSection } from '../components/FeatureStatBlocks'
 import { IssueBadge } from '../components/IssueBadge'
 import { ReportCategoryPill } from '../components/reportCategoryStyles'
 import { reviewQueue } from '../data/reviewQueue'
@@ -17,7 +17,7 @@ export function ReviewQueue() {
     <div className="mx-auto max-w-5xl px-4 pt-6 text-left sm:px-6 lg:px-8">
       <p className="mb-6 max-w-prose text-pretty text-slate-400">{de.review.intro}</p>
 
-      <section className="mb-6 rounded border border-slate-700 bg-slate-900 p-4">
+      <KpiSection className="mb-6">
         <KpiRow aria-label={de.review.totalStatsAria}>
           <KpiCell label={de.review.datasetCount} value={formatDeInteger(nonEmptyAreas.length)} />
           <KpiCell
@@ -29,7 +29,7 @@ export function ReviewQueue() {
             value={<span className="text-rose-300">{formatDeInteger(totalIssues)}</span>}
           />
         </KpiRow>
-      </section>
+      </KpiSection>
 
       {nonEmptyAreas.length === 0 ? (
         <p className="text-slate-400">{de.review.empty}</p>
