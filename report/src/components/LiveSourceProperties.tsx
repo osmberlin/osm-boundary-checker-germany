@@ -1,5 +1,5 @@
 import { ArrowTopRightOnSquareIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { de } from '../i18n/de'
 import { cn } from '../lib/cn'
 import {
@@ -356,16 +356,13 @@ export function LiveSourceProperties({
   const osmHits = overpass.hits
   const datasetForResolver = data.area.trim()
 
-  const buildBoundaryCheckerResolverLink = useCallback(
-    (relationId: number) => {
-      const query = new URLSearchParams()
-      if (datasetForResolver !== '') query.set('dataset', datasetForResolver)
-      const search = query.toString()
-      const path = `/resolve/relation/${relationId}${search ? `?${search}` : ''}`
-      return withSiteBasePath(path)
-    },
-    [datasetForResolver],
-  )
+  function buildBoundaryCheckerResolverLink(relationId: number) {
+    const query = new URLSearchParams()
+    if (datasetForResolver !== '') query.set('dataset', datasetForResolver)
+    const search = query.toString()
+    const path = `/resolve/relation/${relationId}${search ? `?${search}` : ''}`
+    return withSiteBasePath(path)
+  }
 
   // Row keys for each section's "hide all / show all" toggle.
   // Computed inline (not memoized) because `wfs.getStatus` returns fresh values on each render
@@ -380,13 +377,10 @@ export function LiveSourceProperties({
   }
   const overpassRowKeys = osmHits.map((hit) => overpassLiveRowKey(hit.type, hit.id))
 
-  const loadOfficial = useCallback(
-    async (src: OgcWfsInspectSource) => {
-      if (!bbox) return
-      await wfs.load(src, bbox)
-    },
-    [bbox, wfs],
-  )
+  async function loadOfficial(src: OgcWfsInspectSource) {
+    if (!bbox) return
+    await wfs.load(src, bbox)
+  }
 
   async function submitLiveOverpass() {
     if (!overpassDraft) return
@@ -394,7 +388,7 @@ export function LiveSourceProperties({
       await overpass.runLiveOverpass(overpassDraft.query, overpassDraft.interpreterUrl)
       setOverpassDraft(null)
     } catch {
-      /* Mutation retains error for dialog feedback */
+      /* Query error state is rendered in the confirm dialog. */
     }
   }
 

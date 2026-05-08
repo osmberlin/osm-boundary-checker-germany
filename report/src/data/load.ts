@@ -209,7 +209,7 @@ function sortOverpassHits(a: OverpassBoundaryHit, b: OverpassBoundaryHit): numbe
 
 export function overpassLiveQueryOptions(input: OverpassLiveQueryInput) {
   return queryOptions({
-    queryKey: ['overpass-live', input.featureKey, input.interpreterUrl, input.query],
+    queryKey: ['overpass-live', input.featureKey],
     queryFn: async (): Promise<OverpassLiveQueryData> => {
       const res = await fetchOverpassQuery(input.query, input.interpreterUrl)
       const text = await res.text()
