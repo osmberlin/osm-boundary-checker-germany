@@ -7,7 +7,14 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { createAppRouter } from './router'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 6 * 60 * 60 * 1000,
+    },
+  },
+})
 const router = createAppRouter(queryClient)
 
 const rootEl = document.getElementById('root')
