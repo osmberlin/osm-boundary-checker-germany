@@ -14,7 +14,7 @@ async function run() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const { force } = parseArgs(process.argv.slice(2))
   // Refresh all datasets that define `official.download` in config.jsonc (Berlin, Hamburg, …).
-  const args = ['run', 'download:official', '--']
+  const args = ['run', 'extract:official:engine', '--']
   if (force) args.push('--force')
 
   const code = await new Promise<number>((resolve) => {

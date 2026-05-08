@@ -270,13 +270,15 @@ async function main() {
   try {
     const downloadSteps: PipelineStep[] = [
       { step: 'download:bkg', args: ['run', 'bkg:download'] },
-      { step: 'download:official', args: ['run', 'download:official'] },
-      { step: 'download:osm', args: ['run', 'osm:download'] },
+      { step: 'download:official', args: ['run', 'extract:official:engine'] },
+      { step: 'download:osm', args: ['run', 'extract:osm-pbf'] },
     ]
 
     const extractSteps: PipelineStep[] = [
-      { step: 'extract:bkg', args: ['run', 'bkg:extract'] },
-      { step: 'extract:osm', args: ['run', 'osm:extract'] },
+      { step: 'extract:bkg', args: ['run', 'extract:bkg'] },
+      // Explicit `--kind admin` only: `osm:extract` without `--kind` runs admin+admin_candidates under CI,
+      // which would duplicate the next step. Local dev may still use `bun run osm:extract` (defaults both).
+      { step: 'extract:osm', args: ['run', 'osm:extract', '--', '--kind', 'admin'] },
       // `brandenburg-berlin-plz` uses `.cache/osm/germany-postal-code-boundaries.fgb` from the same filtered PBF.
       { step: 'extract:osm:plz', args: ['run', 'osm:extract', '--', '--kind', 'plz'] },
       // Points-only candidates FGBs feed the additive `match_candidates` compare phase. They reuse
@@ -425,7 +427,7 @@ async function main() {
         )
         if (phaseStep.step === 'download:official' && finalExitCode !== 0) {
           console.error(
-            '[pipeline] download:official failed. See per-area reasons above from scripts/download/official.ts (reason/detail).',
+            '[pipeline] extract:official failed. See per-area reasons above from scripts/download/official.ts (reason/detail).',
           )
         }
 

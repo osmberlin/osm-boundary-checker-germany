@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process'
  * Uses `curl` on PATH. Override URL with `--url` or `GERMANY_OSM_PBF_URL`.
  *
  * Set **`OSM_SKIP_PBF_DOWNLOAD=1`** (or `true`) to never hit the network here — use when the PBF
- * is already present and you want `pipeline:nightly` / `osm:download` to leave it unchanged
+ * is already present and you want `pipeline:nightly` / `extract:osm-pbf` to leave it unchanged
  * (e.g. local runs across calendar-day refresh windows).
  */
 import { existsSync, mkdirSync, statSync, unlinkSync } from 'node:fs'
@@ -56,7 +56,7 @@ function main() {
     const skipIntegrity = checkOsmPbfIntegrity(dest)
     if (!skipIntegrity.ok) {
       const hint = skipIntegrity.canDeleteCorruptCache
-        ? `Remove the file or unset OSM_SKIP_PBF_DOWNLOAD, then run: bun run osm:download -- --force`
+        ? `Remove the file or unset OSM_SKIP_PBF_DOWNLOAD, then run: bun run extract:osm-pbf -- --force`
         : `Install osmium on PATH so the PBF can be verified, or unset OSM_SKIP_PBF_DOWNLOAD.`
       console.error(
         `OSM_SKIP_PBF_DOWNLOAD is set but the cached PBF could not be validated:\n  ${dest}\n${skipIntegrity.detail}\n\n${hint}`,

@@ -6,6 +6,6 @@
 Run from repo root:
 
 - `bun run bkg:download`
-- `bun run bkg:extract`
+- `bun run extract:bkg` (alias: `bun run bkg:extract`)
 - `bun run bkg`
-- Full pipeline: `bun run download`
+- Full download + extract chain (no menus): `bun run download:all`

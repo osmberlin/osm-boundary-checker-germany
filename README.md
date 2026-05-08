@@ -25,14 +25,19 @@ Open the URL printed by the dev server (default port 3000).
 
 ## Common commands
 
-| Goal                                 | Command                                                                      |
-| ------------------------------------ | ---------------------------------------------------------------------------- |
-| Full data refresh + compare          | `bun run pipeline:nightly` (or `bun run download` then `bun run compare`)    |
-| Compare (interactive)                | `bun run compare`                                                            |
-| Compare (non-interactive)            | `CI=1 bun run compare -- --area <folder>` or `CI=1 bun run compare -- --all` |
-| Sync report static inputs            | `bun run report:sync-runtime-assets`                                         |
-| Production build (from runtime tree) | `bun run report:build`                                                       |
-| Unit tests                           | `bun run test`                                                               |
+| Goal                                 | Command                                                                                                    |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Full data refresh + compare          | `bun run pipeline:nightly` (or `bun run download:all` then `bun run compare`)                              |
+| Download menu (PBF / BKG / HTTP)     | `bun run download`                                                                                         |
+| Extract menu (OSM + official)        | `bun run extract` (TTY) or `bun run extract -- --yes` for both scopes non-interactively                    |
+| OSM FlatGeobuf extract only          | `bun run extract:osm` (wizard; defaults all four kinds when interactive) or `bun run osm:extract` (engine) |
+| Geofabrik Germany PBF only           | `bun run extract:osm-pbf`                                                                                  |
+| Compare (interactive)                | `bun run compare`                                                                                          |
+| Compare (non-interactive)            | `CI=1 bun run compare -- --area <folder>` or `CI=1 bun run compare` (all areas)                            |
+| Compare one area (no menu, direct)   | `bun run compare:boundaries -- --area <folder>`                                                            |
+| Sync report static inputs            | `bun run report:sync-runtime-assets` (also runs after successful `bun run compare`)                        |
+| Production build (from runtime tree) | `bun run report:build`                                                                                     |
+| Unit tests                           | `bun run test`                                                                                             |
 
 ## Layout
 

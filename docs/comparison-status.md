@@ -5,7 +5,7 @@ This note captures the outcome of a full compare pass over all `berlin-*` and `d
 ## de-gemeinden datasets
 
 - `de-gemeinden-*` state areas are compared directly as separate datasets.
-- `bkg:extract` prepares `de-gemeinden-*/source/official.fgb` from shared VG25 cache using ARS-prefix filtering.
+- `extract:bkg` prepares `de-gemeinden-*/source/official.fgb` from shared VG25 cache using ARS-prefix filtering.
 - Compare writes per-state payloads and PMTiles directly for each state area.
 
 ## What was broken and fixed in code
@@ -60,10 +60,10 @@ Source: `ogrinfo … -so` on `datasets/<area>/source/official.fgb` (BKG layer) a
 
 ## Commands used at repo root
 
-- Compare one area: `CI=1 bun run run.ts --area <folder>`
-- Compare all discoverable areas: `CI=1 bun run run.ts --all`
+- Compare one area: `CI=1 bun run compare -- --area <folder>`
+- Compare all discoverable areas: `CI=1 bun run compare` (or `bun run compare:boundaries -- --area <folder>` for a single area without the menu)
 - Same compare entrypoint via workspace: `bun run compare:boundaries -- --area <folder>`
-- Regenerate OSM FlatGeobuf only (after PBF is present): `bun run extract-osm`
+- Regenerate OSM FlatGeobuf only (after PBF is present): `bun run extract:osm` (wizard) or `bun run osm:extract` (engine)
 
 ## Report app
 
