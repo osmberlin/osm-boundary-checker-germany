@@ -32,12 +32,6 @@ type OfficialSlot =
   | { status: 'error'; message: string }
   | { status: 'done'; features: WfsFeature[] }
 
-type OsmSlot =
-  | { status: 'idle' }
-  | { status: 'confirm'; queryDraft: string; interpreterUrl: string; lastError?: string }
-  | { status: 'loading' }
-  | { status: 'done' }
-
 function formatPropertyValue(value: unknown): string {
   if (value === null || value === undefined) return de.feature.datasetPropertiesEmpty
   if (typeof value === 'object') {
@@ -314,6 +308,16 @@ function withoutNameStarTags(tags: Record<string, string>): Record<string, strin
   return out
 }
 
+function formatOverpassRunError(error: unknown): string {
+  const rawMessage =
+    error instanceof Error ? error.message : typeof error === 'string' ? error : String(error)
+  if (rawMessage === 'INVALID_OVERPASS_JSON') return de.feature.liveOsmInvalidJson
+  if (rawMessage.startsWith('Overpass request failed:')) {
+    return `${de.feature.liveOsmHttp} ${rawMessage.replace('Overpass request failed:', '').trim()}`
+  }
+  return rawMessage
+}
+
 export function LiveSourceProperties({
   featureKey,
   data,
@@ -330,10 +334,13 @@ export function LiveSourceProperties({
     getStatus: (sourceId: string) => OfficialSlot
   }
   overpass: {
-    hasData: boolean
+    hasCachedData: boolean
     hits: OverpassBoundaryHit[]
-    run: (query: string, interpreterUrl: string) => Promise<void>
-    reset: () => void
+    isRunPending: boolean
+    runError: unknown
+    runLiveOverpass: (query: string, interpreterUrl: string) => Promise<void>
+    resetLiveOverpass: () => void
+    resetRunMutation: () => void
   }
 }) {
   const sources = data.ogcInspectSources ?? []
@@ -342,9 +349,10 @@ export function LiveSourceProperties({
 
   const datasetSnapshotValueMatches = buildDatasetSnapshotValueMatchSet(row)
 
-  const [osm, setOsm] = useState<OsmSlot>(() =>
-    overpass.hasData ? { status: 'done' } : { status: 'idle' },
-  )
+  const [overpassDraft, setOverpassDraft] = useState<{
+    query: string
+    interpreterUrl: string
+  } | null>(null)
   const osmHits = overpass.hits
   const datasetForResolver = data.area.trim()
 
@@ -380,31 +388,15 @@ export function LiveSourceProperties({
     [bbox, wfs],
   )
 
-  const runOverpass = useCallback(
-    async (query: string, interpreterUrl: string) => {
-      const q = query.trim()
-      setOsm({ status: 'loading' })
-      try {
-        await overpass.run(q, interpreterUrl)
-        setOsm({ status: 'done' })
-      } catch (e) {
-        const rawMessage = e instanceof Error ? e.message : String(e)
-        const message =
-          rawMessage === 'INVALID_OVERPASS_JSON'
-            ? de.feature.liveOsmInvalidJson
-            : rawMessage.startsWith('Overpass request failed:')
-              ? `${de.feature.liveOsmHttp} ${rawMessage.replace('Overpass request failed:', '').trim()}`
-              : rawMessage
-        setOsm({
-          status: 'confirm',
-          queryDraft: query,
-          interpreterUrl,
-          lastError: message,
-        })
-      }
-    },
-    [overpass],
-  )
+  async function submitLiveOverpass() {
+    if (!overpassDraft) return
+    try {
+      await overpass.runLiveOverpass(overpassDraft.query, overpassDraft.interpreterUrl)
+      setOverpassDraft(null)
+    } catch {
+      /* Mutation retains error for dialog feedback */
+    }
+  }
 
   const showOfficial = sources.length > 0
   const showOsm = bbox != null
@@ -507,23 +499,23 @@ export function LiveSourceProperties({
                 <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={overpassRowKeys} />
               </dt>
               <dd className="mt-2 space-y-3 md:col-span-2 md:mt-0">
-                {osm.status === 'idle' && bbox && (
+                {bbox && !overpass.hasCachedData && overpassDraft == null && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setOsm({
-                        status: 'confirm',
-                        queryDraft: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
+                    onClick={() => {
+                      overpass.resetRunMutation()
+                      setOverpassDraft({
+                        query: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
                         interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
                       })
-                    }
+                    }}
                     className={sharedButtonClass}
                   >
                     {de.feature.liveOsmLoad}
                   </button>
                 )}
 
-                {osm.status === 'confirm' && (
+                {overpassDraft != null && !overpass.isRunPending && (
                   <div
                     className="rounded-lg border border-amber-900/50 bg-amber-950/20 p-3"
                     role="dialog"
@@ -538,13 +530,15 @@ export function LiveSourceProperties({
                     <p className="mt-1 text-sm font-medium text-amber-100">
                       {de.feature.liveOsmOverpassWarnScope}
                     </p>
-                    {osm.lastError != null && osm.lastError !== '' && (
+                    {overpass.runError != null && (
                       <div
                         className="mt-3 rounded-md border border-red-900/60 bg-red-950/35 px-3 py-2 text-sm text-red-100"
                         role="alert"
                       >
                         <p className="font-medium">{de.feature.liveOsmLastErrorTitle}</p>
-                        <p className="mt-1 break-words whitespace-pre-wrap">{osm.lastError}</p>
+                        <p className="mt-1 break-words whitespace-pre-wrap">
+                          {formatOverpassRunError(overpass.runError)}
+                        </p>
                         <p className="mt-2 text-xs text-red-200/85">
                           {de.feature.liveOsmLastErrorHint}
                         </p>
@@ -558,13 +552,11 @@ export function LiveSourceProperties({
                     </label>
                     <select
                       id="overpass-server"
-                      value={osm.interpreterUrl}
+                      value={overpassDraft.interpreterUrl}
                       onChange={(e) =>
-                        setOsm({
-                          status: 'confirm',
-                          queryDraft: osm.queryDraft,
-                          interpreterUrl: e.target.value,
-                        })
+                        setOverpassDraft((d) =>
+                          d ? { ...d, interpreterUrl: e.target.value } : null,
+                        )
                       }
                       className="mt-1 block w-full max-w-full rounded-md border border-slate-600 bg-slate-950 px-2 py-1.5 font-mono text-[11px] text-slate-100 shadow-sm focus:border-amber-600 focus:ring-1 focus:ring-amber-600/30 focus:outline-none"
                     >
@@ -582,13 +574,9 @@ export function LiveSourceProperties({
                     </label>
                     <textarea
                       id="overpass-query-draft"
-                      value={osm.queryDraft}
+                      value={overpassDraft.query}
                       onChange={(e) =>
-                        setOsm({
-                          status: 'confirm',
-                          queryDraft: e.target.value,
-                          interpreterUrl: osm.interpreterUrl,
-                        })
+                        setOverpassDraft((d) => (d ? { ...d, query: e.target.value } : null))
                       }
                       spellCheck={false}
                       rows={10}
@@ -598,11 +586,14 @@ export function LiveSourceProperties({
                       <button
                         type="button"
                         onClick={() =>
-                          setOsm({
-                            status: 'confirm',
-                            queryDraft: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
-                            interpreterUrl: osm.interpreterUrl,
-                          })
+                          setOverpassDraft((d) =>
+                            d
+                              ? {
+                                  ...d,
+                                  query: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
+                                }
+                              : null,
+                          )
                         }
                         className="mt-2 text-xs text-amber-200/85 underline decoration-amber-400/35 underline-offset-2 hover:text-amber-100"
                       >
@@ -612,15 +603,18 @@ export function LiveSourceProperties({
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        onClick={() => setOsm({ status: 'idle' })}
+                        onClick={() => {
+                          setOverpassDraft(null)
+                          overpass.resetRunMutation()
+                        }}
                         className={sharedButtonClass}
                       >
                         {de.feature.liveOsmConfirmNo}
                       </button>
                       <button
                         type="button"
-                        disabled={osm.queryDraft.trim() === ''}
-                        onClick={() => void runOverpass(osm.queryDraft, osm.interpreterUrl)}
+                        disabled={overpassDraft.query.trim() === ''}
+                        onClick={() => void submitLiveOverpass()}
                         className={sharedButtonClass}
                       >
                         {de.feature.liveOsmConfirmYes}
@@ -629,15 +623,15 @@ export function LiveSourceProperties({
                   </div>
                 )}
 
-                {osm.status === 'loading' && (
+                {overpass.isRunPending && (
                   <p className="text-sm text-slate-400">{de.feature.liveOsmLoading}</p>
                 )}
 
-                {osm.status === 'done' && osmHits.length === 0 && (
+                {overpass.hasCachedData && osmHits.length === 0 && (
                   <p className="text-sm text-slate-400">{de.feature.liveOsmEmpty}</p>
                 )}
 
-                {osm.status === 'done' && osmHits.length > 0 && (
+                {overpass.hasCachedData && osmHits.length > 0 && (
                   <div className="space-y-3">
                     {osmHits.map((hit) => (
                       <LiveResultCard
@@ -656,12 +650,12 @@ export function LiveSourceProperties({
                   </div>
                 )}
 
-                {osm.status === 'done' && (
+                {overpass.hasCachedData && (
                   <button
                     type="button"
                     onClick={() => {
-                      overpass.reset()
-                      setOsm({ status: 'idle' })
+                      overpass.resetLiveOverpass()
+                      setOverpassDraft(null)
                     }}
                     className="text-sm text-violet-300/90 underline decoration-violet-400/30 underline-offset-2 hover:text-violet-200"
                   >

@@ -1,82 +1,86 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useMemo, useState } from 'react'
+import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { useCallback, useSyncExternalStore } from 'react'
 import {
   overpassLiveQueryOptions,
   type OverpassLiveQueryData,
   type OverpassLiveQueryInput,
 } from '../data/load'
 
+function pickLatestOverpassLiveFromCache(
+  queryClient: QueryClient,
+  featureKey: string,
+): OverpassLiveQueryData | null {
+  const cachedQueries = queryClient
+    .getQueryCache()
+    .findAll({ queryKey: ['overpass-live', featureKey], exact: false })
+
+  let latest: { data: OverpassLiveQueryData; updatedAt: number } | null = null
+
+  for (const query of cachedQueries) {
+    const key = query.queryKey
+    if (!Array.isArray(key) || key.length !== 4) continue
+    if (key[0] !== 'overpass-live' || key[1] !== featureKey) continue
+    const data = query.state.data
+    if (!data) continue
+    const updatedAt = query.state.dataUpdatedAt ?? 0
+    if (!latest || updatedAt > latest.updatedAt) {
+      latest = { data: data as OverpassLiveQueryData, updatedAt }
+    }
+  }
+
+  return latest?.data ?? null
+}
+
+function subscribeOverpassLiveCache(queryClient: QueryClient, onStoreChange: () => void) {
+  return queryClient.getQueryCache().subscribe(onStoreChange)
+}
+
 export function useFeatureDetailOverpass(featureKey: string) {
   const queryClient = useQueryClient()
-  const [overpassInput, setOverpassInput] = useState<OverpassLiveQueryInput | null>(null)
 
-  const activeOverpassInput = useMemo(
-    () => (overpassInput != null && overpassInput.featureKey === featureKey ? overpassInput : null),
-    [featureKey, overpassInput],
+  const liveData = useSyncExternalStore(
+    (onStoreChange) => subscribeOverpassLiveCache(queryClient, onStoreChange),
+    () => pickLatestOverpassLiveFromCache(queryClient, featureKey),
+    () => pickLatestOverpassLiveFromCache(queryClient, featureKey),
   )
 
-  const overpassQuery = useQuery({
-    ...(activeOverpassInput != null
-      ? overpassLiveQueryOptions(activeOverpassInput)
-      : overpassLiveQueryOptions({
-          featureKey,
-          query: '',
-          interpreterUrl: '',
-        })),
-    enabled: activeOverpassInput != null,
+  const mutation = useMutation({
+    mutationFn: (input: OverpassLiveQueryInput) =>
+      queryClient.fetchQuery({
+        ...overpassLiveQueryOptions(input),
+        retry: false,
+      }),
     retry: false,
   })
 
-  const cachedOverpassData = useMemo(() => {
-    const cachedQueries = queryClient
-      .getQueryCache()
-      .findAll({ queryKey: ['overpass-live', featureKey], exact: false })
-
-    let latest: { data: OverpassLiveQueryData; updatedAt: number } | null = null
-
-    for (const query of cachedQueries) {
-      const key = query.queryKey
-      if (!Array.isArray(key) || key.length !== 4) continue
-      if (key[0] !== 'overpass-live' || key[1] !== featureKey) continue
-      const data = query.state.data
-      if (!data) continue
-      const updatedAt = query.state.dataUpdatedAt ?? 0
-      if (!latest || updatedAt > latest.updatedAt) {
-        latest = { data: data as OverpassLiveQueryData, updatedAt }
-      }
-    }
-
-    return latest?.data ?? null
-  }, [featureKey, queryClient])
-
-  const overpassData = overpassQuery.data ?? cachedOverpassData
-
-  const runOverpass = useCallback(
+  const runLiveOverpass = useCallback(
     async (query: string, interpreterUrl: string) => {
-      const input: OverpassLiveQueryInput = {
+      await mutation.mutateAsync({
         featureKey,
-        query,
+        query: query.trim(),
         interpreterUrl,
-      }
-      setOverpassInput(input)
-      await queryClient.fetchQuery({
-        ...overpassLiveQueryOptions(input),
-        retry: false,
       })
     },
-    [featureKey, queryClient],
+    [featureKey, mutation],
   )
 
-  const resetOverpass = useCallback(() => {
-    setOverpassInput(null)
+  const resetLiveOverpass = useCallback(() => {
     queryClient.removeQueries({ queryKey: ['overpass-live', featureKey], exact: false })
-  }, [featureKey, queryClient])
+    mutation.reset()
+  }, [featureKey, queryClient, mutation])
+
+  const resetRunMutation = useCallback(() => {
+    mutation.reset()
+  }, [mutation])
 
   return {
-    hasData: overpassData != null,
-    hits: overpassData?.hits ?? [],
-    geojson: overpassData?.geojson ?? null,
-    runOverpass,
-    resetOverpass,
+    hits: liveData?.hits ?? [],
+    geojson: liveData?.geojson ?? null,
+    hasCachedData: liveData != null,
+    isRunPending: mutation.isPending,
+    runError: mutation.error,
+    runLiveOverpass,
+    resetLiveOverpass,
+    resetRunMutation,
   }
 }

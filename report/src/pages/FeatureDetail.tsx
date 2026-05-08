@@ -115,10 +115,13 @@ export function FeatureDetail() {
           getStatus: wfs.getStatus,
         }}
         overpass={{
-          hasData: overpass.hasData,
+          hasCachedData: overpass.hasCachedData,
           hits: overpass.hits,
-          run: overpass.runOverpass,
-          reset: overpass.resetOverpass,
+          isRunPending: overpass.isRunPending,
+          runError: overpass.runError,
+          runLiveOverpass: overpass.runLiveOverpass,
+          resetLiveOverpass: overpass.resetLiveOverpass,
+          resetRunMutation: overpass.resetRunMutation,
         }}
       />
 
