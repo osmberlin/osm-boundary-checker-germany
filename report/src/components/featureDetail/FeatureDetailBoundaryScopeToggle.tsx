@@ -1,6 +1,7 @@
 import { useFeatureDetailMapBoundaryScope } from '../../hooks/useFeatureDetailMapBoundaryScope'
 import { de } from '../../i18n/de'
 import { cn } from '../../lib/cn'
+import { LIGHT_CHECKBOX_ROW_INTERACTIVE_CLASS } from '../FeatureStatBlocks'
 
 export function FeatureDetailBoundaryScopeToggle({ className }: { className?: string }) {
   const { showOnlySelected, setShowOnlySelected } = useFeatureDetailMapBoundaryScope()
@@ -14,9 +15,10 @@ export function FeatureDetailBoundaryScopeToggle({ className }: { className?: st
         aria-pressed={showOnlySelected}
         onClick={() => setShowOnlySelected(true)}
         className={cn(
-          'max-w-[11rem] cursor-pointer rounded px-1.5 py-1 text-left text-xs leading-snug transition-colors sm:max-w-none',
-          'hover:bg-slate-800/55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500',
-          showOnlySelected ? 'text-slate-200' : 'text-slate-500',
+          'max-w-[11rem] cursor-pointer rounded-none px-1.5 py-1 text-left text-xs leading-snug sm:max-w-none',
+          LIGHT_CHECKBOX_ROW_INTERACTIVE_CLASS,
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500',
+          showOnlySelected ? 'text-slate-900' : 'text-slate-600',
         )}
       >
         {de.feature.mapBoundaryScopeOnly}
@@ -39,9 +41,10 @@ export function FeatureDetailBoundaryScopeToggle({ className }: { className?: st
         aria-pressed={!showOnlySelected}
         onClick={() => setShowOnlySelected(false)}
         className={cn(
-          'max-w-[11rem] cursor-pointer rounded px-1.5 py-1 text-left text-xs leading-snug transition-colors sm:max-w-none',
-          'hover:bg-slate-800/55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500',
-          showOnlySelected ? 'text-slate-500' : 'text-slate-200',
+          'max-w-[11rem] cursor-pointer rounded-none px-1.5 py-1 text-left text-xs leading-snug sm:max-w-none',
+          LIGHT_CHECKBOX_ROW_INTERACTIVE_CLASS,
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500',
+          showOnlySelected ? 'text-slate-600' : 'text-slate-900',
         )}
       >
         {de.feature.mapBoundaryScopeAll}

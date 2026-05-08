@@ -3,13 +3,23 @@
  * Category pills / legend swatches: `reportCategoryStyles.tsx` (reuses these values).
  */
 export const mapLayerColors = {
-  official: {
-    fill: '#2563eb',
+  officialMatched: {
+    fill: '#65a30d',
+    fillOpacity: 0.2,
+    line: '#4d7c0f',
+  },
+  officialOnly: {
+    fill: '#1d4ed8',
     fillOpacity: 0.2,
     line: '#1d4ed8',
   },
-  osm: {
-    fill: '#ea580c',
+  osmPaired: {
+    fill: '#fbbf24',
+    fillOpacity: 0.15,
+    line: '#f59e0b',
+  },
+  osmUnmatched: {
+    fill: '#c2410c',
     fillOpacity: 0.15,
     line: '#c2410c',
   },

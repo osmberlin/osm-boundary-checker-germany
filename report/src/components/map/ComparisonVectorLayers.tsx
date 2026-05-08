@@ -1,8 +1,7 @@
 import type { ExpressionSpecification } from 'maplibre-gl'
 import { Layer, Source } from 'react-map-gl/maplibre'
 import { mapLayerColors } from '../mapLayerColors'
-import { SOURCE_ID } from './comparisonMapConstants'
-import { OSM_OVERLAY_STRIPE_PATTERN_ID } from './comparisonMapSprites'
+import { SOURCE_ID, UNMATCHED_SOURCE_ID } from './comparisonMapConstants'
 
 export function ComparisonVectorLayers({
   sourceId = SOURCE_ID,
@@ -15,6 +14,8 @@ export function ComparisonVectorLayers({
   showOfficial,
   showOsm,
   showDiff,
+  osmOverlay,
+  osmStripePatternId,
 }: {
   sourceId?: string
   pmtilesUrl: string
@@ -26,12 +27,16 @@ export function ComparisonVectorLayers({
   showOfficial: boolean
   showOsm: boolean
   showDiff: boolean
+  osmOverlay: (typeof mapLayerColors)['osmPaired']
+  osmStripePatternId: string
 }) {
-  const o = mapLayerColors.official
-  const s = mapLayerColors.osm
+  const o = mapLayerColors.officialMatched
+  const s = osmOverlay
   const d = mapLayerColors.diff
 
   const hoveredExpr: ExpressionSpecification = ['boolean', ['feature-state', 'hover'], false]
+  const useStripeFill = sourceId === UNMATCHED_SOURCE_ID
+  const useSolidOsmFill = !useStripeFill
 
   return (
     <Source id={sourceId} type="vector" url={pmtilesUrl} promoteId="featureId">
@@ -44,7 +49,7 @@ export function ComparisonVectorLayers({
         layout={{ visibility: showOfficial ? 'visible' : 'none' }}
         paint={{
           'fill-color': o.fill,
-          'fill-opacity': ['case', hoveredExpr, Math.min(1, o.fillOpacity + 0.18), o.fillOpacity],
+          'fill-opacity': 0,
         }}
       />
       <Layer
@@ -56,9 +61,9 @@ export function ComparisonVectorLayers({
         layout={{ visibility: showOfficial ? 'visible' : 'none' }}
         paint={{
           'line-color': o.line,
-          'line-width': ['case', hoveredExpr, 4, 2],
+          'line-width': ['case', hoveredExpr, 5.2, 2.6],
           // Nudge stroke inward by ~50% of its width so it remains visible under overlap styling.
-          'line-offset': ['case', hoveredExpr, -2, -1],
+          'line-offset': ['case', hoveredExpr, -2.6, -1.3],
         }}
       />
       <Layer
@@ -69,9 +74,11 @@ export function ComparisonVectorLayers({
         filter={filterOsmOverlay}
         layout={{ visibility: showOsm ? 'visible' : 'none' }}
         paint={{
-          'fill-color': s.fill,
-          // Keep OSM overlay fully transparent so only stripe marks are rendered above official fill.
-          'fill-opacity': 0,
+          'fill-color': useSolidOsmFill ? s.line : s.fill,
+          // Matched OSM uses transparent solid fill; stripe mode keeps base fill transparent.
+          'fill-opacity': useSolidOsmFill
+            ? ['case', hoveredExpr, Math.min(1, s.fillOpacity + 0.18), s.fillOpacity]
+            : 0,
         }}
       />
       <Layer
@@ -80,9 +87,9 @@ export function ComparisonVectorLayers({
         source={sourceId}
         source-layer={sourceLayer}
         filter={filterOsmOverlay}
-        layout={{ visibility: showOsm ? 'visible' : 'none' }}
+        layout={{ visibility: showOsm && useStripeFill ? 'visible' : 'none' }}
         paint={{
-          'fill-pattern': OSM_OVERLAY_STRIPE_PATTERN_ID,
+          'fill-pattern': osmStripePatternId,
           'fill-opacity': [
             'case',
             hoveredExpr,

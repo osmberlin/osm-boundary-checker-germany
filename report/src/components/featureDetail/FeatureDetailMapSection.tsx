@@ -83,7 +83,10 @@ export function FeatureDetailMapSection({
 
   return (
     <>
-      <div className="mt-4 w-full overflow-hidden rounded border border-slate-700">
+      <div className="w-full">
+        <div className="h-px w-full bg-slate-500" />
+      </div>
+      <div className="w-full overflow-hidden rounded-b-md border-x border-b border-slate-500">
         <div className="h-[480px] w-full">
           <Suspense
             fallback={
@@ -98,6 +101,13 @@ export function FeatureDetailMapSection({
                   primary: {
                     pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
                     sourceLayer: data.tippecanoeLayer,
+                    officialOnlyFeatureIds: showOnlySelected
+                      ? row.category === 'official_only'
+                        ? [row.canonicalMatchKey]
+                        : []
+                      : data.rows
+                          .filter((r) => r.category === 'official_only')
+                          .map((r) => r.canonicalMatchKey),
                   },
                   unmatched: data.hasUnmatchedPmtiles
                     ? {
@@ -141,7 +151,7 @@ export function FeatureDetailMapSection({
             </MapProvider>
           </Suspense>
         </div>
-        <div className="border-t border-slate-700 px-3 py-2.5">
+        <div className="border-t border-slate-500 bg-[#F2F3F1] px-3 py-2.5">
           <FeatureDetailBoundaryScopeToggle />
         </div>
       </div>

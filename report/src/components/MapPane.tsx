@@ -1,6 +1,8 @@
 import maplibregl from 'maplibre-gl'
+import type { ExpressionSpecification } from 'maplibre-gl'
 import { useRef } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
+import { Layer } from 'react-map-gl/maplibre'
 import MapLibre from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
 import type { OverpassGeoJsonFeatureCollection } from '../lib/overpassBbox'
@@ -18,10 +20,14 @@ import {
   filterOsmOverlay,
   NEVER_MATCH_FILTER,
 } from './map/comparisonMapFilters'
-import { ensureComparisonMapSprites } from './map/comparisonMapSprites'
+import {
+  ensureComparisonMapSprites,
+  OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID,
+} from './map/comparisonMapSprites'
 import { ComparisonVectorLayers } from './map/ComparisonVectorLayers'
 import { OverpassOverlayLayers } from './map/OverpassOverlayLayers'
 import { WfsOverlayLayers } from './map/WfsOverlayLayers'
+import { mapLayerColors } from './mapLayerColors'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 type MapPaneSources = {
@@ -29,6 +35,7 @@ type MapPaneSources = {
     pmtilesUrl: string
     sourceLayer: string
     allowedFeatureIds?: string[] | null
+    officialOnlyFeatureIds?: string[] | null
   }
   unmatched?: {
     pmtilesUrl: string
@@ -120,6 +127,27 @@ export default function MapPane({
   } | null>(null)
 
   const featureIdExpr = featureIdFilterExpr(featureId, primary.allowedFeatureIds ?? null)
+  const officialOnlyFeatureIds = primary.officialOnlyFeatureIds ?? []
+  const officialOverlayFilterExpr = filterOfficialOverlay(featureIdExpr)
+  const officialOnlyListFilter: ExpressionSpecification =
+    officialOnlyFeatureIds.length === 0
+      ? NEVER_MATCH_FILTER
+      : ([
+          'in',
+          ['get', 'featureId'],
+          ['literal', officialOnlyFeatureIds],
+        ] as ExpressionSpecification)
+  const officialOnlyFilter: ExpressionSpecification = [
+    'all',
+    officialOverlayFilterExpr,
+    officialOnlyListFilter,
+  ] as ExpressionSpecification
+  const officialMatchedFilter: ExpressionSpecification = [
+    'all',
+    officialOverlayFilterExpr,
+    ['!', officialOnlyListFilter],
+  ] as ExpressionSpecification
+  const hoverExpr: ExpressionSpecification = ['boolean', ['feature-state', 'hover'], false]
 
   const initialViewState = urlMapView
     ? {
@@ -245,13 +273,45 @@ export default function MapPane({
         sourceId={SOURCE_ID}
         pmtilesUrl={primary.pmtilesUrl}
         sourceLayer={primary.sourceLayer}
-        filterOfficialOverlay={filterOfficialOverlay(featureIdExpr)}
+        filterOfficialOverlay={officialMatchedFilter}
         filterOsmOverlay={filterOsmOverlay(featureIdExpr)}
         filterOfficialDiff={filterOfficialDiff(featureIdExpr)}
         filterOsmDiff={filterOsmDiff(featureIdExpr)}
         showOfficial={showOfficial}
         showOsm={showOsm}
         showDiff={showDiff}
+        osmOverlay={mapLayerColors.osmPaired}
+        osmStripePatternId={OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID}
+      />
+      <Layer
+        id={`${SOURCE_ID}-overlay-official-only-fill`}
+        type="fill"
+        source={SOURCE_ID}
+        source-layer={primary.sourceLayer}
+        filter={officialOnlyFilter}
+        layout={{ visibility: showOfficial ? 'visible' : 'none' }}
+        paint={{
+          'fill-color': mapLayerColors.officialOnly.fill,
+          'fill-opacity': [
+            'case',
+            hoverExpr,
+            Math.min(1, mapLayerColors.officialOnly.fillOpacity + 0.18),
+            mapLayerColors.officialOnly.fillOpacity,
+          ],
+        }}
+      />
+      <Layer
+        id={`${SOURCE_ID}-overlay-official-only-line`}
+        type="line"
+        source={SOURCE_ID}
+        source-layer={primary.sourceLayer}
+        filter={officialOnlyFilter}
+        layout={{ visibility: showOfficial ? 'visible' : 'none' }}
+        paint={{
+          'line-color': mapLayerColors.officialOnly.line,
+          'line-width': ['case', hoverExpr, 4, 2],
+          'line-offset': ['case', hoverExpr, -2, -1],
+        }}
       />
       {unmatched ? (
         <ComparisonVectorLayers
@@ -267,6 +327,8 @@ export default function MapPane({
           showOfficial={false}
           showOsm={unmatched.visible === true}
           showDiff={false}
+          osmOverlay={mapLayerColors.osmUnmatched}
+          osmStripePatternId={OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID}
         />
       ) : null}
       <WfsOverlayLayers geojson={wfsGeojson} />

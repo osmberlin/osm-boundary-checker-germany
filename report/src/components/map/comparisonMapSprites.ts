@@ -1,7 +1,8 @@
 import type maplibregl from 'maplibre-gl'
 import { mapLayerColors } from '../mapLayerColors'
 
-export const OSM_OVERLAY_STRIPE_PATTERN_ID = 'comparison-osm-overlay-diagonal-stripes'
+export const OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID =
+  'comparison-osm-unmatched-overlay-diagonal-stripes'
 
 function parseHexColor(hex: string): [number, number, number] {
   const normalized = hex.replace('#', '')
@@ -13,10 +14,9 @@ function parseHexColor(hex: string): [number, number, number] {
   return [red, green, blue]
 }
 
-export function ensureComparisonMapSprites(map: maplibregl.Map): void {
-  if (map.hasImage(OSM_OVERLAY_STRIPE_PATTERN_ID)) return
-
-  const [red, green, blue] = parseHexColor(mapLayerColors.osm.fill)
+function addStripePatternIfMissing(map: maplibregl.Map, patternId: string, colorHex: string): void {
+  if (map.hasImage(patternId)) return
+  const [red, green, blue] = parseHexColor(colorHex)
   const size = 12
   const stripeWidth = 6
   const pixels = new Uint8Array(size * size * 4)
@@ -36,13 +36,13 @@ export function ensureComparisonMapSprites(map: maplibregl.Map): void {
     }
   }
 
-  map.addImage(
-    OSM_OVERLAY_STRIPE_PATTERN_ID,
-    {
-      width: size,
-      height: size,
-      data: pixels,
-    },
-    { pixelRatio: 1 },
+  map.addImage(patternId, { width: size, height: size, data: pixels }, { pixelRatio: 1 })
+}
+
+export function ensureComparisonMapSprites(map: maplibregl.Map): void {
+  addStripePatternIfMissing(
+    map,
+    OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID,
+    mapLayerColors.osmUnmatched.fill,
   )
 }

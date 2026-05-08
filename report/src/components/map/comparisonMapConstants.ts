@@ -7,6 +7,8 @@ export const UNMATCHED_SOURCE_ID = 'comparison-unmatched-pmtiles'
 export const COMPARISON_INTERACTIVE_LAYER_IDS = [
   `${SOURCE_ID}-overlay-official-fill`,
   `${SOURCE_ID}-overlay-official-line`,
+  `${SOURCE_ID}-overlay-official-only-fill`,
+  `${SOURCE_ID}-overlay-official-only-line`,
   `${SOURCE_ID}-overlay-osm-fill`,
   `${SOURCE_ID}-overlay-osm-line`,
   `${SOURCE_ID}-diff-official-fill`,

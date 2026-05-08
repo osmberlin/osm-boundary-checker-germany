@@ -24,6 +24,7 @@ import {
 import { mapLayerColors } from '../mapLayerColors'
 import { hexToRgba } from '../MapLegend'
 import { OfficialDatasetAgeInfoButton } from '../OfficialDatasetAgeInfoModal'
+import { LegendRectSwatch } from '../reportCategoryStyles'
 import { SummaryStatColumn } from '../SummaryStatColumn'
 
 type MapLayerControls = {
@@ -55,8 +56,8 @@ export function FeatureDetailStatsStrip({
   const m = row.metrics
   const s = de.feature.stats
   const layerId = useId()
-  const o = mapLayerColors.official
-  const osmC = mapLayerColors.osm
+  const o = mapLayerColors.officialMatched
+  const osmC = mapLayerColors.osmPaired
   const d = mapLayerColors.diff
   const reportFresh = kpiFreshnessLinesFromIso(data.generatedAt)
   const officialSide = data.sourceMetadata?.official
@@ -216,8 +217,11 @@ export function FeatureDetailStatsStrip({
             />
           </KpiRow>
 
-          <KpiSection className="mt-6" aria-label={s.layersRowAria}>
-            <KpiRow className="mt-0">
+          <KpiSection
+            className="mt-6 mb-0 rounded-t-md rounded-b-none border-x border-t border-b-0 border-slate-500 !bg-[#F2F3F1] text-slate-900 hover:!bg-[#eaede7]"
+            aria-label={s.layersRowAria}
+          >
+            <KpiRow className="mt-0 [&>*]:!border-l [&>*]:!border-slate-500 [&>*]:pl-3 [&>*]:first:!border-l-0 [&>*]:first:pl-0 [&>*]:lg:pl-6">
               <KpiToggleCell
                 inputId={`${layerId}-official`}
                 checked={mapLayers.showOfficial}
@@ -225,13 +229,13 @@ export function FeatureDetailStatsStrip({
                 label={s.areaOfficial}
                 value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
                 swatch={
-                  <div
-                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
-                    style={{
-                      borderColor: o.line,
-                      backgroundColor: hexToRgba(o.fill, o.fillOpacity),
-                    }}
-                    aria-hidden
+                  <LegendRectSwatch
+                    items={[
+                      {
+                        borderColor: o.line,
+                        backgroundColor: hexToRgba(o.fill, o.fillOpacity),
+                      },
+                    ]}
                   />
                 }
               />
@@ -242,13 +246,13 @@ export function FeatureDetailStatsStrip({
                 label={s.areaOsm}
                 value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
                 swatch={
-                  <div
-                    className="h-full w-full shrink-0 rounded-[2px] border border-solid"
-                    style={{
-                      borderColor: osmC.line,
-                      backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
-                    }}
-                    aria-hidden
+                  <LegendRectSwatch
+                    items={[
+                      {
+                        borderColor: osmC.line,
+                        backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
+                      },
+                    ]}
                   />
                 }
               />
@@ -259,12 +263,17 @@ export function FeatureDetailStatsStrip({
                 label={de.map.diff}
                 value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
                 swatch={
-                  <div
-                    className="h-full w-full shrink-0 rounded-[2px] border border-solid border-slate-500"
-                    style={{
-                      background: `linear-gradient(90deg, ${hexToRgba(d.official.fill, d.official.fillOpacity)} 50%, ${hexToRgba(d.osm.fill, d.osm.fillOpacity)} 50%)`,
-                    }}
-                    aria-hidden
+                  <LegendRectSwatch
+                    items={[
+                      {
+                        borderColor: d.official.line,
+                        backgroundColor: hexToRgba(d.official.fill, d.official.fillOpacity),
+                      },
+                      {
+                        borderColor: d.osm.line,
+                        backgroundColor: hexToRgba(d.osm.fill, d.osm.fillOpacity),
+                      },
+                    ]}
                   />
                 }
               />

@@ -3,8 +3,10 @@ import type { ReportRow } from '../types/report'
 import { mapLayerColors } from './mapLayerColors'
 import { hexToRgba } from './MapLegend'
 
-const o = mapLayerColors.official
-const osm = mapLayerColors.osm
+const o = mapLayerColors.officialMatched
+const osmPaired = mapLayerColors.osmPaired
+const osmUnmatched = mapLayerColors.osmUnmatched
+const officialOnly = mapLayerColors.officialOnly
 
 const swatchBox = 'h-5 w-10 shrink-0 rounded-sm border-2 border-solid'
 
@@ -23,23 +25,23 @@ export function reportCategorySwatchStyle(category: ReportRow['category']): {
       return {
         className: swatchBox,
         style: {
-          borderColor: osm.line,
-          backgroundColor: hexToRgba(osm.fill, osm.fillOpacity),
+          borderColor: osmUnmatched.line,
+          backgroundColor: hexToRgba(osmUnmatched.fill, osmUnmatched.fillOpacity),
         },
       }
     case 'official_only':
       return {
         className: swatchBox,
         style: {
-          borderColor: o.line,
-          backgroundColor: hexToRgba(o.fill, o.fillOpacity),
+          borderColor: officialOnly.line,
+          backgroundColor: hexToRgba(officialOnly.fill, officialOnly.fillOpacity),
         },
       }
     case 'matched':
       return {
         className: `${swatchBox} border-slate-500`,
         style: {
-          background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osm.fill, osm.fillOpacity)} 50%)`,
+          background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osmPaired.fill, osmPaired.fillOpacity)} 50%)`,
         },
       }
   }
@@ -59,8 +61,8 @@ export function reportCategoryPillStyle(category: ReportRow['category']): {
       return {
         className: pillBase,
         style: {
-          borderColor: o.line,
-          backgroundColor: hexToRgba(o.fill, o.fillOpacity),
+          borderColor: officialOnly.line,
+          backgroundColor: hexToRgba(officialOnly.fill, officialOnly.fillOpacity),
           color: 'rgb(224 242 254)',
         },
       }
@@ -68,7 +70,7 @@ export function reportCategoryPillStyle(category: ReportRow['category']): {
       return {
         className: `${pillBase} border-slate-500`,
         style: {
-          background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osm.fill, osm.fillOpacity)} 50%)`,
+          background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osmPaired.fill, osmPaired.fillOpacity)} 50%)`,
           color: 'rgb(248 250 252)',
         },
       }
@@ -80,8 +82,8 @@ export function unmatchedOsmStatPillStyle(): { className: string; style: CSSProp
   return {
     className: pillBase,
     style: {
-      borderColor: osm.line,
-      backgroundColor: hexToRgba(osm.fill, osm.fillOpacity),
+      borderColor: osmUnmatched.line,
+      backgroundColor: hexToRgba(osmUnmatched.fill, osmUnmatched.fillOpacity),
       color: 'rgb(255 237 213)',
     },
   }
@@ -92,30 +94,56 @@ export function ReportCategorySwatch({ category }: { category: ReportRow['catego
   return <div className={s.className} style={s.style} aria-hidden />
 }
 
+export type LegendRectItem = {
+  borderColor: string
+  backgroundColor?: string
+}
+
+export function LegendRectSwatch({ items }: { items: LegendRectItem[] }) {
+  return (
+    <span className="inline-flex items-center gap-1" aria-hidden>
+      {items.map((item, idx) => (
+        <span
+          key={`${item.borderColor}-${idx}`}
+          className="inline-block h-[18px] w-[18px] rounded-[2px] border-2 border-solid"
+          style={{
+            borderColor: item.borderColor,
+            backgroundColor: item.backgroundColor ?? 'transparent',
+          }}
+        />
+      ))}
+    </span>
+  )
+}
+
 export function ReportCategorySquareSwatch({ category }: { category: ReportRow['category'] }) {
-  const s = reportCategorySwatchStyle(category)
-  let borderColor: string
-  switch (category) {
-    case 'official_only':
-      borderColor = o.line
-      break
-    case 'unmatched_osm':
-      borderColor = osm.line
-      break
-    case 'matched':
-      borderColor = o.line
-      break
+  if (category === 'matched') {
+    return (
+      <LegendRectSwatch
+        items={[
+          { borderColor: o.line, backgroundColor: 'transparent' },
+          {
+            borderColor: osmPaired.line,
+            backgroundColor: hexToRgba(osmPaired.fill, osmPaired.fillOpacity),
+          },
+        ]}
+      />
+    )
   }
 
+  const single =
+    category === 'official_only'
+      ? { line: officialOnly.line, fill: officialOnly.fill, fillOpacity: officialOnly.fillOpacity }
+      : { line: osmUnmatched.line, fill: osmUnmatched.fill, fillOpacity: osmUnmatched.fillOpacity }
+
   return (
-    <div
-      className="h-full w-full shrink-0 rounded-[2px] border border-solid"
-      style={{
-        borderColor,
-        background: s.style.background,
-        backgroundColor: s.style.backgroundColor as string | undefined,
-      }}
-      aria-hidden
+    <LegendRectSwatch
+      items={[
+        {
+          borderColor: single.line,
+          backgroundColor: hexToRgba(single.fill, single.fillOpacity),
+        },
+      ]}
     />
   )
 }

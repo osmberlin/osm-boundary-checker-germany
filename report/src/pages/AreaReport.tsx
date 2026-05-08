@@ -144,6 +144,10 @@ export function AreaReport() {
 
   const allMainOn = enabledSet.has('matched') && enabledSet.has('official_only')
   const mapAllowlist = !data || allMainOn ? null : visibleMainRows.map((r) => r.canonicalMatchKey)
+  const officialOnlyMapAllowlist =
+    !data || !enabledSet.has('official_only')
+      ? []
+      : mainRows.filter((r) => r.category === 'official_only').map((r) => r.canonicalMatchKey)
   const unmatchedMapAllowlist = !data || enabledSet.has('unmatched_osm') ? null : []
   const overviewMapBbox = unionMapBboxes(visibleRows)
 
@@ -277,8 +281,11 @@ export function AreaReport() {
         </KpiRow>
       </section>
 
-      <KpiSection className="mb-6" aria-label={st.summaryLegendRowAria}>
-        <KpiRow className="mt-0">
+      <KpiSection
+        className="mb-0 rounded-t-md rounded-b-none border-x border-t border-b-0 border-slate-500 !bg-[#F2F3F1] text-slate-900 hover:!bg-[#eaede7]"
+        aria-label={st.summaryLegendRowAria}
+      >
+        <KpiRow className="mt-0 [&>*]:!border-l [&>*]:!border-slate-500 [&>*]:pl-3 [&>*]:first:!border-l-0 [&>*]:first:pl-0 [&>*]:lg:pl-6">
           <KpiToggleCell
             inputId={`${statsInputId}-matched`}
             checked={catCounts.matched === 0 ? false : isCategoryEnabled('matched')}
@@ -310,7 +317,8 @@ export function AreaReport() {
       </KpiSection>
 
       <div className="mb-8">
-        <div className="w-full overflow-hidden rounded border border-slate-700">
+        <div className="h-px w-full bg-slate-500" />
+        <div className="w-full overflow-hidden rounded-b-md border-x border-b border-slate-500">
           <div className="h-[420px] w-full">
             {visibleRows.length === 0 ? (
               <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
@@ -331,6 +339,7 @@ export function AreaReport() {
                         pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
                         sourceLayer: data.tippecanoeLayer,
                         allowedFeatureIds: mapAllowlist,
+                        officialOnlyFeatureIds: officialOnlyMapAllowlist,
                       },
                       unmatched: data.hasUnmatchedPmtiles
                         ? {
