@@ -168,7 +168,7 @@ export function ProcessingStatus() {
   const runs = buildRuns(events)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 pt-6 text-left sm:px-6 lg:px-8">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-slate-100">{de.status.title}</h1>
         <Link className="text-sky-400 underline hover:text-sky-300" to="/">

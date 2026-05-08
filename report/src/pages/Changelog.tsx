@@ -13,7 +13,7 @@ export function Changelog() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-6 pb-16 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 pt-6 sm:px-6 lg:px-8">
       <header className="mb-6">
         <h1 className="text-3xl font-semibold tracking-tight text-slate-100">
           {de.changelog.heading}

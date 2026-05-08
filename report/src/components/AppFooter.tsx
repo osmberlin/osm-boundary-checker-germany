@@ -46,7 +46,7 @@ export function AppFooter() {
   )
 
   return (
-    <footer className="group/footer border-t border-slate-700 bg-slate-900/50 py-8 text-xs text-slate-400 transition-colors hover:text-slate-300">
+    <footer className="group/footer mt-10 border-t border-slate-700 bg-slate-900/50 py-8 text-xs text-slate-400 transition-colors hover:text-slate-300">
       <div className="mx-auto max-w-5xl space-y-5 px-4 sm:px-6 lg:px-8">
         <p className="flex gap-2">
           <HeartIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-inherit" />

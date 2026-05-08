@@ -40,7 +40,7 @@ export function FeatureDetail() {
   const showCompareFailedNotice = compareBranch?.status === 'compare_failed'
   if (featureQuery.isError) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
         <div className="text-red-400">{String(featureQuery.error)}</div>
         {showCompareFailedNotice ? (
           <p className="mt-2 text-sm text-amber-300">{de.feature.compareFailedNotice}</p>
@@ -54,14 +54,14 @@ export function FeatureDetail() {
       return <RouteLoadingPane title={de.routeLoading.feature(decoded)} />
     }
     return (
-      <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
         <p className="text-slate-400">{de.feature.notFound}</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
       {showCompareFailedNotice ? (
         <div className="mb-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
           {de.feature.compareFailedNotice}

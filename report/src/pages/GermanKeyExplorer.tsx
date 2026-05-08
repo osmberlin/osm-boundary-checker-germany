@@ -23,7 +23,7 @@ export function GermanKeyExplorer() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 text-left sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 pt-8 text-left sm:px-6 lg:px-8">
       <header className="mb-8 border-b border-slate-700 pb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
           {de.germanKeyExplorer.title}

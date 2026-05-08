@@ -174,7 +174,7 @@ export function AreaReport() {
 
   if (comparisonQuery.isError) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
         {areaDisplayName ? (
           <AreaHeadlineRow
             title={areaDisplayName}
@@ -238,7 +238,7 @@ export function AreaReport() {
   const hausdorffP95Max = maxFiniteValue(sortedRows.map((row) => row.metrics?.hausdorffP95M))
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-4 text-left sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
       {areaDisplayName ? (
         <AreaHeadlineRow
           title={areaDisplayName}

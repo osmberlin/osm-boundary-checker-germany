@@ -14,7 +14,7 @@ export function ReviewQueue() {
   const totalReviews = nonEmptyAreas.reduce((sum, area) => sum + area.reviewEntries.length, 0)
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 pt-6 text-left sm:px-6 lg:px-8">
       <p className="mb-6 max-w-prose text-pretty text-slate-400">{de.review.intro}</p>
 
       <section className="mb-6 rounded border border-slate-700 bg-slate-900 p-4">

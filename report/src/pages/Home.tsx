@@ -22,7 +22,7 @@ export function Home() {
   const logoSrc = withSiteBasePath('/osm-grenzabgleich-logo-2025.svg')
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 text-left sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-5xl px-4 pt-6 text-left sm:px-6 lg:px-8">
       <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
         <div className="min-w-0 flex-1 md:pr-2">
           <h1 className="mb-2 max-w-prose text-2xl font-semibold tracking-tight text-pretty text-slate-100 sm:text-3xl">
