@@ -1,6 +1,7 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
 import { type WfsLiveQueryInput, wfsLiveQueryOptions } from '../data/load'
+import { LIVE_ROW_KEY_PROPERTY, wfsFeatureIdPart, wfsLiveRowKey } from '../lib/liveRowKey'
 import { buildWfsGetFeatureUrl, type WfsFeature } from '../lib/wfsGetFeature'
 import type { OgcWfsInspectSource } from '../types/report'
 
@@ -84,14 +85,15 @@ export function useFeatureDetailWfs(featureKey: string) {
       if (!input) continue
       const slot = slotBySourceId[input.sourceId]
       if (!slot || slot.status !== 'done') continue
-      for (const feature of slot.features) {
-        if (!feature.geometry) continue
+      slot.features.forEach((feature, indexInSource) => {
+        if (!feature.geometry) return
         const label =
           feature.id != null && feature.id !== ''
             ? String(feature.id)
             : feature.properties?.id != null
               ? String(feature.properties.id)
               : ''
+        const idPart = wfsFeatureIdPart(feature, indexInSource)
         features.push({
           type: 'Feature',
           id: feature.id,
@@ -99,9 +101,10 @@ export function useFeatureDetailWfs(featureKey: string) {
           properties: {
             ...feature.properties,
             __wfsLabel: label,
+            [LIVE_ROW_KEY_PROPERTY]: wfsLiveRowKey(input.sourceId, idPart),
           },
         })
-      }
+      })
     }
     if (features.length === 0) return null
     return {

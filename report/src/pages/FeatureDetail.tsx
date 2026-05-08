@@ -15,6 +15,7 @@ import { comparisonQueryOptions, featureQueryOptions, runStatusQueryOptions } fr
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useFeatureDetailOverpass } from '../hooks/useFeatureDetailOverpass'
 import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
+import { useFilteredLiveOverlays } from '../hooks/useFilteredLiveOverlays'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { de } from '../i18n/de'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
@@ -38,6 +39,11 @@ export function FeatureDetail() {
   const data = featureQuery.data ?? null
   const overpass = useFeatureDetailOverpass(featureLookupKey)
   const wfs = useFeatureDetailWfs(featureLookupKey)
+  const filteredLiveOverlays = useFilteredLiveOverlays({
+    featureKey: featureLookupKey,
+    wfsGeojson: wfs.geojson,
+    overpassGeojson: overpass.geojson,
+  })
 
   const row = !data || !featureKey ? null : findFeatureDetailRow(data, featureKey)
   const compareBranch = runStatusQuery.data?.areas?.[areaKey]?.compare
@@ -80,8 +86,8 @@ export function FeatureDetail() {
         row={row}
         mapLayers={mapLayers}
         mapView={mapViewParam}
-        overpassGeojson={overpass.geojson}
-        wfsGeojson={wfs.geojson}
+        overpassGeojson={filteredLiveOverlays.overpassGeojson}
+        wfsGeojson={filteredLiveOverlays.wfsGeojson}
       />
 
       <UpdateMapInstructions areaId={areaKey} row={row} />
@@ -98,6 +104,7 @@ export function FeatureDetail() {
 
       <LiveSourceProperties
         key={row.canonicalMatchKey}
+        featureKey={featureLookupKey}
         data={data}
         row={row}
         wfs={{

@@ -1,3 +1,4 @@
+import { ArrowTopRightOnSquareIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import { useCallback, useState } from 'react'
 import { de } from '../i18n/de'
 import { cn } from '../lib/cn'
@@ -5,9 +6,20 @@ import {
   germanKeyExplorerLinkValueOrNull,
   isGermanKeyExplorerDisplayKey,
 } from '../lib/germanKeyExplorer'
+import {
+  type LiveRowKey,
+  overpassLiveRowKey,
+  wfsFeatureIdPart,
+  wfsLiveRowKey,
+} from '../lib/liveRowKey'
 import { buildOverpassBoundaryQuery, type OverpassBoundaryHit } from '../lib/overpassBbox'
 import { DEFAULT_OVERPASS_INTERPRETER_URL, OVERPASS_INSTANCES } from '../lib/overpassServers'
 import { padMapBbox, type WfsFeature } from '../lib/wfsGetFeature'
+import {
+  useHiddenLiveRowKeys,
+  useIsLiveRowHidden,
+  useLiveOverlayActions,
+} from '../stores/liveOverlayVisibilityStore'
 import type { ComparisonForReport, OgcWfsInspectSource, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { mapLayerColors } from './mapLayerColors'
@@ -72,6 +84,11 @@ function buildDatasetSnapshotValueMatchSet(row: ReportRow): ReadonlySet<string> 
   return set
 }
 
+type PropertyCardDisclosure = {
+  isHidden: boolean
+  onOpenChange: (open: boolean) => void
+}
+
 function PropertyCard({
   title,
   properties,
@@ -79,15 +96,17 @@ function PropertyCard({
   osmBrowseLink,
   germanKeyContext,
   datasetSnapshotValueMatches,
+  disclosure,
 }: {
   title: string
   properties: Record<string, unknown>
   variant: 'official' | 'osm'
-  /** When set (Overpass hit), the title links to osm.org for this object. */
+  /** When set (Overpass hit), an icon link to osm.org is rendered on the right of the summary row. */
   osmBrowseLink?: { type: string; id: number }
   germanKeyContext?: { data: ComparisonForReport }
   /** Serialized values from VG250/OSM snapshot cards; matching live rows use Overpass magenta. */
   datasetSnapshotValueMatches?: ReadonlySet<string>
+  disclosure: PropertyCardDisclosure
 }) {
   const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
   const color = variant === 'official' ? mapLayerColors.wfs : mapLayerColors.overpass
@@ -103,61 +122,162 @@ function PropertyCard({
         : `rgb(112 26 117 / ${mapLayerColors.overpass.fillOpacity})`,
   } satisfies React.CSSProperties
 
+  const isOpen = !disclosure.isHidden
+  const toggleLabel = disclosure.isHidden
+    ? de.feature.liveRowShowOnMap
+    : de.feature.liveRowHideOnMap
+
   return (
-    <article className="rounded-lg border p-3 shadow-sm" style={cardStyle}>
-      <h3 className="mb-2 text-sm/6 font-medium text-slate-100">
-        {osmBrowseLink ? (
-          <a
-            href={`https://www.openstreetmap.org/${osmBrowseLink.type}/${osmBrowseLink.id}`}
-            target="_blank"
-            rel="noreferrer noopener"
-            title={de.feature.updateMap.opensInNewWindowTitle}
-            className="text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-          >
-            {title}
-          </a>
+    <details
+      open={isOpen}
+      onToggle={(event) => {
+        const nextOpen = (event.currentTarget as HTMLDetailsElement).open
+        if (nextOpen !== isOpen) disclosure.onOpenChange(nextOpen)
+      }}
+      className="group rounded-lg border shadow-sm"
+      style={cardStyle}
+    >
+      {/* Wrap children in a div: <summary> doesn't accept display:flex reliably across browsers. */}
+      <summary
+        title={toggleLabel}
+        className="cursor-pointer list-none rounded-lg p-3 hover:bg-white/5 focus-visible:ring-1 focus-visible:ring-slate-400 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex min-w-0 items-center gap-2">
+            <span
+              aria-label={toggleLabel}
+              className="flex shrink-0 items-center justify-center text-slate-300 group-hover:text-slate-100"
+            >
+              {disclosure.isHidden ? (
+                <EyeSlashIcon aria-hidden="true" className="h-4 w-4" />
+              ) : (
+                <EyeIcon aria-hidden="true" className="h-4 w-4" />
+              )}
+            </span>
+            <span className="min-w-0 text-sm/6 font-medium break-words text-slate-100">
+              {title}
+            </span>
+          </span>
+          {osmBrowseLink ? (
+            <a
+              href={`https://www.openstreetmap.org/${osmBrowseLink.type}/${osmBrowseLink.id}`}
+              target="_blank"
+              rel="noreferrer noopener"
+              title={de.feature.updateMap.opensInNewWindowTitle}
+              aria-label={de.feature.liveOsmHitOpenLinkAria(osmBrowseLink.type, osmBrowseLink.id)}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex shrink-0 items-center gap-1 text-xs text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+            >
+              {de.feature.liveOsmHitOpenLink}
+              <ArrowTopRightOnSquareIcon aria-hidden="true" className="h-3.5 w-3.5" />
+            </a>
+          ) : null}
+        </div>
+      </summary>
+      <div className="px-3 pb-3">
+        {entries.length === 0 ? (
+          <p className="text-sm text-slate-400">{de.feature.liveOsmHitNoTags}</p>
         ) : (
-          title
-        )}
-      </h3>
-      {entries.length === 0 ? (
-        <p className="text-sm text-slate-400">{de.feature.liveOsmHitNoTags}</p>
-      ) : (
-        <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-          {entries.map(([k, v]) => {
-            const linkVal =
-              germanKeyContext &&
-              isGermanKeyExplorerDisplayKey(k) &&
-              (typeof v === 'string' || typeof v === 'number')
-                ? germanKeyExplorerLinkValueOrNull(v)
-                : null
-            const displayValue = formatPropertyValue(v)
-            const matchesSnapshot = datasetSnapshotValueMatches?.has(displayValue.trim()) ?? false
-            return (
-              <div key={k} className="contents">
-                <dt className={`font-mono text-xs break-words ${keyText}`}>{k}</dt>
-                <dd className={`min-w-0 break-words ${valueText}`}>
-                  <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <span
-                      className={cn(
-                        'min-w-0 rounded-sm text-inherit',
-                        /* mapLayerColors.overpass: fill #701a75, line #86198f → fuchsia-900/800 */
-                        matchesSnapshot && 'bg-fuchsia-800 outline outline-4 outline-fuchsia-800',
-                      )}
-                    >
-                      {displayValue}
+          <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+            {entries.map(([k, v]) => {
+              const linkVal =
+                germanKeyContext &&
+                isGermanKeyExplorerDisplayKey(k) &&
+                (typeof v === 'string' || typeof v === 'number')
+                  ? germanKeyExplorerLinkValueOrNull(v)
+                  : null
+              const displayValue = formatPropertyValue(v)
+              const matchesSnapshot = datasetSnapshotValueMatches?.has(displayValue.trim()) ?? false
+              return (
+                <div key={k} className="contents">
+                  <dt className={`font-mono text-xs break-words ${keyText}`}>{k}</dt>
+                  <dd className={`min-w-0 break-words ${valueText}`}>
+                    <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                      <span
+                        className={cn(
+                          'min-w-0 rounded-sm text-inherit',
+                          /* mapLayerColors.overpass: fill #701a75, line #86198f → fuchsia-900/800 */
+                          matchesSnapshot && 'bg-fuchsia-800 outline outline-4 outline-fuchsia-800',
+                        )}
+                      >
+                        {displayValue}
+                      </span>
+                      {linkVal && germanKeyContext ? (
+                        <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />
+                      ) : null}
                     </span>
-                    {linkVal && germanKeyContext ? (
-                      <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />
-                    ) : null}
-                  </span>
-                </dd>
-              </div>
-            )
-          })}
-        </dl>
+                  </dd>
+                </div>
+              )
+            })}
+          </dl>
+        )}
+      </div>
+    </details>
+  )
+}
+
+/**
+ * Wraps PropertyCard with live overlay visibility from the Zustand store.
+ * Closing the disclosure removes the row from the map; reopening shows it again.
+ */
+function LiveResultCard({
+  featureKey,
+  rowKey,
+  ...rest
+}: {
+  featureKey: string
+  rowKey: LiveRowKey
+} & Omit<Parameters<typeof PropertyCard>[0], 'disclosure'>) {
+  const isHidden = useIsLiveRowHidden(featureKey, rowKey)
+  const { show, hide } = useLiveOverlayActions()
+  return (
+    <PropertyCard
+      {...rest}
+      disclosure={{
+        isHidden,
+        onOpenChange: (open) => {
+          if (open) show(featureKey, rowKey)
+          else hide(featureKey, rowKey)
+        },
+      }}
+    />
+  )
+}
+
+/**
+ * Smart "hide all / show all" toggle for a section's rows.
+ * - When at least one row is currently visible: hides all rows in `rowKeys`.
+ * - When all rows are already hidden: shows all rows again.
+ */
+function LiveSectionVisibilityToggle({
+  featureKey,
+  rowKeys,
+}: {
+  featureKey: string
+  rowKeys: readonly LiveRowKey[]
+}) {
+  const hidden = useHiddenLiveRowKeys(featureKey)
+  const { hideMany, showMany } = useLiveOverlayActions()
+  if (rowKeys.length === 0) return null
+  const allHidden = rowKeys.every((k) => hidden.has(k))
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (allHidden) showMany(featureKey, rowKeys)
+        else hideMany(featureKey, rowKeys)
+      }}
+      aria-label={allHidden ? de.feature.liveSectionShowAllAria : de.feature.liveSectionHideAllAria}
+      className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-300/90 underline decoration-slate-400/30 underline-offset-2 hover:text-slate-100"
+    >
+      {allHidden ? (
+        <EyeIcon aria-hidden="true" className="h-4 w-4" />
+      ) : (
+        <EyeSlashIcon aria-hidden="true" className="h-4 w-4" />
       )}
-    </article>
+      {allHidden ? de.feature.liveSectionShowAll : de.feature.liveSectionHideAll}
+    </button>
   )
 }
 
@@ -172,11 +292,14 @@ function withoutNameStarTags(tags: Record<string, string>): Record<string, strin
 }
 
 export function LiveSourceProperties({
+  featureKey,
   data,
   row,
   wfs,
   overpass,
 }: {
+  /** Stable id for this feature detail page; used as scope for live overlay visibility. */
+  featureKey: string
   data: ComparisonForReport
   row: ReportRow
   wfs: {
@@ -197,6 +320,19 @@ export function LiveSourceProperties({
 
   const [osm, setOsm] = useState<OsmSlot>({ status: 'idle' })
   const osmHits = overpass.hits
+
+  // Row keys for each section's "hide all / show all" toggle.
+  // Computed inline (not memoized) because `wfs.getStatus` returns fresh values on each render
+  // when slot status changes, so memo deps would not be sound and the array is small.
+  const wfsRowKeys: LiveRowKey[] = []
+  for (const src of sources) {
+    const slot = wfs.getStatus(src.id)
+    if (slot.status !== 'done') continue
+    slot.features.forEach((f, i) => {
+      wfsRowKeys.push(wfsLiveRowKey(src.id, wfsFeatureIdPart(f, i)))
+    })
+  }
+  const overpassRowKeys = osmHits.map((hit) => overpassLiveRowKey(hit.type, hit.id))
 
   const loadOfficial = useCallback(
     async (src: OgcWfsInspectSource) => {
@@ -256,6 +392,7 @@ export function LiveSourceProperties({
                 <h3 className="text-sm/6 font-medium text-slate-200">
                   {de.feature.liveOfficialHeading}
                 </h3>
+                <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={wfsRowKeys} />
               </dt>
               <dd className="mt-2 space-y-4 md:col-span-2 md:mt-0">
                 {!bbox && (
@@ -298,12 +435,14 @@ export function LiveSourceProperties({
                         <div className="space-y-3">
                           {slot.features.map((f, i) => {
                             const props = f.properties ?? {}
-                            const idPart = f.id != null ? String(f.id) : String(i + 1)
+                            const idPart = wfsFeatureIdPart(f, i)
                             const title =
                               f.id != null ? idPart : de.feature.liveOfficialFeatureTitle(i + 1, '')
                             return (
-                              <PropertyCard
+                              <LiveResultCard
                                 key={`${src.id}-${idPart}`}
+                                featureKey={featureKey}
+                                rowKey={wfsLiveRowKey(src.id, idPart)}
                                 title={title}
                                 properties={props}
                                 variant="official"
@@ -327,6 +466,7 @@ export function LiveSourceProperties({
                 <h3 className="text-sm/6 font-medium text-slate-200">
                   {de.feature.liveOsmHeading}
                 </h3>
+                <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={overpassRowKeys} />
               </dt>
               <dd className="mt-2 space-y-3 md:col-span-2 md:mt-0">
                 {osm.status === 'idle' && bbox && (
@@ -462,8 +602,10 @@ export function LiveSourceProperties({
                 {osm.status === 'done' && osmHits.length > 0 && (
                   <div className="space-y-3">
                     {osmHits.map((hit) => (
-                      <PropertyCard
+                      <LiveResultCard
                         key={`${hit.type}-${hit.id}`}
+                        featureKey={featureKey}
+                        rowKey={overpassLiveRowKey(hit.type, hit.id)}
                         title={de.feature.liveOsmHitTitle(hit.type, hit.id)}
                         osmBrowseLink={{ type: hit.type, id: hit.id }}
                         properties={withoutNameStarTags(hit.tags) as Record<string, unknown>}
