@@ -539,14 +539,6 @@ export function AreaReport() {
                   <td className="px-3 py-2 text-slate-100">
                     <span className="flex flex-wrap items-baseline gap-x-2">
                       <span>{row.nameLabel}</span>
-                      {row.osmMatchDiagnostics?.matchPath === 'ags_from_rs_fallback' ? (
-                        <span
-                          title={de.areaReport.table.agsFromRsBadgeTitle}
-                          className="rounded border border-amber-700/60 bg-amber-900/40 px-1.5 py-0.5 font-mono text-[10px] text-amber-200"
-                        >
-                          {de.areaReport.table.agsFromRsBadge}
-                        </span>
-                      ) : null}
                     </span>
                   </td>
                   <td className="px-3 py-2 font-mono text-xs text-slate-100">

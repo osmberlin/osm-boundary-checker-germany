@@ -8,7 +8,7 @@ match criteria.
 
 Implementation entry points:
 
-- Extract: [`scripts/osm/extract-osm.ts`](../scripts/osm/extract-osm.ts) (`--kind admin_candidates` / `--kind plz_candidates`)
+- Extract: [`scripts/osm/extract-osm.ts`](../scripts/osm/extract-osm.ts) (`--kind admin_candidates` / `--kind plz_candidates`; nightly pipeline calls these explicitly after `--kind admin`. Locally, `bun run osm:extract` (scripts `extract:osm`) without `--kind` defaults to admin + admin_candidates when interactive or under CI — see script `--help`.)
 - Match: [`scripts/compare/lib/matchCandidates.ts`](../scripts/compare/lib/matchCandidates.ts)
 - Wire-in: `match_candidates` phase in [`scripts/compare/lib/compare.ts`](../scripts/compare/lib/compare.ts)
 - Persist: per-row shards in [`scripts/compare/lib/writeOutputs.ts`](../scripts/compare/lib/writeOutputs.ts)
@@ -55,7 +55,7 @@ admin candidates FGB.
 For each `official_only` row in an area:
 
 1. Resolve the candidate FGB from `osmProfile`:
-   - admin profiles (`admin_rs`, `admin_ags`, `admin_name`) → admin candidates FGB.
+   - admin profiles (`admin_rs`, `admin_name`) → admin candidates FGB.
    - `postal_code` profile → PLZ candidates FGB.
 2. Apply the area's strict reporting filters: `osm.adminLevels` allowlist (admin only),
    `osm.ignoreRelationIds`, plus `compare.bboxFilter / bboxBufferDegrees`. Candidate matching

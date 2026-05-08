@@ -84,9 +84,7 @@ export function ExpectedOsmTagsSection({
       .filter((x) => x.length > 0) ??
     summary?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
     []
-  const showKeyExplorer = matchProperties.some(
-    (mp) => mp === 'de:regionalschluessel' || mp === 'de:amtlicher_gemeindeschluessel',
-  )
+  const showKeyExplorer = matchProperties.some((mp) => isGermanKeyExplorerDisplayKey(mp))
 
   return (
     <section

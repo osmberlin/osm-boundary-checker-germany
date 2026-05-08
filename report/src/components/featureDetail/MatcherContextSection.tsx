@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { areasIndex } from '../../data/areasIndex'
 import { de } from '../../i18n/de'
+import { isGermanKeyExplorerDisplayKey } from '../../lib/germanKeyExplorer'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -44,9 +45,7 @@ export function MatcherContextSection({
   const idPreset = data.idNormalizationPreset ?? '—'
   const mc = data.osmMatchCriteria
 
-  const showKeyExplorer = osmMatchProperties.some(
-    (mp) => mp === 'de:regionalschluessel' || mp === 'de:amtlicher_gemeindeschluessel',
-  )
+  const showKeyExplorer = osmMatchProperties.some((mp) => isGermanKeyExplorerDisplayKey(mp))
 
   return (
     <section
@@ -72,6 +71,15 @@ export function MatcherContextSection({
         <dl className="grid gap-x-3 gap-y-2 px-4 py-6 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:px-6">
           <Row label={s.matcherBoundaryTag} value={boundaryValue} />
           <Row label={s.matcherOfficialProperty} value={officialProp} />
+          {f?.officialExtractFilter ? (
+            <Row
+              label={s.matcherOfficialExtractFilter}
+              value={s.matcherOfficialExtractFilterValue(
+                f.officialExtractFilter.property,
+                f.officialExtractFilter.valuePrefix,
+              )}
+            />
+          ) : null}
           <Row label={s.matcherOsmProperty} value={osmProp} />
           <Row label={s.matcherAdminLevels} value={adminLevels} />
           <Row label={s.matcherBboxFilter} value={bbox} />

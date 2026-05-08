@@ -149,10 +149,7 @@ export function shrinkOfficialPolygon(
  * Returns the normalised key (possibly empty string) so callers can decide whether the
  * candidate is already accounted for in `officialKeySet` (and thus *not* a missing match).
  *
- * For `admin_ags` we apply the same AGS-first / AGS-from-RS fallback used in
- * `compare.ts → deriveOsmKeyForAgsMode`, otherwise the canonical key would be empty for
- * any feature that only carries `de:regionalschluessel` even though the strong-match
- * pipeline would have picked it up.
+ * For `admin_rs` we use `de:regionalschluessel` only (same as strong-match `union_osm`).
  */
 function canonicalKeyForCandidate(
   props: Record<string, unknown>,
@@ -160,19 +157,10 @@ function canonicalKeyForCandidate(
   matchProperty: string,
   preset: IdNormalizationPreset,
 ): string {
-  if (profileId === 'admin_ags') {
-    const agsRaw = trimmedOrNull(props['de:amtlicher_gemeindeschluessel'])
-    if (agsRaw)
-      return normalizeOsmValue('de:amtlicher_gemeindeschluessel', agsRaw, preset).canonicalMatchKey
+  if (profileId === 'admin_rs') {
     const rsRaw = trimmedOrNull(props['de:regionalschluessel'])
-    if (rsRaw) {
-      const digits = rsRaw.replace(/\D/g, '')
-      if (digits.length >= 12) {
-        const ags = `${digits.slice(0, 5)}${digits.slice(9, 12)}`
-        return normalizeOsmValue('de:amtlicher_gemeindeschluessel', ags, preset).canonicalMatchKey
-      }
-    }
-    return ''
+    if (!rsRaw) return ''
+    return normalizeOsmValue('de:regionalschluessel', rsRaw, preset).canonicalMatchKey
   }
   const raw = trimmedOrNull(props[matchProperty])
   if (raw == null) return ''

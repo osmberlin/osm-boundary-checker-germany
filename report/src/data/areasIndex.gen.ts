@@ -5,8 +5,6 @@ const areasIndex = {
     'berlin-ortsteile',
     'berlin-plz',
     'brandenburg-berlin-plz',
-    'brandenburg-gemeinden',
-    'de-gemeinden-bb',
     'de-gemeinden-be',
     'de-gemeinden-bw',
     'de-gemeinden-by',
@@ -47,7 +45,7 @@ const areasIndex = {
       officialOnly: 0,
       unmatchedOsm: 0,
       reviews: 6,
-      issues: 0,
+      issues: 6,
       osmMatchProperties: ['name'],
       osmAdminLevels: ['10'],
     },
@@ -70,28 +68,6 @@ const areasIndex = {
       reviews: 54,
       issues: 149,
       osmMatchProperties: ['postal_code'],
-    },
-    {
-      area: 'brandenburg-gemeinden',
-      displayName: 'Brandenburg Gemeinden',
-      matched: 411,
-      officialOnly: 2,
-      unmatchedOsm: 0,
-      reviews: 41,
-      issues: 25,
-      osmMatchProperties: ['de:amtlicher_gemeindeschluessel', 'de:regionalschluessel'],
-      osmAdminLevels: ['8'],
-    },
-    {
-      area: 'de-gemeinden-bb',
-      displayName: 'Deutschland Gemeinden (Brandenburg)',
-      matched: 411,
-      officialOnly: 2,
-      unmatchedOsm: 0,
-      reviews: 43,
-      issues: 27,
-      osmMatchProperties: ['de:amtlicher_gemeindeschluessel', 'de:regionalschluessel'],
-      osmAdminLevels: ['8'],
     },
     {
       area: 'de-gemeinden-be',
@@ -304,11 +280,11 @@ const areasIndex = {
     {
       area: 'de-verwaltungsgemeinschaften',
       displayName: 'Deutschland Verwaltungsgemeinschaften',
-      matched: 1185,
-      officialOnly: 3414,
+      matched: 1291,
+      officialOnly: 3308,
       unmatchedOsm: 12,
-      reviews: 75,
-      issues: 97,
+      reviews: 77,
+      issues: 98,
       osmMatchProperties: ['de:regionalschluessel'],
       osmAdminLevels: ['7'],
     },
@@ -363,10 +339,6 @@ const areasIndex = {
     },
     {
       name: 'geoportal.brandenburg.de',
-      href: 'https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Ded6ab7a1-7a64-4ceb-8d37-2e156b7f4546',
-    },
-    {
-      name: 'geoportal.brandenburg.de',
       href: 'https://geoportal.brandenburg.de/detailansichtdienst/render?view=gdibb&url=https%3A%2F%2Fgeoportal.brandenburg.de%2Fgs-json%2Fxml%3Ffileid%3Db90acca9-e512-4c6c-a45e-ecc04a1e580c',
     },
     {
@@ -418,27 +390,6 @@ const areasIndex = {
         'https://wiki.openstreetmap.org/wiki/Brandenburg/Geoportal#Rechtliche_Grundlagen',
       officialOsmCompatibilityComment:
         'Brandenburg-Daten mit dokumentierter OSM-Freigabe laut OSM-Wiki.',
-    },
-    {
-      area: 'brandenburg-gemeinden',
-      displayName: 'Brandenburg Gemeinden',
-      officialLicenseLabel: 'DL-DE-BY-2.0',
-      officialLicenseSourceUrl: 'https://www.govdata.de/dl-de/by-2-0',
-      officialOsmCompatibility: 'yes_waiver',
-      officialOsmCompatibilitySourceUrl:
-        'https://wiki.openstreetmap.org/wiki/Brandenburg/Geoportal#Rechtliche_Grundlagen',
-      officialOsmCompatibilityComment:
-        'Brandenburg-Daten mit dokumentierter OSM-Freigabe laut OSM-Wiki.',
-    },
-    {
-      area: 'de-gemeinden-bb',
-      displayName: 'Deutschland Gemeinden (Brandenburg)',
-      officialLicenseLabel: 'CC-BY-4.0',
-      officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
     },
     {
       area: 'de-gemeinden-be',

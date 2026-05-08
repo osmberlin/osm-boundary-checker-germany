@@ -42,9 +42,7 @@ function osmMatchRulesFromAreaConfig(
     const cfg = loadAreaConfig(workspaceRoot, area)
     const matchProperty = resolveOsmProfile(cfg.osmProfile).matchProperty
     const osmMatchProperties =
-      cfg.osmProfile === 'admin_ags'
-        ? ['de:amtlicher_gemeindeschluessel', 'de:regionalschluessel']
-        : [matchProperty]
+      cfg.osmProfile === 'admin_rs' ? ['de:regionalschluessel'] : [matchProperty]
     const adminLevels =
       cfg.osm?.adminLevels != null && cfg.osm.adminLevels.length > 0
         ? [...cfg.osm.adminLevels]

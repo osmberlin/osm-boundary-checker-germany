@@ -33,10 +33,9 @@ export const reportMetricsSchema = z.object({
 export const bboxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()])
 
 export const osmMatchDiagnosticsSchema = z.object({
-  matchPath: z.enum(['ags_direct', 'ags_from_rs_fallback', 'none']),
+  matchPath: z.enum(['rs_direct', 'none']),
   agsRaw: z.string().nullable(),
   rsRaw: z.string().nullable(),
-  agsFromRs: z.string().nullable(),
   missingRecommendedTags: z.array(z.string()),
 })
 
@@ -50,7 +49,7 @@ export const reportRowSchema = z.object({
   officialForEditPath: z.string().nullable(),
   officialProperties: z.record(z.string(), z.unknown()).nullable(),
   osmProperties: z.record(z.string(), z.unknown()).nullable(),
-  /** Per-row OSM match diagnostics (only emitted for AGS-mode datasets). */
+  /** Per-row OSM match diagnostics (`admin_rs` datasets). */
   osmMatchDiagnostics: osmMatchDiagnosticsSchema.nullable().optional(),
 })
 
@@ -67,6 +66,17 @@ export const comparisonSourceMetadataEmbeddedSchema = z.object({
   osm: osmSourceMetadataPersistedSchema.optional().default({}),
 })
 
+/** Subset of direct `official.extractFilter` embedded for report provenance. */
+export const officialExtractFilterSummarySchema = z
+  .object({
+    property: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z_][A-Za-z0-9_]*$/),
+    valuePrefix: z.string().trim().min(1),
+  })
+  .strict()
+
 export const comparisonFilterConfigSummarySchema = z.object({
   officialMatchProperty: z.string().trim().min(1),
   bboxFilter: z.enum(['none', 'official_bbox_overlap']),
@@ -75,7 +85,9 @@ export const comparisonFilterConfigSummarySchema = z.object({
   adminLevels: z.array(z.string().trim().min(1)).optional(),
   ignoreRelationIds: z.array(z.string().trim().min(1)).optional(),
   officialExtractLayer: z.string().trim().min(1).optional(),
-  /** Ordered OSM tags used as match keys (primary first; e.g. AGS then RS fallback). */
+  /** Direct-mode `official.extractFilter`: keep only features whose property value starts with this prefix. */
+  officialExtractFilter: officialExtractFilterSummarySchema.optional(),
+  /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties: z.array(z.string().trim().min(1)).min(1).optional(),
 })
 

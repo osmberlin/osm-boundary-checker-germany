@@ -1,20 +1,19 @@
 {
   "displayName": "Deutschland Gemeinden (Brandenburg)",
   "titlePrefix": "Gemeinde",
-  // Compare: BKG VG25 Gemeinden `AGS` ↔ OSM `de:amtlicher_gemeindeschluessel` (AGS-first), with RS-derived fallback (`de:regionalschluessel` first5+last3) when AGS is missing. Aligned with `brandenburg-gemeinden`.
   "official": {
     "extractFilter": {
       "property": "ARS",
       "valuePrefix": "12",
     },
   },
-  "osmProfile": "admin_ags",
+  "osmProfile": "admin_rs",
   "idNormalization": {
-    "preset": "amtlicher-8",
+    "preset": "regional-12",
   },
   "metricsCrs": "EPSG:25832",
   "compare": {
-    "officialMatchProperty": "AGS",
+    "officialMatchProperty": "ARS",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.02,
     "osmScopeFilter": "centroid_in_official_coverage",

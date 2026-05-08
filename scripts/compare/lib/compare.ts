@@ -28,18 +28,12 @@ import { projectGeometry } from './projectGeometry.ts'
 import { calculateMetricsBatchWithRust } from './rustGeomSidecar.ts'
 
 /**
- * Per-row visibility into how the OSM side was joined for AGS-mode datasets.
- * `matchPath` is `ags_direct` when OSM carried `de:amtlicher_gemeindeschluessel`,
- * `ags_from_rs_fallback` when AGS was derived from canonical `de:regionalschluessel`
- * (first5 + last3) because AGS was missing, and `none` when neither was usable.
- *
- * Only emitted for AGS-mode datasets (osmProfile=admin_ags); all `null` otherwise.
+ * Per-row visibility into how the OSM side was joined for `admin_rs` (ARS ↔ RS only).
  */
 export type OsmMatchDiagnostics = {
-  matchPath: 'ags_direct' | 'ags_from_rs_fallback' | 'none'
+  matchPath: 'rs_direct' | 'none'
   agsRaw: string | null
   rsRaw: string | null
-  agsFromRs: string | null
   missingRecommendedTags: string[]
 }
 
@@ -55,7 +49,7 @@ export type CompareRow = {
   officialProperties: Record<string, unknown> | null
   /** GeoJSON properties from the merged OSM feature(s) for this key. */
   osmProperties: Record<string, unknown> | null
-  /** Per-row OSM match diagnostics for AGS-mode datasets (null otherwise). */
+  /** Per-row OSM match diagnostics for `admin_rs` datasets (null otherwise). */
   osmMatchDiagnostics: OsmMatchDiagnostics | null
   /**
    * Candidate OSM features whose representative point falls inside the shrunk official
@@ -235,73 +229,43 @@ function readTrimmedTag(props: Record<string, unknown> | null | undefined, tag: 
   return String(v).trim()
 }
 
-/** Derive 8-digit AGS from a canonical 12-digit ARS (LLRKK + GGG); returns null if RS lacks 12 digits. */
-function deriveAgsFromRs(rsRaw: string): string | null {
-  const digits = rsRaw.replace(/\D/g, '')
-  if (digits.length < 12) return null
-  return `${digits.slice(0, 5)}${digits.slice(9, 12)}`
-}
-
 type OsmKeyResult = {
   canonicalKey: string | null
   diagnostics: OsmMatchDiagnostics
 }
 
 /**
- * AGS-first OSM keying for `osmProfile=admin_ags`:
- *   1. canonical `de:amtlicher_gemeindeschluessel` → `ags_direct`
- *   2. AGS derived from canonical `de:regionalschluessel` (first5+last3) → `ags_from_rs_fallback`
- *
- * Lifecycle-prefixed RS variants (`abandoned:de:regionalschluessel` etc.) are intentionally NOT
- * consulted — the compare key is the live tag only.
+ * RS-only OSM keying for `osmProfile=admin_rs`: canonical key from `de:regionalschluessel` only.
  */
-function deriveOsmKeyForAgsMode(
+function deriveOsmKeyForRsMode(
   props: Record<string, unknown> | null | undefined,
   preset: IdNormalizationPreset,
 ): OsmKeyResult {
-  const agsRaw = readTrimmedTag(props, OSM_AGS_TAG)
-  const rsRaw = readTrimmedTag(props, OSM_RS_TAG)
-  const agsFromRs = rsRaw ? deriveAgsFromRs(rsRaw) : null
-
-  if (agsRaw) {
-    const canonical = normalizeOsmValue(OSM_AGS_TAG, agsRaw, preset).canonicalMatchKey || null
-    const missing: string[] = []
-    if (!rsRaw) missing.push(OSM_RS_TAG)
+  const p = props ?? {}
+  const rsRaw = readTrimmedTag(p, OSM_RS_TAG)
+  const agsRaw = readTrimmedTag(p, OSM_AGS_TAG)
+  if (!rsRaw) {
     return {
-      canonicalKey: canonical,
+      canonicalKey: null,
       diagnostics: {
-        matchPath: canonical ? 'ags_direct' : 'none',
+        matchPath: 'none',
         agsRaw: agsRaw || null,
-        rsRaw: rsRaw || null,
-        agsFromRs,
-        missingRecommendedTags: missing,
+        rsRaw: null,
+        missingRecommendedTags: [OSM_RS_TAG],
       },
     }
   }
-  if (agsFromRs) {
-    const canonical = normalizeOsmValue(OSM_AGS_TAG, agsFromRs, preset).canonicalMatchKey || null
-    return {
-      canonicalKey: canonical,
-      diagnostics: {
-        matchPath: canonical ? 'ags_from_rs_fallback' : 'none',
-        agsRaw: null,
-        rsRaw: rsRaw || null,
-        agsFromRs,
-        missingRecommendedTags: [OSM_AGS_TAG],
-      },
-    }
-  }
+  const canonical = normalizeOsmValue(OSM_RS_TAG, rsRaw, preset).canonicalMatchKey
+  const canonicalKey = canonical.length > 0 ? canonical : null
   const missing: string[] = []
-  if (!agsRaw) missing.push(OSM_AGS_TAG)
-  if (!rsRaw) missing.push(OSM_RS_TAG)
+  if (canonicalKey && !agsRaw) missing.push(OSM_AGS_TAG)
   return {
-    canonicalKey: null,
+    canonicalKey,
     diagnostics: {
-      matchPath: 'none',
-      agsRaw: null,
+      matchPath: canonicalKey ? 'rs_direct' : 'none',
+      agsRaw: agsRaw || null,
       rsRaw: rsRaw || null,
-      agsFromRs: null,
-      missingRecommendedTags: missing,
+      missingRecommendedTags: canonicalKey ? missing : [OSM_RS_TAG],
     },
   }
 }
@@ -328,16 +292,16 @@ export async function runCompare(
   const osmPath = osmFgbPathFromConfig(runtimeRoot, config.osm)
   if (!existsSync(osmPath)) {
     throw new Error(
-      `Configured OSM FlatGeobuf not found:\n  ${osmPath}\n\nRun: bun run osm:extract`,
+      `Configured OSM FlatGeobuf not found:\n  ${osmPath}\n\nRun: bun run osm:extract (or bun run extract:osm for the wizard)`,
     )
   }
   const osmMatchProperty = config.osm.matchProperty
-  const isAgsMode = osmMatchProperty === OSM_AGS_TAG
   const relationIdCriteria =
     config.osm.matchCriteria?.kind === 'relation_id'
       ? new Set(config.osm.matchCriteria.relationIds)
       : null
   const preset = config.idNormalization.preset
+  const isRsMode = !relationIdCriteria && osmMatchProperty === OSM_RS_TAG
   const metricsCrs = config.metricsCrs
 
   const tLoadOfficial = Date.now()
@@ -444,7 +408,7 @@ export async function runCompare(
   const tUnionOsm = Date.now()
   instrumentation?.setInFlightPhase?.('union_osm')
   instrumentation?.checkpoint?.('before_union_osm')
-  /** First-writer-wins diagnostics per canonical OSM key (only populated for AGS-mode datasets). */
+  /** First-writer-wins diagnostics per canonical OSM key (`admin_rs` datasets). */
   const osmDiagnosticsByKey = new Map<string, OsmMatchDiagnostics>()
   const osmMap = unionFeaturesByKey(osmFc, (props) => {
     const p = props as Record<string, unknown>
@@ -453,8 +417,8 @@ export async function runCompare(
       if (!relId || !relationIdCriteria.has(relId)) return null
       return normalizeOsmValue('osm_relation_id', relId, preset).canonicalMatchKey
     }
-    if (isAgsMode) {
-      const result = deriveOsmKeyForAgsMode(p, preset)
+    if (isRsMode) {
+      const result = deriveOsmKeyForRsMode(p, preset)
       if (result.canonicalKey == null || result.canonicalKey.length === 0) return null
       if (!osmDiagnosticsByKey.has(result.canonicalKey)) {
         osmDiagnosticsByKey.set(result.canonicalKey, result.diagnostics)
@@ -478,8 +442,8 @@ export async function runCompare(
       const relId = resolveRelationId(props)
       if (!relId || !relationIdCriteria.has(relId)) continue
       canonicalKey = normalizeOsmValue('osm_relation_id', relId, preset).canonicalMatchKey
-    } else if (isAgsMode) {
-      canonicalKey = deriveOsmKeyForAgsMode(props, preset).canonicalKey
+    } else if (isRsMode) {
+      canonicalKey = deriveOsmKeyForRsMode(props, preset).canonicalKey
     } else {
       const v = props?.[osmMatchProperty]
       if (v == null) continue
@@ -529,21 +493,19 @@ export async function runCompare(
     }
 
     let osmMatchDiagnostics: OsmMatchDiagnostics | null = null
-    if (isAgsMode) {
+    if (isRsMode) {
       if (osmGeom) {
         osmMatchDiagnostics = osmDiagnosticsByKey.get(key) ?? {
           matchPath: 'none',
           agsRaw: null,
           rsRaw: null,
-          agsFromRs: null,
-          missingRecommendedTags: [OSM_AGS_TAG, OSM_RS_TAG],
+          missingRecommendedTags: [OSM_RS_TAG],
         }
       } else {
         osmMatchDiagnostics = {
           matchPath: 'none',
           agsRaw: null,
           rsRaw: null,
-          agsFromRs: null,
           missingRecommendedTags: [],
         }
       }

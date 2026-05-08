@@ -2,6 +2,16 @@ import { meanIouChartDe } from '@compare-metrics/modalCopyDe.ts'
 import { formatDeInteger } from '../lib/formatDe'
 import type { ReportRow } from '../types/report'
 
+/**
+ * OSM admin RS datasets: copy for feature „OSM-Schlüssel-Tags“ and optional provenance dual-key block.
+ */
+export const osmAdminGermanDualKeyLead = {
+  agsFirst:
+    'Zuordnung über `de:amtlicher_gemeindeschluessel` (Legacy-Hinweis; aktuelle Gemeinde-Datensätze nutzen nur `de:regionalschluessel` für den Abgleich).',
+  rsFirst:
+    'Zuordnung erfolgt über `de:regionalschluessel` auf der OSM-Relation und das amtliche Schlüsselfeld (z. B. ARS bzw. LGB `ars`), jeweils mit dem eingestellten Normalisierungs-Preset. `de:amtlicher_gemeindeschluessel` ist nicht Teil des Abgleichs, wird aber für die Datenpflege empfohlen.',
+} as const
+
 /** UI copy (German). Metric modal copy lives in scripts/compare/lib/metrics/ (per-metric folder, de.ts). */
 export const de = {
   appTitle: 'OSM Grenzabgleich',
@@ -40,6 +50,9 @@ export const de = {
   provenance: {
     sectionAria: 'Datenquellen und Datensatz-Abgleich',
     title: 'Datenquelle, Filter und Vergleichsregeln',
+    configLinkLabel: 'Konfigurationsdatei',
+    configLinkAria: (area: string) =>
+      `Konfigurationsdatei \`${area}/config.jsonc\` auf GitHub öffnen`,
     reportCreatedLabel: 'Auswertung erstellt',
     officialDownloadLabel: 'Amtliche Geometrie (letzter Bezug)',
     officialSourceStandLabel: 'Amtlicher Datenstand',
@@ -75,6 +88,9 @@ export const de = {
     compareDataHeading: 'Vergleichsdaten',
     compareDataLead:
       'Diese Daten wurden für den Vergleich entsprechend der Regeln unten verwendet:',
+    /** Shown under Vergleichsdaten when the OSM side is present (admin RS). */
+    compareDataOsCanonicalNote:
+      'Die OSM-Zeile zeigt den kanonischen Vergleichsschlüssel nach Normalisierung aus `de:regionalschluessel`. Rohwerte der OSM-Tags und der Match-Pfad stehen in der Sektion „OSM-Schlüssel-Tags“ weiter oben auf der Seite.',
     compareDataOsmLabel: 'OSM-Daten',
     compareDataOfficialLabel: 'Amtliche Daten',
     compareDataMissing: '(missing)',
@@ -82,6 +98,13 @@ export const de = {
       `Definiert, welche Felder aus amtlichen Daten und OSM einander zugeordnet werden und zu welchem gemeinsamen Schlüssel normalisiert wird. Metriken beziehen sich auf Projektion ${crs}.`,
     compareMappingEmpty:
       'Keine expliziten Mapping-Regeln im Report eingebettet (Schlüsselfelder/Preset fehlen).',
+    /** Second paragraph under Vergleichsregeln when `osmMatchProperties` lists both German admin keys. */
+    compareMappingDualGermanKeysLeadRsFirst: osmAdminGermanDualKeyLead.rsFirst,
+    compareMappingDualGermanKeysLeadAgsFirst: osmAdminGermanDualKeyLead.agsFirst,
+    /** Single list item replacing two generic `compareOsmMatchTag` bullets for the German dual-key case. */
+    compareOsmMatchGermanDualCode: (orderedTags: string) => `osmMatchTag[]=${orderedTags}`,
+    compareOsmMatchGermanDualDescription:
+      'Prioritätsreihenfolge wie im Absatz darüber: die Konfiguration listet dieselben Tags in derselben Reihenfolge (`osmMatchTag[0]` zuerst).',
     compareOsmFilterHeading: 'Filterung der OSM Daten',
     compareOfficialFilterHeading: 'Filterung der amtlichen Daten',
     compareFilterLead:
@@ -132,6 +155,8 @@ export const de = {
           'Ein OSM-Objekt zählt nur dann, wenn sein Schwerpunkt innerhalb der amtlichen Vergleichsabdeckung liegt.',
       },
       ignoreRelationIds: 'Diese OSM-Relationen werden vor dem Matching explizit ausgeschlossen.',
+      officialExtractFilter: (property: string, valuePrefix: string) =>
+        `Der für den Vergleich verwendete amtliche Datensatz enthält nur Features, deren Feld \`${property}\` mit dem Präfix \`${valuePrefix}\` beginnt.`,
     },
     noSourceData: 'Keine Quellenangaben im Report enthalten.',
     osmFilterNoteTitle: 'Zusatzhinweis aus dem Build',
@@ -236,10 +261,6 @@ export const de = {
       issueIndicator: 'Bewertung',
       map: 'Karte',
       view: 'Detail',
-      /** Inline badge in the name cell when AGS-mode matched via RS-derived fallback. */
-      agsFromRsBadge: 'AGS aus RS',
-      agsFromRsBadgeTitle:
-        'Treffer über Fallback: AGS aus de:regionalschluessel abgeleitet — de:amtlicher_gemeindeschluessel fehlt an der OSM-Geometrie.',
     },
     chartTooltipIou: meanIouChartDe.chartTooltipIou,
     unmatchedCountLabel: 'OSM ohne Treffer in offiziellen Daten (gesamt)',
@@ -445,6 +466,9 @@ export const de = {
       'Diese OSM-Grenze hat kein passendes amtliches Gegenstück in diesem Datensatz. So ist der Abgleich konfiguriert (ohne Live-Abfrage):',
     matcherBoundaryTag: 'Overpass boundary',
     matcherOfficialProperty: 'Amtliches Match-Feld',
+    matcherOfficialExtractFilter: 'Amtlicher Extract-Filter',
+    matcherOfficialExtractFilterValue: (property: string, valuePrefix: string) =>
+      `Feld \`${property}\`, Wert beginnt mit \`${valuePrefix}\``,
     matcherOsmProperty: 'OSM Match-Tag',
     matcherAdminLevels: 'admin_level (erwartet)',
     matcherBboxFilter: 'Bounding-Box-Filter',
@@ -456,18 +480,14 @@ export const de = {
     matcherCriteriaRelations: (ids: string) => `Relation-ID(s): ${ids}`,
     matcherDecodeKeyLink: 'Schlüssel dekodieren',
 
-    /** AGS-first match diagnostics shown for AGS-Datasets (e.g. brandenburg-gemeinden). */
+    /** Match diagnostics for `admin_rs` (ARS ↔ de:regionalschluessel). */
     osmKeyDiagnosticsSectionAria: 'OSM-Schlüssel-Tags und Match-Pfad',
     osmKeyDiagnosticsSectionTitle: 'OSM-Schlüssel-Tags',
-    osmKeyDiagnosticsSectionLead:
-      'Wir matchen zuerst auf den AGS (`de:amtlicher_gemeindeschluessel`). Fehlt dieser, wird ersatzweise ein AGS aus dem kanonischen ARS (`de:regionalschluessel`, erste 5 + letzte 3 Ziffern) abgeleitet. Beide Tags sollten an der OSM-Geometrie gepflegt sein.',
+    osmKeyDiagnosticsSectionLeadRs: osmAdminGermanDualKeyLead.rsFirst,
     osmKeyDiagnosticsAgsLabel: 'de:amtlicher_gemeindeschluessel',
     osmKeyDiagnosticsRsLabel: 'de:regionalschluessel',
-    osmKeyDiagnosticsAgsFromRsLabel: 'AGS aus ARS abgeleitet',
     osmKeyDiagnosticsMatchPathLabel: 'Match-Pfad',
-    osmKeyDiagnosticsMatchPathAgsDirect: 'AGS direkt (de:amtlicher_gemeindeschluessel)',
-    osmKeyDiagnosticsMatchPathAgsFromRs:
-      'AGS abgeleitet aus de:regionalschluessel (Fallback — bitte de:amtlicher_gemeindeschluessel ergänzen)',
+    osmKeyDiagnosticsMatchPathRsDirect: 'ARS/RS direkt (de:regionalschluessel)',
     osmKeyDiagnosticsMatchPathNone: 'Kein passender Schlüssel an der OSM-Geometrie',
     osmKeyDiagnosticsMissingTagsLabel: 'Fehlende Tags (empfohlen)',
     osmKeyDiagnosticsValueAbsent: '— (nicht gesetzt)',

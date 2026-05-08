@@ -67,6 +67,11 @@ export type SourceMetadataSide = {
   license?: string
 }
 
+export type OfficialExtractFilterSummary = {
+  property: string
+  valuePrefix: string
+}
+
 export type ComparisonFilterConfigSummary = {
   officialMatchProperty: string
   bboxFilter: 'none' | 'official_bbox_overlap'
@@ -75,7 +80,9 @@ export type ComparisonFilterConfigSummary = {
   adminLevels?: string[]
   ignoreRelationIds?: string[]
   officialExtractLayer?: string
-  /** Ordered OSM tags used as match keys (primary first; e.g. AGS then RS fallback). */
+  /** Direct-mode subset of the official export before compare (`official.extractFilter`). */
+  officialExtractFilter?: OfficialExtractFilterSummary
+  /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties?: string[]
 }
 
@@ -108,7 +115,7 @@ export type ReportRow = {
   officialProperties: Record<string, unknown> | null
   /** GeoJSON properties from the compare merge (OSM). */
   osmProperties: Record<string, unknown> | null
-  /** Per-row OSM match diagnostics (only emitted for AGS-mode datasets). */
+  /** Per-row OSM match diagnostics (`admin_rs` datasets). */
   osmMatchDiagnostics?: OsmMatchDiagnostics | null
 }
 

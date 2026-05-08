@@ -2,8 +2,8 @@
   "displayName": "Brandenburg Gemeinden",
   "titlePrefix": "Gemeinde",
 
-  // Compare: LGB Verwaltungsgrenzen Gemeinden `ags` ↔ OSM `de:amtlicher_gemeindeschluessel` (AGS-first), with RS-derived fallback (`de:regionalschluessel` first5+last3) when AGS is missing.
-  "osmProfile": "admin_ags",
+  // Compare: LGB Verwaltungsgrenzen Gemeinden `ars` ↔ OSM `de:regionalschluessel` (regional-12).
+  "osmProfile": "admin_rs",
   "official": {
     "extractLayer": "app:gem",
     "download": {
@@ -21,12 +21,12 @@
     },
   },
   "idNormalization": {
-    "preset": "amtlicher-8",
+    "preset": "regional-12",
   },
   "metricsCrs": "EPSG:25832",
 
   "compare": {
-    "officialMatchProperty": "ags",
+    "officialMatchProperty": "ars",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
     "osmScopeFilter": "centroid_in_official_coverage",

@@ -1,9 +1,11 @@
 #!/usr/bin/env bun
+import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { areaConfigPathForDisplay, loadAreaConfig } from '../shared/areaConfig.ts'
 import { parseAreaDisplayName } from '../shared/areaConfigMetadata.ts'
+import { cliErr, cliHeadline, cliMuted, cliOk, cliWarn } from '../shared/cliStyle.ts'
 import { toCompareRulesSummary } from '../shared/compareRulesSummary.ts'
 import {
   comparisonForReportSchema,
@@ -23,6 +25,7 @@ import { type OverpassBoundaryTag, writeOutputs } from './lib/writeOutputs.ts'
 
 function parseArgs(argv: string[]) {
   let area: string | null = null
+  let noSync = false
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--area') {
       const v = argv[i + 1]
@@ -31,8 +34,21 @@ function parseArgs(argv: string[]) {
         i++
       }
     }
+    if (argv[i] === '--no-sync') noSync = true
   }
-  return { area }
+  return { area, noSync }
+}
+
+function maybeSyncReportRuntimeAssets(workspaceRoot: string, noSync: boolean): void {
+  if (noSync || process.env.COMPARE_NO_SYNC === '1') return
+  console.log(`\n${cliHeadline('[compare] report:sync-runtime-assets …')}`)
+  const r = spawnSync('bun', ['run', 'report:sync-runtime-assets'], {
+    cwd: workspaceRoot,
+    stdio: 'inherit',
+  })
+  if ((r.status ?? 1) !== 0) {
+    console.warn(cliWarn(`[compare] report:sync-runtime-assets exited with ${r.status}`))
+  }
 }
 
 function getWorkspaceRoot(): string {
@@ -50,9 +66,7 @@ function nowIso(): string {
 function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfigSummary {
   const osmProfile = resolveOsmProfile(configRaw.osmProfile)
   const osmMatchProperties =
-    configRaw.osmProfile === 'admin_ags'
-      ? ['de:amtlicher_gemeindeschluessel', 'de:regionalschluessel']
-      : [osmProfile.matchProperty]
+    configRaw.osmProfile === 'admin_rs' ? ['de:regionalschluessel'] : [osmProfile.matchProperty]
   return {
     officialMatchProperty: configRaw.compare.officialMatchProperty,
     bboxFilter: configRaw.compare.bboxFilter,
@@ -67,6 +81,16 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
       : {}),
     ...(configRaw.officialMode === 'direct' && configRaw.official.extractLayer?.trim()
       ? { officialExtractLayer: configRaw.official.extractLayer.trim() }
+      : {}),
+    ...(configRaw.officialMode === 'direct' &&
+    configRaw.official.extractFilter?.property?.trim() &&
+    configRaw.official.extractFilter?.valuePrefix?.trim()
+      ? {
+          officialExtractFilter: {
+            property: configRaw.official.extractFilter.property.trim(),
+            valuePrefix: configRaw.official.extractFilter.valuePrefix.trim(),
+          },
+        }
       : {}),
   }
 }
@@ -145,9 +169,14 @@ function signalExitCode(signal: 'SIGINT' | 'SIGTERM'): number {
 }
 
 async function main() {
-  const { area } = parseArgs(process.argv.slice(2))
+  const { area, noSync } = parseArgs(process.argv.slice(2))
   if (!area) {
-    console.error('Usage: bun scripts/compare/compare-boundaries.ts --area <folder>')
+    console.error(
+      cliErr(
+        'Usage: bun scripts/compare/compare-boundaries.ts --area <folder> [--no-sync]\n' +
+          '  --no-sync  Skip bun run report:sync-runtime-assets (used when cli/compare batches areas).',
+      ),
+    )
     process.exit(1)
   }
 
@@ -157,12 +186,12 @@ async function main() {
   try {
     configRaw = loadAreaConfig(workspaceRoot, area)
   } catch (e) {
-    console.error(String(e))
-    console.error(`Expected ${areaConfigPathForDisplay(workspaceRoot, area)}`)
+    console.error(cliErr(String(e)))
+    console.error(cliErr(`Expected ${areaConfigPathForDisplay(workspaceRoot, area)}`))
     process.exit(1)
   }
 
-  console.log(`Comparing area: ${area}`)
+  console.log(cliHeadline(`Comparing area: ${area}`))
   const {
     runId,
     phaseLogger,
@@ -208,13 +237,15 @@ async function main() {
   process.once('SIGINT', onSignal)
   logRunStart()
   checkpoint('run_start')
-  console.log(`[compare] timing runId=${runId}`)
+  console.log(cliMuted(`[compare] timing runId=${runId}`))
   const areaPath = datasetFolderPath(runtimeRoot, area)
   const previousMetricsByKey = loadPreviousMetricsByKey(areaPath)
   const skipIssueIndicator = area === 'de-gemeinden'
   if (skipIssueIndicator) {
     console.log(
-      `[compare] skipping issue-indicator enrichment for ${area} (isolated from parallel de-gemeinden split work)`,
+      cliWarn(
+        `[compare] skipping issue-indicator enrichment for ${area} (isolated from parallel de-gemeinden split work)`,
+      ),
     )
   }
   try {
@@ -274,7 +305,10 @@ async function main() {
       },
     )
     checkpoint('after_write_outputs')
-    console.log(`Wrote output PMTiles + static report payloads under ${DATASETS_DIRECTORY}/${area}`)
+    console.log(
+      cliOk(`Wrote output PMTiles + static report payloads under ${DATASETS_DIRECTORY}/${area}`),
+    )
+    maybeSyncReportRuntimeAssets(workspaceRoot, noSync)
     finalizeRun('ok', { elapsedMs: Date.now() - runStartedEpoch })
   } catch (error) {
     checkpoint('compare_failed', { detail: String(error) })
@@ -292,6 +326,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(e)
+  console.error(cliErr('[compare]'), e)
   process.exit(1)
 })

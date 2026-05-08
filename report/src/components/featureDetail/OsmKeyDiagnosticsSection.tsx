@@ -21,9 +21,7 @@ function PlainRow({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * Shown when the dataset uses AGS-first matching (osmProfile=admin_ags).
- * Surfaces the OSM-side `de:amtlicher_gemeindeschluessel` / `de:regionalschluessel` raw values,
- * the AGS-from-RS fallback derivation, and which match path was used.
+ * Shown for matched/unmatched OSM rows when compare emitted `osmMatchDiagnostics` (`admin_rs`).
  */
 export function OsmKeyDiagnosticsSection({ row }: { row: ReportRow }) {
   const diag = row.osmMatchDiagnostics
@@ -32,11 +30,11 @@ export function OsmKeyDiagnosticsSection({ row }: { row: ReportRow }) {
 
   const s = de.feature
   const matchPathLabel =
-    diag.matchPath === 'ags_direct'
-      ? s.osmKeyDiagnosticsMatchPathAgsDirect
-      : diag.matchPath === 'ags_from_rs_fallback'
-        ? s.osmKeyDiagnosticsMatchPathAgsFromRs
-        : s.osmKeyDiagnosticsMatchPathNone
+    diag.matchPath === 'rs_direct'
+      ? s.osmKeyDiagnosticsMatchPathRsDirect
+      : s.osmKeyDiagnosticsMatchPathNone
+
+  const sectionLead = s.osmKeyDiagnosticsSectionLeadRs
 
   return (
     <section
@@ -47,13 +45,12 @@ export function OsmKeyDiagnosticsSection({ row }: { row: ReportRow }) {
         <h2 className="text-base font-semibold text-slate-100">
           {s.osmKeyDiagnosticsSectionTitle}
         </h2>
-        <p className="mt-2 max-w-4xl text-sm text-slate-400">{s.osmKeyDiagnosticsSectionLead}</p>
+        <p className="mt-2 max-w-4xl text-sm text-slate-400">{sectionLead}</p>
       </div>
       <div className="border-t border-slate-700">
         <dl className="grid gap-x-3 gap-y-2 px-4 py-6 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:px-6">
           <ValueRow label={s.osmKeyDiagnosticsAgsLabel} value={diag.agsRaw} />
           <ValueRow label={s.osmKeyDiagnosticsRsLabel} value={diag.rsRaw} />
-          <ValueRow label={s.osmKeyDiagnosticsAgsFromRsLabel} value={diag.agsFromRs} />
           <PlainRow label={s.osmKeyDiagnosticsMatchPathLabel} value={matchPathLabel} />
           {diag.missingRecommendedTags.length > 0 ? (
             <PlainRow

@@ -1,9 +1,16 @@
 {
-  "generatedAt": "2026-05-08T15:24:57.724Z",
+  "generatedAt": "2026-05-08T21:37:17.422Z",
   "months": [
     {
       "month": "2026-05",
       "entries": [
+        {
+          "refs": ["95eb7f9"],
+          "descriptionMd": "Gemeinde-Abgleich (`admin_rs`) erfolgt nur noch über `de:regionalschluessel` und das amtliche Schlüsselfeld (ARS bzw. LGB `ars`); das Profil `admin_ags` und AGS-/Fallback-Logik entfallen. `de-gemeinden-bb` und `brandenburg-gemeinden` nutzen damit dieselbe RS/ARS-Achse wie die übrigen Gemeinde-Datensätze. Bestehende `comparison_table.json`-Dateien bitte neu erzeugen (`bun run compare`).",
+          "committedAtIso": "2026-05-08T22:25:52+02:00",
+          "committedAtShort": "2026-05-08",
+          "refsDisplay": ["95eb7f9"]
+        },
         {
           "refs": ["a99c98a"],
           "descriptionMd": "Kreisfreie Städte und Stadtstaaten werden jetzt korrekt gematcht, auch wenn ihre OSM-Grenze auf einer anderen `admin_level` liegt. Zusätzlich zeigt die Detailseite Vorschläge für mögliche OSM-Grenzen an, wenn eine amtliche Grenze nicht gematcht wurde.",
