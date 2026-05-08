@@ -273,7 +273,7 @@ export const de = {
     mapBoundaryScopeAria: 'Kartenausschnitt: nur ausgewählte Grenze oder alle Grenzen',
     osmRelation: 'OSM-Relation',
     /** Deep link to Schlüssel-Explorer from property rows and provenance. */
-    germanKeyVerifyLink: 'Schlüssel prüfen',
+    germanKeyVerifyLink: 'Schlüssel-Explorer',
     stats: {
       /** Matches JSON field name; shown next to key value on the feature header row. */
       canonicalMatchKeyField: 'canonicalMatchKey',
