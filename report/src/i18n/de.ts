@@ -371,6 +371,21 @@ export const de = {
     datasetPropertiesLegacySnapshot:
       'Für diesen Snapshot sind keine gespeicherten Attribute verfügbar — Vergleich erneut ausführen.',
 
+    /** Live-Abruf row inside "Attribute zum Zeitpunkt des Vergleichs". */
+    datasetOsmLiveCardTitle: 'OSM-Daten (Live-Abruf)',
+    datasetOsmLiveButton: 'Von Overpass abfragen',
+    datasetOsmLiveButtonHint: (relationId: string) =>
+      `Aktuelle Attribute für relation ${relationId}`,
+    datasetOsmLiveOverpassQueryLabel: 'Overpass-Abfrage',
+    datasetOsmLiveLoading: 'Overpass antwortet …',
+    datasetOsmLiveEmpty: 'Relation nicht gefunden oder ohne Tags.',
+    datasetOsmLiveAgain: 'Erneut abfragen',
+    datasetOsmLiveErrorPrefix: 'Overpass-Anfrage fehlgeschlagen:',
+    datasetOsmLiveInvalidJson: 'Unerwartete Overpass-Antwort.',
+    datasetOsmLiveCompareSame: 'Auszug: gleich',
+    datasetOsmLiveCompareDifferent: (snapshotValue: string) => `Auszug: ${snapshotValue}`,
+    datasetOsmLiveCompareMissing: 'Auszug: kein Wert',
+
     expectedOsmTagsSectionAria: 'Erwartete OSM-Tags für den Abgleich',
     expectedOsmTagsSectionTitle: 'Erwartete OSM-Tags',
     expectedOsmTagsSectionLead:

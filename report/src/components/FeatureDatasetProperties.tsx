@@ -1,4 +1,5 @@
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
+import { useOverpassRelationTags } from '../hooks/useOverpassRelationTags'
 import { de } from '../i18n/de'
 import { pickOsmDatasetExtractDate } from '../lib/datasetExtractDataDates'
 import { EM_DASH } from '../lib/formatDe'
@@ -10,6 +11,7 @@ import {
 import type { ComparisonForReport, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
+import { sharedButtonClass } from './sharedButtonStyles'
 
 function formatPropertyValue(value: unknown): string {
   if (value === null || value === undefined) return de.feature.datasetPropertiesEmpty
@@ -58,6 +60,56 @@ function DatasetPropertyCard({ properties }: { properties: Record<string, unknow
                 <span className="min-w-0">{formatPropertyValue(v)}</span>
                 {linkVal ? (
                   <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />
+                ) : null}
+              </span>
+            </dd>
+          </div>
+        )
+      })}
+    </dl>
+  )
+}
+
+function DatasetLiveComparedPropertyCard({
+  properties,
+  snapshotProperties,
+}: {
+  properties: Record<string, string>
+  snapshotProperties: Record<string, unknown>
+}) {
+  const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
+  if (entries.length === 0) {
+    return <p className="text-sm text-slate-400">{de.feature.datasetPropertiesEmpty}</p>
+  }
+  return (
+    <dl className="grid gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      {entries.map(([k, v]) => {
+        const liveValue = formatPropertyValue(v).trim()
+        const snapshotHasKey = Object.prototype.hasOwnProperty.call(snapshotProperties, k)
+        const snapshotValue = snapshotHasKey
+          ? formatPropertyValue(snapshotProperties[k]).trim()
+          : null
+        const sameAsSnapshot = snapshotHasKey && snapshotValue === liveValue
+        const compareText = snapshotHasKey
+          ? sameAsSnapshot
+            ? de.feature.datasetOsmLiveCompareSame
+            : de.feature.datasetOsmLiveCompareDifferent(
+                snapshotValue ?? de.feature.datasetPropertiesEmpty,
+              )
+          : null
+        const valueClass = snapshotHasKey
+          ? sameAsSnapshot
+            ? 'bg-emerald-900/45 text-emerald-100 ring-1 ring-emerald-700/60'
+            : 'bg-amber-900/35 text-amber-100 ring-1 ring-amber-700/60'
+          : 'text-slate-100'
+        return (
+          <div key={k} className="contents">
+            <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
+            <dd className="min-w-0 break-words text-slate-100">
+              <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <span className={`min-w-0 rounded-sm px-1 py-0.5 ${valueClass}`}>{liveValue}</span>
+                {compareText ? (
+                  <span className="text-[11px] text-slate-400">{compareText}</span>
                 ) : null}
               </span>
             </dd>
@@ -126,6 +178,87 @@ function DatasetExtractDataDateCaption({
         </p>
       ) : null}
       {note ? <p className="text-[11px] leading-snug text-slate-500">{note}</p> : null}
+    </div>
+  )
+}
+
+function OsmLiveRelationTagsRow({
+  osmRelationId,
+  snapshotProperties,
+}: {
+  osmRelationId: string
+  snapshotProperties: Record<string, unknown>
+}) {
+  const live = useOverpassRelationTags(osmRelationId)
+  const captionText =
+    live.status === 'done' && live.replicationDate
+      ? `${de.feature.datasetOsmLiveOverpassQueryLabel}: ${formatIsoTimestampToAbsoluteDe(live.replicationDate)}`
+      : null
+
+  const errorMessage = (() => {
+    if (live.status !== 'error' || !live.error) return null
+    const raw = live.error instanceof Error ? live.error.message : String(live.error)
+    if (raw === 'INVALID_OVERPASS_JSON') return de.feature.datasetOsmLiveInvalidJson
+    if (raw.startsWith('Overpass request failed:'))
+      return `${de.feature.datasetOsmLiveErrorPrefix} ${raw.replace('Overpass request failed:', '').trim()}`
+    return raw
+  })()
+
+  return (
+    <div className="bg-red-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+      <dt className="flex flex-col gap-1">
+        <span className="text-sm/6 font-medium text-slate-200">
+          {de.feature.datasetOsmLiveCardTitle}
+        </span>
+        {captionText ? (
+          <p className="text-xs leading-normal text-slate-400">{captionText}</p>
+        ) : null}
+      </dt>
+      <dd className="mt-2 md:col-span-2 md:mt-0">
+        {live.status === 'idle' && (
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => void live.run()} className={sharedButtonClass}>
+              {de.feature.datasetOsmLiveButton}
+            </button>
+            <span className="text-xs text-slate-400">
+              {de.feature.datasetOsmLiveButtonHint(osmRelationId)}
+            </span>
+          </div>
+        )}
+
+        {live.status === 'loading' && (
+          <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveLoading}</p>
+        )}
+
+        {live.status === 'error' && errorMessage && (
+          <div className="space-y-2">
+            <p className="text-sm text-red-400">{errorMessage}</p>
+            <button type="button" onClick={() => void live.run()} className={sharedButtonClass}>
+              {de.feature.datasetOsmLiveAgain}
+            </button>
+          </div>
+        )}
+
+        {live.status === 'done' && (
+          <div className="space-y-3">
+            {live.tags ? (
+              <DatasetLiveComparedPropertyCard
+                properties={live.tags}
+                snapshotProperties={snapshotProperties}
+              />
+            ) : (
+              <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveEmpty}</p>
+            )}
+            <button
+              type="button"
+              onClick={() => void live.run()}
+              className="text-sm text-violet-300/90 underline decoration-violet-400/30 underline-offset-2 hover:text-violet-200"
+            >
+              {de.feature.datasetOsmLiveAgain}
+            </button>
+          </div>
+        )}
+      </dd>
     </div>
   )
 }
@@ -205,6 +338,9 @@ export function FeatureDatasetProperties({
               <DatasetPropertyCard properties={osm} />
             </dd>
           </div>
+          {osmRelationId !== '' && (
+            <OsmLiveRelationTagsRow osmRelationId={osmRelationId} snapshotProperties={osm} />
+          )}
         </dl>
       </div>
     </section>

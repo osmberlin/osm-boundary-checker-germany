@@ -13,6 +13,10 @@ import {
   type OverpassGeoJsonFeatureCollection,
   parseOverpassBoundaryData,
 } from '../lib/overpassBbox'
+import {
+  buildOverpassRelationTagsQuery,
+  parseOverpassRelationTagsResponse,
+} from '../lib/overpassRelationTags'
 import { textPreview } from '../lib/textPreview'
 import {
   extractWfsErrorMessage,
@@ -201,6 +205,37 @@ export function overpassLiveQueryOptions(input: OverpassLiveQueryInput) {
         featureKey: input.featureKey,
         hits: [...parsed.hits].sort(sortOverpassHits),
         geojson: parsed.geojson,
+      }
+    },
+  })
+}
+
+export type OverpassRelationTagsQueryInput = {
+  relationId: number
+  interpreterUrl: string
+}
+
+export type OverpassRelationTagsQueryData = {
+  relationId: number
+  tags: Record<string, string> | null
+  replicationDate: string | null
+}
+
+export function overpassRelationTagsQueryOptions(input: OverpassRelationTagsQueryInput) {
+  return queryOptions({
+    queryKey: ['overpass-live-relation-tags', input.relationId, input.interpreterUrl],
+    queryFn: async (): Promise<OverpassRelationTagsQueryData> => {
+      const query = buildOverpassRelationTagsQuery(input.relationId)
+      const res = await fetchOverpassQuery(query, input.interpreterUrl)
+      const text = await res.text()
+      if (!res.ok) {
+        throw new Error(`Overpass request failed: ${res.status}`)
+      }
+      const parsed = parseOverpassRelationTagsResponse(text, input.relationId)
+      return {
+        relationId: input.relationId,
+        tags: parsed.tags,
+        replicationDate: parsed.replicationDate,
       }
     },
   })
