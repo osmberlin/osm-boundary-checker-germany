@@ -20,6 +20,7 @@
   },
   "osm": {
     "adminLevels": ["8"],
+    "ignoreRelationIds": ["401805"],
   },
   "ogcInspectSources": [
     {
