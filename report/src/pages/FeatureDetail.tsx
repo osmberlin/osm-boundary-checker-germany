@@ -5,6 +5,7 @@ import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmT
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
 import { FeatureDetailStatsStrip } from '../components/featureDetail/FeatureDetailStatsStrip'
 import { MatcherContextSection } from '../components/featureDetail/MatcherContextSection'
+import { OfficialOnlyCandidatesSection } from '../components/featureDetail/OfficialOnlyCandidatesSection'
 import { OsmKeyDiagnosticsSection } from '../components/featureDetail/OsmKeyDiagnosticsSection'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
@@ -97,6 +98,8 @@ export function FeatureDetail() {
       <FeatureDatasetProperties row={row} data={data} />
 
       <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
+
+      <OfficialOnlyCandidatesSection row={row} candidates={data.candidates} />
 
       <OsmKeyDiagnosticsSection row={row} />
 

@@ -1,17 +1,23 @@
 #!/usr/bin/env bun
 import { spawnSync } from 'node:child_process'
 /**
- * Build one shared OSM FlatGeobuf for all compare runs:
- * administrative boundaries matching any configured inclusion tag on shared-FGB datasets
- * (typically non-empty `de:regionalschluessel`, plus e.g. `de:amtlicher_gemeindeschluessel`
- * where `admin_ags` areas are configured).
+ * Build the shared OSM FlatGeobufs all compare runs depend on.
  *
- * Outputs:
- * - admin (`--kind admin`, default): `.cache/osm/germany-admin-boundaries-rs.fgb`
- * - plz (`--kind plz`): `.cache/osm/germany-postal-code-boundaries.fgb`
+ * Outputs (one per `--kind`):
+ * - admin (default):       `.cache/osm/germany-admin-boundaries-rs.fgb` (keyed polygons)
+ * - plz:                   `.cache/osm/germany-postal-code-boundaries.fgb` (keyed polygons)
+ * - admin_candidates:      `.cache/osm/germany-admin-candidates.fgb` (POINTS only — every
+ *                          `boundary=administrative` multipolygon at any configured
+ *                          `admin_level`, regardless of `de:*` keys; consumed by the
+ *                          additive `match_candidates` compare phase)
+ * - plz_candidates:        `.cache/osm/germany-postal-code-candidates.fgb` (POINTS only —
+ *                          every `boundary=postal_code` multipolygon, regardless of
+ *                          `postal_code` value)
  *
  * Prerequisites: `osmium` and `ogr2ogr` on PATH; run `bun run osm:download` first
- * (or set `OSM_GERMANY_PBF` / `--pbf`).
+ * (or set `OSM_GERMANY_PBF` / `--pbf`). The candidate extracts use SpatiaLite's
+ * `ST_PointOnSurface` (verified available in GDAL 3.12) so the geometry is collapsed
+ * to a single inside point at extract time.
  */
 import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -20,9 +26,11 @@ import { areaHasCompareConfig } from '../shared/areaConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import {
   DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS,
+  GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
   GERMANY_OSM_CACHE_DIR,
   GERMANY_OSM_FILTERED_BASENAME,
   GERMANY_OSM_PBF_BASENAME,
+  GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
 } from '../shared/germanyOsmPbf.ts'
@@ -34,7 +42,10 @@ import {
   writeAreaSourceMetadataFile,
 } from '../shared/sourceMetadataIo.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
-import { loadSharedAdminOsmExtractConfig } from './loadOsmExtractConfig.ts'
+import {
+  loadSharedAdminCandidatesExtractConfig,
+  loadSharedAdminOsmExtractConfig,
+} from './loadOsmExtractConfig.ts'
 
 /** GDAL OSM driver config: promotes `de:regionalschluessel` etc. out of `other_tags`. */
 const GDAL_OSM_BOUNDARIES_INI = join(
@@ -50,7 +61,17 @@ WHERE boundary = 'postal_code'
   AND postal_code <> ''
 `.trim()
 
-type ExtractKind = 'admin' | 'plz'
+const SHARED_OSM_PLZ_CANDIDATES_OGR_SQL = `
+SELECT
+  ST_PointOnSurface(geometry) AS geometry,
+  osm_id,
+  "name",
+  "postal_code"
+FROM multipolygons
+WHERE boundary = 'postal_code'
+`.trim()
+
+type ExtractKind = 'admin' | 'plz' | 'admin_candidates' | 'plz_candidates'
 
 function quoteSqlIdentifier(name: string): string {
   return `"${name.replace(/"/g, '""')}"`
@@ -106,6 +127,35 @@ WHERE ${whereClauses.join('\n  AND ')}
   return { sql, tagsFilterExpressions: cfg.tagsFilterExpressions }
 }
 
+/**
+ * Points-only admin candidates SQL: every `boundary=administrative` multipolygon at any
+ * configured `admin_level`, regardless of whether the de:* keys are set. Geometry is
+ * collapsed to `ST_PointOnSurface` so the resulting FGB is small (~5 MB for ~31k features).
+ * The compare-time `match_candidates` phase consumes this and tests "candidate point in
+ * shrunk official polygon" — see {@link ../compare/lib/matchCandidates.ts}.
+ */
+function buildSharedAdminCandidatesOgrSql(workspaceRoot: string): {
+  sql: string
+  tagsFilterExpressions: string[]
+} {
+  const cfg = loadSharedAdminCandidatesExtractConfig(workspaceRoot)
+  const adminLevelLiterals = cfg.adminLevels
+    .map((level) => `'${level.replace(/'/g, "''")}'`)
+    .join(', ')
+  const sql = `
+SELECT ST_PointOnSurface(geometry) AS geometry,
+       osm_id,
+       "admin_level",
+       "name",
+       "de:regionalschluessel",
+       "de:amtlicher_gemeindeschluessel"
+FROM multipolygons
+WHERE boundary = 'administrative'
+  AND admin_level IN (${adminLevelLiterals})
+`.trim()
+  return { sql, tagsFilterExpressions: cfg.tagsFilterExpressions }
+}
+
 function parseArgs(argv: string[]) {
   let pbf: string | null = null
   let skipTagsFilter = false
@@ -126,12 +176,12 @@ function parseArgs(argv: string[]) {
     if (argv[i] === '--dry-run') dryRun = true
     if (argv[i] === '--kind') {
       const v = argv[i + 1]?.trim().toLowerCase()
-      if (v === 'admin' || v === 'plz') {
-        kind = v
+      if (v === 'admin' || v === 'plz' || v === 'admin_candidates' || v === 'plz_candidates') {
+        kind = v as ExtractKind
         i++
         continue
       }
-      throw new Error(`--kind must be "admin" or "plz"`)
+      throw new Error(`--kind must be "admin", "plz", "admin_candidates", or "plz_candidates"`)
     }
     if (argv[i] === '--area') {
       console.warn('[osm:extract] --area is ignored; a single shared OSM FGB is always built.')
@@ -172,7 +222,13 @@ function runOsmiumTagsFilter(
   if (r.status !== 0) process.exit(r.status ?? 1)
 }
 
-function runOgr2ogr(inputPbf: string, outFgb: string, sql: string, dryRun: boolean): void {
+function runOgr2ogr(
+  inputPbf: string,
+  outFgb: string,
+  sql: string,
+  dryRun: boolean,
+  options?: { geometryType?: 'POINT' },
+): void {
   const args = [
     '--config',
     'OSM_CONFIG_FILE',
@@ -189,6 +245,9 @@ function runOgr2ogr(inputPbf: string, outFgb: string, sql: string, dryRun: boole
     '-sql',
     sql,
   ]
+  if (options?.geometryType) {
+    args.push('-nlt', options.geometryType)
+  }
 
   if (dryRun) {
     const q = (a: string) => (/\s/.test(a) ? JSON.stringify(a) : a)
@@ -198,7 +257,10 @@ function runOgr2ogr(inputPbf: string, outFgb: string, sql: string, dryRun: boole
 
   mkdirSync(dirname(outFgb), { recursive: true })
   if (existsSync(outFgb)) unlinkSync(outFgb)
-  const r = spawnSync('ogr2ogr', args, { stdio: 'inherit' })
+  const r = spawnSync('ogr2ogr', args, {
+    stdio: 'inherit',
+    env: { ...process.env, OGR_GEOMETRY_ACCEPT_UNCLOSED_RING: 'YES' },
+  })
   if (r.error) {
     console.error(r.error)
     process.exit(1)
@@ -311,9 +373,17 @@ function main() {
 
   const filteredPbf = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_FILTERED_BASENAME)
   const adminExtract = kind === 'admin' ? buildSharedAdminOgrSql(workspaceRoot) : null
+  const adminCandidatesExtract =
+    kind === 'admin_candidates' ? buildSharedAdminCandidatesOgrSql(workspaceRoot) : null
   const expressions: string[] = [...DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS]
-  if (adminExtract) {
-    expressions.splice(0, expressions.length, ...adminExtract.tagsFilterExpressions)
+  // Tags-filter expressions come from the kind that owns the PBF prefilter shape; admin and
+  // admin_candidates share the same set of `boundary=*` expressions today (all four entries
+  // in DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS), so reusing the existing filtered PBF across
+  // sibling kinds is safe.
+  const filterSourceExpressions =
+    adminExtract?.tagsFilterExpressions ?? adminCandidatesExtract?.tagsFilterExpressions ?? null
+  if (filterSourceExpressions) {
+    expressions.splice(0, expressions.length, ...filterSourceExpressions)
   }
   const osmHeaderTimestamp = readOsmPbfHeaderTimestamp(inputPbf, dryRun)
 
@@ -334,20 +404,42 @@ function main() {
     console.log('Using full input PBF for ogr2ogr (--skip-tags-filter). This can be very slow.')
   }
 
-  const extractTargets: Record<ExtractKind, { basename: string; sql: string }> = {
+  type ExtractTarget = { basename: string; sql: string; geometryType?: 'POINT' }
+  const extractTargets: Record<ExtractKind, ExtractTarget> = {
     admin: {
       basename: GERMANY_OSM_SHARED_FGB_BASENAME,
       sql: adminExtract?.sql ?? '',
     },
     plz: { basename: GERMANY_OSM_SHARED_PLZ_FGB_BASENAME, sql: SHARED_OSM_PLZ_OGR_SQL },
+    admin_candidates: {
+      basename: GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
+      sql: adminCandidatesExtract?.sql ?? '',
+      geometryType: 'POINT',
+    },
+    plz_candidates: {
+      basename: GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+      sql: SHARED_OSM_PLZ_CANDIDATES_OGR_SQL,
+      geometryType: 'POINT',
+    },
   }
   if (kind === 'admin' && extractTargets.admin.sql === '') {
     throw new Error('Missing shared admin extract SQL configuration')
   }
+  if (kind === 'admin_candidates' && extractTargets.admin_candidates.sql === '') {
+    throw new Error('Missing shared admin candidates extract SQL configuration')
+  }
   const target = extractTargets[kind]
   const outFgb = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, target.basename)
   console.log(`\nShared OSM extract (${kind}) → ${join(GERMANY_OSM_CACHE_DIR, target.basename)}`)
-  runOgr2ogr(pbfForOgr, outFgb, target.sql, dryRun)
+  runOgr2ogr(
+    pbfForOgr,
+    outFgb,
+    target.sql,
+    dryRun,
+    target.geometryType ? { geometryType: target.geometryType } : undefined,
+  )
+  // The admin extract is the single source of truth for OSM provenance timestamps; the
+  // candidate extracts are derived from the same PBF but do not need to update metadata.
   if (kind === 'admin') {
     writeOsmSourceMetadataForAreas(workspaceRoot, runtimeRoot, osmHeaderTimestamp, dryRun)
   }

@@ -24,7 +24,12 @@ import {
   parseWfsFeatures,
   type WfsFeature,
 } from '../lib/wfsGetFeature'
-import type { ComparisonForReport, FeatureDetailShard, SnapshotsJson } from '../types/report'
+import type {
+  CandidateMatch,
+  ComparisonForReport,
+  FeatureDetailShard,
+  SnapshotsJson,
+} from '../types/report'
 import { runStatusFileSchema, type RunStatusFile } from '../types/runStatus'
 import {
   changelogUrl,
@@ -103,10 +108,20 @@ export async function loadChangelog(): Promise<ChangelogFile | null> {
   return parsed.success ? parsed.data : null
 }
 
+/**
+ * Compose result of `loadFeatureOrFallback`. We intentionally surface `candidates` next to
+ * the comparison payload (rather than burying it in `rows[0]`) because the candidates are
+ * shard-only data — see Step 3 of the official-only candidates plan: keeping
+ * `comparison_table.json` lean.
+ */
+export type FeatureDetailComparison = ComparisonForReport & {
+  candidates?: CandidateMatch[]
+}
+
 export async function loadFeatureOrFallback(
   area: string,
   featureKey: string,
-): Promise<ComparisonForReport> {
+): Promise<FeatureDetailComparison> {
   const comparison = await loadComparison(area)
   try {
     const shard = await loadFeatureShard(area, featureKey)
@@ -114,6 +129,7 @@ export async function loadFeatureOrFallback(
       ...comparison,
       rows: [shard.row],
       unmatchedOsm: [],
+      ...(shard.candidates !== undefined ? { candidates: shard.candidates } : {}),
     }
   } catch (shardError) {
     const matchedRow = comparison.rows.find((row) => row.canonicalMatchKey === featureKey)

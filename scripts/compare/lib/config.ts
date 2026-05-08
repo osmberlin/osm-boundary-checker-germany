@@ -24,6 +24,8 @@ export type CompareConfig = {
   bboxBufferDegrees?: number
   /** Geometric scope filter for OSM features after bbox prefilter. */
   osmScopeFilter: 'none' | 'centroid_in_official_coverage'
+  /** Linear shrink factor (0..1] applied to each official_only polygon for candidate matching. */
+  candidateShrinkFactor?: number
 }
 
 export type OsmConfig = {
@@ -90,6 +92,9 @@ function toCompareConfig(compare: DatasetConfig['compare']): CompareConfig {
       ? { bboxBufferDegrees: compare.bboxBufferDegrees }
       : {}),
     osmScopeFilter: compare.osmScopeFilter,
+    ...(compare.candidateShrinkFactor !== undefined
+      ? { candidateShrinkFactor: compare.candidateShrinkFactor }
+      : {}),
   }
 }
 

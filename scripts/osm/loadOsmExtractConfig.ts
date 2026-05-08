@@ -24,6 +24,13 @@ export type SharedAdminOsmExtractConfig = {
   tagsFilterExpressions: string[]
 }
 
+/** Inputs needed for the admin candidates points-only extract (union over all areas). */
+export type SharedAdminCandidatesExtractConfig = {
+  /** Sorted, deduped admin_level values across all areas using the shared admin FGB. */
+  adminLevels: string[]
+  tagsFilterExpressions: string[]
+}
+
 const NonEmptyStringArraySchema = z.array(z.string().trim().min(1))
 const OsmExtractOverrideSchema = z
   .object({
@@ -130,4 +137,41 @@ export function loadSharedAdminOsmExtractConfig(
     additionalWhereClauses,
     tagsFilterExpressions,
   }
+}
+
+/**
+ * Collect the admin_level values configured by any area whose OSM matchProperty resolves
+ * to the shared admin FGB. Used to constrain the points-only candidates extract so we
+ * only carry features at `admin_level` values some compare actually cares about.
+ */
+export function loadSharedAdminCandidatesExtractConfig(
+  workspaceRoot: string,
+): SharedAdminCandidatesExtractConfig {
+  const adminLevelSet = new Set<string>()
+  const tagsFilterSet = new Set<string>(DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS)
+
+  for (const area of discoverAreaFolders(workspaceRoot)) {
+    const rawDoc = loadAreaConfig(workspaceRoot, area)
+    const boundary = loadBoundaryConfig(rawDoc, area)
+    const usesSharedAdminFgb = boundary.osm.sharedFgbBasename === GERMANY_OSM_SHARED_FGB_BASENAME
+    if (!usesSharedAdminFgb) continue
+    for (const level of boundary.osm.adminLevels ?? []) {
+      const trimmed = level.trim()
+      if (trimmed.length > 0) adminLevelSet.add(trimmed)
+    }
+    const override = parseAreaExtractOverride(area, rawDoc)
+    addAll(tagsFilterSet, override.tagsFilterExpressions ?? [])
+  }
+
+  const adminLevels = Array.from(adminLevelSet).sort()
+  if (adminLevels.length === 0) {
+    throw new Error(
+      'Shared admin candidates extract has no admin_level values; at least one area must declare osm.adminLevels',
+    )
+  }
+  const tagsFilterExpressions = Array.from(tagsFilterSet)
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0)
+
+  return { adminLevels, tagsFilterExpressions }
 }

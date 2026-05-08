@@ -8,6 +8,13 @@ import type { BoundaryConfig, IdNormalizationPreset } from './config.ts'
 import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
 import { unionFeaturesByKey } from './geoMerge.ts'
 import { loadFeatureCollection } from './loadFeatureCollection.ts'
+import {
+  type CandidateMatch,
+  loadCandidatePoints,
+  matchCandidatesForOfficialOnly,
+  type OfficialOnlyInput,
+  selectEligibleCandidates,
+} from './matchCandidates.ts'
 import { type MetricResult } from './metrics.ts'
 import {
   classifyIssueIndicator,
@@ -50,6 +57,13 @@ export type CompareRow = {
   osmProperties: Record<string, unknown> | null
   /** Per-row OSM match diagnostics for AGS-mode datasets (null otherwise). */
   osmMatchDiagnostics: OsmMatchDiagnostics | null
+  /**
+   * Candidate OSM features whose representative point falls inside the shrunk official
+   * polygon for this row. Only populated for `category=='official_only'` rows; an empty
+   * array means the candidate phase ran and produced no matches, while `undefined`
+   * means the phase was skipped (e.g. candidate FGB missing).
+   */
+  candidates?: CandidateMatch[]
 }
 
 export type UnmatchedOsmRow = {
@@ -179,14 +193,6 @@ function filterOsmByIgnoredRelationIds(
     const props = feature.properties as Record<string, unknown> | null | undefined
     const relId = resolveRelationId(props)
     return !relId || !ignoredRelationIds.has(relId)
-  })
-}
-
-function filterOsmByAdminLevels(osmFeatures: Feature[], adminLevels: Set<string>): Feature[] {
-  return osmFeatures.filter((feature) => {
-    const props = feature.properties as Record<string, unknown> | null | undefined
-    const adminLevel = readAdminLevel(props ?? null)
-    return adminLevel != null && adminLevels.has(adminLevel)
   })
 }
 
@@ -363,7 +369,6 @@ export async function runCompare(
   const initialOsmFeatureCount = osmFc.features.length
   let droppedByBbox = 0
   let droppedByScope = 0
-  let droppedByAdminLevel = 0
   let droppedByIgnore = 0
 
   if (config.compare.bboxFilter === 'official_bbox_overlap') {
@@ -393,18 +398,6 @@ export async function runCompare(
       remaining: osmFc.features.length,
     })
   }
-  if ((config.osm.adminLevels?.length ?? 0) > 0) {
-    const tAdminLevelFilter = Date.now()
-    const adminLevels = new Set(config.osm.adminLevels)
-    const filtered = filterOsmByAdminLevels(osmFc.features, adminLevels)
-    droppedByAdminLevel = osmFc.features.length - filtered.length
-    osmFc = { type: 'FeatureCollection', features: filtered }
-    phaseLogger?.('filter_admin_level', Date.now() - tAdminLevelFilter, {
-      dropped: droppedByAdminLevel,
-      remaining: osmFc.features.length,
-      configuredAdminLevels: adminLevels.size,
-    })
-  }
   if ((config.osm.ignoreRelationIds?.length ?? 0) > 0) {
     const tIgnoreFilter = Date.now()
     const ignoredRelationIds = new Set(config.osm.ignoreRelationIds)
@@ -417,9 +410,9 @@ export async function runCompare(
       configuredIgnoreRelationIds: ignoredRelationIds.size,
     })
   }
-  if (droppedByBbox > 0 || droppedByScope > 0 || droppedByAdminLevel > 0 || droppedByIgnore > 0) {
+  if (droppedByBbox > 0 || droppedByScope > 0 || droppedByIgnore > 0) {
     console.log(
-      `${areaFolder}: OSM scope filtering kept ${osmFc.features.length}/${initialOsmFeatureCount} features (bbox dropped: ${droppedByBbox}, centroid scope dropped: ${droppedByScope}, admin_level dropped: ${droppedByAdminLevel}, ignore dropped: ${droppedByIgnore})`,
+      `${areaFolder}: OSM scope filtering kept ${osmFc.features.length}/${initialOsmFeatureCount} features (bbox dropped: ${droppedByBbox}, centroid scope dropped: ${droppedByScope}, ignore dropped: ${droppedByIgnore})`,
     )
   }
 
@@ -648,12 +641,25 @@ export async function runCompare(
   instrumentation?.setInFlightPhase?.(null)
 
   const officialKeySet = new Set(officialMap.keys())
+  const adminLevelAllowList =
+    config.osm.adminLevels && config.osm.adminLevels.length > 0
+      ? new Set(config.osm.adminLevels)
+      : null
   const unmatchedOsm: UnmatchedOsmRow[] = []
+  let droppedUnmatchedByAdminLevel = 0
+  const tFilterUnmatchedAdminLevel = Date.now()
   for (const key of Array.from(osmMap.keys()).sort()) {
     if (officialKeySet.has(key)) continue
     const s = osmMap.get(key)
     if (!s) continue
     const props = s.properties as Record<string, unknown> | null
+    const adminLevel = readAdminLevel(props)
+    // Let Kreisfreie Städte / Stadtstaaten match by key even when their OSM boundary lives
+    // at admin_level=6/4, but keep the OSM-only report scoped to the configured level.
+    if (adminLevelAllowList && (adminLevel == null || !adminLevelAllowList.has(adminLevel))) {
+      droppedUnmatchedByAdminLevel++
+      continue
+    }
     const nameLabel =
       typeof props?.name === 'string' && props.name.trim().length > 0
         ? props.name.trim()
@@ -662,9 +668,115 @@ export async function runCompare(
       canonicalMatchKey: key,
       nameLabel,
       osmRelationId: pickOsmRelationId(s.featureIds, props),
-      adminLevel: readAdminLevel(props),
+      adminLevel,
       osmGeometryWgs84: s.geometry ?? null,
     })
+  }
+  if (adminLevelAllowList) {
+    phaseLogger?.('filter_unmatched_admin_level', Date.now() - tFilterUnmatchedAdminLevel, {
+      dropped: droppedUnmatchedByAdminLevel,
+      remaining: unmatchedOsm.length,
+      configuredAdminLevels: adminLevelAllowList.size,
+    })
+    if (droppedUnmatchedByAdminLevel > 0) {
+      console.log(
+        `[compare:${areaFolder}] unmatched_osm admin_level filter dropped=${droppedUnmatchedByAdminLevel} remaining=${unmatchedOsm.length}`,
+      )
+    }
+  }
+
+  // Candidate matching is strictly additive: if the candidate FGB is missing or no
+  // `official_only` rows exist, we silently skip and leave `row.candidates` undefined so
+  // the strong-match pipeline keeps the same observable behaviour as before.
+  const officialOnlyRowIndexes = rows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => row.category === 'official_only')
+  if (officialOnlyRowIndexes.length > 0) {
+    const tCandidates = Date.now()
+    instrumentation?.setInFlightPhase?.('match_candidates')
+    instrumentation?.checkpoint?.('before_match_candidates', {
+      officialOnly: officialOnlyRowIndexes.length,
+    })
+    const { features: candidateFeaturesRaw, sourcePath } = await loadCandidatePoints(
+      runtimeRoot,
+      config,
+    )
+    if (candidateFeaturesRaw.length === 0) {
+      console.log(
+        `[compare:${areaFolder}] match_candidates skipped: candidate FGB missing or empty (${sourcePath ?? 'no path'})`,
+      )
+      phaseLogger?.('match_candidates', Date.now() - tCandidates, {
+        skipped: true,
+        reason: 'candidate_fgb_missing',
+      })
+    } else {
+      const adminLevelAllowList =
+        config.osm.adminLevels && config.osm.adminLevels.length > 0
+          ? new Set(config.osm.adminLevels)
+          : undefined
+      const ignoreRelationIds =
+        config.osm.ignoreRelationIds && config.osm.ignoreRelationIds.length > 0
+          ? new Set(config.osm.ignoreRelationIds)
+          : undefined
+      const officialBbox =
+        config.compare.bboxFilter === 'official_bbox_overlap'
+          ? unionOfficialBbox(officialFc.features)
+          : null
+      const bboxFilter = officialBbox
+        ? expandBbox(officialBbox, config.compare.bboxBufferDegrees ?? 0)
+        : undefined
+      const eligible = selectEligibleCandidates(candidateFeaturesRaw, {
+        adminLevelAllowList,
+        ignoreRelationIds,
+        ...(bboxFilter ? { bboxFilter } : {}),
+      })
+      const officialOnlyInputs: OfficialOnlyInput[] = officialOnlyRowIndexes.map(({ row }) => ({
+        canonicalMatchKey: row.canonicalMatchKey,
+        officialGeometryWgs84:
+          row.officialGeometryWgs84 &&
+          (row.officialGeometryWgs84.type === 'Polygon' ||
+            row.officialGeometryWgs84.type === 'MultiPolygon')
+            ? (row.officialGeometryWgs84 as Polygon | MultiPolygon)
+            : null,
+      }))
+      const matches = matchCandidatesForOfficialOnly({
+        rows: officialOnlyInputs,
+        officialKeySet,
+        candidatePoints: eligible,
+        options: {
+          shrinkFactor: config.compare.candidateShrinkFactor,
+          ...(adminLevelAllowList ? { adminLevelAllowList } : {}),
+          ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
+          ...(bboxFilter ? { bboxFilter } : {}),
+          idNormalizationPreset: preset,
+          osmProfileId: config.osm.profileId as Parameters<
+            typeof matchCandidatesForOfficialOnly
+          >[0]['options']['osmProfileId'],
+          osmMatchProperty,
+        },
+      })
+      let totalCandidates = 0
+      for (const { row, index } of officialOnlyRowIndexes) {
+        const candidatesForRow = matches.get(row.canonicalMatchKey) ?? []
+        totalCandidates += candidatesForRow.length
+        rows[index]!.candidates = candidatesForRow
+      }
+      const candidatesMs = Date.now() - tCandidates
+      phaseLogger?.('match_candidates', candidatesMs, {
+        officialOnly: officialOnlyRowIndexes.length,
+        eligibleCandidates: eligible.length,
+        totalCandidates,
+      })
+      console.log(
+        `[compare:${areaFolder}] match_candidates done officialOnly=${officialOnlyRowIndexes.length} eligible=${eligible.length} totalCandidates=${totalCandidates} elapsedMs=${candidatesMs}`,
+      )
+      instrumentation?.checkpoint?.('after_match_candidates', {
+        eligibleCandidates: eligible.length,
+        totalCandidates,
+        elapsedMs: candidatesMs,
+      })
+    }
+    instrumentation?.setInFlightPhase?.(null)
   }
 
   return { config, rows, unmatchedOsm, metricsCrs }

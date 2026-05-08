@@ -176,7 +176,33 @@ export type SnapshotsJson = {
   }[]
 }
 
+/**
+ * Candidate OSM feature attached to an `official_only` row by the additive
+ * `match_candidates` compare phase. Mirrors `candidateMatchSchema` in
+ * `scripts/shared/comparisonPayload.ts`. Stored only in the per-feature shard so the
+ * main `comparison_table.json` stays slim.
+ */
+export type CandidateMatch = {
+  osmType: 'way' | 'relation'
+  osmId: string
+  name: string | null
+  /** Admin profile only. */
+  adminLevel?: string | null
+  /** Admin profile only. */
+  deRegionalRaw?: string | null
+  /** Admin profile only. */
+  deAgsRaw?: string | null
+  /** Postal code profile only. */
+  postalCodeRaw?: string | null
+}
+
 /** Slim per-feature shard at `output/features/<featureKey>.json`. */
 export type FeatureDetailShard = {
   row: ReportRow
+  /**
+   * Optional candidate matches (only for `official_only` rows). Empty array = phase ran
+   * and produced no matches; absent = phase skipped (e.g. matched row, candidate FGB
+   * missing).
+   */
+  candidates?: CandidateMatch[]
 }

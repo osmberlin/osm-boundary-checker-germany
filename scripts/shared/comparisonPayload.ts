@@ -118,9 +118,38 @@ export const comparisonForReportSchema = z.object({
   unmatchedOsm: z.array(unmatchedOsmRowSchema),
 })
 
+/**
+ * Schema for an additive candidate OSM feature surfaced on the FeatureDetail page next to
+ * `official_only` rows. Stored ONLY in `output/features/<key>.json` shards (never in the
+ * main `comparison_table.json`) to keep the AreaReport payload lean. See
+ * `scripts/compare/lib/matchCandidates.ts` for the producer.
+ */
+export const candidateMatchSchema = z
+  .object({
+    osmType: z.enum(['way', 'relation']),
+    osmId: z.string().trim().min(1),
+    name: z.string().nullable(),
+    /** Admin profile only. */
+    adminLevel: z.string().nullable().optional(),
+    /** Admin profile only. */
+    deRegionalRaw: z.string().nullable().optional(),
+    /** Admin profile only. */
+    deAgsRaw: z.string().nullable().optional(),
+    /** Postal code profile only. */
+    postalCodeRaw: z.string().nullable().optional(),
+  })
+  .strict()
+
 export const featureDetailShardSchema = z.object({
   row: reportRowSchema,
+  /**
+   * Optional candidate matches for `official_only` rows. Empty array = phase ran and
+   * found nothing; absent = phase was skipped (matched rows or candidate FGB missing).
+   */
+  candidates: z.array(candidateMatchSchema).optional(),
 })
+
+export type CandidateMatch = z.infer<typeof candidateMatchSchema>
 
 export const snapshotsSchema = z.object({
   area: z.string(),

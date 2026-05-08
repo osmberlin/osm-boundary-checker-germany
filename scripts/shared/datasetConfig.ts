@@ -41,6 +41,13 @@ const compareSchema = z
     bboxFilter: z.enum(['none', 'official_bbox_overlap']),
     bboxBufferDegrees: z.number().finite().nonnegative().optional(),
     osmScopeFilter: z.enum(['none', 'centroid_in_official_coverage']),
+    /**
+     * Linear shrink factor (0..1] applied to each `official_only` polygon before testing
+     * whether a candidate point falls inside. Defaults to `0.7` (≈30 % linear shrink) so
+     * that candidates near the polygon edge are not picked up as noise. The match is
+     * informational and does not influence the strong key-based join.
+     */
+    candidateShrinkFactor: z.number().finite().positive().max(1).optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

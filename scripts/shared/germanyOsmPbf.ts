@@ -18,6 +18,16 @@ export const GERMANY_OSM_FILTERED_BASENAME = 'germany-boundaries-administrative.
 export const GERMANY_OSM_SHARED_FGB_BASENAME = 'germany-admin-boundaries-rs.fgb'
 /** Shared FlatGeobuf for postal code boundaries keyed by `postal_code`. */
 export const GERMANY_OSM_SHARED_PLZ_FGB_BASENAME = 'germany-postal-code-boundaries.fgb'
+/**
+ * Candidate POINTS-only FGB for admin boundaries: every `boundary=administrative`
+ * multipolygon with a configured `admin_level`, regardless of whether `de:*` keys are
+ * set. Used purely for the additive `match_candidates` compare phase that surfaces
+ * shape-only candidates next to `official_only` rows; the strong key-based pipeline
+ * uses {@link GERMANY_OSM_SHARED_FGB_BASENAME} unchanged.
+ */
+export const GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME = 'germany-admin-candidates.fgb'
+/** Candidate POINTS-only FGB for `boundary=postal_code` multipolygons (any `postal_code`). */
+export const GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME = 'germany-postal-code-candidates.fgb'
 
 export const DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS = [
   'r/boundary=administrative',

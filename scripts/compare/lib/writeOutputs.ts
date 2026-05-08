@@ -647,6 +647,17 @@ export function writeOutputs(
     unmatchedOsm: payloadUnmatched,
   } satisfies ComparisonForReport)
 
+  // Per-row shards may carry the (optional) `candidates` payload; the main
+  // `comparison_table.json` deliberately omits them — see the design note in
+  // `scripts/compare/lib/matchCandidates.ts`. We carry the candidates by canonical key
+  // because `payloadRows` is already a stripped/typed projection.
+  const candidatesByKey = new Map<string, CompareRow['candidates']>()
+  for (const row of rows) {
+    if (row.candidates !== undefined) {
+      candidatesByKey.set(row.canonicalMatchKey, row.candidates)
+    }
+  }
+
   const featureDir = join(outDir, 'features')
   const featureTmp = `${featureDir}.tmp-${Date.now()}`
   rmSync(featureTmp, { recursive: true, force: true })
@@ -655,9 +666,12 @@ export function writeOutputs(
   mkdirSync(featureTmp, { recursive: true })
   for (const row of payloadRows) {
     featureShardCount++
-    writeStaticJson(join(featureTmp, `${encodeURIComponent(row.canonicalMatchKey)}.json`), {
+    const candidates = candidatesByKey.get(row.canonicalMatchKey)
+    const shard: FeatureDetailShard = {
       row,
-    } satisfies FeatureDetailShard)
+      ...(candidates !== undefined ? { candidates } : {}),
+    }
+    writeStaticJson(join(featureTmp, `${encodeURIComponent(row.canonicalMatchKey)}.json`), shard)
     if (
       featureShardCount % shardProgressInterval === 0 ||
       featureShardCount === payloadRows.length

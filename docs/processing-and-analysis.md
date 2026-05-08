@@ -114,6 +114,8 @@ Embedded **`comparison_table.json`** carries the official/OSM metadata snapshot 
 
 With `bboxFilter=official_bbox_overlap`, compare derives a union bbox from official geometries, expands it by `compare.bboxBufferDegrees`, and drops OSM features whose bbox does not overlap. With `osmScopeFilter=centroid_in_official_coverage`, compare additionally keeps only OSM features whose centroid lies inside official polygon coverage before merge/metrics (`[scripts/compare/lib/compare.ts](../scripts/compare/lib/compare.ts)`).
 
+For administrative datasets, `osm.adminLevels` is report-strict but match-permissive: key matching runs before applying the allowlist, so German units that legitimately live at another OSM tier still match by their official key (for example Kreisfreie Städte as `admin_level=6` in Gemeinden datasets, or Stadtstaaten as `admin_level=4`). The allowlist is applied afterwards only to `unmatchedOsm`, which keeps unrelated higher-tier boundaries out of the OSM-only report.
+
 1. **Geometry merge**
    Multiple official or OSM features sharing the same normalized key are **unioned** before metrics (`[scripts/compare/lib/geoMerge.ts](../scripts/compare/lib/geoMerge.ts)`).
 2. **Row set**
@@ -133,6 +135,7 @@ With `bboxFilter=official_bbox_overlap`, compare derives a union bbox from offic
 - **Details:** URLs, layer names (`vg25_gem`, `vg25_krs`, …), and `matchProperty` / preset hints: [vg25-bkg.md](./vg25-bkg.md).
 - **Per-area configs:** under `datasets/de-*/config.jsonc` — each uses `officialProfile` (for example `bkg_vg25_gem`) + `compare.officialMatchProperty` + `idNormalization.preset` + `metricsCrs`.
 - **BKG layer mapping:** resolved from shared `officialProfile` definitions (no per-area layer duplication).
+- **Kreisfreie Städte / Stadtstaaten:** these can appear in both Kreis and Gemeinde layers with the same ARS and identical geometry. That is expected: a Kreisfreie Stadt is both Kreis-level and Gemeinde-level, while Stadtstaaten fill both roles at state level in OSM.
 
 ---
 
