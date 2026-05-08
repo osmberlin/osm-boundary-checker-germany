@@ -12,7 +12,12 @@ import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFo
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { RouteLoadingPane } from '../components/RouteLoadingPane'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
-import { comparisonQueryOptions, featureQueryOptions, runStatusQueryOptions } from '../data/load'
+import {
+  comparisonQueryOptions,
+  featureQueryOptions,
+  runStatusQueryOptions,
+  type FeatureDetailComparison,
+} from '../data/load'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useFeatureDetailOverpass } from '../hooks/useFeatureDetailOverpass'
 import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
@@ -21,6 +26,86 @@ import { useMapViewParam } from '../hooks/useMapViewParam'
 import { de } from '../i18n/de'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
 import { safeDecodeURIComponent } from '../lib/safeDecodeURIComponent'
+import type { ReportRow } from '../types/report'
+
+type ComparisonMapLayers = ReturnType<typeof useComparisonMapLayers>
+type MapViewParamState = ReturnType<typeof useMapViewParam>
+
+function FeatureDetailScrolledContent({
+  areaKey,
+  featureLookupKey,
+  data,
+  row,
+  mapLayers,
+  mapViewParam,
+  interactionData,
+}: {
+  areaKey: string
+  featureLookupKey: string
+  data: FeatureDetailComparison
+  row: ReportRow
+  mapLayers: ComparisonMapLayers
+  mapViewParam: MapViewParamState
+  interactionData: FeatureDetailComparison
+}) {
+  const overpass = useFeatureDetailOverpass(featureLookupKey)
+  const wfs = useFeatureDetailWfs(featureLookupKey)
+  const filteredLiveOverlays = useFilteredLiveOverlays({
+    featureKey: featureLookupKey,
+    wfsGeojson: wfs.geojson,
+    overpassGeojson: overpass.geojson,
+  })
+
+  return (
+    <>
+      <FeatureDetailMapSection
+        areaKey={areaKey}
+        data={data}
+        interactionData={interactionData}
+        row={row}
+        mapLayers={mapLayers}
+        mapView={mapViewParam}
+        overpassGeojson={filteredLiveOverlays.overpassGeojson}
+        wfsGeojson={filteredLiveOverlays.wfsGeojson}
+      />
+
+      <UpdateMapInstructions areaId={areaKey} row={row} />
+
+      <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
+
+      <FeatureDatasetProperties row={row} data={data} />
+
+      <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
+
+      <OfficialOnlyCandidatesSection row={row} candidates={data.candidates} />
+
+      <OsmKeyDiagnosticsSection row={row} />
+
+      <MatcherContextSection areaKey={areaKey} data={data} row={row} />
+
+      <LiveSourceProperties
+        featureKey={featureLookupKey}
+        data={data}
+        row={row}
+        wfs={{
+          load: wfs.loadSource,
+          getStatus: wfs.getStatus,
+        }}
+        overpass={{
+          hasCachedData: overpass.hasCachedData,
+          hits: overpass.hits,
+          isRunPending: overpass.isRunPending,
+          runError: overpass.runError,
+          runLiveOverpass: overpass.runLiveOverpass,
+          resetLiveOverpass: overpass.resetLiveOverpass,
+          resetRunMutation: overpass.resetRunMutation,
+        }}
+      />
+
+      <ReportLicenseCompatibilitySection data={data} />
+    </>
+  )
+}
 
 export function FeatureDetail() {
   const { areaId, featureKey } = useParams({ strict: false })
@@ -38,13 +123,6 @@ export function FeatureDetail() {
   })
   const runStatusQuery = useQuery(runStatusQueryOptions())
   const data = featureQuery.data ?? null
-  const overpass = useFeatureDetailOverpass(featureLookupKey)
-  const wfs = useFeatureDetailWfs(featureLookupKey)
-  const filteredLiveOverlays = useFilteredLiveOverlays({
-    featureKey: featureLookupKey,
-    wfsGeojson: wfs.geojson,
-    overpassGeojson: overpass.geojson,
-  })
 
   const row = !data || !featureKey ? null : findFeatureDetailRow(data, featureKey)
   const compareBranch = runStatusQuery.data?.areas?.[areaKey]?.compare
@@ -80,52 +158,16 @@ export function FeatureDetail() {
       ) : null}
       <FeatureDetailStatsStrip row={row} mapLayers={mapLayers} data={data} />
 
-      <FeatureDetailMapSection
+      <FeatureDetailScrolledContent
+        key={row.canonicalMatchKey}
         areaKey={areaKey}
+        featureLookupKey={featureLookupKey}
         data={data}
-        interactionData={comparisonQuery.data ?? data}
         row={row}
         mapLayers={mapLayers}
-        mapView={mapViewParam}
-        overpassGeojson={filteredLiveOverlays.overpassGeojson}
-        wfsGeojson={filteredLiveOverlays.wfsGeojson}
+        mapViewParam={mapViewParam}
+        interactionData={comparisonQuery.data ?? data}
       />
-
-      <UpdateMapInstructions areaId={areaKey} row={row} />
-
-      <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
-
-      <FeatureDatasetProperties row={row} data={data} />
-
-      <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
-
-      <OfficialOnlyCandidatesSection row={row} candidates={data.candidates} />
-
-      <OsmKeyDiagnosticsSection row={row} />
-
-      <MatcherContextSection areaKey={areaKey} data={data} row={row} />
-
-      <LiveSourceProperties
-        key={row.canonicalMatchKey}
-        featureKey={featureLookupKey}
-        data={data}
-        row={row}
-        wfs={{
-          load: wfs.loadSource,
-          getStatus: wfs.getStatus,
-        }}
-        overpass={{
-          hasCachedData: overpass.hasCachedData,
-          hits: overpass.hits,
-          isRunPending: overpass.isRunPending,
-          runError: overpass.runError,
-          runLiveOverpass: overpass.runLiveOverpass,
-          resetLiveOverpass: overpass.resetLiveOverpass,
-          resetRunMutation: overpass.resetRunMutation,
-        }}
-      />
-
-      <ReportLicenseCompatibilitySection data={data} />
     </div>
   )
 }
