@@ -349,7 +349,7 @@ export const de = {
 
     datasetPropertiesSectionAria: 'Attribute aus dem Vergleich (amtlich und OSM)',
     datasetPropertiesSectionTitle: 'Attribute zum Zeitpunkt des Vergleichs',
-    datasetOfficialCardTitle: 'Amtliche Daten',
+    datasetOfficialCardTitle: 'Amtliche Daten (Gefiltert)',
     datasetOsmCardTitle: 'OSM-Daten (Auszug)',
     /** `official.sourceUpdatedAt` / `sourcePublishedAt` (vendor reference date). */
     datasetExtractSourceDateLabel: 'Referenzdatum (Anbieter)',
@@ -384,15 +384,22 @@ export const de = {
     datasetOsmLiveButton: 'Von Overpass abfragen',
     datasetOsmLiveButtonHint: (relationId: string) =>
       `Aktuelle Attribute für relation ${relationId}`,
+    /** Hint shown below the "Von Overpass abfragen" button to clarify the comparison purpose. */
+    datasetOsmLiveCompareHint:
+      'Nutze diese Funktion um weitere Werte aus den „Amtliche Daten“ oben mit OSM Daten abzugleichen.',
     datasetOsmLiveOverpassQueryLabel: 'Overpass-Abfrage',
     datasetOsmLiveLoading: 'Overpass antwortet …',
     datasetOsmLiveEmpty: 'Relation nicht gefunden oder ohne Tags.',
     datasetOsmLiveAgain: 'Erneut abfragen',
     datasetOsmLiveErrorPrefix: 'Overpass-Anfrage fehlgeschlagen:',
     datasetOsmLiveInvalidJson: 'Unerwartete Overpass-Antwort.',
-    datasetOsmLiveCompareSame: 'Auszug: gleich',
-    datasetOsmLiveCompareDifferent: (snapshotValue: string) => `Auszug: ${snapshotValue}`,
-    datasetOsmLiveCompareMissing: 'Auszug: kein Wert',
+    /** 3rd column status: OSM live tag matches the value in the filtered official record. */
+    datasetOsmLiveCompareMatchTooltip: 'Stimmt mit amtlichen Daten überein',
+    /** 3rd column status: key exists in filtered official, but live OSM value differs. */
+    datasetOsmLiveCompareDifferentLabel: 'Amtliche Daten:',
+    /** 3rd column status: key from filtered official is missing in OSM live. Renders <code>{wert}</code> between prefix and suffix. */
+    datasetOsmLiveCompareMissingPrefix: 'Wert',
+    datasetOsmLiveCompareMissingSuffix: 'der amtlichen Daten könnte ergänzt werden.',
 
     expectedOsmTagsSectionAria: 'Erwartete OSM-Tags für den Abgleich',
     expectedOsmTagsSectionTitle: 'Erwartete OSM-Tags',
