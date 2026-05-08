@@ -30,7 +30,7 @@ export function formatReportDateOnlyDe(d: Date): string {
 
 /** Absolute line for report freshness, e.g. "29. März 2026 13:13". */
 export function formatReportAbsoluteDe(d: Date): string {
-  return format(d, 'd. MMMM yyyy HH:mm', { locale: deLocale })
+  return format(d, 'd. MMM yyyy HH:mm', { locale: deLocale })
 }
 
 function parseIsoOrThrow(raw: string): Date {
