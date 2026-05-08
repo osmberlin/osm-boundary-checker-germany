@@ -4,13 +4,34 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-05
 
+### `a99c98a`
+
+Kreisfreie Städte und Stadtstaaten werden jetzt korrekt gematcht, auch wenn ihre OSM-Grenze auf einer anderen `admin_level` liegt. Zusätzlich zeigt die Detailseite Vorschläge für mögliche OSM-Grenzen an, wenn eine amtliche Grenze nicht gematcht wurde.
+
+### `fcc1d53`, `5ce83d0`
+
+Die Sektion "Live-Daten anzeigen" kann jetzt gefiltert werden, was auch die Kartenansicht beeinflusst. Außerdem werden die OSM-Daten dort mit den Referenzdaten verglichen und betont, wenn sie sich unterscheiden.
+
+### `74baef3`
+
+Hilfswerkzeug [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) korrigiert. Die 8-stelligen Gemeindeschlüssel werden jetzt korrekt verarbeitet. Außerdem gibt es Erklärung wie die Schlüssel funktionieren.
+
+### `73b8cdf`, `709871b`, `7f3f475`
+
+Alle Gemeinde-Datensätze werden jetzt sowohl mit dem `de:amtlicher_gemeindeschluessel` als auch mit dem `de:regionalschluessel` (transformiert) verglichen. Die Anzeige wie der Vergleich funktioniert, ist darauf angepasst. Und es gibt eine neue Sektion die darauf hinweißt, dass ein `de:amtlicher_gemeindeschluessel` fehlt, wenn das der Fall ist.
+
+### `37403de`, `384184d`, `a40e807`, `955e2cf`, `1aaada0`, `5751cda`
+
+Interface verbessert: Datums-Anzeige; Filter-Anzeige über den Karten; Anzeige-Toggle unter der Karte; uvm. Man kann unter anderem in der Detailansicht Nachbar-Grenzen anzeigen und dort hin navigieren.
+
 ### `7873f42`
 
 Die Seiten zeigen jetzt einen Lade-Spinner, wenn sie geladen werden. Einige Seiten sind leider sehr groß und laden daher länger.
 
-### `9015e77`
+### `9015e77`, `0c3351f`, `57c1f81`, `e93040e`
 
 Wenn man die Live OSM Daten anzeigen lässt, verlinken die Ergebnisse jetzt auf osm.org. Und es gibt Hilfs-Links zum Schlüssel-Explorer. Und die Werte aus den Referenzdaten, werden in den OSM Daten gesucht und hervorgehoben. Damit ist es einfacher zu verstehen, welche OSM Daten editiert werden müssen um ein Match zu erhalten.
+Die URL `/resolve/relation/ID` erzeugt einen intelligenten Deeplink in den Grenzabgleich. Die Seite leitet entweder direkt zum Ergebnis in der App weiter oder zeigt eine Liste, wenn es mehrere mögliche Ergebnisse gibt.
 
 ### `5a370a1`, `22ad7ab`
 
