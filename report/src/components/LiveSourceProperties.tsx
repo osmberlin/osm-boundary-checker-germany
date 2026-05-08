@@ -330,6 +330,7 @@ export function LiveSourceProperties({
     getStatus: (sourceId: string) => OfficialSlot
   }
   overpass: {
+    hasData: boolean
     hits: OverpassBoundaryHit[]
     run: (query: string, interpreterUrl: string) => Promise<void>
     reset: () => void
@@ -341,7 +342,9 @@ export function LiveSourceProperties({
 
   const datasetSnapshotValueMatches = buildDatasetSnapshotValueMatchSet(row)
 
-  const [osm, setOsm] = useState<OsmSlot>({ status: 'idle' })
+  const [osm, setOsm] = useState<OsmSlot>(() =>
+    overpass.hasData ? { status: 'done' } : { status: 'idle' },
+  )
   const osmHits = overpass.hits
   const datasetForResolver = data.area.trim()
 

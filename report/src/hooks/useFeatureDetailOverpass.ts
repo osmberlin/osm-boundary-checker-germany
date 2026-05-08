@@ -1,6 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
-import { overpassLiveQueryOptions, type OverpassLiveQueryInput } from '../data/load'
+import {
+  overpassLiveQueryOptions,
+  type OverpassLiveQueryData,
+  type OverpassLiveQueryInput,
+} from '../data/load'
 
 export function useFeatureDetailOverpass(featureKey: string) {
   const queryClient = useQueryClient()
@@ -23,6 +27,30 @@ export function useFeatureDetailOverpass(featureKey: string) {
     retry: false,
   })
 
+  const cachedOverpassData = useMemo(() => {
+    const cachedQueries = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: ['overpass-live', featureKey], exact: false })
+
+    let latest: { data: OverpassLiveQueryData; updatedAt: number } | null = null
+
+    for (const query of cachedQueries) {
+      const key = query.queryKey
+      if (!Array.isArray(key) || key.length !== 4) continue
+      if (key[0] !== 'overpass-live' || key[1] !== featureKey) continue
+      const data = query.state.data
+      if (!data) continue
+      const updatedAt = query.state.dataUpdatedAt ?? 0
+      if (!latest || updatedAt > latest.updatedAt) {
+        latest = { data: data as OverpassLiveQueryData, updatedAt }
+      }
+    }
+
+    return latest?.data ?? null
+  }, [featureKey, queryClient])
+
+  const overpassData = overpassQuery.data ?? cachedOverpassData
+
   const runOverpass = useCallback(
     async (query: string, interpreterUrl: string) => {
       const input: OverpassLiveQueryInput = {
@@ -41,11 +69,13 @@ export function useFeatureDetailOverpass(featureKey: string) {
 
   const resetOverpass = useCallback(() => {
     setOverpassInput(null)
-  }, [])
+    queryClient.removeQueries({ queryKey: ['overpass-live', featureKey], exact: false })
+  }, [featureKey, queryClient])
 
   return {
-    hits: overpassQuery.data?.hits ?? [],
-    geojson: overpassQuery.data?.geojson ?? null,
+    hasData: overpassData != null,
+    hits: overpassData?.hits ?? [],
+    geojson: overpassData?.geojson ?? null,
     runOverpass,
     resetOverpass,
   }
