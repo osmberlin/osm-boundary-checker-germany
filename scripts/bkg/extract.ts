@@ -1,11 +1,11 @@
 #!/usr/bin/env bun
 import { spawnSync } from 'node:child_process'
 /**
- * Read BKG GeoPackage (default: `.cache/bkg/...` from `bun run bkg:download`) and write
+ * Read BKG GeoPackage (default: `.cache/bkg/...` from `bun run download -- --yes --targets bkg`) and write
  * `source/official.fgb` (WGS84 FlatGeobuf) per area using per-dataset `config.jsonc`.
  *
- * With no flags: extracts **all** areas from the config (same as `compare` defaulting to full runs in CI).
- * Use `--area <folder>` for a single area. Interactive Clack prompts appear when the GPKG is missing (non-CI).
+ * With no flags: extracts **all** areas from the config (same as a full compare run).
+ * Use `--area <folder>` for a single area. Interactive Clack prompts appear when the GPKG is missing (unless `--yes`).
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
@@ -39,13 +39,10 @@ type AreaLayerSpec = {
   where?: string
 }
 
-function isCi(): boolean {
-  return process.env.CI === '1' || process.env.CI === 'true'
-}
-
 function parseArgs(argv: string[]) {
   let area: string | null = null
   let gpkg: string | null = null
+  let nonInteractive = false
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--area') {
       const v = argv[i + 1]
@@ -64,15 +61,18 @@ function parseArgs(argv: string[]) {
     if (argv[i] === '--all') {
       /* no-op: full extract is the default */
     }
+    if (argv[i] === '--yes' || argv[i] === '--non-interactive') {
+      nonInteractive = true
+    }
   }
-  return { area, gpkg }
+  return { area, gpkg, nonInteractive }
 }
 
 function resolveGpkgPath(runtimeRoot: string, cliGpkg: string | null): string {
   if (cliGpkg) return resolve(process.cwd(), cliGpkg)
   const metaPath = join(runtimeRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
   if (!existsSync(metaPath)) {
-    throw new Error(`Missing ${metaPath}. Run bun run bkg:download first.`)
+    throw new Error(`Missing ${metaPath}. Run bun run download -- --yes --targets bkg first.`)
   }
   const meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as {
     gpkgRelativePath: string
@@ -122,11 +122,12 @@ function downloadScript(workspaceRoot: string): string {
   return join(workspaceRoot, 'scripts/bkg/download.ts')
 }
 
-/** Resolve GPKG path; in non-CI, offer Clack when cache/config is missing or file absent. */
+/** Resolve GPKG path; with an interactive TTY, offer Clack when cache/config is missing or file absent. */
 async function ensureGpkgPath(
   workspaceRoot: string,
   runtimeRoot: string,
   initialCliGpkg: string | null,
+  nonInteractive: boolean,
 ): Promise<string> {
   let cliGpkg = initialCliGpkg
 
@@ -135,7 +136,7 @@ async function ensureGpkgPath(
     try {
       candidate = resolveGpkgPath(runtimeRoot, cliGpkg)
     } catch (err) {
-      if (isCi()) {
+      if (nonInteractive) {
         console.error(String(err))
         process.exit(1)
       }
@@ -144,11 +145,11 @@ async function ensureGpkgPath(
         options: [
           {
             value: 'download',
-            label: 'Download ZIP from BKG (runs bkg:download)',
+            label: 'Download ZIP from BKG (bun run download -- --yes --targets bkg)',
           },
           {
             value: 'zip',
-            label: 'Use a local ZIP (same as bkg:download --zip)',
+            label: 'Use a local ZIP (same as scripts bkg/download.ts --zip)',
           },
           { value: 'gpkg', label: 'Point to a local .gpkg file' },
           { value: 'cancel', label: 'Cancel' },
@@ -164,7 +165,7 @@ async function ensureGpkgPath(
           stdio: 'inherit',
         })
         if (r.status !== 0) {
-          p.log.error('bkg:download failed.')
+          p.log.error('BKG download failed.')
           continue
         }
         cliGpkg = null
@@ -185,7 +186,7 @@ async function ensureGpkgPath(
           stdio: 'inherit',
         })
         if (r.status !== 0) {
-          p.log.error('bkg:download --zip failed.')
+          p.log.error('BKG download --zip failed.')
           continue
         }
         cliGpkg = null
@@ -211,7 +212,7 @@ async function ensureGpkgPath(
       return candidate
     }
 
-    if (isCi()) {
+    if (nonInteractive) {
       console.error(`GPKG not found: ${candidate}`)
       process.exit(1)
     }
@@ -250,21 +251,24 @@ function runOgr2ogr(gpkg: string, layer: string, outFgb: string, where?: string)
 async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
-  const { area, gpkg: cliGpkg } = parseArgs(process.argv.slice(2))
-  if (!isCi()) {
+  const argv = process.argv.slice(2)
+  const { area, gpkg: cliGpkg, nonInteractive } = parseArgs(argv)
+  if (!nonInteractive) {
     p.intro('VG25 → FlatGeobuf')
   }
-  const gpkgAbs = await ensureGpkgPath(workspaceRoot, runtimeRoot, cliGpkg)
+  const gpkgAbs = await ensureGpkgPath(workspaceRoot, runtimeRoot, cliGpkg, nonInteractive)
 
   const metaPath = join(runtimeRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
   if (!existsSync(metaPath)) {
-    throw new Error(`Missing ${metaPath}. Run bun run bkg:download first.`)
+    throw new Error(`Missing ${metaPath}. Run bun run download -- --yes --targets bkg first.`)
   }
   let bkgMeta
   try {
     bkgMeta = bkgDownloadMetadataSchema.parse(JSON.parse(readFileSync(metaPath, 'utf-8')))
   } catch {
-    throw new Error(`Invalid ${metaPath}. Run bun run bkg:download to regenerate metadata.`)
+    throw new Error(
+      `Invalid ${metaPath}. Run bun run download -- --yes --targets bkg to regenerate metadata.`,
+    )
   }
 
   const specs = discoverBkgAreaSpecs(workspaceRoot)
@@ -286,7 +290,7 @@ async function main() {
     process.exit(1)
   }
 
-  if (!isCi()) {
+  if (!nonInteractive) {
     p.log.info(`GeoPackage: ${gpkgAbs}`)
     p.log.info(
       `Extracting ${selected.length} area(s)${area ? ` (--area ${area})` : ' (full config)'}.`,
@@ -326,7 +330,7 @@ async function main() {
     writeAreaSourceMetadataFile(areaPath, mergeAreaSourceMetadata(prev, patch))
   }
 
-  if (!isCi()) {
+  if (!nonInteractive) {
     p.outro('Extract finished.')
   } else {
     console.log('Done.')

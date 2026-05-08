@@ -2,7 +2,7 @@
 /**
  * Interactive compare (`bun run compare`).
  * One prompt: "All areas" (first, default) or a specific dataset, then `compare-boundaries` per area.
- * On full success, runs `bun run report:sync-runtime-assets` unless `--no-sync` or COMPARE_NO_SYNC=1.
+ * On full success, runs `bun run --filter report sync-runtime-assets` unless `--no-sync` or COMPARE_NO_SYNC=1.
  */
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
@@ -29,8 +29,7 @@ function parseArgs(argv: string[]) {
     if (argv[i] === '--no-sync') noSync = true
     if (argv[i] === '--yes') yes = true
   }
-  const ci = process.env.CI === '1' || process.env.CI === 'true'
-  return { area, all, noSync, yes, ci }
+  return { area, all, noSync, yes }
 }
 
 function discoverAreas(repoRoot: string): string[] {
@@ -45,7 +44,7 @@ function discoverAreas(repoRoot: string): string[] {
   return out.sort()
 }
 
-/** Always `--no-sync`: this entry point runs `report:sync-runtime-assets` once after all areas. */
+/** Always `--no-sync`: this entry point runs `sync-runtime-assets` in the report workspace once after all areas. */
 function runCompareScript(repoRoot: string, area: string): Promise<number> {
   const script = join(repoRoot, 'scripts', 'compare', 'compare-boundaries.ts')
   const args = [script, '--area', area, '--no-sync']
@@ -61,13 +60,13 @@ function runCompareScript(repoRoot: string, area: string): Promise<number> {
 
 function syncReportAssets(repoRoot: string): void {
   if (process.env.COMPARE_NO_SYNC === '1') return
-  console.log(`\n${cliHeadline('[compare] report:sync-runtime-assets …')}`)
-  const r = spawnSync('bun', ['run', 'report:sync-runtime-assets'], {
+  console.log(`\n${cliHeadline('[compare] sync-runtime-assets (report) …')}`)
+  const r = spawnSync('bun', ['run', '--filter', 'report', 'sync-runtime-assets'], {
     cwd: repoRoot,
     stdio: 'inherit',
   })
   if ((r.status ?? 1) !== 0) {
-    console.warn(cliWarn(`[compare] report:sync-runtime-assets exited with ${r.status}`))
+    console.warn(cliWarn(`[compare] sync-runtime-assets exited with ${r.status}`))
   }
 }
 
@@ -78,11 +77,11 @@ Interactive: one list — "All areas" (default) or pick a single dataset.
 
   --area <folder>     Compare only this area (no menu)
   --all               Compare all discoverable areas (no menu)
-  --yes               With --area/--all or in CI: skip any remaining prompts
-  --no-sync           Do not run report:sync-runtime-assets after success
+  --yes               Non-interactive: use with --area or --all, or alone to compare all areas
+  --no-sync           Do not run report workspace sync-runtime-assets after success
   COMPARE_NO_SYNC=1   Same as --no-sync (also respected by compare-boundaries.ts)
 
-CI: compares all areas (or --area) without prompts; sync runs unless COMPARE_NO_SYNC=1.
+Sync after success runs unless --no-sync or COMPARE_NO_SYNC=1.
 `)
 }
 
@@ -94,7 +93,7 @@ async function main() {
   }
 
   const repoRoot = process.cwd()
-  const { area: flagArea, all: flagAll, noSync, yes, ci } = parseArgs(argv)
+  const { area: flagArea, all: flagAll, noSync, yes } = parseArgs(argv)
   const areas = discoverAreas(repoRoot)
 
   if (areas.length === 0) {
@@ -104,7 +103,7 @@ async function main() {
 
   let selected: string[] = []
 
-  if (ci || yes) {
+  if (yes) {
     if (flagArea) selected = [flagArea]
     else if (flagAll) selected = areas
     else selected = areas

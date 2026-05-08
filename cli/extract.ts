@@ -87,11 +87,7 @@ async function main(): Promise<void> {
   }
 
   const repoRoot = process.cwd()
-  const nonInteractive =
-    process.env.CI === '1' ||
-    process.env.CI === 'true' ||
-    argv.includes('--yes') ||
-    argv.includes('--non-interactive')
+  const nonInteractive = argv.includes('--yes') || argv.includes('--non-interactive')
 
   const extra = nonInteractive ? ['--yes'] : []
 

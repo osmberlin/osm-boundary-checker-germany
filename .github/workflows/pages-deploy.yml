@@ -70,13 +70,13 @@ jobs:
           if_no_artifact_found: fail
 
       - name: Prepare static snapshot assets
-        run: bun run report:sync-runtime-assets
+        run: bun run --filter report sync-runtime-assets
 
       - name: Validate non-empty area index
         run: bun run scripts/ci/validate-areas-index.ts
 
       - name: Build static report shell
-        run: bun run report:build:app
+        run: bun run --filter report build
 
       - uses: actions/upload-pages-artifact@v3
         with:

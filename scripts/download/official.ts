@@ -472,7 +472,7 @@ async function main() {
       (f) => `- ${f.area}: ${f.reason}${f.detail ? ` :: ${f.detail}` : ''}`,
     )
     console.error(
-      `[extract:official] failed for ${failures.length} area(s):\n` +
+      `[download:official] failed for ${failures.length} area(s):\n` +
         `${lines.join('\n')}\n` +
         'Hint: inspect official.download upstreamDateResolver strategies in scripts/shared/downloadOfficialConfig.ts.',
     )

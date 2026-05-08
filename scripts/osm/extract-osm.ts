@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
  * Build the shared OSM FlatGeobufs all compare runs depend on.
  *
  * Without `--kind`: interactive multiselect (TTY) defaulting to admin + admin_candidates;
- * CI / `--yes` / `--non-interactive` / non-TTY runs those two without prompts (`--help`).
+ * `--yes` / `--non-interactive` / non-TTY (stdin) runs those two without prompts (`--help`).
  *
  * With `--kind <name>`: one extract only, non-interactive (same as before).
  *
@@ -15,7 +15,7 @@ import { spawnSync } from 'node:child_process'
  *                       for `match_candidates` / OSM-Kandidaten UI)
  * - plz_candidates:     `.cache/osm/germany-postal-code-candidates.fgb` (POINTS)
  *
- * Prerequisites: `osmium` and `ogr2ogr` on PATH; run `bun run extract:osm-pbf` first
+ * Prerequisites: `osmium` and `ogr2ogr` on PATH; run `bun run download -- --yes --targets pbf` first
  * (or set `OSM_GERMANY_PBF` / `--pbf`). The candidate extracts use SpatiaLite's
  * `ST_PointOnSurface` (verified available in GDAL 3.12) so the geometry is collapsed
  * to a single inside point at extract time.
@@ -83,11 +83,6 @@ function sortKinds(kinds: ExtractKind[]): ExtractKind[] {
   return EXTRACT_KIND_ORDER.filter((k) => kinds.includes(k))
 }
 
-function isCiEnv(): boolean {
-  const v = process.env.CI?.trim().toLowerCase()
-  return v === '1' || v === 'true'
-}
-
 function mergeTagsFilterExpressions(workspaceRoot: string, kinds: ExtractKind[]): string[] {
   const merged = new Set<string>(DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS)
   for (const kind of kinds) {
@@ -105,13 +100,13 @@ function mergeTagsFilterExpressions(workspaceRoot: string, kinds: ExtractKind[])
 }
 
 function printHelp(): void {
-  console.log(`Usage: bun run osm:extract [options]
+  console.log(`Usage: bun run --filter ./scripts extract:osm [options]
 
 Build shared OSM FlatGeobuf file(s) under ${GERMANY_OSM_CACHE_DIR}/.
 
 When --kind is omitted:
-  • TTY + not CI: interactive multiselect (@clack/prompts); default selection = admin + admin_candidates.
-  • CI=1 / CI=true, --yes, --non-interactive, or non-TTY stdin: runs admin and admin_candidates without prompts.
+  • Interactive TTY: multiselect (@clack/prompts); default selection = admin + admin_candidates.
+  • --yes, --non-interactive, or non-TTY stdin: runs admin and admin_candidates without prompts.
 
 When --kind is set: runs that single kind only (no prompts), same as before.
 
@@ -132,7 +127,7 @@ Outputs (basenames from shared constants in code):
 
 async function resolveKindsWhenImplicit(nonInteractive: boolean): Promise<ExtractKind[]> {
   const defaultPair: ExtractKind[] = ['admin', 'admin_candidates']
-  if (nonInteractive || isCiEnv() || !process.stdin.isTTY) {
+  if (nonInteractive || !process.stdin.isTTY) {
     return defaultPair
   }
 
@@ -521,7 +516,7 @@ function runSharedExtract(
       console.error(
         cliErr(
           `Germany PBF not found:\n  ${inputPbf}\n\n` +
-            `Download with:\n  bun run extract:osm-pbf\n` +
+            `Download with:\n  bun run download -- --yes --targets pbf\n` +
             `Or set OSM_GERMANY_PBF / pass --pbf /path/to/germany-latest.osm.pbf`,
         ),
       )
@@ -532,7 +527,7 @@ function runSharedExtract(
     if (!integ.ok) {
       const fix =
         integ.canDeleteCorruptCache === true
-          ? `Re-download with:\n  bun run extract:osm-pbf -- --force`
+          ? `Re-download with:\n  bun run download -- --yes --targets pbf --force`
           : `Install osmium on PATH, or use a machine where \`osmium fileinfo -e\` works on this file.`
       console.error(
         cliErr(`Germany PBF could not be validated:\n  ${inputPbf}\n${integ.detail}\n\n${fix}`),
@@ -600,7 +595,7 @@ async function main() {
 
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
-  const nonInteractive = parsed.nonInteractive || isCiEnv()
+  const nonInteractive = parsed.nonInteractive
   const kinds: ExtractKind[] = parsed.kindExplicit
     ? [parsed.kind]
     : await resolveKindsWhenImplicit(nonInteractive)

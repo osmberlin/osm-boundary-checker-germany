@@ -104,9 +104,8 @@ jobs:
           echo "- Why: avoid unnecessary artifact downloads when upstream fetch succeeds." >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "### Download cache decisions" >> "$GITHUB_STEP_SUMMARY"
-          bun run pipeline:nightly:download
+          bun run scripts/pipeline/nightly.ts -- --phase download
         env:
-          CI: '1'
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
       # Phase 2 (conditional): restore minimal fallback inputs needed for a retry.
@@ -146,22 +145,20 @@ jobs:
           echo "### Fallback-assisted retry" | tee -a "$GITHUB_STEP_SUMMARY"
           echo "- Trigger: fresh-first attempt failed." | tee -a "$GITHUB_STEP_SUMMARY"
           echo "- Action: restore scoped cache artifacts and retry download phase." | tee -a "$GITHUB_STEP_SUMMARY"
-          bun run pipeline:nightly:download
+          bun run scripts/pipeline/nightly.ts -- --phase download
         env:
-          CI: '1'
           FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
       - name: Normalize runtime source metadata (single canonical state)
-        run: bun run migrate:source-metadata
+        run: bun run scripts/migrations/normalize-source-metadata.ts
         env:
           DATA_ROOT: ${{ github.workspace }}
 
       - name: Extract and prepare geometry
         timeout-minutes: 90
-        run: bun run pipeline:nightly:extract
+        run: bun run scripts/pipeline/nightly.ts -- --phase extract
         env:
-          CI: '1'
           FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
@@ -174,13 +171,12 @@ jobs:
         timeout-minutes: 210
         run: |
           echo "### Compare phase" >> "$GITHUB_STEP_SUMMARY"
-          if ! bun run pipeline:nightly:compare; then
+          if ! bun run scripts/pipeline/nightly.ts -- --phase compare; then
             echo "Compare phase failed, retrying once in 60s..." | tee -a "$GITHUB_STEP_SUMMARY"
             sleep 60
-            bun run pipeline:nightly:compare
+            bun run scripts/pipeline/nightly.ts -- --phase compare
           fi
         env:
-          CI: '1'
           FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
@@ -204,7 +200,7 @@ jobs:
         run: bun run scripts/ci/verify-temp-cleanup.ts
 
       - name: Prepare static report snapshot
-        run: bun run report:sync-runtime-assets
+        run: bun run --filter report sync-runtime-assets
 
       - name: Validate snapshot output
         run: bun run scripts/ci/validate-refresh-snapshot.ts

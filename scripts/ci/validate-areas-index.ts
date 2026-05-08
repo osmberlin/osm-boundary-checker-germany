@@ -13,11 +13,15 @@ type ReviewQueue = unknown[]
 
 const areaIndexPath = new URL('../../report/src/data/areasIndex.gen.ts', import.meta.url)
 if (!existsSync(areaIndexPath)) {
-  throw new Error('Missing report/src/data/areasIndex.gen.ts; run report:generate-areas first.')
+  throw new Error(
+    'Missing report/src/data/areasIndex.gen.ts; run `cd report && bun run generate-areas` first.',
+  )
 }
 const reviewQueuePath = new URL('../../report/src/data/reviewQueue.gen.ts', import.meta.url)
 if (!existsSync(reviewQueuePath)) {
-  throw new Error('Missing report/src/data/reviewQueue.gen.ts; run report:generate-areas first.')
+  throw new Error(
+    'Missing report/src/data/reviewQueue.gen.ts; run `cd report && bun run generate-areas` first.',
+  )
 }
 
 const mod = (await import(areaIndexPath.href)) as { default?: AreaIndex }

@@ -24,25 +24,25 @@ export RUST_GEOM_BIN="/absolute/path/to/geom-sidecar"
 ### Quick test run (skip BKG download)
 
 ```bash
-CI=1 bun run download:official && bun run download:osm:extract && bun run compare -- --all
+bun run extract:official -- --yes && bun run extract:osm -- --yes && bun run compare -- --yes --all
 ```
 
 Force-refresh only official HTTP sources first:
 
 ```bash
-CI=1 bun run download:official -- --force && bun run download:osm:extract && bun run compare -- --all
+bun run extract:official -- --yes --force && bun run extract:osm -- --yes && bun run compare -- --yes --all
 ```
 
 ### Full refresh run (includes BKG)
 
 ```bash
-bun run pipeline:nightly
+bun run scripts/pipeline/nightly.ts -- --phase all
 ```
 
 ## Single-area sanity check
 
 ```bash
-bun run compare:boundaries -- --area hamburg-bezirke
+bun run scripts/compare/compare-boundaries.ts -- --area hamburg-bezirke
 ```
 
 ## What to check after a run

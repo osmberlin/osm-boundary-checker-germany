@@ -41,13 +41,13 @@ function parseArgs(argv: string[]) {
 
 function maybeSyncReportRuntimeAssets(workspaceRoot: string, noSync: boolean): void {
   if (noSync || process.env.COMPARE_NO_SYNC === '1') return
-  console.log(`\n${cliHeadline('[compare] report:sync-runtime-assets …')}`)
-  const r = spawnSync('bun', ['run', 'report:sync-runtime-assets'], {
+  console.log(`\n${cliHeadline('[compare] sync-runtime-assets (report) …')}`)
+  const r = spawnSync('bun', ['run', '--filter', 'report', 'sync-runtime-assets'], {
     cwd: workspaceRoot,
     stdio: 'inherit',
   })
   if ((r.status ?? 1) !== 0) {
-    console.warn(cliWarn(`[compare] report:sync-runtime-assets exited with ${r.status}`))
+    console.warn(cliWarn(`[compare] sync-runtime-assets exited with ${r.status}`))
   }
 }
 
@@ -173,8 +173,8 @@ async function main() {
   if (!area) {
     console.error(
       cliErr(
-        'Usage: bun scripts/compare/compare-boundaries.ts --area <folder> [--no-sync]\n' +
-          '  --no-sync  Skip bun run report:sync-runtime-assets (used when cli/compare batches areas).',
+        'Usage: bun run scripts/compare/compare-boundaries.ts -- --area <folder> [--no-sync]\n' +
+          '  --no-sync  Skip report sync-runtime-assets (used when cli/compare batches areas).',
       ),
     )
     process.exit(1)

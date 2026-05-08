@@ -15,8 +15,8 @@ From this directory:
 ```bash
 bun install
 bun run rust:build
-bun run pipeline:nightly
-bun run report:dev
+bun run scripts/pipeline/nightly.ts -- --phase all
+cd report && bun run dev
 ```
 
 Open the URL printed by the dev server (default port 3000).
@@ -25,19 +25,19 @@ Open the URL printed by the dev server (default port 3000).
 
 ## Common commands
 
-| Goal                                 | Command                                                                                                    |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Full data refresh + compare          | `bun run pipeline:nightly` (or `bun run download:all` then `bun run compare`)                              |
-| Download menu (PBF / BKG / HTTP)     | `bun run download`                                                                                         |
-| Extract menu (OSM + official)        | `bun run extract` (TTY) or `bun run extract -- --yes` for both scopes non-interactively                    |
-| OSM FlatGeobuf extract only          | `bun run extract:osm` (wizard; defaults all four kinds when interactive) or `bun run osm:extract` (engine) |
-| Geofabrik Germany PBF only           | `bun run extract:osm-pbf`                                                                                  |
-| Compare (interactive)                | `bun run compare`                                                                                          |
-| Compare (non-interactive)            | `CI=1 bun run compare -- --area <folder>` or `CI=1 bun run compare` (all areas)                            |
-| Compare one area (no menu, direct)   | `bun run compare:boundaries -- --area <folder>`                                                            |
-| Sync report static inputs            | `bun run report:sync-runtime-assets` (also runs after successful `bun run compare`)                        |
-| Production build (from runtime tree) | `bun run report:build`                                                                                     |
-| Unit tests                           | `bun run test`                                                                                             |
+| Goal                                 | Command                                                                                                                                                                                                         |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full data refresh + compare          | `bun run scripts/pipeline/nightly.ts -- --phase all` (or CLIs: `download` → `extract` → `compare -- --yes`). Skip PBF re-download: `OSM_SKIP_PBF_DOWNLOAD=1 bun run scripts/pipeline/nightly.ts -- --phase all` |
+| Download menu (PBF / BKG / HTTP)     | `bun run download` (non-interactive: `--yes`, optional `--targets pbf,bkg,official` or `--all`)                                                                                                                 |
+| Extract menu (OSM + official)        | `bun run extract` (TTY) or `bun run extract -- --yes` for both scopes non-interactively                                                                                                                         |
+| OSM FlatGeobuf extract only          | `bun run extract:osm` (wizard) or `bun run --filter ./scripts extract:osm` (engine)                                                                                                                             |
+| Geofabrik Germany PBF only           | `bun run download -- --yes --targets pbf` (add `--force` to re-fetch)                                                                                                                                           |
+| Compare (interactive)                | `bun run compare`                                                                                                                                                                                               |
+| Compare (non-interactive)            | `bun run compare -- --yes --area <folder>` or `bun run compare -- --yes` (all areas)                                                                                                                            |
+| Compare one area (no menu, direct)   | `bun run scripts/compare/compare-boundaries.ts -- --area <folder>`                                                                                                                                              |
+| Sync report static inputs            | `cd report && bun run sync-runtime-assets` (also runs after successful `bun run compare`)                                                                                                                       |
+| Production build (from runtime tree) | `cd report && bun run build:with-runtime`                                                                                                                                                                       |
+| Unit tests                           | `bun run test`                                                                                                                                                                                                  |
 
 ## Layout
 

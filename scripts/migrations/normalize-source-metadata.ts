@@ -82,7 +82,7 @@ function main(): void {
     `[migrate:source-metadata] bkgDownloadedAtBackfills=${stats.bkgDownloadedAtBackfills} bkgLegacyKeyRemovals=${stats.bkgLegacyKeyRemovals}`,
   )
   console.log(
-    '[migrate:source-metadata] retire when BKG caches are too new for zipLastFetchedAt: delete normalize-source-metadata.ts + .test.ts, remove migrate:source-metadata (root + scripts package.json), drop its step from data-refresh.yml, trim the migrate note in docs/processing-and-analysis.md',
+    '[migrate:source-metadata] retire when BKG caches are too new for zipLastFetchedAt: delete normalize-source-metadata.ts + .test.ts, remove migrate:source-metadata from scripts/package.json, drop its step from data-refresh.yml, trim the migrate note in docs/processing-and-analysis.md',
   )
 }
 

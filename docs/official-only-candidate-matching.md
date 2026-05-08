@@ -8,7 +8,7 @@ match criteria.
 
 Implementation entry points:
 
-- Extract: [`scripts/osm/extract-osm.ts`](../scripts/osm/extract-osm.ts) (`--kind admin_candidates` / `--kind plz_candidates`; nightly pipeline calls these explicitly after `--kind admin`. Locally, `bun run osm:extract` (scripts `extract:osm`) without `--kind` defaults to admin + admin_candidates when interactive or under CI — see script `--help`.)
+- Extract: [`scripts/osm/extract-osm.ts`](../scripts/osm/extract-osm.ts) (`--kind admin_candidates` / `--kind plz_candidates`; nightly pipeline calls these explicitly after `--kind admin`. Locally, `bun run --filter ./scripts extract:osm` without `--kind` defaults to admin + admin_candidates when interactive, with `--yes` / non-TTY, or with explicit `--kind` — see script `--help`.)
 - Match: [`scripts/compare/lib/matchCandidates.ts`](../scripts/compare/lib/matchCandidates.ts)
 - Wire-in: `match_candidates` phase in [`scripts/compare/lib/compare.ts`](../scripts/compare/lib/compare.ts)
 - Persist: per-row shards in [`scripts/compare/lib/writeOutputs.ts`](../scripts/compare/lib/writeOutputs.ts)

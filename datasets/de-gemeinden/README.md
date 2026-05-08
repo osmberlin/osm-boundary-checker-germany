@@ -1,6 +1,6 @@
 # Deutschland — Gemeinden (`vg25_gem`)
 
-BKG **VG25**, Layer `vg25_gem`. Extraktion: `bun run bkg:extract -- --area de-gemeinden`.
+BKG **VG25**, Layer `vg25_gem`. Extraktion: `bun run extract:official -- --area de-gemeinden`.
 
 OSM typisch `admin_level=8` (Gemeinden) → `source/osm.fgb`.
 

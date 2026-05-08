@@ -59,12 +59,12 @@ flowchart LR
   JSON --> SNAP
 ```
 
-Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `bun run download:all` (or `bun run pipeline:nightly`) pulls BKG / HTTP official / OSM PBF and runs extract/compare per `datasets/<area>/config.jsonc`. For a guided download menu use `bun run download`; for extract use `bun run extract` (scopes OSM + official, then `extract:osm` / `extract:official` wizards) or `bun run extract:osm` / `bun run extract:official` directly. Official boundaries use **upstream metadata first**: each run resolves a canonical **`official.sourceUpdatedAt`** via `official.download.upstreamDateResolver` (BKG: GDZ HTML _Aktualitätsstand_; HTTP areas: e.g. `wfs_inspire_iso19139`, `iso19139_xml`, `ogc_api_features_temporal_end` — see [`scripts/shared/downloadOfficialConfig.ts`](../scripts/shared/downloadOfficialConfig.ts)). Geometry bytes (ZIP / GetFeature) are **skipped when `sourceUpdatedAt` is unchanged** and a prior FlatGeobuf exists, unless `--force`. OSM PBF caching keeps its own policy in [`scripts/osm/download-germany-pbf.ts`](../scripts/osm/download-germany-pbf.ts).
+Nightlies and one-shot runs are orchestrated from the workspace root (see [README.md](../README.md)): `bun run scripts/pipeline/nightly.ts -- --phase all` (or `bun run download -- --yes --all` then `extract` / `compare` CLIs) pulls BKG / HTTP official / OSM PBF and runs extract/compare per `datasets/<area>/config.jsonc`. For a guided download menu use `bun run download`; for extract use `bun run extract` (scopes OSM + official, then `extract:osm` / `extract:official` wizards) or `bun run extract:osm` / `bun run extract:official` directly. Official boundaries use **upstream metadata first**: each run resolves a canonical **`official.sourceUpdatedAt`** via `official.download.upstreamDateResolver` (BKG: GDZ HTML _Aktualitätsstand_; HTTP areas: e.g. `wfs_inspire_iso19139`, `iso19139_xml`, `ogc_api_features_temporal_end` — see [`scripts/shared/downloadOfficialConfig.ts`](../scripts/shared/downloadOfficialConfig.ts)). Geometry bytes (ZIP / GetFeature) are **skipped when `sourceUpdatedAt` is unchanged** and a prior FlatGeobuf exists, unless `--force`. OSM PBF caching keeps its own policy in [`scripts/osm/download-germany-pbf.ts`](../scripts/osm/download-germany-pbf.ts).
 
 Config ownership is explicit:
 
 - `datasets/<area>/config.jsonc` = human-authored setup (compare, profiles, optional direct official download/source facts).
-- `datasets/<area>/source/metadata.json` = runtime provenance written by pipeline scripts. The `official` block holds the amtliche Quelle (URLs, licence, timestamps below). The `osm` block is **slim**: `downloadedAt` (PBF snapshot from header when applicable), optional `extractedAt` (when `extract:osm` / `osm:extract` rebuilt the shared FlatGeobuf), and optional `sourceDateSource`. Geofabrik URLs and ODbL defaults are **not** duplicated here — they live in `GERMANY_OSM_SOURCE_DEFAULTS` in [`scripts/shared/germanyOsmPbf.ts`](../scripts/shared/germanyOsmPbf.ts) and are merged at compare / report time via [`scripts/shared/osmGermanyProvenance.ts`](../scripts/shared/osmGermanyProvenance.ts).
+- `datasets/<area>/source/metadata.json` = runtime provenance written by pipeline scripts. The `official` block holds the amtliche Quelle (URLs, licence, timestamps below). The `osm` block is **slim**: `downloadedAt` (PBF snapshot from header when applicable), optional `extractedAt` (when `bun run extract:osm` rebuilt the shared FlatGeobuf), and optional `sourceDateSource`. Geofabrik URLs and ODbL defaults are **not** duplicated here — they live in `GERMANY_OSM_SOURCE_DEFAULTS` in [`scripts/shared/germanyOsmPbf.ts`](../scripts/shared/germanyOsmPbf.ts) and are merged at compare / report time via [`scripts/shared/osmGermanyProvenance.ts`](../scripts/shared/osmGermanyProvenance.ts).
 - Legacy config keys `sources` and `osmExtract` are not supported.
 
 ### Source timestamp contract (`*At` fields)
@@ -81,9 +81,9 @@ Single reference for pipeline authors and report UI (avoid duplicating this else
 | **`osm.extractedAt`**                       | `osm/extract-osm.ts`                     | When the **shared OSM FlatGeobuf** was rebuilt (wall clock).                                                                                       |
 | **BKG `.cache/bkg/download-metadata.json`** | `bkg/download.ts`                        | Same trio as official for VG25: `sourceUpdatedAt`, `sourceUpdatedAtVerifiedAt`, `downloadedAt` (+ paths).                                          |
 
-Canonical-only runtime rule: `bkgDownloadMetadataSchema` does not accept legacy `zipLastFetchedAt`. If an **old** `.cache/bkg/download-metadata.json` is restored (for example from GitHub Actions cache), normalize it with `bun run migrate:source-metadata` before BKG extract runs.
+Canonical-only runtime rule: `bkgDownloadMetadataSchema` does not accept legacy `zipLastFetchedAt`. If an **old** `.cache/bkg/download-metadata.json` is restored (for example from GitHub Actions cache), normalize it with `bun run scripts/migrations/normalize-source-metadata.ts` before BKG extract runs.
 
-CI enforcement: `data-refresh.yml` runs `migrate:source-metadata` after fallback artifacts are restored and before extract consumes BKG cache metadata. Checked-in `datasets/**/source/metadata.json` is validated by schema at read time; it is not rewritten by this migration.
+CI enforcement: `data-refresh.yml` runs that migration script after fallback artifacts are restored and before extract consumes BKG cache metadata. Checked-in `datasets/**/source/metadata.json` is validated by schema at read time; it is not rewritten by this migration.
 
 Report KPI “Amtliche Daten” turns **rose** when **`sourceUpdatedAtVerifiedAt`** is older than ~14 days (`OFFICIAL_VERIFICATION_STALE_DAYS` in [`report/src/lib/officialAreaSummaryFreshness.ts`](../report/src/lib/officialAreaSummaryFreshness.ts)), not when `sourceUpdatedAt` is a past calendar year.
 
@@ -96,7 +96,7 @@ Embedded **`comparison_table.json`** carries the official/OSM metadata snapshot 
 1. **Inputs**
 
 - **Official:** one FlatGeobuf per area at `datasets/<area>/source/official.fgb`.
-- **OSM:** a shared FlatGeobuf selected by top-level `osmProfile` (`admin_rs`, `admin_name`, or `postal_code`), built from the Germany extract (`bun run osm:extract -- --kind admin`, or interactive / CI defaults — see `--help` on [`scripts/osm/extract-osm.ts`](../scripts/osm/extract-osm.ts)). The points-only **`germany-admin-candidates.fgb`** (`--kind admin_candidates`) feeds the additive `match_candidates` phase; the nightly pipeline runs it as a separate step after the polygon extract.
+- **OSM:** a shared FlatGeobuf selected by top-level `osmProfile` (`admin_rs`, `admin_name`, or `postal_code`), built from the Germany extract (`bun run --filter ./scripts extract:osm -- --kind admin`, or interactive / `--yes` defaults — see `--help` on [`scripts/osm/extract-osm.ts`](../scripts/osm/extract-osm.ts)). The points-only **`germany-admin-candidates.fgb`** (`--kind admin_candidates`) feeds the additive `match_candidates` phase; the nightly pipeline runs it as a separate step after the polygon extract.
 
 2. **Matching key**
 
@@ -133,7 +133,7 @@ For administrative datasets, `osm.adminLevels` is report-strict but match-permis
 ## BKG data (national administrative layers)
 
 - **Product:** BKG **VG25** (Verwaltungsgebiete 1:25 000), distributed as a GeoPackage inside a ZIP.
-- **Commands:** `bun run bkg:download`, `bun run extract:bkg` (or combined `bun run bkg`; alias `bkg:extract`).
+- **Commands:** `bun run download -- --yes --targets bkg` (ZIP), then `bun run extract:official` (or `-- --area <folder>`). Pipeline uses `bun run --filter ./scripts download:bkg` / `extract:bkg` internally.
 - **Details:** URLs, layer names (`vg25_gem`, `vg25_krs`, …), and `matchProperty` / preset hints: [vg25-bkg.md](./vg25-bkg.md).
 - **Per-area configs:** under `datasets/de-*/config.jsonc` — each uses `officialProfile` (for example `bkg_vg25_gem`) + `compare.officialMatchProperty` + `idNormalization.preset` + `metricsCrs`.
 - **BKG layer mapping:** resolved from shared `officialProfile` definitions (no per-area layer duplication).
@@ -143,7 +143,7 @@ For administrative datasets, `osm.adminLevels` is report-strict but match-permis
 
 ## Berlin data (Bezirke example)
 
-- **Official:** Berlin ALKIS Bezirke via WFS GeoJSON, fetched by `extract:official` (wizard) or `extract:official:engine` into `datasets/berlin-bezirke/source/official.fgb` (see `[datasets/berlin-bezirke/config.jsonc](../datasets/berlin-bezirke/config.jsonc)` and `[datasets/berlin-bezirke/README.md](../datasets/berlin-bezirke/README.md)`).
+- **Official:** Berlin ALKIS Bezirke via WFS GeoJSON, fetched by `extract:official` or `bun run download -- --yes --targets official` into `datasets/berlin-bezirke/source/official.fgb` (see `[datasets/berlin-bezirke/config.jsonc](../datasets/berlin-bezirke/config.jsonc)` and `[datasets/berlin-bezirke/README.md](../datasets/berlin-bezirke/README.md)`).
 - **Matching:** `compare.officialMatchProperty` is `name` with preset `**berlin-bezirk-rs5`\*\* so Berlin district names align with `de:regionalschluessel` on OSM (5-digit Berlin RS expanded to an 8-digit canonical form for matching).
 - **Metrics CRS:** `EPSG:32633` (UTM zone 33N), chosen for that dataset.
 - **OSM input:** still the **shared** Germany admin-boundaries FlatGeobuf — there is no separate per-area OSM file in the compare step.

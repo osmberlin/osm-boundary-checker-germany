@@ -2,7 +2,7 @@
 import { spawnSync } from 'node:child_process'
 /**
  * Official boundaries menu (`bun run extract:official`).
- * BKG VG25 extract vs HTTP/Direct groups (by download URL). Runs scripts `extract:official` via `--filter ./scripts`.
+ * BKG VG25 extract vs HTTP/Direct groups (by download URL). HTTP fetch uses the `download` CLI (`--targets official`) or the scripts engine via `--filter ./scripts`.
  */
 import { existsSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
@@ -40,7 +40,6 @@ function runFilterScript(repoRoot: string, script: string, args: string[] = []):
   const r = spawnSync('bun', ['run', '--filter', './scripts', script, ...args], {
     cwd: repoRoot,
     stdio: 'inherit',
-    env: { ...process.env, CI: process.env.CI ?? '' },
   })
   return r.status ?? 1
 }
@@ -97,11 +96,7 @@ function parseArgv(argv: string[]) {
     help: argv.includes('--help') || argv.includes('-h'),
     area,
     force,
-    nonInteractive:
-      process.env.CI === '1' ||
-      process.env.CI === 'true' ||
-      argv.includes('--yes') ||
-      argv.includes('--non-interactive'),
+    nonInteractive: argv.includes('--yes') || argv.includes('--non-interactive'),
   }
 }
 
@@ -111,11 +106,12 @@ function printHelp(): void {
 Interactive: pick BKG extract and/or HTTP-official groups (grouped by download URL).
 
   --area <folder>             Run only that dataset (BKG extract or HTTP official)
-  --force                     Forward to engine / extract:bkg
-  --yes / --non-interactive   BKG (if any) + all HTTP official areas, no menu
+  --force                     Forward to BKG / HTTP download engines
+  --yes / --non-interactive   BKG (if any) + all HTTP official areas, no menu (required for automation)
   -h, --help                  This text
 
-Engine (no menu): bun run extract:official:engine (root) or bun run --filter ./scripts extract:official
+HTTP official fetch only (no menu): bun run download -- --yes --targets official
+  Re-fetch: add --force. One area: bun run --filter ./scripts download:official -- --area <folder>
 `)
 }
 
@@ -159,7 +155,11 @@ async function main(): Promise<void> {
     if (isBkgExtractArea(cfg)) {
       ran = true
       console.log(cliHeadline(`[extract:official] extract:bkg — ${a}`))
-      const c = runFilterScript(repoRoot, 'extract:bkg', ['--', '--area', a])
+      const c = runFilterScript(
+        repoRoot,
+        'extract:bkg',
+        parsed.nonInteractive ? ['--', '--yes', '--area', a] : ['--', '--area', a],
+      )
       if (c !== 0) code = c
     }
     if (cfg.officialMode === 'direct') {
@@ -172,8 +172,8 @@ async function main(): Promise<void> {
       }
       if (spec) {
         ran = true
-        console.log(cliHeadline(`[extract:official] extract:official — ${a}`))
-        const c = runFilterScript(repoRoot, 'extract:official', ['--', '--area', a, ...forceArgs])
+        console.log(cliHeadline(`[extract:official] download:official — ${a}`))
+        const c = runFilterScript(repoRoot, 'download:official', ['--', '--area', a, ...forceArgs])
         if (c !== 0) code = c
       }
     }
@@ -188,14 +188,14 @@ async function main(): Promise<void> {
     let code = 0
     if (hasBkg) {
       console.log(cliHeadline('[extract:official] extract:bkg'))
-      const c = runFilterScript(repoRoot, 'extract:bkg', [])
+      const c = runFilterScript(repoRoot, 'extract:bkg', ['--', '--yes'])
       if (c !== 0) code = c
     }
     if (hasHttp) {
-      console.log(cliHeadline('[extract:official] extract:official (all HTTP areas)'))
+      console.log(cliHeadline('[extract:official] download:official (all HTTP areas)'))
       const c = runFilterScript(
         repoRoot,
-        'extract:official',
+        'download:official',
         forceArgs.length ? ['--', ...forceArgs] : [],
       )
       if (c !== 0) code = c
@@ -211,7 +211,7 @@ async function main(): Promise<void> {
     options.push({
       value: '__bkg__',
       label: `BKG VG250 → official.fgb (${bkgAreaCount} Dataset${bkgAreaCount === 1 ? '' : 's'})`,
-      hint: 'extract:bkg',
+      hint: 'extract:official -- --area …',
     })
   }
   httpGroups.forEach((g, i) => {
@@ -251,8 +251,8 @@ async function main(): Promise<void> {
     if (!choice.includes(key)) continue
     const { areas } = httpGroups[i]!
     for (const area of areas) {
-      console.log(cliHeadline(`[extract:official] extract:official — ${area}`))
-      const c = runFilterScript(repoRoot, 'extract:official', ['--', '--area', area, ...forceArgs])
+      console.log(cliHeadline(`[extract:official] download:official — ${area}`))
+      const c = runFilterScript(repoRoot, 'download:official', ['--', '--area', area, ...forceArgs])
       if (c !== 0) code = c
     }
   }

@@ -2,7 +2,7 @@
 
 ## Problem
 
-Each area compare currently runs in its own process via `run.ts`, and each run reloads and deserializes the shared OSM FlatGeobuf from disk. For national runs, this repeats expensive IO and decode work.
+Each area compare currently runs in its own process via `cli/compare.ts` (or `compare-boundaries.ts` when invoked directly), and each run reloads and deserializes the shared OSM FlatGeobuf from disk. For national runs, this repeats expensive IO and decode work.
 
 ## Options Evaluated
 

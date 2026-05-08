@@ -111,7 +111,7 @@ export const sourceMetadataSideSchema = sourceMetadataCommonSideSchema.extend({
 export type SourceMetadataSide = z.infer<typeof sourceMetadataSideSchema>
 /** One OSM side in `source/metadata.json` (no self-compatibility fields). */
 export const osmSourceMetadataSideSchema = sourceMetadataCommonSideSchema.extend({
-  /** Wall-clock instant when OSM FlatGeobuf was last rebuilt (`extract:osm` / `osm:extract`); distinct from snapshot `downloadedAt` when source is `osm_pbf_header`. */
+  /** Wall-clock instant when OSM FlatGeobuf was last rebuilt (`bun run extract:osm`); distinct from snapshot `downloadedAt` when source is `osm_pbf_header`. */
   extractedAt: optionalIsoInstantStringSchema,
 })
 export type OsmSourceMetadataSide = z.infer<typeof osmSourceMetadataSideSchema>

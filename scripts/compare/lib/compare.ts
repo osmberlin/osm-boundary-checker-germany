@@ -292,7 +292,7 @@ export async function runCompare(
   const osmPath = osmFgbPathFromConfig(runtimeRoot, config.osm)
   if (!existsSync(osmPath)) {
     throw new Error(
-      `Configured OSM FlatGeobuf not found:\n  ${osmPath}\n\nRun: bun run osm:extract (or bun run extract:osm for the wizard)`,
+      `Configured OSM FlatGeobuf not found:\n  ${osmPath}\n\nRun: bun run extract:osm (wizard) or bun run --filter ./scripts extract:osm`,
     )
   }
   const osmMatchProperty = config.osm.matchProperty

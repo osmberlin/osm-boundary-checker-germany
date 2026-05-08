@@ -16,33 +16,32 @@ From `osm-boundary-checker-germany/` (workspace root):
 
 ```bash
 # Fetch ZIP into .cache/bkg/, unzip, write download-metadata.json
-bun run bkg:download
+bun run download -- --yes --targets bkg
 
-# Or copy an already downloaded ZIP (no HTTP)
-bun run bkg:download -- --zip /path/to/vg25.utm32s.gpkg.zip
+# Or copy an already downloaded ZIP (no HTTP) — scripts engine (pass-through flags after --)
+bun run --filter ./scripts download:bkg -- --zip /path/to/vg25.utm32s.gpkg.zip
 
 # Re-download from BKG
-bun run bkg:download -- --force
+bun run download -- --yes --targets bkg --force
 ```
 
 ```bash
-# GPKG → source/official.fgb for all areas that define `officialProfile` (default; no flags)
-bun run bkg:extract
+# GPKG → source/official.fgb for all BKG-profile areas (non-interactive)
+bun run extract:official -- --yes
 
 # Single area
-bun run bkg:extract -- --area de-gemeinden
+bun run extract:official -- --area de-gemeinden
 
-# Download + extract
-bun run bkg
+# Full network pull (PBF + BKG + HTTP) then official extract (typical local refresh)
+bun run download -- --yes --all
+bun run extract:official -- --yes
 ```
 
-Override GeoPackage path:
+Override GeoPackage path (advanced; scripts engine keeps `--gpkg`):
 
 ```bash
-bun run bkg:extract -- --area de-laender --gpkg /path/to/DE_VG25.gpkg
+bun run --filter ./scripts extract:bkg -- --yes --area de-laender --gpkg /path/to/DE_VG25.gpkg
 ```
-
-Legacy script names `download-bkg-vg25` and `extract-vg250` still map to `bkg:download` and `bkg:extract`.
 
 ## Prerequisites
 
@@ -56,7 +55,7 @@ Legacy script names `download-bkg-vg25` and `extract-vg250` still map to `bkg:do
 - `.cache/bkg/extract/…` (unzipped tree, often `…/daten/DE_VG25.gpkg`)
 - `.cache/bkg/download-metadata.json` — `sourceUpdatedAt`, `sourceUpdatedAtVerifiedAt`, `downloadedAt`, paths (see **Source timestamp contract** in [`docs/processing-and-analysis.md`](./processing-and-analysis.md)).
 
-If you previously used `.cache/bkg-vg25/`, move that folder to `.cache/bkg/` or run `bkg:download` again so paths in `download-metadata.json` match.
+If you previously used `.cache/bkg-vg25/`, move that folder to `.cache/bkg/` or run `bun run download -- --yes --targets bkg` again so paths in `download-metadata.json` match.
 
 ## Inspect layers and attributes
 
@@ -81,6 +80,6 @@ Match keys for OSM often use **ARS** (12-digit) or **AGS** (8-digit); confirm co
 | `vg25_sta`           | Staatsgebiet | (Landesgrenze)          | `regional-12`           | `2` (see `datasets/de-staat/config.jsonc` for relation-based matching via OSM `relation/51477`)                          |
 | `vg25_vwg`           | VWG          | (variiert)              | `regional-12`           | often `7`; OSM coverage can be much lower than BKG — review OSM tagging coverage and compare matching config when needed |
 
-Workspace area `config.jsonc` files can tune compare-side OSM matching via `osm.*` settings (`matchCriteria`, `ignoreRelationIds`, `extract`) plus top-level `osmProfile`. The shared extract itself is built by `bun run osm:extract`.
+Workspace area `config.jsonc` files can tune compare-side OSM matching via `osm.*` settings (`matchCriteria`, `ignoreRelationIds`, `extract`) plus top-level `osmProfile`. The shared polygon extract is built with `bun run extract:osm` or `bun run --filter ./scripts extract:osm -- --kind admin` — see [`scripts/osm/extract-osm.ts`](../scripts/osm/extract-osm.ts) `--help`.
 
 Source SRS is usually **EPSG:25832**; extracts are reprojected to **WGS84** for `.fgb` inputs.

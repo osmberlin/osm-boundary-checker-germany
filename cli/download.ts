@@ -17,12 +17,20 @@ function printHelp(): void {
 Interactive: (1) reuse vs force fresh downloads, (2) multiselect targets (default: Geofabrik PBF only),
 then a short notice before anything runs.
 
-  --yes / --non-interactive   Skip prompts (reuse cache; only Geofabrik PBF unless --all)
-  --all                       With --yes: also BKG ZIP + all HTTP official areas
+  --yes / --non-interactive   Skip prompts (see --all / --targets)
+  --all                       With --yes: PBF + BKG ZIP + all HTTP official (same as --targets pbf,bkg,official)
+  --targets <list>            With --yes: comma-separated subset instead of default PBF-only.
+                              Tokens: pbf | bkg | official (aliases: osm-pbf, bkg_zip, http)
   --force                     With --yes: force fresh where applicable (same as choosing "force" in the menu)
   -h, --help                  This text
 
-One-shot full refresh (no menu): bun run download:all
+Examples (no menu):
+  bun run download -- --yes                          Geofabrik PBF only (reuse rules)
+  bun run download -- --yes --all                    Everything above
+  bun run download -- --yes --targets bkg            BKG VG25 ZIP only
+  bun run download -- --yes --targets official       HTTP/WFS official fetch only (all configured areas)
+  bun run download -- --yes --targets pbf,official   PBF + HTTP official
+  bun run download -- --yes --all --force            Full refresh from sources
 `)
 }
 
@@ -30,33 +38,89 @@ function runFilterScript(repoRoot: string, script: string, args: string[] = []):
   const r = spawnSync('bun', ['run', '--filter', './scripts', script, ...args], {
     cwd: repoRoot,
     stdio: 'inherit',
-    env: { ...process.env, CI: process.env.CI ?? '' },
   })
   return r.status ?? 1
 }
 
+const TARGET_ALIASES: Record<string, Which> = {
+  pbf: 'pbf',
+  osm: 'pbf',
+  'osm-pbf': 'pbf',
+  bkg: 'bkg_zip',
+  bkg_zip: 'bkg_zip',
+  zip: 'bkg_zip',
+  official: 'official_http',
+  official_http: 'official_http',
+  http: 'official_http',
+}
+
+function readTargetsArg(argv: string[]): string | null {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]
+    if (a === undefined) continue
+    if (a === '--targets') {
+      return argv[i + 1] ?? ''
+    }
+    if (a.startsWith('--targets=')) {
+      return a.slice('--targets='.length)
+    }
+  }
+  return null
+}
+
+function parseTargetsList(raw: string | null): Which[] | null {
+  if (raw === null) return null
+  const trimmed = raw.trim()
+  if (trimmed === '') return null
+  const tokens = trimmed.split(',').map((s) => s.trim().toLowerCase())
+  const out: Which[] = []
+  for (const t of tokens) {
+    if (t === '') continue
+    const w = TARGET_ALIASES[t]
+    if (w === undefined) {
+      console.error(
+        cliErr(
+          `[download] Unknown --targets token "${t}". Use: pbf, bkg, official (comma-separated).`,
+        ),
+      )
+      process.exit(1)
+    }
+    if (!out.includes(w)) out.push(w)
+  }
+  if (out.length === 0) {
+    console.error(cliErr('[download] --targets must list at least one of: pbf, bkg, official.'))
+    process.exit(1)
+  }
+  return out
+}
+
 function parseArgv(argv: string[]) {
   return {
-    help: argv.includes('--help') || argv.includes('-h'),
-    nonInteractive:
-      process.env.CI === '1' ||
-      process.env.CI === 'true' ||
-      argv.includes('--yes') ||
-      argv.includes('--non-interactive'),
+    nonInteractive: argv.includes('--yes') || argv.includes('--non-interactive'),
     all: argv.includes('--all'),
     force: argv.includes('--force'),
+    targets: parseTargetsList(readTargetsArg(argv)),
   }
 }
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2)
-  if (parseArgv(argv).help) {
+  if (argv.includes('--help') || argv.includes('-h')) {
     printHelp()
     return
   }
 
   const repoRoot = process.cwd()
-  const { nonInteractive, all, force } = parseArgv(argv)
+  const { nonInteractive, all, force, targets: targetsFlag } = parseArgv(argv)
+
+  if (targetsFlag !== null && !nonInteractive) {
+    console.error(cliErr('[download] --targets requires --yes (or CI) non-interactive mode.'))
+    process.exit(1)
+  }
+  if (nonInteractive && targetsFlag !== null && all) {
+    console.error(cliErr('[download] Use either --all or --targets, not both.'))
+    process.exit(1)
+  }
 
   let how: How
   let which: Which[]
@@ -64,7 +128,13 @@ async function main(): Promise<void> {
   if (nonInteractive) {
     how = force ? 'force' : 'reuse'
     const allTargets: Which[] = ['pbf', 'bkg_zip', 'official_http']
-    which = all ? allTargets : ['pbf']
+    if (all) {
+      which = allTargets
+    } else if (targetsFlag !== null) {
+      which = targetsFlag
+    } else {
+      which = ['pbf']
+    }
   } else {
     p.intro('download')
     const h = await p.select<How>({
@@ -95,17 +165,17 @@ async function main(): Promise<void> {
         {
           value: 'pbf',
           label: 'Geofabrik Deutschland OSM PBF',
-          hint: 'extract:osm-pbf → .cache/osm/germany-latest.osm.pbf',
+          hint: 'non-interactive: bun run download -- --yes --targets pbf',
         },
         {
           value: 'bkg_zip',
           label: 'BKG VG25 Produkt-ZIP',
-          hint: 'bkg:download → .cache/bkg/',
+          hint: 'non-interactive: bun run download -- --yes --targets bkg',
         },
         {
           value: 'official_http',
           label: 'Amtliche HTTP-/WFS-Quellen (alle Areas mit official.download)',
-          hint: 'extract:official (scripts) — per-area official.fgb',
+          hint: 'non-interactive: bun run download -- --yes --targets official',
         },
       ],
       initialValues: ['pbf'],
@@ -119,7 +189,7 @@ async function main(): Promise<void> {
     console.log(
       cliMuted(
         '\nHinweis: OSM wird hier nur als .pbf geladen. Das Filtern (osmium tags-filter) für ' +
-          'Vergleich/FlatGeobufs passiert in `bun run extract:osm` automatisch für die gewählten Extrakte — ' +
+          'Vergleich/FlatGeobufs passiert in `bun run extract` / `bun run extract:osm` automatisch für die gewählten Extrakte — ' +
           'nicht in diesem Download-Schritt.\n',
       ),
     )
@@ -132,25 +202,25 @@ async function main(): Promise<void> {
     console.log(
       cliMuted(
         '\nHinweis: OSM wird hier nur als .pbf geladen. Das Filtern (osmium tags-filter) für ' +
-          'Vergleich/FlatGeobufs passiert in `bun run extract:osm` automatisch — nicht in diesem Download-Schritt.\n',
+          'Vergleich/FlatGeobufs passiert in `bun run extract` / `bun run extract:osm` automatisch — nicht in diesem Download-Schritt.\n',
       ),
     )
   }
 
   let code = 0
   if (which.includes('bkg_zip')) {
-    console.log(cliHeadline('[download] bkg:download'))
-    const c = runFilterScript(repoRoot, 'bkg:download', forceArgs)
+    console.log(cliHeadline('[download] download:bkg'))
+    const c = runFilterScript(repoRoot, 'download:bkg', forceArgs)
     if (c !== 0) code = c
   }
   if (which.includes('pbf')) {
-    console.log(cliHeadline('[download] extract:osm-pbf'))
-    const c = runFilterScript(repoRoot, 'extract:osm-pbf', forceArgs)
+    console.log(cliHeadline('[download] download:osm-pbf'))
+    const c = runFilterScript(repoRoot, 'download:osm-pbf', forceArgs)
     if (c !== 0) code = c
   }
   if (which.includes('official_http')) {
-    console.log(cliHeadline('[download] extract:official'))
-    const c = runFilterScript(repoRoot, 'extract:official', forceArgs)
+    console.log(cliHeadline('[download] download:official'))
+    const c = runFilterScript(repoRoot, 'download:official', forceArgs)
     if (c !== 0) code = c
   }
 

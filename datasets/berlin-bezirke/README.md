@@ -2,14 +2,14 @@
 
 Run the boundary checker from the workspace root (see [../README.md](../README.md)):
 
-`CI=1 bun run compare -- --area berlin-bezirke`  
-(or: `bun run compare:boundaries -- --area berlin-bezirke`)
+`bun run compare -- --yes --area berlin-bezirke`  
+(or: `bun run scripts/compare/compare-boundaries.ts -- --area berlin-bezirke`)
 
 Configuration: [config.jsonc](./config.jsonc).
 
 ## Source
 
-Official and OSM layers live under **`source/`** as **FlatGeobuf** (`.fgb`). Provenance for the report UI is in [source/metadata.json](./source/metadata.json): `official.*` for the amtliche Quelle, and a slim `osm` block (`downloadedAt`, optional `sourceDateSource`) updated by `osm:extract`. Geofabrik URLs and licence text are not stored per dataset — they come from `GERMANY_OSM_SOURCE_DEFAULTS` in `scripts/shared/germanyOsmPbf.ts` and are merged in the report.
+Official and OSM layers live under **`source/`** as **FlatGeobuf** (`.fgb`). Provenance for the report UI is in [source/metadata.json](./source/metadata.json): `official.*` for the amtliche Quelle, and a slim `osm` block (`downloadedAt`, optional `sourceDateSource`) updated by `bun run extract:osm` (wizard) or the `extract:osm` engine under `./scripts`. Geofabrik URLs and licence text are not stored per dataset — they come from `GERMANY_OSM_SOURCE_DEFAULTS` in `scripts/shared/germanyOsmPbf.ts` and are merged in the report.
 
 Convert GeoJSON from WFS or Overpass before replacing the `.fgb` files:
 
@@ -20,7 +20,7 @@ ogr2ogr -f FlatGeobuf datasets/berlin-bezirke/source/osm.fgb /tmp/export.geojson
 
 - https://wfsexplorer.odis-berlin.de/?wfs=https%3A%2F%2Fgdi.berlin.de%2Fservices%2Fwfs%2Falkis_bezirke
 - https://daten.berlin.de/datensaetze/alkis-berlin-bezirke-wfs-ced31d7d
-- WFS GeoJSON URL is in **`official.download`**, and static official source metadata defaults live in **`official.source`** inside [config.jsonc](./config.jsonc). Run **`bun run download:official -- --area berlin-bezirke`**, **`bun run berlin:download`** (all HTTP-official areas), or **`bun run pipeline:nightly`** (scheduled runs refresh BKG + all `official.download` datasets) to fetch and build **`source/official.fgb`**.
+- WFS GeoJSON URL is in **`official.download`**, and static official source metadata defaults live in **`official.source`** inside [config.jsonc](./config.jsonc). Run **`bun run extract:official -- --area berlin-bezirke`**, **`bun run download -- --yes --targets official`** (all HTTP-official areas), or **`bun run scripts/pipeline/nightly.ts -- --phase all`** (scheduled runs refresh BKG + all `official.download` datasets) to fetch and build **`source/official.fgb`**.
 
 ## OSM
 

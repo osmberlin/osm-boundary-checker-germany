@@ -269,27 +269,33 @@ async function main() {
 
   try {
     const downloadSteps: PipelineStep[] = [
-      { step: 'download:bkg', args: ['run', 'bkg:download'] },
-      { step: 'download:official', args: ['run', 'extract:official:engine'] },
-      { step: 'download:osm', args: ['run', 'extract:osm-pbf'] },
+      { step: 'download:bkg', args: ['run', '--filter', './scripts', 'download:bkg'] },
+      { step: 'download:official', args: ['run', '--filter', './scripts', 'download:official'] },
+      { step: 'download:osm', args: ['run', '--filter', './scripts', 'download:osm-pbf'] },
     ]
 
     const extractSteps: PipelineStep[] = [
-      { step: 'extract:bkg', args: ['run', 'extract:bkg'] },
-      // Explicit `--kind admin` only: `osm:extract` without `--kind` runs admin+admin_candidates under CI,
-      // which would duplicate the next step. Local dev may still use `bun run osm:extract` (defaults both).
-      { step: 'extract:osm', args: ['run', 'osm:extract', '--', '--kind', 'admin'] },
+      { step: 'extract:bkg', args: ['run', '--filter', './scripts', 'extract:bkg', '--', '--yes'] },
+      // Explicit `--kind admin` only: `extract:osm` without `--kind` runs admin+admin_candidates under CI,
+      // which would duplicate the next step. Locally, `bun run extract:osm` (wizard) can default both.
+      {
+        step: 'extract:osm',
+        args: ['run', '--filter', './scripts', 'extract:osm', '--', '--kind', 'admin'],
+      },
       // `brandenburg-berlin-plz` uses `.cache/osm/germany-postal-code-boundaries.fgb` from the same filtered PBF.
-      { step: 'extract:osm:plz', args: ['run', 'osm:extract', '--', '--kind', 'plz'] },
+      {
+        step: 'extract:osm:plz',
+        args: ['run', '--filter', './scripts', 'extract:osm', '--', '--kind', 'plz'],
+      },
       // Points-only candidates FGBs feed the additive `match_candidates` compare phase. They reuse
       // the same filtered PBF as their polygon counterparts, so they typically run in <10 s combined.
       {
         step: 'extract:osm:admin_candidates',
-        args: ['run', 'osm:extract', '--', '--kind', 'admin_candidates'],
+        args: ['run', '--filter', './scripts', 'extract:osm', '--', '--kind', 'admin_candidates'],
       },
       {
         step: 'extract:osm:plz_candidates',
-        args: ['run', 'osm:extract', '--', '--kind', 'plz_candidates'],
+        args: ['run', '--filter', './scripts', 'extract:osm', '--', '--kind', 'plz_candidates'],
       },
     ]
 
@@ -427,7 +433,7 @@ async function main() {
         )
         if (phaseStep.step === 'download:official' && finalExitCode !== 0) {
           console.error(
-            '[pipeline] extract:official failed. See per-area reasons above from scripts/download/official.ts (reason/detail).',
+            '[pipeline] download:official failed. See per-area reasons above from scripts/download/official.ts (reason/detail).',
           )
         }
 
@@ -473,10 +479,9 @@ async function main() {
         const hadCompareOutputBefore = readCompareGeneratedAt(runtimeRoot, area) != null
         const exitCode = await runCommand(
           'bun',
-          ['run', 'compare:boundaries', '--', '--area', area],
+          ['scripts/compare/compare-boundaries.ts', '--area', area],
           workspaceRoot,
           stepName,
-          { CI: '1' },
         )
         const durationMs = Date.now() - t0
         appendJsonl(logPath, {
