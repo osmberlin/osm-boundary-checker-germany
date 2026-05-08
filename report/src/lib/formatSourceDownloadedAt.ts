@@ -1,5 +1,20 @@
-import { differenceInMonths, format, formatDistanceToNow, isValid, parseISO } from 'date-fns'
+import {
+  differenceInHours,
+  differenceInMonths,
+  format,
+  formatDistanceToNow,
+  isValid,
+  parseISO,
+} from 'date-fns'
 import { de as deLocale } from 'date-fns/locale'
+
+/**
+ * Below this many full hours we render the age in hours rather than days.
+ * `formatDistanceToNow` flips to "1 Tag" already at 22h which obscures
+ * sub-day freshness in KPI rows; keep hour granularity until a full extra
+ * day has clearly passed.
+ */
+const HOUR_DAY_THRESHOLD = 26
 
 /** Calendar date only (no time), e.g. "29. März 2026". */
 export function formatReportDateOnlyDe(d: Date): string {
@@ -37,8 +52,10 @@ export function formatIsoTimestampToAbsoluteDe(raw: string): string {
 
 /**
  * Relative age for KPI rows, e.g. "4 Stunden alt" (no leading "etwa").
- * Ages from 12 full months onward use month counts ("13 Monate alt") so labels stay short
- * and never use year-based phrases from `formatDistanceToNow` ("mehr als 1 Jahr …").
+ * Below `HOUR_DAY_THRESHOLD` full hours we always show hours so a ~1-day-old
+ * report does not collapse to "1 Tag alt". Ages from 12 full months onward
+ * use month counts ("13 Monate alt") so labels stay short and never use
+ * year-based phrases from `formatDistanceToNow` ("mehr als 1 Jahr …").
  */
 export function formatRelativeAgeAltDe(d: Date): string {
   const now = new Date()
@@ -46,6 +63,11 @@ export function formatRelativeAgeAltDe(d: Date): string {
     let s = formatDistanceToNow(d, { locale: deLocale, addSuffix: false })
     s = s.replace(/^etwa\s+/i, '').trim()
     return `${s} alt`
+  }
+
+  const fullHours = differenceInHours(now, d)
+  if (fullHours >= 1 && fullHours < HOUR_DAY_THRESHOLD) {
+    return `${fullHours} ${fullHours === 1 ? 'Stunde' : 'Stunden'} alt`
   }
 
   const fullMonths = differenceInMonths(now, d)
