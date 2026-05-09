@@ -1,11 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import * as turf from '@turf/turf'
 import type { Feature, MultiPolygon, Polygon } from 'geojson'
-import {
-  DEFAULT_SCOPE_OVERLAP_MIN_M2,
-  mergeOfficialFootprint,
-  passesMergedOfficialScope,
-} from './scopeFilterMerged.ts'
+import { mergeOfficialFootprint, passesMergedOfficialScope } from './scopeFilterMerged.ts'
 
 const METRICS_CRS = 'EPSG:25832'
 
@@ -42,42 +38,29 @@ describe('passesMergedOfficialScope', () => {
     const merged = rect(9.0, 50.0, 9.2, 50.2)
     const mergedBbox = turf.bbox(merged) as [number, number, number, number]
     const osm = rect(9.05, 50.05, 9.1, 50.1)
-    expect(passesMergedOfficialScope(osm, merged, mergedBbox, METRICS_CRS, 100, undefined)).toBe(
-      true,
-    )
+    expect(passesMergedOfficialScope(osm, merged, mergedBbox, METRICS_CRS)).toBe(true)
   })
 
   test('rejects OSM whose bbox does not overlap merged bbox', () => {
     const merged = rect(9.0, 50.0, 9.05, 50.05)
     const mergedBbox = turf.bbox(merged) as [number, number, number, number]
     const osm = rect(10.0, 51.0, 10.05, 51.05)
-    expect(passesMergedOfficialScope(osm, merged, mergedBbox, METRICS_CRS, 100, undefined)).toBe(
-      false,
-    )
+    expect(passesMergedOfficialScope(osm, merged, mergedBbox, METRICS_CRS)).toBe(false)
   })
 
   test('rejects grazing edge-only contact (fallback intersection area ~ 0)', () => {
     const merged = rect(9.0, 50.0, 9.1, 50.1)
     const mergedBbox = turf.bbox(merged) as [number, number, number, number]
     const osm = rect(9.1, 50.0, 9.2, 50.1)
-    expect(
-      passesMergedOfficialScope(
-        osm,
-        merged,
-        mergedBbox,
-        METRICS_CRS,
-        DEFAULT_SCOPE_OVERLAP_MIN_M2,
-        undefined,
-      ),
-    ).toBe(false)
+    expect(passesMergedOfficialScope(osm, merged, mergedBbox, METRICS_CRS)).toBe(false)
   })
 
-  test('accepts multipolygon when largest part is outside merged but another part overlaps substantively', () => {
-    const merged = rect(9.0, 50.0, 9.15, 50.15)
+  test('accepts multipolygon when largest part is outside merged but overlap meets fixed fallback thresholds', () => {
+    const merged = rect(9.0, 50.0, 9.25, 50.25)
     const mergedBbox = turf.bbox(merged) as [number, number, number, number]
 
-    const largeOutside = rect(7.5, 50.0, 8.5, 51.0)
-    const overlapInside = rect(9.05, 50.05, 9.12, 50.12)
+    const largeOutside = rect(7.5, 50.0, 8.0, 50.5)
+    const overlapInside = rect(9.05, 50.05, 9.22, 50.22)
 
     const mp: Feature<MultiPolygon> = {
       type: 'Feature',
@@ -91,14 +74,17 @@ describe('passesMergedOfficialScope', () => {
     const rep = turf.pointOnFeature(mp)
     const pip = turf.booleanPointInPolygon(rep, merged)
     if (pip) {
-      expect(passesMergedOfficialScope(mp, merged, mergedBbox, METRICS_CRS, 500, undefined)).toBe(
-        true,
-      )
+      expect(passesMergedOfficialScope(mp, merged, mergedBbox, METRICS_CRS)).toBe(true)
       return
     }
 
-    expect(passesMergedOfficialScope(mp, merged, mergedBbox, METRICS_CRS, 500, undefined)).toBe(
-      true,
-    )
+    expect(passesMergedOfficialScope(mp, merged, mergedBbox, METRICS_CRS)).toBe(true)
+  })
+
+  test('fallback rejects wide polygon that only ribbons along merged edge (low overlap / OSM area)', () => {
+    const merged = rect(9.0, 50.0, 9.2, 50.2)
+    const mergedBbox = turf.bbox(merged) as [number, number, number, number]
+    const osm = rect(9.15, 50.0, 11.0, 50.2)
+    expect(passesMergedOfficialScope(osm, merged, mergedBbox, METRICS_CRS)).toBe(false)
   })
 })

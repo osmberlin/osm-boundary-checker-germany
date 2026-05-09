@@ -83,10 +83,6 @@ export type ComparisonFilterConfigSummary = {
   officialExtractFilter?: OfficialExtractFilterSummary
   /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties?: string[]
-  /** Minimum intersection area (m² in metricsCrs) for merged-scope substantive overlap fallback. */
-  scopeOverlapMinM2?: number
-  /** Optional intersection/OSM area ratio threshold for that fallback. */
-  scopeOverlapMinRatio?: number
 }
 
 /** WFS source for live property loading (mirrors `ogcInspectSources` in area config). */

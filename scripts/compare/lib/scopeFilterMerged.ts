@@ -4,8 +4,17 @@ import { featureBBox } from './featureBBox.ts'
 import { isPoly, jstsAreaM2 } from './metrics/sharedGeom.ts'
 import { projectGeometry } from './projectGeometry.ts'
 
-/** Default minimum intersection area (m² in metricsCrs) for scope fallback when pip fails. Rejects touch-only matches. */
-export const DEFAULT_SCOPE_OVERLAP_MIN_M2 = 10_000
+/**
+ * Minimum intersection area (m² in metricsCrs) when the representative-point test fails: only
+ * substantive overlaps pass (not configurable per dataset—keeps configs simple).
+ */
+export const MERGED_SCOPE_FALLBACK_MIN_INTERSECTION_M2 = 100_000
+
+/**
+ * Minimum share of the OSM polygon’s area (metricsCrs) in that intersection. Border ribbons can
+ * satisfy a large absolute m² while covering almost none of the OSM polygon; this rejects them.
+ */
+export const MERGED_SCOPE_FALLBACK_MIN_OVERLAP_RATIO = 0.08
 
 function toPolygonFeature(feature: Feature): Feature<Polygon | MultiPolygon> | null {
   const geometry = feature.geometry
@@ -57,8 +66,6 @@ function substantiveOverlapWithMerged(
   osmWgs: Feature<Polygon | MultiPolygon>,
   mergedWgs: Feature<Polygon | MultiPolygon>,
   metricsCrs: string,
-  overlapMinM2: number,
-  overlapMinRatio: number | undefined,
 ): boolean {
   try {
     const go = projectGeometry(osmWgs.geometry, metricsCrs)
@@ -70,12 +77,10 @@ function substantiveOverlapWithMerged(
     const ig = inter?.geometry
     if (!ig || !isPoly(ig)) return false
     const interArea = jstsAreaM2(ig)
-    if (interArea < overlapMinM2) return false
-    if (overlapMinRatio !== undefined && overlapMinRatio > 0) {
-      const osmArea = jstsAreaM2(go)
-      if (osmArea <= 0) return false
-      if (interArea / osmArea < overlapMinRatio) return false
-    }
+    if (interArea < MERGED_SCOPE_FALLBACK_MIN_INTERSECTION_M2) return false
+    const osmArea = jstsAreaM2(go)
+    if (osmArea <= 0) return false
+    if (interArea / osmArea < MERGED_SCOPE_FALLBACK_MIN_OVERLAP_RATIO) return false
     return true
   } catch {
     return false
@@ -96,19 +101,13 @@ export function passesMergedOfficialScope(
   mergedOfficial: Feature<Polygon | MultiPolygon>,
   mergedBbox: BBox,
   metricsCrs: string,
-  overlapMinM2: number,
-  overlapMinRatio: number | undefined,
 ): boolean {
   const g = osmFeature.geometry
   if (!g || (g.type !== 'Polygon' && g.type !== 'MultiPolygon')) return false
   const osmPoly = osmFeature as Feature<Polygon | MultiPolygon>
 
-  let osmBbox: BBox
-  try {
-    osmBbox = featureBBox(osmFeature)
-  } catch {
-    return false
-  }
+  const osmBbox = featureBBox(osmFeature)
+  if (!osmBbox) return false
   if (!bboxesOverlap(osmBbox, mergedBbox)) return false
 
   try {
@@ -118,13 +117,13 @@ export function passesMergedOfficialScope(
     /* fallback below */
   }
 
-  return substantiveOverlapWithMerged(
-    osmPoly,
-    mergedOfficial,
-    metricsCrs,
-    overlapMinM2,
-    overlapMinRatio,
-  )
+  try {
+    if (!turf.booleanIntersects(osmPoly, mergedOfficial)) return false
+  } catch {
+    return false
+  }
+
+  return substantiveOverlapWithMerged(osmPoly, mergedOfficial, metricsCrs)
 }
 
 export function filterOsmByMergedOfficialScope(
@@ -132,17 +131,8 @@ export function filterOsmByMergedOfficialScope(
   mergedOfficial: Feature<Polygon | MultiPolygon>,
   mergedBbox: BBox,
   metricsCrs: string,
-  overlapMinM2: number,
-  overlapMinRatio: number | undefined,
 ): Feature[] {
   return osmFeatures.filter((f) =>
-    passesMergedOfficialScope(
-      f,
-      mergedOfficial,
-      mergedBbox,
-      metricsCrs,
-      overlapMinM2,
-      overlapMinRatio,
-    ),
+    passesMergedOfficialScope(f, mergedOfficial, mergedBbox, metricsCrs),
   )
 }

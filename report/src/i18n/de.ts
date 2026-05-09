@@ -152,12 +152,8 @@ export const de = {
       osmScopeFilter: {
         none: 'Es wird kein zusätzlicher räumlicher Scope-Filter auf OSM-Features angewendet.',
         intersects_official_coverage:
-          'Amtliche Polygone werden zu einer gemeinsamen Referenzfläche (Vereinigung) zusammengeführt. Ein OSM-Objekt bleibt erhalten, wenn ein repräsentativer Punkt auf der OSM-Geometrie innerhalb dieser Fläche liegt; schlägt dieser Test fehl, zählt nur noch eine inhaltliche Überlappung in der Metrik-CRS (Flächenschnitt oberhalb konfigurierbarer Mindestwerte) — reine Berührungen entlang der Außenlinie werden verworfen.',
+          'Amtliche Polygone werden zu einer gemeinsamen Referenzfläche (Vereinigung) zusammengeführt. Ein OSM-Objekt bleibt erhalten, wenn ein repräsentativer Punkt auf der OSM-Geometrie innerhalb dieser Fläche liegt; schlägt dieser Test fehl, nur noch eine starke Überlappung in der Metrik-CRS (Mindestfläche und Mindestanteil der OSM-Fläche, fest im Code) — schmale Randstreifen und reine Berührungen werden verworfen.',
       },
-      scopeOverlapMinM2: (m2: number) =>
-        `Mindestfläche des Schnitts (OSM ↔ vereinigte amtliche Fläche) in der Metrik-CRS für den Fallback, wenn der repräsentative Punkt außerhalb liegt: ${m2.toLocaleString('de-DE')} m².`,
-      scopeOverlapMinRatio: (ratio: number) =>
-        `Zusätzlich verlangter Mindestanteil der Schnittfläche an der OSM-Fläche (Metrik-CRS) im Fallback: ${ratio}.`,
       ignoreRelationIds: 'Diese OSM-Relationen werden vor dem Matching explizit ausgeschlossen.',
       officialExtractFilter: (property: string, valuePrefix: string) =>
         `Der für den Vergleich verwendete amtliche Datensatz enthält nur Features, deren Feld \`${property}\` mit dem Präfix \`${valuePrefix}\` beginnt.`,

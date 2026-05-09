@@ -1,8 +1,11 @@
 import * as turf from '@turf/turf'
 import type { BBox, Feature } from 'geojson'
 
-/** GDAL-style bbox columns on FGB features (optional); falls back to {@link turf.bbox}. */
-export function featureBBox(f: Feature): BBox {
+/**
+ * GDAL-style bbox columns on FGB features (optional); falls back to {@link turf.bbox}.
+ * Returns `null` only when coordinates cannot be bounded (invalid geometry).
+ */
+export function featureBBox(f: Feature): BBox | null {
   const p = f.properties as Record<string, unknown> | null | undefined
   if (p) {
     const minx = p['_bbox_minx']
@@ -22,5 +25,9 @@ export function featureBBox(f: Feature): BBox {
       return [minx, miny, maxx, maxy]
     }
   }
-  return turf.bbox(f) as BBox
+  try {
+    return turf.bbox(f) as BBox
+  } catch {
+    return null
+  }
 }

@@ -26,10 +26,6 @@ export type CompareConfig = {
   osmScopeFilter: 'none' | 'intersects_official_coverage'
   /** Linear shrink factor (0..1] applied to each official_only polygon for candidate matching. */
   candidateShrinkFactor?: number
-  /** Minimum intersection area (m² in metricsCrs) for merged-scope substantive overlap fallback. */
-  scopeOverlapMinM2?: number
-  /** Optional minimum intersection/OSM area ratio for substantive overlap fallback. */
-  scopeOverlapMinRatio?: number
 }
 
 export type OsmConfig = {
@@ -98,12 +94,6 @@ function toCompareConfig(compare: DatasetConfig['compare']): CompareConfig {
     osmScopeFilter: compare.osmScopeFilter,
     ...(compare.candidateShrinkFactor !== undefined
       ? { candidateShrinkFactor: compare.candidateShrinkFactor }
-      : {}),
-    ...(compare.scopeOverlapMinM2 !== undefined
-      ? { scopeOverlapMinM2: compare.scopeOverlapMinM2 }
-      : {}),
-    ...(compare.scopeOverlapMinRatio !== undefined
-      ? { scopeOverlapMinRatio: compare.scopeOverlapMinRatio }
       : {}),
   }
 }

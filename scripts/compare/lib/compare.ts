@@ -27,11 +27,7 @@ import { normalizeOfficialValue, normalizeOsmValue } from './normalizeGermanKey.
 import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
 import { projectGeometry } from './projectGeometry.ts'
 import { calculateMetricsBatchWithRust } from './rustGeomSidecar.ts'
-import {
-  DEFAULT_SCOPE_OVERLAP_MIN_M2,
-  filterOsmByMergedOfficialScope,
-  mergeOfficialFootprint,
-} from './scopeFilterMerged.ts'
+import { filterOsmByMergedOfficialScope, mergeOfficialFootprint } from './scopeFilterMerged.ts'
 
 export type CompareRow = {
   canonicalMatchKey: string
@@ -115,12 +111,8 @@ function unionOfficialBbox(features: Feature[]): BBox | null {
   let acc: BBox | null = null
   for (const f of features) {
     if (!f.geometry) continue
-    let bb: BBox
-    try {
-      bb = featureBBox(f)
-    } catch {
-      continue
-    }
+    const bb = featureBBox(f)
+    if (!bb) continue
     acc = acc ? mergeBboxes(acc, bb) : bb
   }
   return acc
@@ -134,12 +126,8 @@ function filterOsmByOfficialBbox(
   const pad = expandBbox(officialUnion, bufferDeg)
   return osmFeatures.filter((f) => {
     if (!f.geometry) return false
-    let bb: BBox
-    try {
-      bb = featureBBox(f)
-    } catch {
-      return false
-    }
+    const bb = featureBBox(f)
+    if (!bb) return false
     return bboxesOverlap(pad, bb)
   })
 }
@@ -163,12 +151,8 @@ function intersectsOfficialCoverage(
   const g = osmFeature.geometry
   if (!g || (g.type !== 'Polygon' && g.type !== 'MultiPolygon')) return false
   const osmPoly = osmFeature as Feature<Polygon | MultiPolygon>
-  let osmBbox: BBox
-  try {
-    osmBbox = featureBBox(osmFeature)
-  } catch {
-    return false
-  }
+  const osmBbox = featureBBox(osmFeature)
+  if (!osmBbox) return false
   for (let i = 0; i < officialCoverage.length; i++) {
     const official = officialCoverage[i]!
     const ob = officialBboxes[i]!
@@ -194,15 +178,18 @@ function filterOsmByIntersectingOfficialCoverage(
       'compare.osmScopeFilter=intersects_official_coverage requires official polygon geometries',
     )
   }
-  const officialBboxes = officialCoverage.map((o) => {
-    try {
-      return featureBBox(o)
-    } catch {
-      return turf.bbox(o) as BBox
-    }
-  })
+  const withBbox = officialCoverage
+    .map((o) => ({ o, bb: featureBBox(o) }))
+    .filter((x): x is { o: Feature<Polygon | MultiPolygon>; bb: BBox } => x.bb != null)
+  if (withBbox.length === 0) {
+    throw new Error(
+      'compare.osmScopeFilter=intersects_official_coverage requires official polygon geometries with computable bboxes',
+    )
+  }
+  const officialCoverageWithBbox = withBbox.map((x) => x.o)
+  const officialBboxes = withBbox.map((x) => x.bb)
   return osmFeatures.filter((feature) =>
-    intersectsOfficialCoverage(feature, officialCoverage, officialBboxes),
+    intersectsOfficialCoverage(feature, officialCoverageWithBbox, officialBboxes),
   )
 }
 
@@ -363,15 +350,11 @@ export async function runCompare(
     let filtered: Feature[]
     if (mergedOfficial?.geometry) {
       const mergedBbox = turf.bbox(mergedOfficial) as BBox
-      const overlapMinM2 = config.compare.scopeOverlapMinM2 ?? DEFAULT_SCOPE_OVERLAP_MIN_M2
-      const overlapMinRatio = config.compare.scopeOverlapMinRatio
       filtered = filterOsmByMergedOfficialScope(
         osmFc.features,
         mergedOfficial,
         mergedBbox,
         metricsCrs,
-        overlapMinM2,
-        overlapMinRatio,
       )
     } else {
       filtered = filterOsmByIntersectingOfficialCoverage(osmFc.features, officialFc.features)
