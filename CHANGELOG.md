@@ -4,35 +4,39 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-05
 
-### `198e9ff`
+### `e699d5f`
 
-Gemeinde-Abgleich (`admin_rs`) erfolgt nur noch über `de:regionalschluessel` und das amtliche Schlüsselfeld (ARS bzw. LGB `ars`); das Profil `admin_ags` und AGS-/Fallback-Logik entfallen. `de-gemeinden-bb` und `brandenburg-gemeinden` nutzen damit dieselbe RS/ARS-Achse wie die übrigen Gemeinde-Datensätze. Bestehende `comparison_table.json`-Dateien bitte neu erzeugen (`bun run compare`).
+Gemeinde-Abgleich (`admin_rs`) erfolgt nur noch über `de:regionalschluessel` und das amtliche Schlüsselfeld (ARS bzw. LGB `ARS`). `de-gemeinden-bb` und `brandenburg-gemeinden` nutzen damit dieselbe RS/ARS-Achse wie die übrigen Gemeinde-Datensätze.
 
-### `a99c98a`
+### `97bed55`
 
-Kreisfreie Städte und Stadtstaaten werden jetzt korrekt gematcht, auch wenn ihre OSM-Grenze auf einer anderen `admin_level` liegt. Zusätzlich zeigt die Detailseite Vorschläge für mögliche OSM-Grenzen an, wenn eine amtliche Grenze nicht gematcht wurde.
+Auf der Detailseite ist die Anzeige wie der Vergleich und die Filterung funktionieren, verbessert.
 
-### `fcc1d53`, `5ce83d0`
+### `d6a2abe`, `29f6e81`, `790d9fd`
 
-Die Sektion "Live-Daten anzeigen" kann jetzt gefiltert werden, was auch die Kartenansicht beeinflusst. Außerdem werden die OSM-Daten dort mit den Referenzdaten verglichen und betont, wenn sie sich unterscheiden.
+Die Regeln für die Filterung der OSM-Kandidaten sind verbessert. Wir suchen jetzt zuerst immer nach einem Treffe für den Referenzwert in allen OSM Daten. Die Kandidaten verwenden dann bspw. den `admin_level` filter, damit es möglichst relevante Kandidaten sind. Dabei ignorieren wir weiterhin, dass die `admin_level` bei Dingen wie "Kreisefreihe Stadt" zu einfach gedacht sind. Außerdem gibt es jetzt OSM Match Kandidaten für alle "Nur Amtlich" Datensätze. Die sind noch nicht verknüpft mit anderen Teilen der App aber werden schonmal aufgelistet.
 
-### `74baef3`
+### `2d5862a`
 
 Hilfswerkzeug [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) korrigiert. Die 8-stelligen Gemeindeschlüssel werden jetzt korrekt verarbeitet. Außerdem gibt es Erklärung wie die Schlüssel funktionieren.
 
-### `73b8cdf`, `709871b`, `7f3f475`
+### `8e0461b`, `df9a665`, `2c412da`
 
 Alle Gemeinde-Datensätze werden jetzt sowohl mit dem `de:amtlicher_gemeindeschluessel` als auch mit dem `de:regionalschluessel` (transformiert) verglichen. Die Anzeige wie der Vergleich funktioniert, ist darauf angepasst. Und es gibt eine neue Sektion die darauf hinweißt, dass ein `de:amtlicher_gemeindeschluessel` fehlt, wenn das der Fall ist.
 
-### `37403de`, `384184d`, `a40e807`, `955e2cf`, `1aaada0`, `5751cda`
+### `0f3489b`, `5ac5b74`, `4e6f720`, `2e2d549`, `3716bc3`, `306c18f`, `fbeaf8c`
 
 Interface verbessert: Datums-Anzeige; Filter-Anzeige über den Karten; Anzeige-Toggle unter der Karte; uvm. Man kann unter anderem in der Detailansicht Nachbar-Grenzen anzeigen und dort hin navigieren.
+
+### `e750eae`, `00b407d`, `78ef63e`, `fa54283`, `c670af4`, `e7b896f`, `4f80fb9`
+
+Die Sektion "Live-Daten anzeigen" kann jetzt gefiltert werden, was auch die Kartenansicht beeinflusst. Außerdem werden die OSM-Daten dort mit den Referenzdaten verglichen und betont, wenn sie sich unterscheiden. Und sie bleiben beim Navigieren in der App erhalten. Die Live-Abfragen verwenden die BBOX der Karte am Kopf der Detailseite.
 
 ### `7873f42`
 
 Die Seiten zeigen jetzt einen Lade-Spinner, wenn sie geladen werden. Einige Seiten sind leider sehr groß und laden daher länger.
 
-### `9015e77`, `0c3351f`, `57c1f81`, `e93040e`
+### `9015e77`
 
 Wenn man die Live OSM Daten anzeigen lässt, verlinken die Ergebnisse jetzt auf osm.org. Und es gibt Hilfs-Links zum Schlüssel-Explorer. Und die Werte aus den Referenzdaten, werden in den OSM Daten gesucht und hervorgehoben. Damit ist es einfacher zu verstehen, welche OSM Daten editiert werden müssen um ein Match zu erhalten.
 Die URL `/resolve/relation/ID` erzeugt einen intelligenten Deeplink in den Grenzabgleich. Die Seite leitet entweder direkt zum Ergebnis in der App weiter oder zeigt eine Liste, wenn es mehrere mögliche Ergebnisse gibt.
