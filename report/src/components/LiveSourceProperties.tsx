@@ -330,7 +330,7 @@ export function LiveSourceProperties({
   data: ComparisonForReport
   row: ReportRow
   wfs: {
-    load: (source: OgcWfsInspectSource, bbox: [number, number, number, number]) => Promise<void>
+    load: (source: OgcWfsInspectSource) => Promise<void>
     getStatus: (sourceId: string) => OfficialSlot
   }
   overpass: {
@@ -379,7 +379,7 @@ export function LiveSourceProperties({
 
   async function loadOfficial(src: OgcWfsInspectSource) {
     if (!bbox) return
-    await wfs.load(src, bbox)
+    await wfs.load(src)
   }
 
   async function submitLiveOverpass() {

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
+import { useMemo } from 'react'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmTagsSection'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
@@ -20,6 +21,10 @@ import { useMapViewParam } from '../hooks/useMapViewParam'
 import { de } from '../i18n/de'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
 import { safeDecodeURIComponent } from '../lib/safeDecodeURIComponent'
+import { padMapBbox } from '../lib/wfsGetFeature'
+import type { OgcWfsInspectSource } from '../types/report'
+
+const EMPTY_OGC_SOURCES: readonly OgcWfsInspectSource[] = []
 
 export function FeatureDetail() {
   const { areaId, featureKey } = useParams({ strict: false })
@@ -37,15 +42,22 @@ export function FeatureDetail() {
   })
   const runStatusQuery = useQuery(runStatusQueryOptions())
   const data = featureQuery.data ?? null
+  const row = !data || !featureKey ? null : findFeatureDetailRow(data, featureKey)
+  const wfsBbox = useMemo<[number, number, number, number] | null>(
+    () => (row?.mapBbox ? padMapBbox(row.mapBbox) : null),
+    [row?.mapBbox],
+  )
   const overpass = useFeatureDetailOverpass(featureLookupKey)
-  const wfs = useFeatureDetailWfs(featureLookupKey)
+  const wfs = useFeatureDetailWfs({
+    featureKey: featureLookupKey,
+    sources: data?.ogcInspectSources ?? EMPTY_OGC_SOURCES,
+    bbox: wfsBbox,
+  })
   const filteredLiveOverlays = useFilteredLiveOverlays({
     featureKey: featureLookupKey,
     wfsGeojson: wfs.geojson,
     overpassGeojson: overpass.geojson,
   })
-
-  const row = !data || !featureKey ? null : findFeatureDetailRow(data, featureKey)
   const compareBranch = runStatusQuery.data?.areas?.[areaKey]?.compare
   const showCompareFailedNotice = compareBranch?.status === 'compare_failed'
   if (featureQuery.isError) {
