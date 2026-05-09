@@ -43,6 +43,7 @@ export function useAreaReportCategoryFilter() {
         }
       }) as never,
       replace: true,
+      resetScroll: false,
     })
   }
 

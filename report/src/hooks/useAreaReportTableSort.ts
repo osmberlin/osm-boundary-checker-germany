@@ -139,6 +139,7 @@ export function useAreaReportTableSort(rows: AreaReportRow[]) {
         }
       }) as never,
       replace: true,
+      resetScroll: false,
     })
   }
 

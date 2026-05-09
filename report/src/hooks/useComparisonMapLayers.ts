@@ -27,6 +27,7 @@ export function useComparisonMapLayers() {
           mapOfficial: value ? undefined : false,
         })) as never,
         replace: true,
+        resetScroll: false,
       })
     },
     [navigate],
@@ -40,6 +41,7 @@ export function useComparisonMapLayers() {
           mapOsm: value ? undefined : false,
         })) as never,
         replace: true,
+        resetScroll: false,
       })
     },
     [navigate],
@@ -53,6 +55,7 @@ export function useComparisonMapLayers() {
           mapDiff: value ? true : undefined,
         })) as never,
         replace: true,
+        resetScroll: false,
       })
     },
     [navigate],

@@ -19,6 +19,7 @@ export function GermanKeyExplorer() {
     navigate({
       to: '/tools/german-key',
       search: next,
+      resetScroll: false,
     })
   }
 
