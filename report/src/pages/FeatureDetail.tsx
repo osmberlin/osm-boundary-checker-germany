@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
-import { useMemo } from 'react'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmTagsSection'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
@@ -43,10 +42,7 @@ export function FeatureDetail() {
   const runStatusQuery = useQuery(runStatusQueryOptions())
   const data = featureQuery.data ?? null
   const row = !data || !featureKey ? null : findFeatureDetailRow(data, featureKey)
-  const wfsBbox = useMemo<[number, number, number, number] | null>(
-    () => (row?.mapBbox ? padMapBbox(row.mapBbox) : null),
-    [row?.mapBbox],
-  )
+  const wfsBbox = row?.mapBbox ? padMapBbox(row.mapBbox) : null
   const overpass = useFeatureDetailOverpass(featureLookupKey)
   const wfs = useFeatureDetailWfs({
     featureKey: featureLookupKey,
