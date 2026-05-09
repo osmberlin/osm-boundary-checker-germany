@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+cd "$(dirname -- "$0")/.." || exit 1
+
+case "$1" in
+  rebase|amend)
+    bun run changelog:remap
+    ;;
+esac

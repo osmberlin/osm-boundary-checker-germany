@@ -24,6 +24,7 @@
     "german-key-lookup:weekly": "bun run --filter ./scripts german-key-lookup:weekly && oxfmt --write report/public/data/german-key-lookup.json",
     "changelog": "changelog --output-json-path report/public/changelog.gen.json --ignore-commit-term \"chore(data):\" --ignore-commit-term \"Update areasIndex.gen.ts\" --ignore-commit-term \"Update Changelog\" && bun run format",
     "changelog:husky": "changelog --non-interactive --ci --validate --generate --output-json-path report/public/changelog.gen.json --ignore-commit-term \"chore(data):\" --ignore-commit-term \"Update areasIndex.gen.ts\" --ignore-commit-term \"Update Changelog\"",
+    "changelog:remap": "changelog --non-interactive --ci --remap-refs",
     "update": "bun run update:deps && bun run update:gitdeps && bun run update:app",
     "update:deps": "bunx taze latest --include-locked --interactive --write",
     "update:gitdeps": "bun update @tordans/changelog-kit",

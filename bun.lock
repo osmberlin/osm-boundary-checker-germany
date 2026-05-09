@@ -411,7 +411,7 @@
 
     "@tanstack/virtual-core": ["@tanstack/virtual-core@3.13.23", "", {}, "sha512-zSz2Z2HNyLjCplANTDyl3BcdQJc2k1+yyFoKhNRmCr7V7dY8o8q5m8uFTI1/Pg1kL+Hgrz6u3Xo6eFUB7l66cg=="],
 
-    "@tordans/changelog-kit": ["@tordans/changelog-kit@github:tordans/changelog-kit#4ef8900", { "dependencies": { "@clack/prompts": "^1.3.0", "micromark": "^4.0.2", "yaml": "^2.8.1", "zod": "^3.24.1" }, "peerDependencies": { "react": ">=18.0.0" }, "bin": { "changelog": "./dist/cli/changelog.js" } }, "tordans-changelog-kit-4ef8900", "sha512-eFsGBt6s8HmRgZgu4sRmHIvv/I3LSrcFumprNIVC9IdJO4MPSXqAy6+Z9iIwT0+rqF3YAHWL3i0DrpI1lQKpoQ=="],
+    "@tordans/changelog-kit": ["@tordans/changelog-kit@github:tordans/changelog-kit#4e22eba", { "dependencies": { "@clack/prompts": "^1.3.0", "micromark": "^4.0.2", "yaml": "^2.8.1", "zod": "^3.24.1" }, "peerDependencies": { "react": ">=18.0.0" }, "bin": { "changelog": "./dist/cli/changelog.js" } }, "tordans-changelog-kit-4e22eba", "sha512-ZQls/Eu1AhlBYMX0aA/JsCIrGccQmnuOFQ/DjntMHbt6kkTesEwQsWtFxUapd2o6zdUN7nTtBNdv6/JGc3/mJA=="],
 
     "@turf/along": ["@turf/along@7.3.4", "", { "dependencies": { "@turf/bearing": "7.3.4", "@turf/destination": "7.3.4", "@turf/distance": "7.3.4", "@turf/helpers": "7.3.4", "@turf/invariant": "7.3.4", "@types/geojson": "^7946.0.10", "tslib": "^2.8.1" } }, "sha512-PvIoXin0I1t3nRwJz7uqR6fsxDMqdGwJq90qGOeqkNwlZqlF+5o2wKHPwYwi0RXZhLvxRP5qlbNIvV8ADdbWxw=="],
 
