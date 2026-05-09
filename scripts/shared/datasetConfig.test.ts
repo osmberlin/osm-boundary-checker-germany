@@ -39,22 +39,20 @@ describe('parseDatasetConfig', () => {
     expect(parsed.officialMode).toBe('profile')
   })
 
-  test('rejects mixed officialProfile + official object', () => {
-    expect(() =>
-      parseDatasetConfig('area-invalid', {
-        displayName: 'Area Invalid',
-        titlePrefix: 'Area',
-        officialProfile: 'bkg_vg25_gem',
-        official: {},
-        osmProfile: 'admin_rs',
-        idNormalization: { preset: 'regional-12' },
-        metricsCrs: 'EPSG:25832',
-        compare: {
-          officialMatchProperty: 'ARS',
-          bboxFilter: 'none',
-          osmScopeFilter: 'none',
-        },
-      }),
-    ).toThrow()
+  test('maps legacy osmScopeFilter centroid alias to intersects_official_coverage', () => {
+    const parsed = parseDatasetConfig('area-legacy', {
+      displayName: 'Legacy scope',
+      titlePrefix: 'Area',
+      officialProfile: 'bkg_vg25_gem',
+      osmProfile: 'admin_rs',
+      idNormalization: { preset: 'regional-12' },
+      metricsCrs: 'EPSG:25832',
+      compare: {
+        officialMatchProperty: 'ARS',
+        bboxFilter: 'none',
+        osmScopeFilter: 'centroid_in_official_coverage',
+      },
+    })
+    expect(parsed.compare.osmScopeFilter).toBe('intersects_official_coverage')
   })
 })

@@ -151,7 +151,7 @@ export const de = {
         `Erweitert den amtlichen Bounding-Box-Filter um ${value} Grad als Sicherheitsrand gegen Randabschneidungen.`,
       osmScopeFilter: {
         none: 'Es wird kein zusätzlicher räumlicher Scope-Filter auf OSM-Features angewendet.',
-        centroid_in_official_coverage:
+        intersects_official_coverage:
           'Ein OSM-Objekt zählt nur dann, wenn seine Geometrie mindestens ein amtliches Vergleichspolygon schneidet (Überlappung). Das vermeidet Ausreißer bei Küsten und mehrteiligen Grenzen, bei denen Schwerpunkt oder Einzelpunkt außerhalb der amtlichen Fläche liegen können.',
       },
       ignoreRelationIds: 'Diese OSM-Relationen werden vor dem Matching explizit ausgeschlossen.',

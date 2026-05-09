@@ -25,7 +25,7 @@
     "officialMatchProperty": "bezirk",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
-    "osmScopeFilter": "centroid_in_official_coverage",
+    "osmScopeFilter": "intersects_official_coverage",
   },
   "osm": {
     // Hamburg Bezirke are expected at admin_level=9.

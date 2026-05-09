@@ -75,7 +75,7 @@ export type ComparisonFilterConfigSummary = {
   officialMatchProperty: string
   bboxFilter: 'none' | 'official_bbox_overlap'
   bboxBufferDegrees?: number
-  osmScopeFilter: 'none' | 'centroid_in_official_coverage'
+  osmScopeFilter: 'none' | 'intersects_official_coverage'
   adminLevels?: string[]
   ignoreRelationIds?: string[]
   officialExtractLayer?: string

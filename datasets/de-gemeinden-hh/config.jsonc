@@ -16,7 +16,7 @@
     "officialMatchProperty": "ARS",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.02,
-    "osmScopeFilter": "centroid_in_official_coverage",
+    "osmScopeFilter": "intersects_official_coverage",
   },
   "osm": {
     "adminLevels": ["8"],

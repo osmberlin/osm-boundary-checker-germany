@@ -242,8 +242,9 @@ export function selectEligibleCandidates(
  *   1. Skip rows without a polygonal official geometry (matched-only / unmatched_osm).
  *   2. Shrink the polygon by `shrinkFactor` (default 0.7) around its centroid.
  *   3. Bbox-query the candidate index over the shrunk bbox.
- *   4. For each hit, derive the candidate's canonical key and drop it if it already
- *      matched in `officialKeySet` (covers both no_key and unmatched_osm scope).
+ *   4. For each hit, derive the candidate's canonical key and drop it if that key is an
+ *      official key **for a different unit** than this row (same key as the current row
+ *      is kept so coastal / scope-drop recoveries still surface the RS-aligned relation).
  *   5. Confirm the candidate point lies inside the shrunk polygon via point-in-polygon.
  */
 export function matchCandidatesForOfficialOnly(input: {
@@ -281,7 +282,13 @@ export function matchCandidatesForOfficialOnly(input: {
         options.osmMatchProperty,
         options.idNormalizationPreset,
       )
-      if (canonical.length > 0 && officialKeySet.has(canonical)) continue
+      if (
+        canonical.length > 0 &&
+        canonical !== row.canonicalMatchKey &&
+        officialKeySet.has(canonical)
+      ) {
+        continue
+      }
 
       const c = hit.geometry.coordinates
       if (typeof c[0] !== 'number' || typeof c[1] !== 'number') continue

@@ -146,7 +146,7 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     expect(outside.get('k1') ?? []).toHaveLength(0)
   })
 
-  test('candidate whose canonical key already matched is excluded', () => {
+  test('candidate whose canonical key belongs to another official unit is excluded', () => {
     const inputs: OfficialOnlyInput[] = [
       { canonicalMatchKey: 'k1', officialGeometryWgs84: squarePolygon(10, 50, 1) },
     ]
@@ -171,6 +171,36 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     })
     const matches = result.get('k1') ?? []
     expect(matches.map((m) => m.osmId)).toEqual(['2'])
+  })
+
+  test('candidate with same canonical RS as this official_only row is kept (recovery)', () => {
+    const rowKey = '130725259085'
+    const inputs: OfficialOnlyInput[] = [
+      { canonicalMatchKey: rowKey, officialGeometryWgs84: squarePolygon(10, 50, 1) },
+    ]
+    const officialKeySet = new Set([rowKey, '010040000000'])
+    const candidates = [
+      pointFeature(10, 50, {
+        osm_id: '-394331',
+        admin_level: '8',
+        name: 'Rerik',
+        'de:regionalschluessel': '130725259085',
+      }),
+    ]
+    const result = matchCandidatesForOfficialOnly({
+      rows: inputs,
+      officialKeySet,
+      candidatePoints: candidates,
+      options: ADMIN_OPTIONS_DEFAULT,
+    })
+    const matches = result.get(rowKey) ?? []
+    expect(matches).toHaveLength(1)
+    expect(matches[0]).toMatchObject({
+      osmType: 'relation',
+      osmId: '394331',
+      name: 'Rerik',
+      deRegionalRaw: '130725259085',
+    })
   })
 
   test('multipolygon official: point inside one of the disjoint pieces matches', () => {
@@ -248,7 +278,6 @@ describe('matchCandidatesForOfficialOnly — postal_code profile', () => {
     ]
     const result = matchCandidatesForOfficialOnly({
       rows: inputs,
-      // Already-matched key is in the set; we expect the candidate to be excluded.
       officialKeySet: new Set(['13585']),
       candidatePoints: candidates,
       options: {
@@ -257,19 +286,7 @@ describe('matchCandidatesForOfficialOnly — postal_code profile', () => {
         osmMatchProperty: 'postal_code',
       },
     })
-    expect(result.get('13585') ?? []).toEqual([])
-
-    const result2 = matchCandidatesForOfficialOnly({
-      rows: inputs,
-      officialKeySet: new Set([]),
-      candidatePoints: candidates,
-      options: {
-        idNormalizationPreset: 'plz-5',
-        osmProfileId: 'postal_code',
-        osmMatchProperty: 'postal_code',
-      },
-    })
-    const matches = result2.get('13585') ?? []
+    const matches = result.get('13585') ?? []
     expect(matches).toHaveLength(1)
     const match = matches[0] as CandidateMatch
     expect(match.osmType).toBe('relation')

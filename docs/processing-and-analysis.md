@@ -111,10 +111,10 @@ Embedded **`comparison_table.json`** carries the official/OSM metadata snapshot 
  Compare reads explicit enum decisions from `compare`:
 
 - `compare.bboxFilter`: `none` or `official_bbox_overlap`
-- `compare.osmScopeFilter`: `none` or `centroid_in_official_coverage`
+- `compare.osmScopeFilter`: `none` or `intersects_official_coverage`
 - `compare.bboxBufferDegrees`: required when `bboxFilter=official_bbox_overlap`
 
-With `bboxFilter=official_bbox_overlap`, compare derives a union bbox from official geometries, expands it by `compare.bboxBufferDegrees`, and drops OSM features whose bbox does not overlap. With `osmScopeFilter=centroid_in_official_coverage`, compare additionally keeps only OSM features whose centroid lies inside official polygon coverage before merge/metrics (`[scripts/compare/lib/compare.ts](../scripts/compare/lib/compare.ts)`).
+With `bboxFilter=official_bbox_overlap`, compare derives a union bbox from official geometries, expands it by `compare.bboxBufferDegrees`, and drops OSM features whose bbox does not overlap. With `osmScopeFilter=intersects_official_coverage`, compare additionally keeps only OSM features whose geometry intersects at least one official polygon (bbox shortcut, then `booleanIntersects`) before merge/metrics (`[scripts/compare/lib/compare.ts](../scripts/compare/lib/compare.ts)`).
 
 For administrative datasets, `osm.adminLevels` is report-strict but match-permissive: key matching runs before applying the allowlist, so German units that legitimately live at another OSM tier still match by their official key (for example Kreisfreie Städte as `admin_level=6` in Gemeinden datasets, or Stadtstaaten as `admin_level=4`). The allowlist is applied afterwards only to `unmatchedOsm`, which keeps unrelated higher-tier boundaries out of the OSM-only report.
 

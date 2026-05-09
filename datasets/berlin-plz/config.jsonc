@@ -26,6 +26,6 @@
     "officialMatchProperty": "plz",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.05,
-    "osmScopeFilter": "centroid_in_official_coverage",
+    "osmScopeFilter": "intersects_official_coverage",
   },
 }

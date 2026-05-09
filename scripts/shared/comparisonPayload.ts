@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ogcWfsInspectSourceSchema } from './ogcInspectSources.ts'
+import { osmScopeFilterSchema } from './osmScopeFilter.ts'
 import { osmSourceMetadataPersistedSchema, sourceMetadataSideSchema } from './sourceMetadata.ts'
 
 export const reportMetricsSchema = z.object({
@@ -72,7 +73,7 @@ export const comparisonFilterConfigSummarySchema = z.object({
   officialMatchProperty: z.string().trim().min(1),
   bboxFilter: z.enum(['none', 'official_bbox_overlap']),
   bboxBufferDegrees: z.number().finite().nonnegative().optional(),
-  osmScopeFilter: z.enum(['none', 'centroid_in_official_coverage']),
+  osmScopeFilter: osmScopeFilterSchema,
   adminLevels: z.array(z.string().trim().min(1)).optional(),
   ignoreRelationIds: z.array(z.string().trim().min(1)).optional(),
   officialExtractLayer: z.string().trim().min(1).optional(),

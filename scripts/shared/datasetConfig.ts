@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { officialHttpDownloadSchema } from './downloadOfficialConfig.ts'
 import { officialProfileIdSchema, resolveOfficialProfile } from './officialProfiles.ts'
 import { osmProfileIdSchema } from './osmProfiles.ts'
+import { osmScopeFilterSchema } from './osmScopeFilter.ts'
 import { datasetLicenseIdSchema, osmLicenseCompatibilitySchema } from './sourceMetadata.ts'
 
 const trimmedString = z.string().trim().min(1)
@@ -40,7 +41,7 @@ const compareSchema = z
     officialMatchProperty: trimmedString,
     bboxFilter: z.enum(['none', 'official_bbox_overlap']),
     bboxBufferDegrees: z.number().finite().nonnegative().optional(),
-    osmScopeFilter: z.enum(['none', 'centroid_in_official_coverage']),
+    osmScopeFilter: osmScopeFilterSchema,
     /**
      * Linear shrink factor (0..1] applied to each `official_only` polygon before testing
      * whether a candidate point falls inside. Defaults to `0.7` (≈30 % linear shrink) so

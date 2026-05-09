@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as turf from '@turf/turf'
-import type { BBox, Feature, Geometry, MultiPolygon, Point, Polygon } from 'geojson'
+import type { BBox, Feature, Geometry, MultiPolygon, Polygon } from 'geojson'
 import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
 import type { BoundaryConfig, IdNormalizationPreset } from './config.ts'
@@ -135,24 +135,40 @@ function toPolygonFeature(feature: Feature): Feature<Polygon | MultiPolygon> | n
   return feature as Feature<Polygon | MultiPolygon>
 }
 
-function hasCentroidInOfficialCoverage(
+/**
+ * Keeps OSM features whose geometry **intersects** at least one official polygon.
+ * Point-in-polygon tests (centroid or point-on-feature) fail for many coastal or fragmented
+ * boundaries where the representative point lies outside the amtliche Fläche despite overlap.
+ * Uses bbox rejection before `booleanIntersects` so scope filtering stays tractable.
+ */
+function intersectsOfficialCoverage(
   osmFeature: Feature,
   officialCoverage: Feature<Polygon | MultiPolygon>[],
+  officialBboxes: readonly BBox[],
 ): boolean {
-  if (!osmFeature.geometry) return false
-  let centroid: Feature<Point>
+  const g = osmFeature.geometry
+  if (!g || (g.type !== 'Polygon' && g.type !== 'MultiPolygon')) return false
+  const osmPoly = osmFeature as Feature<Polygon | MultiPolygon>
+  let osmBbox: BBox
   try {
-    centroid = turf.centroid(osmFeature as Feature) as Feature<Point>
+    osmBbox = turf.bbox(osmPoly) as BBox
   } catch {
     return false
   }
-  for (const official of officialCoverage) {
-    if (turf.booleanPointInPolygon(centroid, official)) return true
+  for (let i = 0; i < officialCoverage.length; i++) {
+    const official = officialCoverage[i]!
+    const ob = officialBboxes[i]!
+    if (!bboxesOverlap(osmBbox, ob)) continue
+    try {
+      if (turf.booleanIntersects(osmPoly, official)) return true
+    } catch {
+      continue
+    }
   }
   return false
 }
 
-function filterOsmByOfficialCoverageCentroid(
+function filterOsmByIntersectingOfficialCoverage(
   osmFeatures: Feature[],
   officialFeatures: Feature[],
 ): Feature[] {
@@ -161,10 +177,13 @@ function filterOsmByOfficialCoverageCentroid(
     .filter((feature): feature is Feature<Polygon | MultiPolygon> => feature != null)
   if (officialCoverage.length === 0) {
     throw new Error(
-      'compare.osmScopeFilter=centroid_in_official_coverage requires official polygon geometries',
+      'compare.osmScopeFilter=intersects_official_coverage requires official polygon geometries',
     )
   }
-  return osmFeatures.filter((feature) => hasCentroidInOfficialCoverage(feature, officialCoverage))
+  const officialBboxes = officialCoverage.map((o) => turf.bbox(o) as BBox)
+  return osmFeatures.filter((feature) =>
+    intersectsOfficialCoverage(feature, officialCoverage, officialBboxes),
+  )
 }
 
 function filterOsmByIgnoredRelationIds(
@@ -312,9 +331,9 @@ export async function runCompare(
       remaining: osmFc.features.length,
     })
   }
-  if (config.compare.osmScopeFilter === 'centroid_in_official_coverage') {
+  if (config.compare.osmScopeFilter === 'intersects_official_coverage') {
     const tScopeFilter = Date.now()
-    const filtered = filterOsmByOfficialCoverageCentroid(osmFc.features, officialFc.features)
+    const filtered = filterOsmByIntersectingOfficialCoverage(osmFc.features, officialFc.features)
     droppedByScope = osmFc.features.length - filtered.length
     osmFc = { type: 'FeatureCollection', features: filtered }
     phaseLogger?.('filter_scope', Date.now() - tScopeFilter, {
@@ -336,7 +355,7 @@ export async function runCompare(
   }
   if (droppedByBbox > 0 || droppedByScope > 0 || droppedByIgnore > 0) {
     console.log(
-      `${areaFolder}: OSM scope filtering kept ${osmFc.features.length}/${initialOsmFeatureCount} features (bbox dropped: ${droppedByBbox}, centroid scope dropped: ${droppedByScope}, ignore dropped: ${droppedByIgnore})`,
+      `${areaFolder}: OSM scope filtering kept ${osmFc.features.length}/${initialOsmFeatureCount} features (bbox dropped: ${droppedByBbox}, overlap scope dropped: ${droppedByScope}, ignore dropped: ${droppedByIgnore})`,
     )
   }
 

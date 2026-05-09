@@ -23,7 +23,7 @@ export type CompareConfig = {
   /** Pad official bbox in degrees (required when bboxFilter=official_bbox_overlap). */
   bboxBufferDegrees?: number
   /** Geometric scope filter for OSM features after bbox prefilter. */
-  osmScopeFilter: 'none' | 'centroid_in_official_coverage'
+  osmScopeFilter: 'none' | 'intersects_official_coverage'
   /** Linear shrink factor (0..1] applied to each official_only polygon for candidate matching. */
   candidateShrinkFactor?: number
 }
