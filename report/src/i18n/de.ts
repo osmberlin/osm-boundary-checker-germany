@@ -70,6 +70,8 @@ export const de = {
     directDownloadLabel: 'Direktdownload',
     licenseLabel: 'Lizenz',
     licenseSectionHeading: 'Lizenz und OSM-Kompatibilität der amtlichen Quelle',
+    /** Homepage license table: first column is area display name, not feature name+key. */
+    licenseTableAreaColumn: 'Gebiet',
     licenseShortNameLabel: 'Originale Lizenz (Kurzname)',
     licenseSourceLabel: 'Lizenzquelle',
     osmCompatibilityLabelTitle: 'OSM-kompatibel',
@@ -197,8 +199,7 @@ export const de = {
     issuesCount: 'Problem',
     sectionCountSuffix: 'Einträge',
     table: {
-      name: 'Name',
-      key: 'Schlüssel (canonicalMatchKey)',
+      nameWithComparisonKey: 'Name (Vergleichs-Schlüssel)',
       category: 'Kategorie',
       issueLevel: 'Bewertung',
       view: 'Detail',
@@ -251,8 +252,7 @@ export const de = {
     compareFallbackNotice:
       'Der Vergleich für dieses Gebiet ist fehlgeschlagen; es werden zuletzt erfolgreiche Vergleichsdaten angezeigt.',
     table: {
-      name: 'Name',
-      key: 'Schlüssel (canonicalMatchKey)',
+      nameWithComparisonKey: 'Name (Vergleichs-Schlüssel)',
       category: 'Kategorie',
       iou: 'IoU',
       areaDelta: 'Δ Fläche %',

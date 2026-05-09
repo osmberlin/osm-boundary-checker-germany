@@ -4,7 +4,6 @@ import type { AreaReportRow, ReportCategory } from '../types/report'
 
 export const AREA_TABLE_SORT_KEYS = [
   'name',
-  'key',
   'category',
   'iou',
   'area',
@@ -19,6 +18,7 @@ const sortKeySchema = z.enum(AREA_TABLE_SORT_KEYS)
 const sortDirSchema = z.enum(['asc', 'desc'])
 
 function parseSortKey(value: unknown): AreaTableSortKey {
+  if (value === 'key') return 'name'
   const parsed = sortKeySchema.safeParse(value)
   return parsed.success ? parsed.data : 'haus'
 }
@@ -66,10 +66,11 @@ function compareRows(
   const str = (x: string, y: string) => inv * x.localeCompare(y, 'de', { sensitivity: 'base' })
 
   switch (sort) {
-    case 'name':
-      return str(a.nameLabel, b.nameLabel)
-    case 'key':
+    case 'name': {
+      const byName = str(a.nameLabel, b.nameLabel)
+      if (byName !== 0) return byName
       return str(a.canonicalMatchKey, b.canonicalMatchKey)
+    }
     case 'category':
       return inv * (CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category))
     case 'iou': {

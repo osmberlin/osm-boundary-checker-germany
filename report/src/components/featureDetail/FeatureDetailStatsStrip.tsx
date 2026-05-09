@@ -10,6 +10,7 @@ import {
   formatDePercentPoints,
   formatDeSquareKilometersFromM2,
 } from '../../lib/formatDe'
+import { reviewIssueAmpelTextClasses } from '../../lib/issueAmpelStyles'
 import { officialAreaSummaryFreshness } from '../../lib/officialAreaSummaryFreshness'
 import { kpiFreshnessLinesFromIso } from '../../lib/reportFreshnessLines'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
@@ -349,11 +350,9 @@ function IssueIndicatorStatColumn({
   const primaryClass =
     level === 'ok'
       ? 'text-emerald-200'
-      : level === 'review'
-        ? 'text-amber-200'
-        : level === 'issue'
-          ? 'text-rose-300'
-          : 'text-slate-400'
+      : level === 'review' || level === 'issue'
+        ? reviewIssueAmpelTextClasses
+        : 'text-slate-400'
   const primaryText = level ? issueLevelLabelDe(level) : EM_DASH
   const reasonsLine = reasons?.length
     ? capitalizeFirstDe(reasons.map(issueReasonLabelDe).join(' · '))

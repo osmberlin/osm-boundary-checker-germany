@@ -7,6 +7,10 @@ import { categoryLabelDe, de } from '../i18n/de'
 import { EM_DASH, formatDeInteger } from '../lib/formatDe'
 import { withSiteBasePath } from '../lib/siteBasePath'
 
+/** Homepage Prüfung / Problem: bright when non-zero, subdued when zero (no ampel pink). */
+const homeAmpelKpiActiveClass = 'text-slate-50'
+const homeAmpelKpiZeroClass = 'text-slate-600'
+
 const GITHUB_REPO_ROOT = 'https://github.com/osmberlin/osm-boundary-checker-germany'
 const GITHUB_ISSUES_NEW_URL = `${GITHUB_REPO_ROOT}/issues/new`
 const LAUNCH_BLOGPOST_URL = 'https://www.osm-verkehrswende.org/grenzabgleich/posts/grenzabgleich/'
@@ -135,7 +139,10 @@ export function Home() {
                     >
                       <KpiCell
                         label={
-                          <ReportCategoryPill category="matched">
+                          <ReportCategoryPill
+                            category="matched"
+                            matchedPresentation="homeYellowSolo"
+                          >
                             {categoryLabelDe('matched')}
                           </ReportCategoryPill>
                         }
@@ -159,14 +166,22 @@ export function Home() {
                             label={
                               <span
                                 className={
-                                  reviewsCountRaw > 0 ? 'text-amber-200' : 'text-slate-400'
+                                  reviewsCountRaw > 0
+                                    ? homeAmpelKpiActiveClass
+                                    : homeAmpelKpiZeroClass
                                 }
                               >
                                 {de.home.reviewsStat}
                               </span>
                             }
                             value={
-                              <span className={reviewsCountRaw > 0 ? 'text-amber-200' : undefined}>
+                              <span
+                                className={
+                                  reviewsCountRaw > 0
+                                    ? homeAmpelKpiActiveClass
+                                    : homeAmpelKpiZeroClass
+                                }
+                              >
                                 {reviews}
                               </span>
                             }
@@ -176,13 +191,23 @@ export function Home() {
                           <KpiCell
                             label={
                               <span
-                                className={issuesCountRaw > 0 ? 'text-rose-300' : 'text-slate-400'}
+                                className={
+                                  issuesCountRaw > 0
+                                    ? homeAmpelKpiActiveClass
+                                    : homeAmpelKpiZeroClass
+                                }
                               >
                                 {de.home.issuesStat}
                               </span>
                             }
                             value={
-                              <span className={issuesCountRaw > 0 ? 'text-rose-300' : undefined}>
+                              <span
+                                className={
+                                  issuesCountRaw > 0
+                                    ? homeAmpelKpiActiveClass
+                                    : homeAmpelKpiZeroClass
+                                }
+                              >
                                 {issues}
                               </span>
                             }
@@ -225,7 +250,7 @@ function HomeLicenseSection({
         <table className="min-w-full text-left text-xs text-slate-300">
           <thead className="bg-slate-900 text-slate-200">
             <tr>
-              <th className="px-3 py-2">{de.areaReport.table.name}</th>
+              <th className="px-3 py-2">{de.provenance.licenseTableAreaColumn}</th>
               <th className="px-3 py-2">{p.licenseShortNameLabel}</th>
               <th className="px-3 py-2">{p.osmCompatibilityLabelTitle}</th>
               <th className="px-3 py-2">{p.osmCompatibilitySourceLabel}</th>

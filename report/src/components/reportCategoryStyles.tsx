@@ -8,6 +8,9 @@ const osmPaired = mapLayerColors.osmPaired
 const osmUnmatched = mapLayerColors.osmUnmatched
 const officialOnly = mapLayerColors.officialOnly
 
+/** Softer than solid `osmPaired.line` for UI double-stroke (map line stays full opacity). */
+const OSM_PAIRED_LINE_BORDER_UI = hexToRgba(osmPaired.line, 0.7)
+
 const swatchBox = 'h-5 w-10 shrink-0 rounded-sm border-2 border-solid'
 
 const pillBase =
@@ -39,18 +42,28 @@ export function reportCategorySwatchStyle(category: ReportRow['category']): {
       }
     case 'matched':
       return {
-        className: `${swatchBox} border-slate-500`,
+        className: swatchBox,
         style: {
-          background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osmPaired.fill, osmPaired.fillOpacity)} 50%)`,
+          borderColor: o.line,
+          backgroundColor: hexToRgba(osmPaired.fill, osmPaired.fillOpacity),
+          boxShadow: `inset 0 0 0 2px ${OSM_PAIRED_LINE_BORDER_UI}`,
         },
       }
   }
 }
 
+export type ReportCategoryPillOptions = {
+  /** Homepage only: single yellow OSM stroke + translucent fill (no amtlich ring). */
+  matchedPresentation?: 'homeYellowSolo'
+}
+
 /**
  * Inline category label (feature header, table) — same palette as map overlays.
  */
-export function reportCategoryPillStyle(category: ReportRow['category']): {
+export function reportCategoryPillStyle(
+  category: ReportRow['category'],
+  opts?: ReportCategoryPillOptions,
+): {
   className: string
   style: CSSProperties
 } {
@@ -67,10 +80,22 @@ export function reportCategoryPillStyle(category: ReportRow['category']): {
         },
       }
     case 'matched':
+      if (opts?.matchedPresentation === 'homeYellowSolo') {
+        return {
+          className: pillBase,
+          style: {
+            borderColor: OSM_PAIRED_LINE_BORDER_UI,
+            backgroundColor: hexToRgba(osmPaired.fill, osmPaired.fillOpacity),
+            color: 'rgb(248 250 252)',
+          },
+        }
+      }
       return {
-        className: `${pillBase} border-slate-500`,
+        className: pillBase,
         style: {
-          background: `linear-gradient(90deg, ${hexToRgba(o.fill, o.fillOpacity)} 50%, ${hexToRgba(osmPaired.fill, osmPaired.fillOpacity)} 50%)`,
+          borderColor: o.line,
+          backgroundColor: hexToRgba(osmPaired.fill, osmPaired.fillOpacity),
+          boxShadow: `inset 0 0 0 2px ${OSM_PAIRED_LINE_BORDER_UI}`,
           color: 'rgb(248 250 252)',
         },
       }
@@ -123,7 +148,7 @@ export function ReportCategorySquareSwatch({ category }: { category: ReportRow['
         items={[
           { borderColor: o.line, backgroundColor: 'transparent' },
           {
-            borderColor: osmPaired.line,
+            borderColor: OSM_PAIRED_LINE_BORDER_UI,
             backgroundColor: hexToRgba(osmPaired.fill, osmPaired.fillOpacity),
           },
         ]}
@@ -152,12 +177,17 @@ export function ReportCategoryPill({
   category,
   children,
   className = '',
+  matchedPresentation,
 }: {
   category: ReportRow['category']
   children: ReactNode
   className?: string
+  matchedPresentation?: ReportCategoryPillOptions['matchedPresentation']
 }) {
-  const p = reportCategoryPillStyle(category)
+  const p = reportCategoryPillStyle(
+    category,
+    matchedPresentation ? { matchedPresentation } : undefined,
+  )
   return (
     <span className={[p.className, className].filter(Boolean).join(' ')} style={p.style}>
       {children}

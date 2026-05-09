@@ -5,6 +5,7 @@ import { ReportCategoryPill } from '../components/reportCategoryStyles'
 import { reviewQueue } from '../data/reviewQueue'
 import { categoryLabelDe, de } from '../i18n/de'
 import { formatDeInteger } from '../lib/formatDe'
+import { reviewIssueAmpelTextClasses } from '../lib/issueAmpelStyles'
 
 export function ReviewQueue() {
   const nonEmptyAreas = reviewQueue.filter(
@@ -21,12 +22,16 @@ export function ReviewQueue() {
         <KpiRow aria-label={de.review.totalStatsAria}>
           <KpiCell label={de.review.datasetCount} value={formatDeInteger(nonEmptyAreas.length)} />
           <KpiCell
-            label={<span className="text-amber-200">{de.review.reviewsCount}</span>}
-            value={<span className="text-amber-200">{formatDeInteger(totalReviews)}</span>}
+            label={<span className={reviewIssueAmpelTextClasses}>{de.review.reviewsCount}</span>}
+            value={
+              <span className={reviewIssueAmpelTextClasses}>{formatDeInteger(totalReviews)}</span>
+            }
           />
           <KpiCell
-            label={<span className="text-rose-300">{de.review.issuesCount}</span>}
-            value={<span className="text-rose-300">{formatDeInteger(totalIssues)}</span>}
+            label={<span className={reviewIssueAmpelTextClasses}>{de.review.issuesCount}</span>}
+            value={
+              <span className={reviewIssueAmpelTextClasses}>{formatDeInteger(totalIssues)}</span>
+            }
           />
         </KpiRow>
       </KpiSection>
@@ -90,8 +95,9 @@ function ReviewTopicTable({ areaId, level, entries }: ReviewTopicTableProps) {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-900">
             <tr>
-              <th className="px-3 py-2 text-left text-slate-100">{de.review.table.name}</th>
-              <th className="px-3 py-2 text-left text-slate-100">{de.review.table.key}</th>
+              <th className="px-3 py-2 text-left text-slate-100">
+                {de.review.table.nameWithComparisonKey}
+              </th>
               <th className="px-3 py-2 text-left text-slate-100">{de.review.table.category}</th>
               <th className="px-3 py-2 text-left text-slate-100">{de.review.table.issueLevel}</th>
               <th className="px-3 py-2 text-right text-slate-100">{de.review.table.view}</th>
@@ -119,9 +125,13 @@ function ReviewTopicTable({ areaId, level, entries }: ReviewTopicTableProps) {
                   }
                 }}
               >
-                <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
-                <td className="px-3 py-2 font-mono text-xs text-slate-100">
-                  {row.canonicalMatchKey}
+                <td className="px-3 py-2 text-slate-100">
+                  <span className="flex flex-wrap items-baseline gap-x-1.5">
+                    <span>{row.nameLabel}</span>
+                    <span className="font-mono text-xs text-slate-400">
+                      ({row.canonicalMatchKey})
+                    </span>
+                  </span>
                 </td>
                 <td className="px-3 py-2">
                   <ReportCategoryPill category={row.category}>
