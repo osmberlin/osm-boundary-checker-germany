@@ -155,3 +155,6 @@ entries:
       - '790d9fd'
     descriptionMd: |
       Die Regeln für die Filterung der OSM-Kandidaten sind verbessert. Wir suchen jetzt zuerst immer nach einem Treffe für den Referenzwert in allen OSM Daten. Die Kandidaten verwenden dann bspw. den `admin_level` filter, damit es möglichst relevante Kandidaten sind. Dabei ignorieren wir weiterhin, dass die `admin_level` bei Dingen wie "Kreisefreihe Stadt" zu einfach gedacht sind. Außerdem gibt es jetzt OSM Match Kandidaten für alle "Nur Amtlich" Datensätze. Die sind noch nicht verknüpft mit anderen Teilen der App aber werden schonmal aufgelistet.
+  - refs:
+      - 'b5cf850'
+    hide: true
