@@ -2,7 +2,7 @@
 /**
  * Interactive compare (`bun run compare`).
  * One prompt: "All areas" (first, default) or a specific dataset, then `compare-boundaries` per area.
- * On full success, runs `bun run --filter report sync-runtime-assets` unless `--no-sync` or COMPARE_NO_SYNC=1.
+ * On full success, runs `bun run sync-runtime-assets` in `report/` unless `--no-sync` or COMPARE_NO_SYNC=1.
  */
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
@@ -60,9 +60,9 @@ function runCompareScript(repoRoot: string, area: string): Promise<number> {
 
 function syncReportAssets(repoRoot: string): void {
   if (process.env.COMPARE_NO_SYNC === '1') return
-  console.log(`\n${cliHeadline('[compare] sync-runtime-assets (report) …')}`)
-  const r = spawnSync('bun', ['run', '--filter', 'report', 'sync-runtime-assets'], {
-    cwd: repoRoot,
+  console.log(`\n${cliHeadline('[compare] sync-runtime-assets (report/) …')}`)
+  const r = spawnSync('bun', ['run', 'sync-runtime-assets'], {
+    cwd: join(repoRoot, 'report'),
     stdio: 'inherit',
   })
   if ((r.status ?? 1) !== 0) {

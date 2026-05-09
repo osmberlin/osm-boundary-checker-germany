@@ -41,9 +41,9 @@ function parseArgs(argv: string[]) {
 
 function maybeSyncReportRuntimeAssets(workspaceRoot: string, noSync: boolean): void {
   if (noSync || process.env.COMPARE_NO_SYNC === '1') return
-  console.log(`\n${cliHeadline('[compare] sync-runtime-assets (report) …')}`)
-  const r = spawnSync('bun', ['run', '--filter', 'report', 'sync-runtime-assets'], {
-    cwd: workspaceRoot,
+  console.log(`\n${cliHeadline('[compare] sync-runtime-assets (report/) …')}`)
+  const r = spawnSync('bun', ['run', 'sync-runtime-assets'], {
+    cwd: join(workspaceRoot, 'report'),
     stdio: 'inherit',
   })
   if ((r.status ?? 1) !== 0) {
