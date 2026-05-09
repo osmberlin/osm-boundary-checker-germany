@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
+import { MapProvider } from 'react-map-gl/maplibre'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmTagsSection'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
@@ -11,19 +12,119 @@ import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFo
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { RouteLoadingPane } from '../components/RouteLoadingPane'
 import { UpdateMapInstructions } from '../components/UpdateMapInstructions'
-import { comparisonQueryOptions, featureQueryOptions, runStatusQueryOptions } from '../data/load'
+import {
+  comparisonQueryOptions,
+  featureQueryOptions,
+  runStatusQueryOptions,
+  type FeatureDetailComparison,
+} from '../data/load'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useFeatureDetailOverpass } from '../hooks/useFeatureDetailOverpass'
 import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
 import { useFilteredLiveOverlays } from '../hooks/useFilteredLiveOverlays'
+import { useLiveQueryBboxFromMap } from '../hooks/useLiveQueryBboxFromMap'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { de } from '../i18n/de'
+import { featureDetailHasComparisonMap } from '../lib/featureDetailHasComparisonMap'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
 import { safeDecodeURIComponent } from '../lib/safeDecodeURIComponent'
-import { padMapBbox } from '../lib/wfsGetFeature'
-import type { OgcWfsInspectSource } from '../types/report'
+import type { ComparisonForReport, OgcWfsInspectSource, ReportRow } from '../types/report'
 
 const EMPTY_OGC_SOURCES: readonly OgcWfsInspectSource[] = []
+
+type MapLayerControls = ReturnType<typeof useComparisonMapLayers>
+type MapViewParam = ReturnType<typeof useMapViewParam>
+
+function FeatureDetailWithMapContext({
+  areaKey,
+  featureLookupKey,
+  row,
+  data,
+  comparisonOverlayData,
+  mapLayers,
+  mapViewParam,
+  showCompareFailedNotice,
+}: {
+  areaKey: string
+  featureLookupKey: string
+  row: ReportRow
+  data: FeatureDetailComparison
+  comparisonOverlayData: ComparisonForReport
+  mapLayers: MapLayerControls
+  mapViewParam: MapViewParam
+  showCompareFailedNotice: boolean
+}) {
+  const { getLiveQueryBbox } = useLiveQueryBboxFromMap()
+  const overpass = useFeatureDetailOverpass(featureLookupKey)
+  const wfs = useFeatureDetailWfs({
+    featureKey: featureLookupKey,
+    sources: data.ogcInspectSources ?? EMPTY_OGC_SOURCES,
+  })
+  const filteredLiveOverlays = useFilteredLiveOverlays({
+    featureKey: featureLookupKey,
+    wfsGeojson: wfs.geojson,
+    overpassGeojson: overpass.geojson,
+  })
+  const hasComparisonMap = featureDetailHasComparisonMap(row, data)
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
+      {showCompareFailedNotice ? (
+        <div className="mb-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          {de.feature.compareFailedNotice}
+        </div>
+      ) : null}
+      <FeatureDetailStatsStrip row={row} mapLayers={mapLayers} data={data} />
+
+      <FeatureDetailMapSection
+        areaKey={areaKey}
+        data={data}
+        row={row}
+        interactionData={comparisonOverlayData}
+        mapLayers={mapLayers}
+        mapView={mapViewParam}
+        overpassGeojson={filteredLiveOverlays.overpassGeojson}
+        wfsGeojson={filteredLiveOverlays.wfsGeojson}
+      />
+
+      <UpdateMapInstructions areaId={areaKey} row={row} />
+
+      <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
+
+      <FeatureDatasetProperties row={row} data={data} />
+
+      <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
+
+      <OfficialOnlyCandidatesSection row={row} candidates={data.candidates} />
+
+      <MatcherContextSection areaKey={areaKey} data={data} row={row} />
+
+      {hasComparisonMap ? (
+        <LiveSourceProperties
+          featureKey={featureLookupKey}
+          data={data}
+          row={row}
+          getLiveQueryBbox={getLiveQueryBbox}
+          wfs={{
+            load: wfs.loadSource,
+            getStatus: wfs.getStatus,
+          }}
+          overpass={{
+            hasCachedData: overpass.hasCachedData,
+            hits: overpass.hits,
+            isRunPending: overpass.isRunPending,
+            runError: overpass.runError,
+            runLiveOverpass: overpass.runLiveOverpass,
+            resetLiveOverpass: overpass.resetLiveOverpass,
+            resetRunMutation: overpass.resetRunMutation,
+          }}
+        />
+      ) : null}
+
+      <ReportLicenseCompatibilitySection data={data} />
+    </div>
+  )
+}
 
 export function FeatureDetail() {
   const { areaId, featureKey } = useParams({ strict: false })
@@ -42,18 +143,6 @@ export function FeatureDetail() {
   const runStatusQuery = useQuery(runStatusQueryOptions())
   const data = featureQuery.data ?? null
   const row = !data || !featureKey ? null : findFeatureDetailRow(data, featureKey)
-  const wfsBbox = row?.mapBbox ? padMapBbox(row.mapBbox) : null
-  const overpass = useFeatureDetailOverpass(featureLookupKey)
-  const wfs = useFeatureDetailWfs({
-    featureKey: featureLookupKey,
-    sources: data?.ogcInspectSources ?? EMPTY_OGC_SOURCES,
-    bbox: wfsBbox,
-  })
-  const filteredLiveOverlays = useFilteredLiveOverlays({
-    featureKey: featureLookupKey,
-    wfsGeojson: wfs.geojson,
-    overpassGeojson: overpass.geojson,
-  })
   const compareBranch = runStatusQuery.data?.areas?.[areaKey]?.compare
   const showCompareFailedNotice = compareBranch?.status === 'compare_failed'
   if (featureQuery.isError) {
@@ -79,57 +168,18 @@ export function FeatureDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
-      {showCompareFailedNotice ? (
-        <div className="mb-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          {de.feature.compareFailedNotice}
-        </div>
-      ) : null}
-      <FeatureDetailStatsStrip row={row} mapLayers={mapLayers} data={data} />
-
-      <FeatureDetailMapSection
+    <MapProvider>
+      <FeatureDetailWithMapContext
+        key={`${areaKey}/${featureLookupKey}`}
         areaKey={areaKey}
-        data={data}
+        featureLookupKey={featureLookupKey}
         row={row}
-        interactionData={comparisonQuery.data ?? data}
+        data={data}
+        comparisonOverlayData={comparisonQuery.data ?? data}
         mapLayers={mapLayers}
-        mapView={mapViewParam}
-        overpassGeojson={filteredLiveOverlays.overpassGeojson}
-        wfsGeojson={filteredLiveOverlays.wfsGeojson}
+        mapViewParam={mapViewParam}
+        showCompareFailedNotice={showCompareFailedNotice}
       />
-
-      <UpdateMapInstructions areaId={areaKey} row={row} />
-
-      <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
-
-      <FeatureDatasetProperties row={row} data={data} />
-
-      <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
-
-      <OfficialOnlyCandidatesSection row={row} candidates={data.candidates} />
-
-      <MatcherContextSection areaKey={areaKey} data={data} row={row} />
-
-      <LiveSourceProperties
-        featureKey={featureLookupKey}
-        data={data}
-        row={row}
-        wfs={{
-          load: wfs.loadSource,
-          getStatus: wfs.getStatus,
-        }}
-        overpass={{
-          hasCachedData: overpass.hasCachedData,
-          hits: overpass.hits,
-          isRunPending: overpass.isRunPending,
-          runError: overpass.runError,
-          runLiveOverpass: overpass.runLiveOverpass,
-          resetLiveOverpass: overpass.resetLiveOverpass,
-          resetRunMutation: overpass.resetRunMutation,
-        }}
-      />
-
-      <ReportLicenseCompatibilitySection data={data} />
-    </div>
+    </MapProvider>
   )
 }

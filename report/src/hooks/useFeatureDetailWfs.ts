@@ -1,5 +1,5 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { type WfsLiveQueryInput, wfsLiveQueryOptions } from '../data/load'
 import { LIVE_ROW_KEY_PROPERTY, wfsFeatureIdPart, wfsLiveRowKey } from '../lib/liveRowKey'
 import { buildWfsGetFeatureUrl, type WfsFeature } from '../lib/wfsGetFeature'
@@ -14,34 +14,23 @@ type WfsStatus =
   | { status: 'done'; features: WfsFeature[] }
 
 /**
- * Live WFS state mirrors `useFeatureDetailOverpass`: deterministic query keys
- * built from `(featureKey, sourceId, requestUrl)` make every observer hit the
- * shared TanStack cache, so navigating away and back to a feature reads the
- * previous result without requiring another button click. No external state.
+ * Live WFS: query keys include `requestUrl` (bbox-dependent). Each `loadSource(source, bbox)`
+ * upserts that source’s observer input so TanStack cache and map overlays stay aligned with
+ * the bbox used at load time.
  */
 export function useFeatureDetailWfs({
   featureKey,
   sources,
-  bbox,
 }: {
   featureKey: string
   sources: readonly OgcWfsInspectSource[]
-  bbox: [number, number, number, number] | null
 }) {
   const queryClient = useQueryClient()
+  const [loadedInputs, setLoadedInputs] = useState<WfsLiveQueryInput[]>([])
+  const [wfsLoadingSourceId, setWfsLoadingSourceId] = useState<string | null>(null)
 
-  const inputs = useMemo<WfsLiveQueryInput[]>(() => {
-    if (!bbox) return []
-    return sources.map((source) => ({
-      featureKey,
-      sourceId: source.id,
-      requestUrl: buildWfsGetFeatureUrl(source, bbox),
-    }))
-  }, [featureKey, sources, bbox])
-
-  // Observers only — fetches are triggered explicitly via `loadSource`.
   const queryResults = useQueries({
-    queries: inputs.map((input) => ({
+    queries: loadedInputs.map((input) => ({
       ...wfsLiveQueryOptions(input),
       enabled: false,
       staleTime: LIVE_STALE_TIME_MS,
@@ -53,47 +42,65 @@ export function useFeatureDetailWfs({
 
   const slotBySourceId = useMemo(() => {
     const out: Record<string, WfsStatus> = {}
-    for (let i = 0; i < inputs.length; i += 1) {
-      const input = inputs[i]
+    const queryBySourceId = new Map<string, (typeof queryResults)[number]>()
+    for (let i = 0; i < loadedInputs.length; i += 1) {
+      const input = loadedInputs[i]
       const query = queryResults[i]
-      if (!input || !query) continue
-      if (query.data) {
-        out[input.sourceId] = { status: 'done', features: query.data.features }
+      if (input && query) queryBySourceId.set(input.sourceId, query)
+    }
+    for (const source of sources) {
+      const query = queryBySourceId.get(source.id)
+      if (!query) {
+        out[source.id] =
+          wfsLoadingSourceId === source.id ? { status: 'loading' } : { status: 'idle' }
         continue
       }
-      // `isFetching` (not `isPending`): the latter is true forever for
-      // `enabled: false` queries that have never received data.
-      if (query.isFetching) {
-        out[input.sourceId] = { status: 'loading' }
+      if (query.data) {
+        out[source.id] = { status: 'done', features: query.data.features }
+        continue
+      }
+      if (query.isFetching || wfsLoadingSourceId === source.id) {
+        out[source.id] = { status: 'loading' }
         continue
       }
       if (query.isError) {
-        out[input.sourceId] = {
+        out[source.id] = {
           status: 'error',
           message: query.error instanceof Error ? query.error.message : String(query.error),
         }
         continue
       }
-      out[input.sourceId] = { status: 'idle' }
+      out[source.id] = { status: 'idle' }
     }
     return out
-  }, [inputs, queryResults])
+  }, [sources, loadedInputs, queryResults, wfsLoadingSourceId])
 
   const loadSource = useCallback(
-    async (source: OgcWfsInspectSource) => {
-      if (!bbox) return
+    async (source: OgcWfsInspectSource, bbox: [number, number, number, number]) => {
       const input: WfsLiveQueryInput = {
         featureKey,
         sourceId: source.id,
         requestUrl: buildWfsGetFeatureUrl(source, bbox),
       }
-      await queryClient.fetchQuery({
-        ...wfsLiveQueryOptions(input),
-        staleTime: LIVE_STALE_TIME_MS,
-        retry: false,
+      setLoadedInputs((prev) => {
+        const i = prev.findIndex((p) => p.sourceId === source.id)
+        if (i === -1) return [...prev, input]
+        const next = [...prev]
+        next[i] = input
+        return next
       })
+      setWfsLoadingSourceId(source.id)
+      try {
+        await queryClient.fetchQuery({
+          ...wfsLiveQueryOptions(input),
+          staleTime: LIVE_STALE_TIME_MS,
+          retry: false,
+        })
+      } finally {
+        setWfsLoadingSourceId((id) => (id === source.id ? null : id))
+      }
     },
-    [featureKey, bbox, queryClient],
+    [featureKey, queryClient],
   )
 
   const getStatus = useCallback(
@@ -103,7 +110,7 @@ export function useFeatureDetailWfs({
 
   const geojson = useMemo((): GeoJSON.FeatureCollection | null => {
     const features: GeoJSON.Feature[] = []
-    for (const input of inputs) {
+    for (const input of loadedInputs) {
       const slot = slotBySourceId[input.sourceId]
       if (!slot || slot.status !== 'done') continue
       slot.features.forEach((feature, indexInSource) => {
@@ -132,7 +139,7 @@ export function useFeatureDetailWfs({
       type: 'FeatureCollection',
       features,
     }
-  }, [inputs, slotBySourceId])
+  }, [loadedInputs, slotBySourceId])
 
   return {
     loadSource,

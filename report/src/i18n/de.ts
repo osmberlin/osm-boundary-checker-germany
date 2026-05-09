@@ -152,7 +152,7 @@ export const de = {
       osmScopeFilter: {
         none: 'Es wird kein zusätzlicher räumlicher Scope-Filter auf OSM-Features angewendet.',
         centroid_in_official_coverage:
-          'Ein OSM-Objekt zählt nur dann, wenn sein Schwerpunkt innerhalb der amtlichen Vergleichsabdeckung liegt.',
+          'Ein OSM-Objekt zählt nur dann, wenn seine Geometrie mindestens ein amtliches Vergleichspolygon schneidet (Überlappung). Das vermeidet Ausreißer bei Küsten und mehrteiligen Grenzen, bei denen Schwerpunkt oder Einzelpunkt außerhalb der amtlichen Fläche liegen können.',
       },
       ignoreRelationIds: 'Diese OSM-Relationen werden vor dem Matching explizit ausgeschlossen.',
       officialExtractFilter: (property: string, valuePrefix: string) =>
@@ -330,6 +330,8 @@ export const de = {
     liveOfficialLoad: 'Eigenschaften laden',
     liveOfficialLoading: 'Wird geladen …',
     liveOfficialNoBbox: 'Kein Kartenausschnitt — für dieses Objekt liegt keine Geometrie vor.',
+    liveMapViewportPending:
+      'Kartenausschnitt ist noch nicht bereit — bitte kurz warten oder die Karte leicht bewegen.',
     liveOfficialEmpty: 'Keine Treffer im Ausschnitt.',
     liveOfficialInvalidJson: 'Unerwartete WFS-Antwort (kein FeatureCollection).',
     liveOfficialUnsupportedFormat:

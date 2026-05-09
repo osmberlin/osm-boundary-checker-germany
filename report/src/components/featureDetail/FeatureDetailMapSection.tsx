@@ -1,6 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
 import { lazy, Suspense, useState } from 'react'
-import { MapProvider } from 'react-map-gl/maplibre'
 import type { ViewState } from 'react-map-gl/maplibre'
 import {
   comparisonPmtilesMaplibreUrl,
@@ -9,6 +8,7 @@ import {
 import { useFeatureDetailMapBoundaryScope } from '../../hooks/useFeatureDetailMapBoundaryScope'
 import { de } from '../../i18n/de'
 import { handleComparisonMapFeatureClick } from '../../lib/comparisonMapFeatureClick'
+import { featureDetailHasComparisonMap } from '../../lib/featureDetailHasComparisonMap'
 import type { MapViewQueryValue } from '../../lib/mapViewQueryParam'
 import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
@@ -75,8 +75,7 @@ export function FeatureDetailMapSection({
   const navigate = useNavigate()
   const { showOnlySelected } = useFeatureDetailMapBoundaryScope()
   const [overlapPickKeys, setOverlapPickKeys] = useState<string[] | null>(null)
-  const hasRowMapTiles =
-    row.category === 'unmatched_osm' ? data.hasUnmatchedPmtiles === true : data.hasPmtiles
+  const hasRowMapTiles = featureDetailHasComparisonMap(row, data)
   const detailMaxBounds = toDetailMapMaxBounds(row.mapBbox)
 
   if (!hasRowMapTiles) {
@@ -97,79 +96,73 @@ export function FeatureDetailMapSection({
               </div>
             }
           >
-            <MapProvider>
-              <ComparisonMapShell
-                sources={{
-                  primary: {
-                    pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
-                    sourceLayer: data.tippecanoeLayer,
-                    allowedFeatureIds: showOnlySelected
+            <ComparisonMapShell
+              sources={{
+                primary: {
+                  pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
+                  sourceLayer: data.tippecanoeLayer,
+                  allowedFeatureIds: showOnlySelected
+                    ? [row.canonicalMatchKey]
+                    : interactionData.rows.map((r) => r.canonicalMatchKey),
+                  officialOnlyFeatureIds: showOnlySelected
+                    ? row.category === 'official_only'
                       ? [row.canonicalMatchKey]
-                      : interactionData.rows.map((r) => r.canonicalMatchKey),
-                    officialOnlyFeatureIds: showOnlySelected
-                      ? row.category === 'official_only'
-                        ? [row.canonicalMatchKey]
-                        : []
-                      : interactionData.rows
-                          .filter((r) => r.category === 'official_only')
-                          .map((r) => r.canonicalMatchKey),
-                  },
-                  unmatched: data.hasUnmatchedPmtiles
-                    ? {
-                        pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
-                        sourceLayer: data.tippecanoeLayer,
-                        allowedFeatureIds: showOnlySelected
-                          ? row.category === 'unmatched_osm'
-                            ? [row.canonicalMatchKey]
-                            : []
-                          : interactionData.unmatchedOsm.map((r) => r.canonicalMatchKey),
-                        visible:
-                          (row.category === 'unmatched_osm' || !showOnlySelected) &&
-                          mapLayers.showOsm,
-                      }
-                    : undefined,
-                }}
-                view={{
-                  featureId: showOnlySelected ? row.canonicalMatchKey : null,
-                  mapBbox: row.mapBbox,
-                  maxBounds: showOnlySelected ? detailMaxBounds : undefined,
-                  urlMapView: mapView.mapView,
-                  onMoveEndCommitUrl: mapView.commitMapViewFromMap,
-                }}
-                layers={{
-                  showOfficial:
-                    row.category === 'unmatched_osm' && showOnlySelected
-                      ? false
-                      : mapLayers.showOfficial,
-                  showOsm:
-                    row.category === 'unmatched_osm' && showOnlySelected
-                      ? false
-                      : mapLayers.showOsm,
-                  showDiff:
-                    row.category === 'unmatched_osm' && showOnlySelected
-                      ? false
-                      : mapLayers.showDiff,
-                }}
-                overlays={{
-                  overpassGeojson,
-                  wfsGeojson,
-                }}
-                interaction={
-                  showOnlySelected
-                    ? undefined
-                    : {
-                        onFeatureClick: (featureKeys) =>
-                          handleComparisonMapFeatureClick({
-                            featureKeys,
-                            areaKey,
-                            data: interactionData,
-                            navigate,
-                            onOverlapPick: setOverlapPickKeys,
-                          }),
-                      }
-                }
-              />
-            </MapProvider>
+                      : []
+                    : interactionData.rows
+                        .filter((r) => r.category === 'official_only')
+                        .map((r) => r.canonicalMatchKey),
+                },
+                unmatched: data.hasUnmatchedPmtiles
+                  ? {
+                      pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
+                      sourceLayer: data.tippecanoeLayer,
+                      allowedFeatureIds: showOnlySelected
+                        ? row.category === 'unmatched_osm'
+                          ? [row.canonicalMatchKey]
+                          : []
+                        : interactionData.unmatchedOsm.map((r) => r.canonicalMatchKey),
+                      visible:
+                        (row.category === 'unmatched_osm' || !showOnlySelected) &&
+                        mapLayers.showOsm,
+                    }
+                  : undefined,
+              }}
+              view={{
+                featureId: showOnlySelected ? row.canonicalMatchKey : null,
+                mapBbox: row.mapBbox,
+                maxBounds: showOnlySelected ? detailMaxBounds : undefined,
+                urlMapView: mapView.mapView,
+                onMoveEndCommitUrl: mapView.commitMapViewFromMap,
+              }}
+              layers={{
+                showOfficial:
+                  row.category === 'unmatched_osm' && showOnlySelected
+                    ? false
+                    : mapLayers.showOfficial,
+                showOsm:
+                  row.category === 'unmatched_osm' && showOnlySelected ? false : mapLayers.showOsm,
+                showDiff:
+                  row.category === 'unmatched_osm' && showOnlySelected ? false : mapLayers.showDiff,
+              }}
+              overlays={{
+                overpassGeojson,
+                wfsGeojson,
+              }}
+              interaction={
+                showOnlySelected
+                  ? undefined
+                  : {
+                      onFeatureClick: (featureKeys) =>
+                        handleComparisonMapFeatureClick({
+                          featureKeys,
+                          areaKey,
+                          data: interactionData,
+                          navigate,
+                          onOverlapPick: setOverlapPickKeys,
+                        }),
+                    }
+              }
+            />
           </Suspense>
         </div>
         <div className="border-t border-slate-500 bg-[#F2F3F1] px-3 py-2.5">

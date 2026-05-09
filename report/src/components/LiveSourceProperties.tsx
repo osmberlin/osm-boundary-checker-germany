@@ -15,7 +15,7 @@ import {
 import { buildOverpassBoundaryQuery, type OverpassBoundaryHit } from '../lib/overpassBbox'
 import { DEFAULT_OVERPASS_INTERPRETER_URL, OVERPASS_INSTANCES } from '../lib/overpassServers'
 import { withSiteBasePath } from '../lib/siteBasePath'
-import { padMapBbox, type WfsFeature } from '../lib/wfsGetFeature'
+import type { WfsFeature } from '../lib/wfsGetFeature'
 import {
   useHiddenLiveRowKeys,
   useIsLiveRowHidden,
@@ -324,7 +324,7 @@ function formatOverpassRunError(error: unknown): string {
 }
 
 type WfsLiveController = {
-  load: (source: OgcWfsInspectSource) => Promise<void>
+  load: (source: OgcWfsInspectSource, bbox: [number, number, number, number]) => Promise<void>
   getStatus: (sourceId: string) => OfficialSlot
 }
 
@@ -342,14 +342,14 @@ function OfficialLiveSourcesSection({
   featureKey,
   data,
   sources,
-  bbox,
+  getLiveQueryBbox,
   wfs,
   datasetSnapshotValueMatches,
 }: {
   featureKey: string
   data: ComparisonForReport
   sources: readonly OgcWfsInspectSource[]
-  bbox: [number, number, number, number] | null
+  getLiveQueryBbox: () => [number, number, number, number] | null
   wfs: WfsLiveController
   datasetSnapshotValueMatches: ReadonlySet<string>
 }) {
@@ -363,9 +363,12 @@ function OfficialLiveSourcesSection({
   }
 
   async function loadOfficial(src: OgcWfsInspectSource) {
+    const bbox = getLiveQueryBbox()
     if (!bbox) return
-    await wfs.load(src)
+    await wfs.load(src, bbox)
   }
+
+  const viewportBbox = getLiveQueryBbox()
 
   return (
     <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
@@ -374,7 +377,9 @@ function OfficialLiveSourcesSection({
         <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={wfsRowKeys} />
       </dt>
       <dd className="mt-2 space-y-4 md:col-span-2 md:mt-0">
-        {!bbox && <p className="text-sm text-amber-300/90">{de.feature.liveOfficialNoBbox}</p>}
+        {!viewportBbox && (
+          <p className="text-sm text-amber-300/90">{de.feature.liveMapViewportPending}</p>
+        )}
         {sources.map((src) => {
           const slot = wfs.getStatus(src.id)
           const officialErrorMessage =
@@ -393,7 +398,7 @@ function OfficialLiveSourcesSection({
               {slot.status !== 'done' && (
                 <button
                   type="button"
-                  disabled={!bbox || slot.status === 'loading'}
+                  disabled={!viewportBbox || slot.status === 'loading'}
                   onClick={() => void loadOfficial(src)}
                   className={sharedButtonClass}
                 >
@@ -441,14 +446,14 @@ function OfficialLiveSourcesSection({
 function OverpassLiveSourcesSection({
   featureKey,
   data,
-  bbox,
+  getLiveQueryBbox,
   overpassBoundaryTag,
   overpass,
   datasetSnapshotValueMatches,
 }: {
   featureKey: string
   data: ComparisonForReport
-  bbox: [number, number, number, number]
+  getLiveQueryBbox: () => [number, number, number, number] | null
   overpassBoundaryTag: OverpassBoundaryTag
   overpass: OverpassLiveController
   datasetSnapshotValueMatches: ReadonlySet<string>
@@ -460,6 +465,7 @@ function OverpassLiveSourcesSection({
   const osmHits = overpass.hits
   const datasetForResolver = data.area.trim()
   const overpassRowKeys = osmHits.map((hit) => overpassLiveRowKey(hit.type, hit.id))
+  const viewportBbox = getLiveQueryBbox()
 
   function buildBoundaryCheckerResolverLink(relationId: number) {
     const query = new URLSearchParams()
@@ -486,10 +492,16 @@ function OverpassLiveSourcesSection({
         <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={overpassRowKeys} />
       </dt>
       <dd className="mt-2 space-y-3 md:col-span-2 md:mt-0">
+        {!viewportBbox && (
+          <p className="text-sm text-amber-300/90">{de.feature.liveMapViewportPending}</p>
+        )}
         {!overpass.hasCachedData && overpassDraft == null && (
           <button
             type="button"
+            disabled={!viewportBbox}
             onClick={() => {
+              const bbox = getLiveQueryBbox()
+              if (!bbox) return
               overpass.resetRunMutation()
               setOverpassDraft({
                 query: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
@@ -565,7 +577,9 @@ function OverpassLiveSourcesSection({
             />
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                const bbox = getLiveQueryBbox()
+                if (!bbox) return
                 setOverpassDraft((d) =>
                   d
                     ? {
@@ -574,7 +588,7 @@ function OverpassLiveSourcesSection({
                       }
                     : null,
                 )
-              }
+              }}
               className="mt-2 text-xs text-amber-200/85 underline decoration-amber-400/35 underline-offset-2 hover:text-amber-100"
             >
               {de.feature.liveOsmQueryReset}
@@ -650,6 +664,7 @@ export function LiveSourceProperties({
   featureKey,
   data,
   row,
+  getLiveQueryBbox,
   wfs,
   overpass,
 }: {
@@ -657,17 +672,17 @@ export function LiveSourceProperties({
   featureKey: string
   data: ComparisonForReport
   row: ReportRow
+  getLiveQueryBbox: () => [number, number, number, number] | null
   wfs: WfsLiveController
   overpass: OverpassLiveController
 }) {
   const sources = data.ogcInspectSources ?? []
-  const bbox = row.mapBbox ? padMapBbox(row.mapBbox) : null
   const overpassBoundaryTag = data.overpassBoundaryTag ?? 'administrative'
 
   const datasetSnapshotValueMatches = buildDatasetSnapshotValueMatchSet(row)
 
   const showOfficial = sources.length > 0
-  const showOsm = bbox != null
+  const showOsm = true
   if (!showOfficial && !showOsm) return null
 
   return (
@@ -689,7 +704,7 @@ export function LiveSourceProperties({
               featureKey={featureKey}
               data={data}
               sources={sources}
-              bbox={bbox}
+              getLiveQueryBbox={getLiveQueryBbox}
               wfs={wfs}
               datasetSnapshotValueMatches={datasetSnapshotValueMatches}
             />
@@ -699,7 +714,7 @@ export function LiveSourceProperties({
             <OverpassLiveSourcesSection
               featureKey={featureKey}
               data={data}
-              bbox={bbox}
+              getLiveQueryBbox={getLiveQueryBbox}
               overpassBoundaryTag={overpassBoundaryTag}
               overpass={overpass}
               datasetSnapshotValueMatches={datasetSnapshotValueMatches}
