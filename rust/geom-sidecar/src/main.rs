@@ -1,7 +1,7 @@
 use std::io::{self, Read};
 
 use anyhow::{Context, Result, anyhow, bail};
-use geo::{Area, BooleanOps, GeodesicArea, HausdorffDistance, MultiPolygon};
+use geo::{Area, BooleanOps, Centroid, Contains, GeodesicArea, HausdorffDistance, Intersects, MultiPolygon};
 use geojson::Geometry;
 use serde::{Deserialize, Serialize};
 
@@ -82,10 +82,31 @@ struct DiffRowOutput {
     osm_diff: Option<Geometry>,
 }
 
+#[derive(Debug, Deserialize)]
+struct ScopeFilterMergedInput {
+    merged_official: Geometry,
+    merged_bbox: [f64; 4],
+    min_intersection_area_m2: f64,
+    min_overlap_ratio: f64,
+    rows: Vec<ScopeFilterMergedRowInput>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ScopeFilterMergedRowInput {
+    row_index: usize,
+    geometry: Option<Geometry>,
+    bbox: Option<[f64; 4]>,
+}
+
+#[derive(Debug, Serialize)]
+struct ScopeFilterMergedOutput {
+    keep_row_indexes: Vec<usize>,
+}
+
 fn main() -> Result<()> {
     let command = std::env::args()
         .nth(1)
-        .ok_or_else(|| anyhow!("missing command: union-by-key | metrics-batch | diff-batch"))?;
+        .ok_or_else(|| anyhow!("missing command: union-by-key | metrics-batch | diff-batch | scope-filter-merged"))?;
 
     let input = read_stdin()?;
     match command.as_str() {
@@ -105,6 +126,12 @@ fn main() -> Result<()> {
             let payload: DiffBatchInput =
                 serde_json::from_str(&input).context("parse diff-batch input")?;
             let output = diff_batch(payload);
+            write_stdout(&output)?;
+        }
+        "scope-filter-merged" => {
+            let payload: ScopeFilterMergedInput =
+                serde_json::from_str(&input).context("parse scope-filter-merged input")?;
+            let output = scope_filter_merged(payload);
             write_stdout(&output)?;
         }
         _ => bail!("unknown command: {command}"),
@@ -266,4 +293,72 @@ fn has_min_geodesic_area(geometry: &Geometry) -> bool {
         return false;
     };
     mp.geodesic_area_signed().abs() >= 1e-6
+}
+
+fn bboxes_overlap(a: [f64; 4], b: [f64; 4]) -> bool {
+    !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3])
+}
+
+fn is_substantive_overlap(
+    osm_mp: &MultiPolygon<f64>,
+    merged_mp: &MultiPolygon<f64>,
+    min_intersection_area_m2: f64,
+    min_overlap_ratio: f64,
+) -> bool {
+    let inter = osm_mp.intersection(merged_mp);
+    let inter_area = inter.geodesic_area_signed().abs();
+    if inter_area < min_intersection_area_m2 {
+        return false;
+    }
+    let osm_area = osm_mp.geodesic_area_signed().abs();
+    if osm_area <= 0.0 {
+        return false;
+    }
+    inter_area / osm_area >= min_overlap_ratio
+}
+
+fn scope_filter_merged(input: ScopeFilterMergedInput) -> ScopeFilterMergedOutput {
+    let Some(merged_mp) = geometry_to_multi_polygon(&input.merged_official) else {
+        return ScopeFilterMergedOutput {
+            keep_row_indexes: Vec::new(),
+        };
+    };
+    let mut keep = Vec::new();
+    for row in input.rows {
+        let Some(osm_bbox) = row.bbox else {
+            continue;
+        };
+        if !bboxes_overlap(osm_bbox, input.merged_bbox) {
+            continue;
+        }
+        let Some(geometry) = row.geometry.as_ref() else {
+            continue;
+        };
+        let Some(osm_mp) = geometry_to_multi_polygon(geometry) else {
+            continue;
+        };
+
+        let centroid_inside = osm_mp
+            .centroid()
+            .map(|point| merged_mp.contains(&point))
+            .unwrap_or(false);
+        if centroid_inside {
+            keep.push(row.row_index);
+            continue;
+        }
+        if !osm_mp.intersects(&merged_mp) {
+            continue;
+        }
+        if is_substantive_overlap(
+            &osm_mp,
+            &merged_mp,
+            input.min_intersection_area_m2,
+            input.min_overlap_ratio,
+        ) {
+            keep.push(row.row_index);
+        }
+    }
+    ScopeFilterMergedOutput {
+        keep_row_indexes: keep,
+    }
 }

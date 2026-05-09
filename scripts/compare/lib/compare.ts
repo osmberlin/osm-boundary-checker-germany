@@ -348,6 +348,7 @@ export async function runCompare(
 
     const tScopeFilter = Date.now()
     let filtered: Feature[]
+    let scopeEngine: 'merged_rust' | 'legacy_pairwise'
     if (mergedOfficial?.geometry) {
       const mergedBbox = turf.bbox(mergedOfficial) as BBox
       filtered = filterOsmByMergedOfficialScope(
@@ -356,14 +357,17 @@ export async function runCompare(
         mergedBbox,
         metricsCrs,
       )
+      scopeEngine = 'merged_rust'
     } else {
       filtered = filterOsmByIntersectingOfficialCoverage(osmFc.features, officialFc.features)
+      scopeEngine = 'legacy_pairwise'
     }
     droppedByScope = osmFc.features.length - filtered.length
     osmFc = { type: 'FeatureCollection', features: filtered }
     phaseLogger?.('filter_scope', Date.now() - tScopeFilter, {
       dropped: droppedByScope,
       remaining: osmFc.features.length,
+      scopeEngine,
     })
   }
   if ((config.osm.ignoreRelationIds?.length ?? 0) > 0) {

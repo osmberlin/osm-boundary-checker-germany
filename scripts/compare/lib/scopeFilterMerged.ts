@@ -3,6 +3,7 @@ import type { BBox, Feature, MultiPolygon, Point, Polygon } from 'geojson'
 import { featureBBox } from './featureBBox.ts'
 import { isPoly, jstsAreaM2 } from './metrics/sharedGeom.ts'
 import { projectGeometry } from './projectGeometry.ts'
+import { filterByMergedScopeWithRust } from './rustGeomSidecar.ts'
 
 /**
  * Minimum intersection area (m² in metricsCrs) when the representative-point test fails: only
@@ -132,7 +133,19 @@ export function filterOsmByMergedOfficialScope(
   mergedBbox: BBox,
   metricsCrs: string,
 ): Feature[] {
-  return osmFeatures.filter((f) =>
-    passesMergedOfficialScope(f, mergedOfficial, mergedBbox, metricsCrs),
-  )
+  const keepIndexes = filterByMergedScopeWithRust({
+    mergedOfficial: mergedOfficial.geometry,
+    mergedBbox,
+    minIntersectionAreaM2: MERGED_SCOPE_FALLBACK_MIN_INTERSECTION_M2,
+    minOverlapRatio: MERGED_SCOPE_FALLBACK_MIN_OVERLAP_RATIO,
+    rows: osmFeatures.map((feature, rowIndex) => ({
+      rowIndex,
+      geometry: feature.geometry ?? null,
+      bbox: featureBBox(feature),
+    })),
+  })
+  const kept = osmFeatures.filter((_feature, index) => keepIndexes.has(index))
+  // Keep this argument for callsite compatibility and parity with the TS single-row helper.
+  void metricsCrs
+  return kept
 }

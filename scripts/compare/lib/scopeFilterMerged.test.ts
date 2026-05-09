@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import * as turf from '@turf/turf'
 import type { Feature, MultiPolygon, Polygon } from 'geojson'
-import { mergeOfficialFootprint, passesMergedOfficialScope } from './scopeFilterMerged.ts'
+import {
+  filterOsmByMergedOfficialScope,
+  mergeOfficialFootprint,
+  passesMergedOfficialScope,
+} from './scopeFilterMerged.ts'
 
 const METRICS_CRS = 'EPSG:25832'
 
@@ -86,5 +90,22 @@ describe('passesMergedOfficialScope', () => {
     const mergedBbox = turf.bbox(merged) as [number, number, number, number]
     const osm = rect(9.15, 50.0, 11.0, 50.2)
     expect(passesMergedOfficialScope(osm, merged, mergedBbox, METRICS_CRS)).toBe(false)
+  })
+})
+
+describe('filterOsmByMergedOfficialScope', () => {
+  test('keeps only rows that pass merged official scope', () => {
+    const merged = rect(9.0, 50.0, 9.2, 50.2)
+    const mergedBbox = turf.bbox(merged) as [number, number, number, number]
+    const inside = rect(9.05, 50.05, 9.1, 50.1)
+    const outside = rect(10.0, 51.0, 10.05, 51.05)
+    const ribbon = rect(9.15, 50.0, 11.0, 50.2)
+    const filtered = filterOsmByMergedOfficialScope(
+      [inside, outside, ribbon],
+      merged,
+      mergedBbox,
+      METRICS_CRS,
+    )
+    expect(filtered).toEqual([inside])
   })
 })

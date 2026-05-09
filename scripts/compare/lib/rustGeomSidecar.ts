@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { Geometry } from 'geojson'
+import type { BBox, Geometry } from 'geojson'
 import type { MetricResult } from './metrics/types.ts'
 
 type RustUnionBucket = {
@@ -23,6 +23,12 @@ type RustDiffBatchResult = {
   canonicalMatchKey: string
   externalDiff: Geometry | null
   osmDiff: Geometry | null
+}
+
+type RustMergedScopeRow = {
+  rowIndex: number
+  geometry: Geometry | null
+  bbox: BBox | null
 }
 
 function defaultRustBinaryPath(): string {
@@ -235,4 +241,46 @@ export function calculateDiffBatchWithRust(
     )
   }
   return out
+}
+
+export function filterByMergedScopeWithRust(input: {
+  mergedOfficial: Geometry
+  mergedBbox: BBox
+  minIntersectionAreaM2: number
+  minOverlapRatio: number
+  rows: RustMergedScopeRow[]
+}): Set<number> {
+  if (input.rows.length === 0) return new Set<number>()
+  const output = runRustCommand<
+    {
+      merged_official: Geometry
+      merged_bbox: [number, number, number, number]
+      min_intersection_area_m2: number
+      min_overlap_ratio: number
+      rows: Array<{
+        row_index: number
+        geometry: Geometry | null
+        bbox: [number, number, number, number] | null
+      }>
+    },
+    {
+      keep_row_indexes: number[]
+    }
+  >('scope-filter-merged', {
+    merged_official: input.mergedOfficial,
+    merged_bbox: [
+      input.mergedBbox[0],
+      input.mergedBbox[1],
+      input.mergedBbox[2],
+      input.mergedBbox[3],
+    ],
+    min_intersection_area_m2: input.minIntersectionAreaM2,
+    min_overlap_ratio: input.minOverlapRatio,
+    rows: input.rows.map((row) => ({
+      row_index: row.rowIndex,
+      geometry: row.geometry,
+      bbox: row.bbox ? [row.bbox[0], row.bbox[1], row.bbox[2], row.bbox[3]] : null,
+    })),
+  })
+  return new Set(output.keep_row_indexes)
 }
