@@ -3,6 +3,7 @@ use std::io::{self, Read};
 use anyhow::{Context, Result, anyhow, bail};
 use geo::{Area, BooleanOps, Centroid, Contains, GeodesicArea, HausdorffDistance, Intersects, MultiPolygon};
 use geojson::Geometry;
+use rstar::{RTree, RTreeObject, AABB};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize)]
@@ -83,30 +84,55 @@ struct DiffRowOutput {
 }
 
 #[derive(Debug, Deserialize)]
-struct ScopeFilterMergedInput {
-    merged_official: Geometry,
-    merged_bbox: [f64; 4],
-    min_intersection_area_m2: f64,
-    min_overlap_ratio: f64,
-    rows: Vec<ScopeFilterMergedRowInput>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ScopeFilterMergedRowInput {
+struct ScopeFilterRowInput {
     row_index: usize,
     geometry: Option<Geometry>,
     bbox: Option<[f64; 4]>,
 }
 
+#[derive(Debug, Deserialize)]
+struct ScopeFilterCoverageInput {
+    /// Individual official polygons (no merge). The Rust side builds an RTree of their
+    /// envelopes and runs per-OSM bbox-prune + per-candidate intersect/area tests.
+    official: Vec<ScopeFilterOfficialInput>,
+    /// OSM features to scope-filter; row_index is preserved in the output.
+    rows: Vec<ScopeFilterRowInput>,
+    /// Per-candidate ribbon-edge fallback thresholds (applied per individual candidate, not against a mega-poly).
+    min_intersection_area_m2: f64,
+    min_overlap_ratio: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct ScopeFilterOfficialInput {
+    bbox: [f64; 4],
+    geometry: Geometry,
+}
+
 #[derive(Debug, Serialize)]
-struct ScopeFilterMergedOutput {
+struct ScopeFilterCoverageOutput {
     keep_row_indexes: Vec<usize>,
 }
 
+/// Wrapper so rstar can index official polygons by their bbox while we keep the
+/// original Vec index for cheap geometry lookup at query time.
+struct OfficialEnvelope {
+    aabb: AABB<[f64; 2]>,
+    index: usize,
+}
+
+impl RTreeObject for OfficialEnvelope {
+    type Envelope = AABB<[f64; 2]>;
+    fn envelope(&self) -> Self::Envelope {
+        self.aabb
+    }
+}
+
 fn main() -> Result<()> {
-    let command = std::env::args()
-        .nth(1)
-        .ok_or_else(|| anyhow!("missing command: union-by-key | metrics-batch | diff-batch | scope-filter-merged"))?;
+    let command = std::env::args().nth(1).ok_or_else(|| {
+        anyhow!(
+            "missing command: union-by-key | metrics-batch | diff-batch | scope-filter-coverage"
+        )
+    })?;
 
     let input = read_stdin()?;
     match command.as_str() {
@@ -128,10 +154,10 @@ fn main() -> Result<()> {
             let output = diff_batch(payload);
             write_stdout(&output)?;
         }
-        "scope-filter-merged" => {
-            let payload: ScopeFilterMergedInput =
-                serde_json::from_str(&input).context("parse scope-filter-merged input")?;
-            let output = scope_filter_merged(payload);
+        "scope-filter-coverage" => {
+            let payload: ScopeFilterCoverageInput =
+                serde_json::from_str(&input).context("parse scope-filter-coverage input")?;
+            let output = scope_filter_coverage(payload);
             write_stdout(&output)?;
         }
         _ => bail!("unknown command: {command}"),
@@ -295,10 +321,6 @@ fn has_min_geodesic_area(geometry: &Geometry) -> bool {
     mp.geodesic_area_signed().abs() >= 1e-6
 }
 
-fn bboxes_overlap(a: [f64; 4], b: [f64; 4]) -> bool {
-    !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3])
-}
-
 fn is_substantive_overlap(
     osm_mp: &MultiPolygon<f64>,
     merged_mp: &MultiPolygon<f64>,
@@ -317,20 +339,48 @@ fn is_substantive_overlap(
     inter_area / osm_area >= min_overlap_ratio
 }
 
-fn scope_filter_merged(input: ScopeFilterMergedInput) -> ScopeFilterMergedOutput {
-    let Some(merged_mp) = geometry_to_multi_polygon(&input.merged_official) else {
-        return ScopeFilterMergedOutput {
+fn aabb_from_bbox(bbox: [f64; 4]) -> AABB<[f64; 2]> {
+    // bbox is [minX, minY, maxX, maxY] in WGS84 lon/lat.
+    AABB::from_corners([bbox[0], bbox[1]], [bbox[2], bbox[3]])
+}
+
+/// RTree-backed scope filter: per OSM polygon we bbox-prune to a small candidate set of
+/// individual official polygons, then test intersect (with the per-candidate ribbon-edge
+/// fallback) against just those candidates. Replaces the merged-mega-polygon path that
+/// scaled as O(n_osm * verts(merged)).
+fn scope_filter_coverage(input: ScopeFilterCoverageInput) -> ScopeFilterCoverageOutput {
+    if input.official.is_empty() {
+        return ScopeFilterCoverageOutput {
             keep_row_indexes: Vec::new(),
         };
-    };
+    }
+
+    // Decode official polygons once. Drop any that fail to parse: they would be unreachable
+    // via the RTree anyway, so we treat them as if they weren't in the official set.
+    let mut official_polys: Vec<Option<MultiPolygon<f64>>> = Vec::with_capacity(input.official.len());
+    let mut envelopes: Vec<OfficialEnvelope> = Vec::with_capacity(input.official.len());
+    for (index, off) in input.official.iter().enumerate() {
+        official_polys.push(geometry_to_multi_polygon(&off.geometry));
+        if official_polys[index].is_some() {
+            envelopes.push(OfficialEnvelope {
+                aabb: aabb_from_bbox(off.bbox),
+                index,
+            });
+        }
+    }
+    if envelopes.is_empty() {
+        return ScopeFilterCoverageOutput {
+            keep_row_indexes: Vec::new(),
+        };
+    }
+    // bulk_load is O(n) and significantly faster than repeated insert for large inputs.
+    let tree: RTree<OfficialEnvelope> = RTree::bulk_load(envelopes);
+
     let mut keep = Vec::new();
     for row in input.rows {
         let Some(osm_bbox) = row.bbox else {
             continue;
         };
-        if !bboxes_overlap(osm_bbox, input.merged_bbox) {
-            continue;
-        }
         let Some(geometry) = row.geometry.as_ref() else {
             continue;
         };
@@ -338,27 +388,146 @@ fn scope_filter_merged(input: ScopeFilterMergedInput) -> ScopeFilterMergedOutput
             continue;
         };
 
-        let centroid_inside = osm_mp
-            .centroid()
-            .map(|point| merged_mp.contains(&point))
-            .unwrap_or(false);
-        if centroid_inside {
-            keep.push(row.row_index);
-            continue;
+        let query_aabb = aabb_from_bbox(osm_bbox);
+        let candidates = tree.locate_in_envelope_intersecting(&query_aabb);
+
+        // Fast path: if any candidate intersects, keep immediately. The substantive-overlap
+        // fallback only matters when intersect succeeds against a candidate that the OSM
+        // polygon merely grazes; we apply it per-candidate to preserve parity with the
+        // pre-RTree thresholds without ever building a mega-poly.
+        let mut kept = false;
+        for candidate in candidates {
+            let Some(off_mp) = official_polys[candidate.index].as_ref() else {
+                continue;
+            };
+            if !osm_mp.intersects(off_mp) {
+                continue;
+            }
+            // Cheap confirmation first: centroid inside this candidate ⇒ keep.
+            let centroid_inside = osm_mp
+                .centroid()
+                .map(|p| off_mp.contains(&p))
+                .unwrap_or(false);
+            if centroid_inside {
+                kept = true;
+                break;
+            }
+            // Otherwise check the per-candidate ribbon-edge thresholds.
+            if is_substantive_overlap(
+                &osm_mp,
+                off_mp,
+                input.min_intersection_area_m2,
+                input.min_overlap_ratio,
+            ) {
+                kept = true;
+                break;
+            }
         }
-        if !osm_mp.intersects(&merged_mp) {
-            continue;
-        }
-        if is_substantive_overlap(
-            &osm_mp,
-            &merged_mp,
-            input.min_intersection_area_m2,
-            input.min_overlap_ratio,
-        ) {
+        if kept {
             keep.push(row.row_index);
         }
     }
-    ScopeFilterMergedOutput {
+
+    ScopeFilterCoverageOutput {
         keep_row_indexes: keep,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Build a closed-ring axis-aligned `Polygon` Geometry in WGS84 lon/lat.
+    fn rect(lon1: f64, lat1: f64, lon2: f64, lat2: f64) -> Geometry {
+        Geometry::new(geojson::Value::Polygon(vec![vec![
+            vec![lon1, lat1],
+            vec![lon2, lat1],
+            vec![lon2, lat2],
+            vec![lon1, lat2],
+            vec![lon1, lat1],
+        ]]))
+    }
+
+    fn official(lon1: f64, lat1: f64, lon2: f64, lat2: f64) -> ScopeFilterOfficialInput {
+        ScopeFilterOfficialInput {
+            bbox: [lon1, lat1, lon2, lat2],
+            geometry: rect(lon1, lat1, lon2, lat2),
+        }
+    }
+
+    fn row(
+        row_index: usize,
+        lon1: f64,
+        lat1: f64,
+        lon2: f64,
+        lat2: f64,
+    ) -> ScopeFilterRowInput {
+        ScopeFilterRowInput {
+            row_index,
+            geometry: Some(rect(lon1, lat1, lon2, lat2)),
+            bbox: Some([lon1, lat1, lon2, lat2]),
+        }
+    }
+
+    fn run(officials: Vec<ScopeFilterOfficialInput>, rows: Vec<ScopeFilterRowInput>) -> Vec<usize> {
+        let out = scope_filter_coverage(ScopeFilterCoverageInput {
+            official: officials,
+            rows,
+            min_intersection_area_m2: 100_000.0,
+            min_overlap_ratio: 0.08,
+        });
+        out.keep_row_indexes
+    }
+
+    #[test]
+    fn keeps_osm_polygon_with_centroid_inside_official_candidate() {
+        // Single official square; OSM square fully inside ⇒ centroid_inside ⇒ keep.
+        let out = run(
+            vec![official(9.0, 50.0, 9.2, 50.2)],
+            vec![row(0, 9.05, 50.05, 9.1, 50.1)],
+        );
+        assert_eq!(out, vec![0]);
+    }
+
+    #[test]
+    fn drops_osm_polygon_far_from_all_officials_via_rtree_prune() {
+        // OSM bbox doesn't intersect any official bbox ⇒ RTree returns 0 candidates ⇒ drop.
+        let out = run(
+            vec![official(9.0, 50.0, 9.05, 50.05)],
+            vec![row(0, 10.0, 51.0, 10.05, 51.05)],
+        );
+        assert!(out.is_empty(), "expected empty, got {out:?}");
+    }
+
+    #[test]
+    fn rejects_cross_state_ribbon_edge_overlap() {
+        // Tall thin OSM polygon ribboning along the eastern edge of the official polygon:
+        // intersects but the per-candidate substantive-overlap threshold should reject it.
+        let out = run(
+            vec![official(9.0, 50.0, 9.2, 50.2)],
+            vec![row(0, 9.15, 50.0, 11.0, 50.2)],
+        );
+        assert!(out.is_empty(), "expected empty, got {out:?}");
+    }
+
+    #[test]
+    fn keeps_when_only_one_of_many_candidates_passes() {
+        // Two adjacent official polygons. OSM square sits inside the right one only;
+        // the RTree may return both as bbox candidates but the inner intersect+centroid
+        // pass on the right one keeps the row exactly once.
+        let out = run(
+            vec![
+                official(9.0, 50.0, 9.1, 50.1),
+                official(9.1, 50.0, 9.2, 50.1),
+            ],
+            vec![row(0, 9.12, 50.02, 9.18, 50.08)],
+        );
+        assert_eq!(out, vec![0]);
+    }
+
+    #[test]
+    fn returns_empty_when_official_set_is_empty() {
+        let out = run(vec![], vec![row(0, 9.0, 50.0, 9.1, 50.1)]);
+        assert!(out.is_empty());
     }
 }

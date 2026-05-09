@@ -26,8 +26,14 @@ import { isPoly } from './metrics/sharedGeom.ts'
 import { normalizeOfficialValue, normalizeOsmValue } from './normalizeGermanKey.ts'
 import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
 import { projectGeometry } from './projectGeometry.ts'
-import { calculateMetricsBatchWithRust } from './rustGeomSidecar.ts'
-import { filterOsmByMergedOfficialScope, mergeOfficialFootprint } from './scopeFilterMerged.ts'
+import {
+  calculateMetricsBatchWithRust,
+  filterByOfficialCoverageWithRust,
+} from './rustGeomSidecar.ts'
+import {
+  MERGED_SCOPE_FALLBACK_MIN_INTERSECTION_M2,
+  MERGED_SCOPE_FALLBACK_MIN_OVERLAP_RATIO,
+} from './scopeFilterThresholds.ts'
 
 export type CompareRow = {
   canonicalMatchKey: string
@@ -339,25 +345,34 @@ export async function runCompare(
     })
   }
   if (config.compare.osmScopeFilter === 'intersects_official_coverage') {
-    const tMergeScope = Date.now()
-    const mergedOfficial = mergeOfficialFootprint(officialFc.features)
-    const mergeOfficialScopeMs = Date.now() - tMergeScope
-    phaseLogger?.('merge_official_scope', mergeOfficialScopeMs, {
-      mergedFootprint: mergedOfficial != null,
-    })
-
     const tScopeFilter = Date.now()
+    // Build the per-official-polygon coverage payload once. The Rust side builds an RTree
+    // over these envelopes and tests each OSM polygon against just the few candidates that
+    // actually overlap its bbox — no merged mega-polygon is ever computed.
+    const officialCoverage: Array<{ bbox: BBox; geometry: Geometry }> = []
+    for (const feature of officialFc.features) {
+      const g = feature.geometry
+      if (!g || (g.type !== 'Polygon' && g.type !== 'MultiPolygon')) continue
+      const bb = featureBBox(feature)
+      if (!bb) continue
+      officialCoverage.push({ bbox: bb, geometry: g })
+    }
+
     let filtered: Feature[]
-    let scopeEngine: 'merged_rust' | 'legacy_pairwise'
-    if (mergedOfficial?.geometry) {
-      const mergedBbox = turf.bbox(mergedOfficial) as BBox
-      filtered = filterOsmByMergedOfficialScope(
-        osmFc.features,
-        mergedOfficial,
-        mergedBbox,
-        metricsCrs,
-      )
-      scopeEngine = 'merged_rust'
+    let scopeEngine: 'coverage_rtree_rust' | 'legacy_pairwise'
+    if (officialCoverage.length > 0) {
+      const keepIndexes = filterByOfficialCoverageWithRust({
+        official: officialCoverage,
+        minIntersectionAreaM2: MERGED_SCOPE_FALLBACK_MIN_INTERSECTION_M2,
+        minOverlapRatio: MERGED_SCOPE_FALLBACK_MIN_OVERLAP_RATIO,
+        rows: osmFc.features.map((feature, rowIndex) => ({
+          rowIndex,
+          geometry: feature.geometry ?? null,
+          bbox: featureBBox(feature),
+        })),
+      })
+      filtered = osmFc.features.filter((_feature, index) => keepIndexes.has(index))
+      scopeEngine = 'coverage_rtree_rust'
     } else {
       filtered = filterOsmByIntersectingOfficialCoverage(osmFc.features, officialFc.features)
       scopeEngine = 'legacy_pairwise'

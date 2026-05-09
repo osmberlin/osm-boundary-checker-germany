@@ -31,6 +31,11 @@ type RustMergedScopeRow = {
   bbox: BBox | null
 }
 
+type RustOfficialCoverageInput = {
+  bbox: BBox
+  geometry: Geometry
+}
+
 function defaultRustBinaryPath(): string {
   const here = dirname(fileURLToPath(import.meta.url))
   const ext = process.platform === 'win32' ? '.exe' : ''
@@ -243,18 +248,25 @@ export function calculateDiffBatchWithRust(
   return out
 }
 
-export function filterByMergedScopeWithRust(input: {
-  mergedOfficial: Geometry
-  mergedBbox: BBox
+/**
+ * RTree-backed scope filter: send individual official polygons (not a merged footprint)
+ * plus the OSM rows to test. Rust builds the RTree per call and returns the surviving
+ * row indexes. Heavy datasets are fine without chunking because each OSM row only
+ * carries its own geometry once and the official set is small (≤ a few thousand polygons).
+ */
+export function filterByOfficialCoverageWithRust(input: {
+  official: RustOfficialCoverageInput[]
   minIntersectionAreaM2: number
   minOverlapRatio: number
   rows: RustMergedScopeRow[]
 }): Set<number> {
-  if (input.rows.length === 0) return new Set<number>()
+  if (input.rows.length === 0 || input.official.length === 0) return new Set<number>()
   const output = runRustCommand<
     {
-      merged_official: Geometry
-      merged_bbox: [number, number, number, number]
+      official: Array<{
+        bbox: [number, number, number, number]
+        geometry: Geometry
+      }>
       min_intersection_area_m2: number
       min_overlap_ratio: number
       rows: Array<{
@@ -266,14 +278,11 @@ export function filterByMergedScopeWithRust(input: {
     {
       keep_row_indexes: number[]
     }
-  >('scope-filter-merged', {
-    merged_official: input.mergedOfficial,
-    merged_bbox: [
-      input.mergedBbox[0],
-      input.mergedBbox[1],
-      input.mergedBbox[2],
-      input.mergedBbox[3],
-    ],
+  >('scope-filter-coverage', {
+    official: input.official.map((entry) => ({
+      bbox: [entry.bbox[0], entry.bbox[1], entry.bbox[2], entry.bbox[3]],
+      geometry: entry.geometry,
+    })),
     min_intersection_area_m2: input.minIntersectionAreaM2,
     min_overlap_ratio: input.minOverlapRatio,
     rows: input.rows.map((row) => ({

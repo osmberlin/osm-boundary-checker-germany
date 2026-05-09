@@ -221,6 +221,7 @@ dependencies = [
  "anyhow",
  "geo",
  "geojson",
+ "rstar 0.12.2",
  "serde",
  "serde_json",
 ]
