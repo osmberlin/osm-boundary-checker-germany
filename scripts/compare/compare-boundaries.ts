@@ -92,6 +92,12 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
           },
         }
       : {}),
+    ...(configRaw.compare.scopeOverlapMinM2 !== undefined
+      ? { scopeOverlapMinM2: configRaw.compare.scopeOverlapMinM2 }
+      : {}),
+    ...(configRaw.compare.scopeOverlapMinRatio !== undefined
+      ? { scopeOverlapMinRatio: configRaw.compare.scopeOverlapMinRatio }
+      : {}),
   }
 }
 

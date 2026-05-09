@@ -6,6 +6,7 @@ import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
 import type { BoundaryConfig, IdNormalizationPreset } from './config.ts'
 import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
+import { featureBBox } from './featureBBox.ts'
 import { unionFeaturesByKey } from './geoMerge.ts'
 import { loadFeatureCollection } from './loadFeatureCollection.ts'
 import {
@@ -26,6 +27,11 @@ import { normalizeOfficialValue, normalizeOsmValue } from './normalizeGermanKey.
 import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
 import { projectGeometry } from './projectGeometry.ts'
 import { calculateMetricsBatchWithRust } from './rustGeomSidecar.ts'
+import {
+  DEFAULT_SCOPE_OVERLAP_MIN_M2,
+  filterOsmByMergedOfficialScope,
+  mergeOfficialFootprint,
+} from './scopeFilterMerged.ts'
 
 export type CompareRow = {
   canonicalMatchKey: string
@@ -109,7 +115,12 @@ function unionOfficialBbox(features: Feature[]): BBox | null {
   let acc: BBox | null = null
   for (const f of features) {
     if (!f.geometry) continue
-    const bb = turf.bbox(f as Feature)
+    let bb: BBox
+    try {
+      bb = featureBBox(f)
+    } catch {
+      continue
+    }
     acc = acc ? mergeBboxes(acc, bb) : bb
   }
   return acc
@@ -123,7 +134,12 @@ function filterOsmByOfficialBbox(
   const pad = expandBbox(officialUnion, bufferDeg)
   return osmFeatures.filter((f) => {
     if (!f.geometry) return false
-    const bb = turf.bbox(f as Feature)
+    let bb: BBox
+    try {
+      bb = featureBBox(f)
+    } catch {
+      return false
+    }
     return bboxesOverlap(pad, bb)
   })
 }
@@ -136,10 +152,8 @@ function toPolygonFeature(feature: Feature): Feature<Polygon | MultiPolygon> | n
 }
 
 /**
- * Keeps OSM features whose geometry **intersects** at least one official polygon.
- * Point-in-polygon tests (centroid or point-on-feature) fail for many coastal or fragmented
- * boundaries where the representative point lies outside the amtliche Fläche despite overlap.
- * Uses bbox rejection before `booleanIntersects` so scope filtering stays tractable.
+ * Legacy pairwise scope: keeps OSM features whose geometry intersects at least one official polygon.
+ * Used only when merged-footprint union fails. Uses bbox rejection before `booleanIntersects`.
  */
 function intersectsOfficialCoverage(
   osmFeature: Feature,
@@ -151,7 +165,7 @@ function intersectsOfficialCoverage(
   const osmPoly = osmFeature as Feature<Polygon | MultiPolygon>
   let osmBbox: BBox
   try {
-    osmBbox = turf.bbox(osmPoly) as BBox
+    osmBbox = featureBBox(osmFeature)
   } catch {
     return false
   }
@@ -180,7 +194,13 @@ function filterOsmByIntersectingOfficialCoverage(
       'compare.osmScopeFilter=intersects_official_coverage requires official polygon geometries',
     )
   }
-  const officialBboxes = officialCoverage.map((o) => turf.bbox(o) as BBox)
+  const officialBboxes = officialCoverage.map((o) => {
+    try {
+      return featureBBox(o)
+    } catch {
+      return turf.bbox(o) as BBox
+    }
+  })
   return osmFeatures.filter((feature) =>
     intersectsOfficialCoverage(feature, officialCoverage, officialBboxes),
   )
@@ -332,8 +352,30 @@ export async function runCompare(
     })
   }
   if (config.compare.osmScopeFilter === 'intersects_official_coverage') {
+    const tMergeScope = Date.now()
+    const mergedOfficial = mergeOfficialFootprint(officialFc.features)
+    const mergeOfficialScopeMs = Date.now() - tMergeScope
+    phaseLogger?.('merge_official_scope', mergeOfficialScopeMs, {
+      mergedFootprint: mergedOfficial != null,
+    })
+
     const tScopeFilter = Date.now()
-    const filtered = filterOsmByIntersectingOfficialCoverage(osmFc.features, officialFc.features)
+    let filtered: Feature[]
+    if (mergedOfficial?.geometry) {
+      const mergedBbox = turf.bbox(mergedOfficial) as BBox
+      const overlapMinM2 = config.compare.scopeOverlapMinM2 ?? DEFAULT_SCOPE_OVERLAP_MIN_M2
+      const overlapMinRatio = config.compare.scopeOverlapMinRatio
+      filtered = filterOsmByMergedOfficialScope(
+        osmFc.features,
+        mergedOfficial,
+        mergedBbox,
+        metricsCrs,
+        overlapMinM2,
+        overlapMinRatio,
+      )
+    } else {
+      filtered = filterOsmByIntersectingOfficialCoverage(osmFc.features, officialFc.features)
+    }
     droppedByScope = osmFc.features.length - filtered.length
     osmFc = { type: 'FeatureCollection', features: filtered }
     phaseLogger?.('filter_scope', Date.now() - tScopeFilter, {

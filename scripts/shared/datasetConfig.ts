@@ -49,6 +49,10 @@ const compareSchema = z
      * informational and does not influence the strong key-based join.
      */
     candidateShrinkFactor: z.number().finite().positive().max(1).optional(),
+    /** Minimum intersection area (m² in metricsCrs) for merged-scope fallback when pip fails; rejects grazing touches. */
+    scopeOverlapMinM2: z.number().finite().positive().optional(),
+    /** Optional minimum intersection area / OSM area ratio for that fallback (0..1). */
+    scopeOverlapMinRatio: z.number().finite().min(0).max(1).optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

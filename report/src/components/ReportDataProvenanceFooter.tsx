@@ -250,6 +250,26 @@ function compareFilterItems(
     )
   }
 
+  if (filter?.scopeOverlapMinM2 !== undefined) {
+    osmItems.push(
+      <FilterItem
+        key="compare-scope-overlap-m2"
+        code={`scopeOverlapMinM2=${filter.scopeOverlapMinM2}`}
+        description={p.filterDescriptions.scopeOverlapMinM2(filter.scopeOverlapMinM2)}
+      />,
+    )
+  }
+
+  if (filter?.scopeOverlapMinRatio !== undefined) {
+    osmItems.push(
+      <FilterItem
+        key="compare-scope-overlap-ratio"
+        code={`scopeOverlapMinRatio=${filter.scopeOverlapMinRatio}`}
+        description={p.filterDescriptions.scopeOverlapMinRatio(filter.scopeOverlapMinRatio)}
+      />,
+    )
+  }
+
   if ((filter?.ignoreRelationIds?.length ?? 0) > 0) {
     const ids = filter!.ignoreRelationIds!.join(',')
     osmItems.push(

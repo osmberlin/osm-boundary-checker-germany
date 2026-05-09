@@ -81,6 +81,8 @@ export const comparisonFilterConfigSummarySchema = z.object({
   officialExtractFilter: officialExtractFilterSummarySchema.optional(),
   /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties: z.array(z.string().trim().min(1)).min(1).optional(),
+  scopeOverlapMinM2: z.number().finite().positive().optional(),
+  scopeOverlapMinRatio: z.number().finite().min(0).max(1).optional(),
 })
 
 export const idNormalizationPresetSchema = z.enum([
