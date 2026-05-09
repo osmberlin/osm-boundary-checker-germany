@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { KpiCell, KpiRow } from '../components/FeatureStatBlocks'
 import { ReportCategoryPill, UnmatchedOsmStatPill } from '../components/reportCategoryStyles'
 import { areasIndex, type AreaLicenseSummary } from '../data/areasIndex'
@@ -12,6 +13,21 @@ const LAUNCH_BLOGPOST_URL = 'https://www.osm-verkehrswende.org/grenzabgleich/pos
 
 const homeLinkClass =
   'font-medium text-sky-400 underline decoration-sky-400/30 underline-offset-2 hover:text-sky-300 hover:decoration-sky-300/40'
+
+/** Shared darker-blue panel behind Prüfung + Problem KPIs on homepage cards. */
+function HomeReviewIssueKpiPair({ review, issue }: { review: ReactNode; issue: ReactNode }) {
+  return (
+    <div
+      className={
+        'col-span-2 flex min-w-0 gap-x-3 rounded-md bg-blue-950/55 px-3 py-2 ring-1 ring-blue-900/35 ring-inset ' +
+        'md:!flex-[2_1_0%] md:border-l md:border-white/15 md:pl-3 md:lg:pl-6'
+      }
+    >
+      <div className="min-w-0 flex-1">{review}</div>
+      <div className="min-w-0 flex-1 border-l border-white/15 pl-3">{issue}</div>
+    </div>
+  )
+}
 
 export function Home() {
   const areas = areasIndex.areas
@@ -96,7 +112,7 @@ export function Home() {
               return (
                 <li key={a}>
                   <Link
-                    className="group block rounded border border-slate-700 bg-slate-900 p-4 transition-colors hover:border-slate-500 hover:bg-slate-800/60"
+                    className="group block overflow-hidden rounded-lg border border-slate-700 bg-slate-900 p-4 transition-colors hover:border-slate-500 hover:bg-slate-800/60"
                     to="/$areaId"
                     params={{ areaId: a }}
                     title={a}
@@ -137,30 +153,40 @@ export function Home() {
                         label={<UnmatchedOsmStatPill>{de.home.unmatchedStat}</UnmatchedOsmStatPill>}
                         value={unmatched}
                       />
-                      <KpiCell
-                        label={
-                          <span
-                            className={reviewsCountRaw > 0 ? 'text-amber-200' : 'text-slate-400'}
-                          >
-                            {de.home.reviewsStat}
-                          </span>
+                      <HomeReviewIssueKpiPair
+                        review={
+                          <KpiCell
+                            label={
+                              <span
+                                className={
+                                  reviewsCountRaw > 0 ? 'text-amber-200' : 'text-slate-400'
+                                }
+                              >
+                                {de.home.reviewsStat}
+                              </span>
+                            }
+                            value={
+                              <span className={reviewsCountRaw > 0 ? 'text-amber-200' : undefined}>
+                                {reviews}
+                              </span>
+                            }
+                          />
                         }
-                        value={
-                          <span className={reviewsCountRaw > 0 ? 'text-amber-200' : undefined}>
-                            {reviews}
-                          </span>
-                        }
-                      />
-                      <KpiCell
-                        label={
-                          <span className={issuesCountRaw > 0 ? 'text-rose-300' : 'text-slate-400'}>
-                            {de.home.issuesStat}
-                          </span>
-                        }
-                        value={
-                          <span className={issuesCountRaw > 0 ? 'text-rose-300' : undefined}>
-                            {issues}
-                          </span>
+                        issue={
+                          <KpiCell
+                            label={
+                              <span
+                                className={issuesCountRaw > 0 ? 'text-rose-300' : 'text-slate-400'}
+                              >
+                                {de.home.issuesStat}
+                              </span>
+                            }
+                            value={
+                              <span className={issuesCountRaw > 0 ? 'text-rose-300' : undefined}>
+                                {issues}
+                              </span>
+                            }
+                          />
                         }
                       />
                     </KpiRow>
