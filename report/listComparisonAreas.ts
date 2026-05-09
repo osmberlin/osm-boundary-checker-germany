@@ -6,6 +6,10 @@ import { comparisonForReportSchema } from '../scripts/shared/comparisonPayload.t
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
 import { resolveOsmProfile } from '../scripts/shared/osmProfiles.ts'
 import { sourceMetadataSideSchema } from '../scripts/shared/sourceMetadata.ts'
+import {
+  fallbackOfficialSourceGroupKey,
+  officialSourceGroupKey,
+} from './src/lib/officialSourceGroupKey.ts'
 
 /** Dataset slugs under `datasets/` that contain `output/comparison_table.json`. */
 export function listComparisonAreas(runtimeRoot: string): string[] {
@@ -74,6 +78,8 @@ export type ReviewQueueArea = z.infer<typeof reviewQueueAreaSchema>
 const areaLicenseSummarySchema = z.object({
   area: z.string().min(1),
   displayName: z.string().min(1),
+  /** Internal merge key for homepage licence table (preset or download URL); not for display. */
+  officialSourceGroupKey: z.string().min(1),
   officialLicenseLabel: z.string().min(1),
   officialLicenseSourceUrl: z.string().optional(),
   officialOsmCompatibility: z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver']),
@@ -196,9 +202,20 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
     const officialOsmCompatibilityRaw = official?.osmCompatibility ?? 'unknown'
     const officialOsmCompatibilitySourceUrlRaw = official?.osmCompatibilitySourceUrl ?? ''
     const officialOsmCompatibilityCommentRaw = official?.osmCompatibilityComment ?? ''
+    let officialSourceGroupKeyValue: string
+    try {
+      const cfg = loadAreaConfig(runtimeRoot, area)
+      officialSourceGroupKeyValue = officialSourceGroupKey(cfg, official?.sourceDownloadUrl, area)
+    } catch {
+      officialSourceGroupKeyValue = fallbackOfficialSourceGroupKey(
+        official?.sourceDownloadUrl,
+        area,
+      )
+    }
     const summary: AreaLicenseSummary = {
       area,
       displayName: parsedTable.displayName,
+      officialSourceGroupKey: officialSourceGroupKeyValue,
       officialLicenseLabel: officialLicenseLabelRaw || 'unknown',
       ...(officialLicenseSourceUrlRaw
         ? { officialLicenseSourceUrl: officialLicenseSourceUrlRaw }

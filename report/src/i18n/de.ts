@@ -72,6 +72,16 @@ export const de = {
     licenseSectionHeading: 'Lizenz und OSM-Kompatibilität der amtlichen Quelle',
     /** Homepage license table: first column is area display name, not feature name+key. */
     licenseTableAreaColumn: 'Gebiet',
+    /** Bundled BKG VG250 rows on homepage (same official preset family). */
+    licenseHomeBkgBundleLabel: 'Bundesamt für Kartographie und Geodäsie (VG250)',
+    licenseHomeBkgBundleSubline:
+      'Gemeinsame amtliche Grundlage für die deutschlandweiten LIST-Datensätze in dieser Übersicht.',
+    /** Multiple areas sharing the same direct download URL (non-BKG bundle). */
+    licenseHomeSharedDownloadSourceLabel: 'Gemeinsame amtliche Download-Quelle',
+    licenseHomeSharedDownloadSourceSubline:
+      'Mehrere der oben gelisteten Vergleichsgebiete nutzen dieselbe technische Download-Adresse für die amtlichen Daten. Sind Lizenz und OSM-Kompatibilität gleich, stehen sie hier nur einmal.',
+    /** After merged-group explanation: comma-separated dataset links (homepage licence table). */
+    licenseHomeMergedDatasetListLead: 'Zugehörige Vergleichsgebiete:',
     licenseShortNameLabel: 'Originale Lizenz (Kurzname)',
     licenseSourceLabel: 'Lizenzquelle',
     osmCompatibilityLabelTitle: 'OSM-kompatibel',

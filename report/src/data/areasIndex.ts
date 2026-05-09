@@ -22,6 +22,8 @@ export type GeoDataSource = {
 export type AreaLicenseSummary = {
   area: string
   displayName: string
+  /** Internal homepage merge key (from preset or download URL); do not render as UI copy. */
+  officialSourceGroupKey: string
   officialLicenseLabel: string
   officialLicenseSourceUrl?: string
   officialOsmCompatibility: 'unknown' | 'no' | 'yes_licence' | 'yes_waiver'
@@ -86,6 +88,11 @@ function parseAreaLicenseSummary(raw: unknown): AreaLicenseSummary | null {
     typeof rec.displayName === 'string' && rec.displayName.trim() !== ''
       ? rec.displayName.trim()
       : area
+  const officialSourceGroupKey =
+    typeof rec.officialSourceGroupKey === 'string' && rec.officialSourceGroupKey.trim() !== ''
+      ? rec.officialSourceGroupKey.trim()
+      : ''
+  if (!officialSourceGroupKey) return null
   const officialLicenseLabel =
     typeof rec.officialLicenseLabel === 'string' && rec.officialLicenseLabel.trim() !== ''
       ? rec.officialLicenseLabel.trim()
@@ -113,6 +120,7 @@ function parseAreaLicenseSummary(raw: unknown): AreaLicenseSummary | null {
   return {
     area,
     displayName,
+    officialSourceGroupKey,
     officialLicenseLabel,
     ...(officialLicenseSourceUrl ? { officialLicenseSourceUrl } : {}),
     officialOsmCompatibility: compatibility,
