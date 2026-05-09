@@ -179,6 +179,7 @@ jobs:
         env:
           FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
+          PIPELINE_COMPARE_CONCURRENCY: '2'
 
       - name: Compare timing diagnostics
         if: always()

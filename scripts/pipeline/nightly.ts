@@ -106,6 +106,7 @@ type PipelineStepName =
   | 'extract:osm:admin_candidates'
   | 'extract:osm:plz_candidates'
 type PipelineStep = { step: PipelineStepName; args: string[] }
+const DEFAULT_COMPARE_CONCURRENCY = 2
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -199,30 +200,51 @@ function branchStatusFromStepResult(
   return 'failed_no_cache'
 }
 
-function parseArgs(argv: string[]): { phase: PipelinePhase } {
+function parsePositiveInt(value: string | undefined): number | null {
+  if (!value) return null
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) return null
+  return parsed
+}
+
+function parseArgs(argv: string[]): { phase: PipelinePhase; compareConcurrency: number } {
   let phase: PipelinePhase | null = null
+  let compareConcurrency: number | null = parsePositiveInt(process.env.PIPELINE_COMPARE_CONCURRENCY)
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] !== '--phase') continue
-    const value = argv[i + 1]?.trim().toLowerCase()
-    if (value === 'all' || value === 'download' || value === 'extract' || value === 'compare') {
-      phase = value
+    const arg = argv[i]
+    if (arg === '--phase') {
+      const value = argv[i + 1]?.trim().toLowerCase()
+      if (value === 'all' || value === 'download' || value === 'extract' || value === 'compare') {
+        phase = value
+        i++
+        continue
+      }
+      throw new Error(
+        `Invalid --phase value "${argv[i + 1] ?? ''}". Expected all|download|extract|compare.`,
+      )
+    }
+    if (arg === '--compare-concurrency') {
+      const parsed = parsePositiveInt(argv[i + 1]?.trim())
+      if (parsed == null) {
+        throw new Error(
+          `Invalid --compare-concurrency value "${argv[i + 1] ?? ''}". Expected a positive integer.`,
+        )
+      }
+      compareConcurrency = parsed
       i++
       continue
     }
-    throw new Error(
-      `Invalid --phase value "${argv[i + 1] ?? ''}". Expected all|download|extract|compare.`,
-    )
   }
   if (phase == null) {
     throw new Error(
       'Missing required --phase argument. Expected one of: all|download|extract|compare.',
     )
   }
-  return { phase }
+  return { phase, compareConcurrency: compareConcurrency ?? DEFAULT_COMPARE_CONCURRENCY }
 }
 
 async function main() {
-  const { phase } = parseArgs(process.argv.slice(2))
+  const { phase, compareConcurrency } = parseArgs(process.argv.slice(2))
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const processingDir = join(runtimeRoot, 'data')
@@ -470,7 +492,7 @@ async function main() {
         })
       }
 
-      for (const area of areas) {
+      const runCompareForArea = async (area: string) => {
         const t0 = Date.now()
         const stepName = `compare:${area}`
         console.log(`[pipeline] starting ${stepName}`)
@@ -503,7 +525,7 @@ async function main() {
             compareOutputOrigin: 'current_run',
             compareOutputGeneratedAt: readCompareGeneratedAt(runtimeRoot, area) ?? undefined,
           })
-          continue
+          return
         }
 
         let usedCache = false
@@ -529,6 +551,27 @@ async function main() {
           retryHint: 'automatic retry next nightly run',
         })
         failed = true
+      }
+
+      const workerCount = Math.max(1, Math.min(compareConcurrency, areas.length))
+      console.log(
+        `[pipeline] compare phase running ${areas.length} dataset(s) with concurrency=${workerCount}`,
+      )
+      if (workerCount === 1) {
+        for (const area of areas) {
+          await runCompareForArea(area)
+        }
+      } else {
+        let cursor = 0
+        const workers = Array.from({ length: workerCount }, async () => {
+          while (true) {
+            const index = cursor
+            cursor += 1
+            if (index >= areas.length) return
+            await runCompareForArea(areas[index]!)
+          }
+        })
+        await Promise.all(workers)
       }
 
       const relationIndexStep = 'pipeline:relation-resolver-index'
