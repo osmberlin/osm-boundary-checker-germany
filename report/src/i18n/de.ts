@@ -3,7 +3,7 @@ import { formatDeInteger } from '../lib/formatDe'
 import type { ReportRow } from '../types/report'
 
 /**
- * OSM admin RS datasets: copy for feature „OSM-Schlüssel-Tags“ and optional provenance dual-key block.
+ * OSM admin RS datasets: shared paragraph under provenance „Vergleichsregeln“ when both German admin tags are listed.
  */
 export const osmAdminGermanDualKeyLead = {
   agsFirst:
@@ -90,7 +90,7 @@ export const de = {
       'Diese Daten wurden für den Vergleich entsprechend der Regeln unten verwendet:',
     /** Shown under Vergleichsdaten when the OSM side is present (admin RS). */
     compareDataOsCanonicalNote:
-      'Die OSM-Zeile zeigt den kanonischen Vergleichsschlüssel nach Normalisierung aus `de:regionalschluessel`. Rohwerte der OSM-Tags und der Match-Pfad stehen in der Sektion „OSM-Schlüssel-Tags“ weiter oben auf der Seite.',
+      'Die OSM-Zeile zeigt den kanonischen Vergleichsschlüssel nach Normalisierung aus `de:regionalschluessel` (Priorität und Normalisierung unter „Vergleichsregeln“; Tag-Rohwerte über Live-Eigenschaften).',
     compareDataOsmLabel: 'OSM-Daten',
     compareDataOfficialLabel: 'Amtliche Daten',
     compareDataMissing: '(missing)',
@@ -479,18 +479,6 @@ export const de = {
     matcherCriteriaProperty: 'über Tag-Vergleich',
     matcherCriteriaRelations: (ids: string) => `Relation-ID(s): ${ids}`,
     matcherDecodeKeyLink: 'Schlüssel dekodieren',
-
-    /** Match diagnostics for `admin_rs` (ARS ↔ de:regionalschluessel). */
-    osmKeyDiagnosticsSectionAria: 'OSM-Schlüssel-Tags und Match-Pfad',
-    osmKeyDiagnosticsSectionTitle: 'OSM-Schlüssel-Tags',
-    osmKeyDiagnosticsSectionLeadRs: osmAdminGermanDualKeyLead.rsFirst,
-    osmKeyDiagnosticsAgsLabel: 'de:amtlicher_gemeindeschluessel',
-    osmKeyDiagnosticsRsLabel: 'de:regionalschluessel',
-    osmKeyDiagnosticsMatchPathLabel: 'Match-Pfad',
-    osmKeyDiagnosticsMatchPathRsDirect: 'ARS/RS direkt (de:regionalschluessel)',
-    osmKeyDiagnosticsMatchPathNone: 'Kein passender Schlüssel an der OSM-Geometrie',
-    osmKeyDiagnosticsMissingTagsLabel: 'Fehlende Tags (empfohlen)',
-    osmKeyDiagnosticsValueAbsent: '— (nicht gesetzt)',
 
     updateMap: {
       title: 'Daten in OSM bearbeiten',

@@ -32,13 +32,6 @@ export const reportMetricsSchema = z.object({
 
 export const bboxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()])
 
-export const osmMatchDiagnosticsSchema = z.object({
-  matchPath: z.enum(['rs_direct', 'none']),
-  agsRaw: z.string().nullable(),
-  rsRaw: z.string().nullable(),
-  missingRecommendedTags: z.array(z.string()),
-})
-
 export const reportRowSchema = z.object({
   canonicalMatchKey: z.string(),
   nameLabel: z.string(),
@@ -49,8 +42,6 @@ export const reportRowSchema = z.object({
   officialForEditPath: z.string().nullable(),
   officialProperties: z.record(z.string(), z.unknown()).nullable(),
   osmProperties: z.record(z.string(), z.unknown()).nullable(),
-  /** Per-row OSM match diagnostics (`admin_rs` datasets). */
-  osmMatchDiagnostics: osmMatchDiagnosticsSchema.nullable().optional(),
 })
 
 export const unmatchedOsmRowSchema = z.object({
@@ -183,7 +174,6 @@ export const snapshotsSchema = z.object({
 
 export type ReportMetrics = z.infer<typeof reportMetricsSchema>
 export type ReportRow = z.infer<typeof reportRowSchema>
-export type OsmMatchDiagnostics = z.infer<typeof osmMatchDiagnosticsSchema>
 export type UnmatchedOsmReportRow = z.infer<typeof unmatchedOsmRowSchema>
 export type ComparisonForReport = z.infer<typeof comparisonForReportSchema>
 export type ComparisonFilterConfigSummary = z.infer<typeof comparisonFilterConfigSummarySchema>
