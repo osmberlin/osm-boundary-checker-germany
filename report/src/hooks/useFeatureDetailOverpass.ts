@@ -53,7 +53,9 @@ export function useFeatureDetailOverpass(featureKey: string) {
     hits: overpassQuery.data?.hits ?? [],
     geojson: overpassQuery.data?.geojson ?? null,
     hasCachedData: overpassQuery.data != null,
-    isRunPending: overpassQuery.isPending,
+    // Use `isFetching` (true only while a request is in flight), not `isPending`
+    // which stays true while `enabled: false` because there is no data yet.
+    isRunPending: overpassQuery.isFetching,
     runError: overpassQuery.error,
     runLiveOverpass,
     resetLiveOverpass,
