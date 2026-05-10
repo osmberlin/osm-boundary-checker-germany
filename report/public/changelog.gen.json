@@ -1,9 +1,30 @@
 {
-  "generatedAt": "2026-05-09T10:11:25.017Z",
+  "generatedAt": "2026-05-10T06:00:20.095Z",
   "months": [
     {
       "month": "2026-05",
       "entries": [
+        {
+          "refs": ["fa4b95f", "f864f52", "ba7e243", "282f588", "6e13e7e"],
+          "descriptionMd": "Die Performance des Datenabgleichs ist verbessert; vorher war der Datenabgleich so langsam geworden, dass er quasi kaputt war in Github Actions.",
+          "committedAtIso": "2026-05-09T17:39:52+02:00",
+          "committedAtShort": "2026-05-09",
+          "refsDisplay": ["fa4b95f", "f864f52", "ba7e243", "282f588", "6e13e7e"]
+        },
+        {
+          "refs": ["8547aeb"],
+          "descriptionMd": "Die Lizenz-Tabelle auf der Startseite ist jetzt gruppiert nach Quelle.",
+          "committedAtIso": "2026-05-09T17:36:14+02:00",
+          "committedAtShort": "2026-05-09",
+          "refsDisplay": ["8547aeb"]
+        },
+        {
+          "refs": ["0649caf", "8613273"],
+          "descriptionMd": "Inteface Design verbessert.",
+          "committedAtIso": "2026-05-09T17:09:17+02:00",
+          "committedAtShort": "2026-05-09",
+          "refsDisplay": ["0649caf", "8613273"]
+        },
         {
           "refs": ["e699d5f"],
           "descriptionMd": "Gemeinde-Abgleich (`admin_rs`) erfolgt nur noch über `de:regionalschluessel` und das amtliche Schlüsselfeld (ARS bzw. LGB `ARS`). `de-gemeinden-bb` und `brandenburg-gemeinden` nutzen damit dieselbe RS/ARS-Achse wie die übrigen Gemeinde-Datensätze.",

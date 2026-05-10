@@ -4,6 +4,18 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-05
 
+### `fa4b95f`, `f864f52`, `ba7e243`, `282f588`, `6e13e7e`
+
+Die Performance des Datenabgleichs ist verbessert; vorher war der Datenabgleich so langsam geworden, dass er quasi kaputt war in Github Actions.
+
+### `8547aeb`
+
+Die Lizenz-Tabelle auf der Startseite ist jetzt gruppiert nach Quelle.
+
+### `0649caf`, `8613273`
+
+Inteface Design verbessert.
+
 ### `e699d5f`
 
 Gemeinde-Abgleich (`admin_rs`) erfolgt nur noch über `de:regionalschluessel` und das amtliche Schlüsselfeld (ARS bzw. LGB `ARS`). `de-gemeinden-bb` und `brandenburg-gemeinden` nutzen damit dieselbe RS/ARS-Achse wie die übrigen Gemeinde-Datensätze.

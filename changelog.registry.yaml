@@ -158,3 +158,23 @@ entries:
   - refs:
       - 'b5cf850'
     hide: true
+  - refs:
+      - '0649caf'
+      - '8613273'
+    descriptionMd: |
+      Inteface Design verbessert.
+  - refs:
+      - '8547aeb'
+    descriptionMd: |
+      Die Lizenz-Tabelle auf der Startseite ist jetzt gruppiert nach Quelle.
+  - refs:
+      - 'fa4b95f'
+      - 'f864f52'
+      - 'ba7e243'
+      - '282f588'
+      - '6e13e7e'
+    descriptionMd: |
+      Die Performance des Datenabgleichs ist verbessert; vorher war der Datenabgleich so langsam geworden, dass er quasi kaputt war in Github Actions.
+  - refs:
+      - '7e842fd'
+    hide: true
