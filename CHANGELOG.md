@@ -4,6 +4,10 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-05
 
+### `069a8c5`
+
+Man kann jetzt auf Github einen speziellen Issue erstellen der dann in der App als Hinweis angezeigt wird. Damit ist es möglich gemeinsame über bestimmte, komplizierte Regionen zu sprechen. Nutzt den Button auf der Datensatz-Übersichtsseite oder der Detailseite "Datensatz diskutieren" um einen solchen Issue zu erstellen.
+
 ### `fa4b95f`, `f864f52`, `ba7e243`, `282f588`, `6e13e7e`
 
 Die Performance des Datenabgleichs ist verbessert; vorher war der Datenabgleich so langsam geworden, dass er quasi kaputt war in Github Actions.

@@ -178,3 +178,7 @@ entries:
   - refs:
       - '7e842fd'
     hide: true
+  - refs:
+      - '069a8c5'
+    descriptionMd: |
+      Man kann jetzt auf Github einen speziellen Issue erstellen der dann in der App als Hinweis angezeigt wird. Damit ist es möglich gemeinsame über bestimmte, komplizierte Regionen zu sprechen. Nutzt den Button auf der Datensatz-Übersichtsseite oder der Detailseite "Datensatz diskutieren" um einen solchen Issue zu erstellen.
