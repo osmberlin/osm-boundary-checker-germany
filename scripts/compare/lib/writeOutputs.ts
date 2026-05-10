@@ -44,6 +44,10 @@ const OFFICIAL_FOR_EDIT_DIR = 'official_for_edit'
 const OFFICIAL_FOR_EDIT_SIMPLIFY_METERS = 2.5
 const OFFICIAL_FOR_EDIT_SIMPLIFY_DEGREES = OFFICIAL_FOR_EDIT_SIMPLIFY_METERS / 111_320
 const OFFICIAL_FOR_EDIT_COORD_PRECISION = 6
+// TODO: Move tippecanoe profile selection into per-dataset config (e.g. `compare.tippecanoeProfile`
+// in each `datasets/*/config.jsonc`) instead of hard-coding area ids here.
+// `de-staat` is intentionally omitted: local benchmarks showed no reliable speedup (high variance,
+// sometimes slower) for its tiny feature count, so it stays on the default profile.
 const FAST_LOW_ZOOM_TIPPECANOE_AREAS = new Set(['de-verwaltungsgemeinschaften', 'de-landkreise'])
 
 export type OverpassBoundaryTag = 'administrative' | 'postal_code'
