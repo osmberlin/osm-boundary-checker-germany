@@ -5,6 +5,15 @@ import {
   featureDetailShardSchema,
   snapshotsSchema,
 } from '../../../scripts/shared/comparisonPayload.ts'
+import {
+  discussionRegistryFileSchema,
+  emptyDiscussionRegistryFile,
+  type DiscussionRegistryFile,
+} from '../../../scripts/shared/discussionsRegistry.ts'
+import {
+  discussionRegistrySyncMetaSchema,
+  type DiscussionRegistrySyncMeta,
+} from '../../../scripts/shared/discussionsRegistrySyncMeta.ts'
 import { germanKeyLookupBundleSchema } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import {
@@ -34,6 +43,8 @@ import { runStatusFileSchema, type RunStatusFile } from '../types/runStatus'
 import {
   changelogUrl,
   comparisonApiUrl,
+  discussionsRegistryUrl,
+  discussionsRegistrySyncMetaUrl,
   featureApiUrl,
   germanKeyLookupUrl,
   runStatusUrl,
@@ -106,6 +117,30 @@ export async function loadChangelog(): Promise<ChangelogFile | null> {
   if (!r.ok) return null
   const parsed = changelogFileSchema.safeParse(await readJsonStrict(url, r))
   return parsed.success ? parsed.data : null
+}
+
+export async function loadDiscussionsRegistry(): Promise<DiscussionRegistryFile> {
+  const url = discussionsRegistryUrl()
+  const r = await fetch(url)
+  if (!r.ok) return emptyDiscussionRegistryFile()
+  try {
+    const parsed = discussionRegistryFileSchema.safeParse(await readJsonStrict(url, r))
+    return parsed.success ? parsed.data : emptyDiscussionRegistryFile()
+  } catch {
+    return emptyDiscussionRegistryFile()
+  }
+}
+
+export async function loadDiscussionsRegistrySyncMeta(): Promise<DiscussionRegistrySyncMeta | null> {
+  const url = discussionsRegistrySyncMetaUrl()
+  const r = await fetch(url)
+  if (!r.ok) return null
+  try {
+    const parsed = discussionRegistrySyncMetaSchema.safeParse(await readJsonStrict(url, r))
+    return parsed.success ? parsed.data : null
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -185,6 +220,20 @@ export function changelogQueryOptions() {
   return queryOptions({
     queryKey: ['changelog'],
     queryFn: loadChangelog,
+  })
+}
+
+export function discussionsRegistryQueryOptions() {
+  return queryOptions({
+    queryKey: ['discussions-registry'],
+    queryFn: loadDiscussionsRegistry,
+  })
+}
+
+export function discussionsRegistrySyncMetaQueryOptions() {
+  return queryOptions({
+    queryKey: ['discussions-registry-sync-meta'],
+    queryFn: loadDiscussionsRegistrySyncMeta,
   })
 }
 

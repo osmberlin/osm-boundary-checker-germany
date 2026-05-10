@@ -5,13 +5,14 @@ import { RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import { APP_QUERY_STALE_MS } from './lib/appQueryStaleMs'
 import { createAppRouter } from './router'
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 6 * 60 * 60 * 1000,
+      staleTime: APP_QUERY_STALE_MS,
     },
   },
 })

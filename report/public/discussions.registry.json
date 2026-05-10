@@ -1,0 +1,18 @@
+{
+  "issues": [
+    {
+      "match": "/de-gemeinden-mv/feature/130009999999",
+      "number": 11,
+      "url": "https://github.com/osmberlin/osm-boundary-checker-germany/issues/11",
+      "state": "open",
+      "lastTouchedAt": "2026-05-10T06:40:41Z"
+    },
+    {
+      "match": "/berlin-plz",
+      "number": 12,
+      "url": "https://github.com/osmberlin/osm-boundary-checker-germany/issues/12",
+      "state": "open",
+      "lastTouchedAt": "2026-05-10T06:49:11Z"
+    }
+  ]
+}

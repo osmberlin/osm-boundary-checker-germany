@@ -70,6 +70,8 @@ jobs:
           if_no_artifact_found: fail
 
       - name: Prepare static snapshot assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bun run --filter report sync-runtime-assets
 
       - name: Validate non-empty area index

@@ -32,6 +32,15 @@ export function changelogUrl(): string {
   return withSiteBasePath('/changelog.gen.json')
 }
 
+export function discussionsRegistryUrl(): string {
+  return withSiteBasePath('/discussions.registry.json')
+}
+
+/** Optional; present after a successful CI/local sync (gitignored source file). */
+export function discussionsRegistrySyncMetaUrl(): string {
+  return withSiteBasePath('/discussions.registry.sync-meta.json')
+}
+
 function datasetDataPath(area: string, rel: string): string {
   return withSiteBasePath(`/${DATASETS_DIRECTORY}/${area}/${rel}`)
 }

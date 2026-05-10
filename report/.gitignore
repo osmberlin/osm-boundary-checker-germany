@@ -16,6 +16,9 @@ public/datasets
 public/data/*
 !public/data/german-key-lookup.json
 
+# Sync timestamp for discussions registry (generated per successful sync; deploy/runtime only).
+public/discussions.registry.sync-meta.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

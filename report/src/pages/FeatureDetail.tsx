@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from '@tanstack/react-router'
 import { MapProvider } from 'react-map-gl/maplibre'
+import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmTagsSection'
+import { FeatureDetailHeader } from '../components/featureDetail/FeatureDetailHeader'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
 import { FeatureDetailStatsStrip } from '../components/featureDetail/FeatureDetailStatsStrip'
 import { MatcherContextSection } from '../components/featureDetail/MatcherContextSection'
@@ -69,12 +71,16 @@ function FeatureDetailWithMapContext({
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
-      {showCompareFailedNotice ? (
-        <div className="mb-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          {de.feature.compareFailedNotice}
-        </div>
-      ) : null}
-      <FeatureDetailStatsStrip row={row} mapLayers={mapLayers} data={data} />
+      <div className="flex flex-col gap-6">
+        <FeatureDetailHeader titlePrefix={data.titlePrefix} row={row} />
+        <DatasetDiscussionAlerts />
+        {showCompareFailedNotice ? (
+          <div className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            {de.feature.compareFailedNotice}
+          </div>
+        ) : null}
+        <FeatureDetailStatsStrip row={row} mapLayers={mapLayers} data={data} />
+      </div>
 
       <FeatureDetailMapSection
         areaKey={areaKey}

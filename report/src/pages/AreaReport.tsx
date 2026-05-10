@@ -14,6 +14,8 @@ import {
 import { MapProvider } from 'react-map-gl/maplibre'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
+import { AreaReportHeader } from '../components/AreaReportHeader'
+import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { KpiRow, KpiSection, KpiToggleCell } from '../components/FeatureStatBlocks'
 import {
   AreaDeltaInfoButton,
@@ -175,23 +177,26 @@ export function AreaReport() {
   if (comparisonQuery.isError) {
     return (
       <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
-        {areaDisplayName ? (
-          <AreaHeadlineRow
-            title={areaDisplayName}
-            sourceName={pageSourceName}
-            sourceHref={pageSourceHref}
-          />
-        ) : null}
-        <div className="text-red-400">
-          {String(comparisonQuery.error)}
-          <p className="mt-2 text-sm text-slate-400">
-            {de.areaReport.errorRunCompare}{' '}
-            <code className="rounded bg-slate-800 px-1 text-slate-200">bun run compare</code>{' '}
-            {de.areaReport.errorRunCompareExists}
-          </p>
-          {showCompareFailedNotice ? (
-            <p className="mt-2 text-sm text-amber-300">{de.areaReport.compareFailedNotice}</p>
+        <div className="flex flex-col gap-6">
+          {areaKey ? (
+            <AreaReportHeader
+              title={areaDisplayName || areaKey}
+              sourceName={pageSourceName}
+              sourceHref={pageSourceHref}
+            />
           ) : null}
+          <DatasetDiscussionAlerts />
+          <div className="text-red-400">
+            {String(comparisonQuery.error)}
+            <p className="mt-2 text-sm text-slate-400">
+              {de.areaReport.errorRunCompare}{' '}
+              <code className="rounded bg-slate-800 px-1 text-slate-200">bun run compare</code>{' '}
+              {de.areaReport.errorRunCompareExists}
+            </p>
+            {showCompareFailedNotice ? (
+              <p className="mt-2 text-sm text-amber-300">{de.areaReport.compareFailedNotice}</p>
+            ) : null}
+          </div>
         </div>
       </div>
     )
@@ -239,24 +244,27 @@ export function AreaReport() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
-      {areaDisplayName ? (
-        <AreaHeadlineRow
-          title={areaDisplayName}
-          sourceName={pageSourceName}
-          sourceHref={pageSourceHref}
-        />
-      ) : null}
-      {showCompareFallbackNotice ? (
-        <div className="mb-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          {de.areaReport.compareFallbackNotice}
-        </div>
-      ) : null}
-      {showCompareFailedNotice ? (
-        <div className="mb-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          {de.areaReport.compareFailedNotice}
-        </div>
-      ) : null}
-      <section className="mb-6" aria-label={st.summaryStatRowAria}>
+      <div className="flex flex-col gap-6">
+        {areaKey ? (
+          <AreaReportHeader
+            title={areaDisplayName || areaKey}
+            sourceName={pageSourceName}
+            sourceHref={pageSourceHref}
+          />
+        ) : null}
+        <DatasetDiscussionAlerts />
+        {showCompareFallbackNotice ? (
+          <div className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            {de.areaReport.compareFallbackNotice}
+          </div>
+        ) : null}
+        {showCompareFailedNotice ? (
+          <div className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+            {de.areaReport.compareFailedNotice}
+          </div>
+        ) : null}
+      </div>
+      <section className="mt-6 mb-6" aria-label={st.summaryStatRowAria}>
         <KpiRow className="mt-0">
           <SummaryStatColumn
             heading={de.areaReport.freshnessHeadingReport}
@@ -665,40 +673,6 @@ function formatHeadlineSourceLabel(
     return suffix ? `${sourceUrl} (${suffix})` : sourceUrl
   }
   return suffix
-}
-
-function AreaHeadlineRow({
-  title,
-  sourceName,
-  sourceHref,
-}: {
-  title: string
-  sourceName: string | null
-  sourceHref: string | null
-}) {
-  const isHashLink = sourceHref != null && sourceHref.startsWith('#')
-  return (
-    <div className="mb-6 flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-      <h1 className="min-w-0 text-2xl font-semibold text-slate-100">{title}</h1>
-      {sourceName ? (
-        <p className="text-xs text-slate-500 sm:text-right">
-          {de.footer.geoDataLine}
-          {sourceHref ? (
-            <a
-              href={sourceHref}
-              className="underline decoration-slate-500/60 underline-offset-2 transition-colors hover:text-slate-300"
-              {...(isHashLink ? {} : { target: '_blank', rel: 'noreferrer' })}
-            >
-              {sourceName}
-            </a>
-          ) : (
-            sourceName
-          )}
-          {de.footer.geoDataSuffix}
-        </p>
-      ) : null}
-    </div>
-  )
 }
 
 function SortableTh({

@@ -10,7 +10,12 @@ import {
 import { ReportLayout } from './App'
 import { RouteLoadingPane } from './components/RouteLoadingPane'
 import { areasIndex } from './data/areasIndex'
-import { comparisonQueryOptions, featureQueryOptions, snapshotsQueryOptions } from './data/load'
+import {
+  comparisonQueryOptions,
+  discussionsRegistryQueryOptions,
+  featureQueryOptions,
+  snapshotsQueryOptions,
+} from './data/load'
 import { relationResolverIndexUrl, routerBasePath } from './data/paths'
 import { de } from './i18n/de'
 import { validateFeatureDetailSearch } from './lib/featureDetailSearch'
@@ -140,6 +145,7 @@ const areaRoute = createRoute({
     await Promise.all([
       context.queryClient.ensureQueryData(comparisonQueryOptions(params.areaId)),
       context.queryClient.ensureQueryData(snapshotsQueryOptions(params.areaId)),
+      context.queryClient.ensureQueryData(discussionsRegistryQueryOptions()),
     ])
   },
   pendingComponent: AreaPendingPane,
@@ -157,6 +163,7 @@ const featureRoute = createRoute({
   path: '/$areaId/feature/$featureKey',
   validateSearch: (search: Record<string, unknown>) => validateFeatureDetailSearch(search),
   loader: async ({ context, params }) => {
+    await context.queryClient.ensureQueryData(discussionsRegistryQueryOptions())
     return context.queryClient.ensureQueryData(
       featureQueryOptions(params.areaId, params.featureKey),
     )

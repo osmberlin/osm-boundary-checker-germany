@@ -245,6 +245,30 @@ export const de = {
     empty: 'Noch keine Changelog-Einträge.',
   },
 
+  /** GitHub issues with label `discussion`, linked by issue title = canonical page path (no query). */
+  discuss: {
+    buttonLabel: 'Datensatz diskutieren',
+    modalTitle: 'Diskussion auf GitHub',
+    modalLead: 'Hinweise oder vertiefende Fragen zu dieser Seite.',
+    modalParagraphs: [
+      'Über die Schaltfläche unten öffnen Sie das neue Issue auf GitHub — Label „discussion“ und der Issue-Titel (Seitenpfad ohne URL-Parameter) sind dabei bereits gesetzt.',
+      'Technischer Hinweis: Die Verknüpfung zu dieser Seite entsteht, indem genau dieses Label und der Titel mit dem aktuellen Seitenpfad übereinstimmen.',
+      'Nach dem nächsten Report-Lauf kann der Hinweis hier für andere sichtbar werden.',
+    ],
+    modalClose: 'Schließen',
+    openNewIssue: 'Issue auf GitHub anlegen',
+    alertTitle: 'Zu dieser Seite gibt es eine Diskussion auf GitHub.',
+    /** Prefix before open/closed in the alert status line, e.g. "Status: Offen · …". */
+    alertStatusPrefix: 'Status',
+    alertLastActive: (relativeTimeWithSuffix: string) => `Zuletzt aktiv ${relativeTimeWithSuffix}`,
+    /** Shown when `discussions.registry.sync-meta.json` exists (successful sync). */
+    alertLastChecked: (relativeTimeWithSuffix: string) =>
+      `Zuletzt geprüft ${relativeTimeWithSuffix}`,
+    openDiscussion: 'Auf Github lesen und kommentieren',
+    stateOpen: 'Offen',
+    stateClosed: 'Geschlossen',
+  },
+
   areaReport: {
     backAreas: '← Gebiete',
     chartTitle: meanIouChartDe.chartTitle,
