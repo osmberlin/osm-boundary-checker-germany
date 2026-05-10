@@ -105,6 +105,17 @@
         "reviews": 77,
         "issues": 97
       }
+    },
+    {
+      "id": "2026-05-10",
+      "summary": {
+        "totalRows": 4599,
+        "meanIou": 0.9909721034225735,
+        "matched": 1294,
+        "unmatchedOsm": 9,
+        "reviews": 79,
+        "issues": 98
+      }
     }
   ]
 }
