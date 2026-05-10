@@ -32,7 +32,7 @@ import type {
   UnmatchedOsmRow,
 } from './compare.ts'
 import { computeMeanIou } from './metrics.ts'
-import { runTippecanoe, TIPPECANOE_LAYER } from './runTippecanoe.ts'
+import { runTippecanoe, TIPPECANOE_LAYER, type TippecanoeProfile } from './runTippecanoe.ts'
 import { calculateDiffBatchWithRust } from './rustGeomSidecar.ts'
 
 const TABLE_JSON = 'comparison_table.json'
@@ -44,6 +44,7 @@ const OFFICIAL_FOR_EDIT_DIR = 'official_for_edit'
 const OFFICIAL_FOR_EDIT_SIMPLIFY_METERS = 2.5
 const OFFICIAL_FOR_EDIT_SIMPLIFY_DEGREES = OFFICIAL_FOR_EDIT_SIMPLIFY_METERS / 111_320
 const OFFICIAL_FOR_EDIT_COORD_PRECISION = 6
+const FAST_LOW_ZOOM_TIPPECANOE_AREAS = new Set(['de-verwaltungsgemeinschaften', 'de-landkreise'])
 
 export type OverpassBoundaryTag = 'administrative' | 'postal_code'
 
@@ -507,6 +508,9 @@ export function writeOutputs(
 
   const snapshotId = todayStamp()
   const generatedAt = new Date().toISOString()
+  const tippecanoeProfile: TippecanoeProfile = FAST_LOW_ZOOM_TIPPECANOE_AREAS.has(areaFolder)
+    ? 'fast_low_zoom'
+    : 'default'
 
   const matched = rows.filter((r) => r.category === 'matched')
   const officialOnly = rows.filter((r) => r.category === 'official_only')
@@ -540,7 +544,7 @@ export function writeOutputs(
       instrumentation?.checkpoint?.('before_tippecanoe_main', {
         features: geometryFc.features.length,
       })
-      runTippecanoe(fgbPath, pmtilesPath)
+      runTippecanoe(fgbPath, pmtilesPath, tippecanoeProfile)
       const tippecanoeMs = Date.now() - tTippecanoeMain
       phaseLogger?.('tippecanoe_main', tippecanoeMs, {
         features: geometryFc.features.length,
@@ -581,7 +585,7 @@ export function writeOutputs(
       instrumentation?.checkpoint?.('before_tippecanoe_unmatched', {
         features: unmatchedFc.features.length,
       })
-      runTippecanoe(unmatchedFgbPath, unmatchedPmtilesPath)
+      runTippecanoe(unmatchedFgbPath, unmatchedPmtilesPath, tippecanoeProfile)
       phaseLogger?.('tippecanoe_unmatched', Date.now() - tTippecanoeUnmatched, {
         features: unmatchedFc.features.length,
       })
