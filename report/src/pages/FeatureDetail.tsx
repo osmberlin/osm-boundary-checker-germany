@@ -6,7 +6,8 @@ import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties
 import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmTagsSection'
 import { FeatureDetailHeader } from '../components/featureDetail/FeatureDetailHeader'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
-import { FeatureDetailStatsStrip } from '../components/featureDetail/FeatureDetailStatsStrip'
+import { FeatureDetailStatsDiffMetricsSection } from '../components/featureDetail/FeatureDetailStatsDiffMetricsSection'
+import { FeatureDetailStatsSummarySection } from '../components/featureDetail/FeatureDetailStatsSummarySection'
 import { MatcherContextSection } from '../components/featureDetail/MatcherContextSection'
 import { OfficialOnlyCandidatesSection } from '../components/featureDetail/OfficialOnlyCandidatesSection'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
@@ -79,7 +80,8 @@ function FeatureDetailWithMapContext({
             {de.feature.compareFailedNotice}
           </div>
         ) : null}
-        <FeatureDetailStatsStrip row={row} data={data} />
+        <FeatureDetailStatsSummarySection row={row} data={data} />
+        {row.metrics ? <FeatureDetailStatsDiffMetricsSection metrics={row.metrics} /> : null}
 
         <FeatureDetailMapSection
           areaKey={areaKey}

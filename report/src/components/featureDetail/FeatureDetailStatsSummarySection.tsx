@@ -45,7 +45,7 @@ export function FeatureDetailStatsSummarySection({
   const osmIsOld = isOlderThanDays(osmCheckRawForRose, 5)
 
   return (
-    <section className="mb-6" aria-label={de.areaReport.stats.summaryStatRowAria}>
+    <section className="w-full" aria-label={de.areaReport.stats.summaryStatRowAria}>
       <KpiRow narrowLayout="none" className={summaryKpiRowClassName}>
         {m ? (
           <IssueIndicatorStatColumn

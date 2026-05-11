@@ -33,7 +33,7 @@ export function FeatureDetailStatsDiffMetricsSection({
   const s = de.feature.stats
 
   return (
-    <KpiSection className="mb-6" aria-label={s.diffMetricsRowAria}>
+    <KpiSection className="w-full" aria-label={s.diffMetricsRowAria}>
       <KpiRow narrowLayout="none" className={diffMetricsKpiRowClassName}>
         <KpiCell
           label={
