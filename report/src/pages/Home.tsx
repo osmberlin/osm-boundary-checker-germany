@@ -137,10 +137,7 @@ export function Home() {
                     >
                       <KpiCell
                         label={
-                          <ReportCategoryPill
-                            category="matched"
-                            matchedPresentation="homeYellowSolo"
-                          >
+                          <ReportCategoryPill category="matched">
                             {categoryLabelDe('matched')}
                           </ReportCategoryPill>
                         }

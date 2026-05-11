@@ -52,18 +52,11 @@ export function reportCategorySwatchStyle(category: ReportRow['category']): {
   }
 }
 
-export type ReportCategoryPillOptions = {
-  /** Homepage only: single yellow OSM stroke + translucent fill (no amtlich ring). */
-  matchedPresentation?: 'homeYellowSolo'
-}
-
 /**
- * Inline category label (feature header, table) — same palette as map overlays.
+ * Inline category label (table, dialogs, home) — matched uses single yellow OSM
+ * stroke + translucent fill (same as map OSM-paired layer cue, no amtlich ring on the pill).
  */
-export function reportCategoryPillStyle(
-  category: ReportRow['category'],
-  opts?: ReportCategoryPillOptions,
-): {
+export function reportCategoryPillStyle(category: ReportRow['category']): {
   className: string
   style: CSSProperties
 } {
@@ -80,22 +73,11 @@ export function reportCategoryPillStyle(
         },
       }
     case 'matched':
-      if (opts?.matchedPresentation === 'homeYellowSolo') {
-        return {
-          className: pillBase,
-          style: {
-            borderColor: OSM_PAIRED_LINE_BORDER_UI,
-            backgroundColor: hexToRgba(osmPaired.fill, osmPaired.fillOpacity),
-            color: 'rgb(248 250 252)',
-          },
-        }
-      }
       return {
         className: pillBase,
         style: {
-          borderColor: o.line,
+          borderColor: OSM_PAIRED_LINE_BORDER_UI,
           backgroundColor: hexToRgba(osmPaired.fill, osmPaired.fillOpacity),
-          boxShadow: `inset 0 0 0 2px ${OSM_PAIRED_LINE_BORDER_UI}`,
           color: 'rgb(248 250 252)',
         },
       }
@@ -177,17 +159,12 @@ export function ReportCategoryPill({
   category,
   children,
   className = '',
-  matchedPresentation,
 }: {
   category: ReportRow['category']
   children: ReactNode
   className?: string
-  matchedPresentation?: ReportCategoryPillOptions['matchedPresentation']
 }) {
-  const p = reportCategoryPillStyle(
-    category,
-    matchedPresentation ? { matchedPresentation } : undefined,
-  )
+  const p = reportCategoryPillStyle(category)
   return (
     <span className={[p.className, className].filter(Boolean).join(' ')} style={p.style}>
       {children}
