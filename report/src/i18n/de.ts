@@ -12,6 +12,21 @@ export const osmAdminGermanDualKeyLead = {
     'Zuordnung erfolgt über `de:regionalschluessel` auf der OSM-Relation und das amtliche Schlüsselfeld (z. B. ARS bzw. LGB `ars`), jeweils mit dem eingestellten Normalisierungs-Preset. `de:amtlicher_gemeindeschluessel` ist nicht Teil des Abgleichs, wird aber für die Datenpflege empfohlen.',
 } as const
 
+/**
+ * Metric column titles shared by the Gebiete results table (`de.areaReport.table`)
+ * and the feature-detail KPI row (`de.feature.stats`). Hausdorff short labels describe
+ * the measure (boundary gap), not the eponym.
+ */
+const areaReportTableMetricLabels = {
+  iou: 'IoU',
+  areaDelta: 'Δ Fläche %',
+  /** Discrete max gap along the two boundaries (m). */
+  hausdorff: 'Max. Randabstand',
+  /** Robust boundary-distance percentile. */
+  hausdorffP95: 'Randabstand P95',
+  issueIndicator: 'Bewertung',
+} as const
+
 /** UI copy (German). Metric modal copy lives in scripts/compare/lib/metrics/ (per-metric folder, de.ts). */
 export const de = {
   appTitle: 'OSM Grenzabgleich',
@@ -272,11 +287,7 @@ export const de = {
     table: {
       name: 'Name',
       category: 'Kategorie',
-      iou: 'IoU',
-      areaDelta: 'Δ Fläche %',
-      hausdorff: 'Hausdorff',
-      hausdorffP95: 'Hausdorff P95',
-      issueIndicator: 'Bewertung',
+      ...areaReportTableMetricLabels,
       map: 'Karte',
       view: 'Detail',
     },
@@ -318,14 +329,10 @@ export const de = {
       canonicalMatchKeyField: 'canonicalMatchKey',
       /** aria-label fragment for header key group including the canonical value. */
       canonicalMatchKeyGroupAria: 'Abgleichsschlüssel',
-      iou: 'IoU',
-      areaDelta: 'Flächenabweichung',
+      ...areaReportTableMetricLabels,
       symDiff: 'Symmetrische Differenz',
       /** Narrow KPI column at `lg`; full phrase below `lg`. */
       symDiffShort: 'Symmetrische Diff.',
-      hausdorff: 'Hausdorff-Abstand',
-      hausdorffP95: 'Hausdorff P95',
-      issueIndicator: 'Bewertungsampel',
       /** KPI band: first column when there are no overlap metrics but the row is OSM-only or official-only. */
       unmatchedCompareLabel: 'Zuordnung',
       areaOfficial: 'Amtliche Fläche',
