@@ -30,6 +30,7 @@ import { useMapViewParam } from '../hooks/useMapViewParam'
 import { de } from '../i18n/de'
 import { featureDetailHasComparisonMap } from '../lib/featureDetailHasComparisonMap'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
+import { FEATURE_DETAIL_ROUTE_FROM } from '../lib/parseFeatureDetailRouteParams'
 import { safeDecodeURIComponent } from '../lib/safeDecodeURIComponent'
 import type { ComparisonForReport, OgcWfsInspectSource, ReportRow } from '../types/report'
 
@@ -135,22 +136,16 @@ function FeatureDetailWithMapContext({
 }
 
 export function FeatureDetail() {
-  const { areaId, featureKey } = useParams({ strict: false })
-  const areaKey = areaId ?? ''
-  const featureLookupKey = featureKey ?? ''
+  const { areaId: areaKey, featureKey: featureLookupKey } = useParams({
+    from: FEATURE_DETAIL_ROUTE_FROM,
+  })
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
-  const featureQuery = useQuery({
-    ...featureQueryOptions(areaKey, featureLookupKey),
-    enabled: areaId != null && featureKey != null,
-  })
-  const comparisonQuery = useQuery({
-    ...comparisonQueryOptions(areaKey),
-    enabled: areaId != null,
-  })
+  const featureQuery = useQuery(featureQueryOptions(areaKey, featureLookupKey))
+  const comparisonQuery = useQuery(comparisonQueryOptions(areaKey))
   const runStatusQuery = useQuery(runStatusQueryOptions())
   const data = featureQuery.data ?? null
-  const row = !data || !featureKey ? null : findFeatureDetailRow(data, featureKey)
+  const row = !data ? null : findFeatureDetailRow(data, featureLookupKey)
   const compareBranch = runStatusQuery.data?.areas?.[areaKey]?.compare
   const showCompareFailedNotice = compareBranch?.status === 'compare_failed'
   if (featureQuery.isError) {
@@ -165,7 +160,7 @@ export function FeatureDetail() {
   }
   if (featureQuery.isPending || !data || !row) {
     if (!data) {
-      const decoded = featureKey ? safeDecodeURIComponent(featureKey) : ''
+      const decoded = safeDecodeURIComponent(featureLookupKey)
       return <RouteLoadingPane title={de.routeLoading.feature(decoded)} />
     }
     return (

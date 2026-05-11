@@ -20,6 +20,10 @@ import { relationResolverIndexUrl, routerBasePath } from './data/paths'
 import { de } from './i18n/de'
 import { validateFeatureDetailSearch } from './lib/featureDetailSearch'
 import { validateGermanKeySearch } from './lib/germanKeySearch'
+import {
+  FEATURE_DETAIL_ROUTE_FROM,
+  parseFeatureDetailRouteParams,
+} from './lib/parseFeatureDetailRouteParams'
 import { decideRelationResolution, type RelationResolverCandidate } from './lib/relationResolver'
 import { validateRelationResolverSearch } from './lib/relationResolverSearch'
 import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
@@ -61,8 +65,8 @@ function AreaPendingPane() {
 
 /** Pending UI for `/$areaId/feature/$featureKey`: decoded canonicalMatchKey only. */
 function FeaturePendingPane() {
-  const { featureKey } = useParams({ strict: false })
-  const decoded = featureKey ? safeDecodeURIComponent(featureKey) : ''
+  const { featureKey } = useParams({ from: FEATURE_DETAIL_ROUTE_FROM })
+  const decoded = safeDecodeURIComponent(featureKey)
   return <RouteLoadingPane title={de.routeLoading.feature(decoded)} />
 }
 
@@ -151,6 +155,9 @@ const areaRoute = createRoute({
 const featureRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/$areaId/feature/$featureKey',
+  params: {
+    parse: parseFeatureDetailRouteParams,
+  },
   validateSearch: (search: Record<string, unknown>) => validateFeatureDetailSearch(search),
   loader: async ({ context, params }) => {
     await context.queryClient.ensureQueryData(discussionsRegistryQueryOptions())
