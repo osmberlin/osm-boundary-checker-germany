@@ -290,7 +290,7 @@ export const de = {
     compareFallbackNotice:
       'Der Vergleich für dieses Gebiet ist fehlgeschlagen; es werden zuletzt erfolgreiche Vergleichsdaten angezeigt.',
     table: {
-      nameWithComparisonKey: 'Name (Vergleichs-Schlüssel)',
+      name: 'Name',
       category: 'Kategorie',
       iou: 'IoU',
       areaDelta: 'Δ Fläche %',

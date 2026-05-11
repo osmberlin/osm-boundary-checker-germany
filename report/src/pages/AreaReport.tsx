@@ -437,7 +437,7 @@ export function AreaReport() {
             <tr>
               <SortableTh
                 column="name"
-                label={de.areaReport.table.nameWithComparisonKey}
+                label={de.areaReport.table.name}
                 align="left"
                 sortBy={sortBy}
                 sortDir={sortDir}
@@ -536,14 +536,7 @@ export function AreaReport() {
                     }
                   }}
                 >
-                  <td className="px-3 py-2 text-slate-100">
-                    <span className="flex flex-wrap items-baseline gap-x-1.5">
-                      <span>{row.nameLabel}</span>
-                      <span className="font-mono text-xs text-slate-400">
-                        ({row.canonicalMatchKey})
-                      </span>
-                    </span>
-                  </td>
+                  <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
                   <td className="px-3 py-2">
                     <ReportCategoryPill category={row.category}>
                       {categoryLabelDe(row.category)}
