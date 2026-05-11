@@ -177,7 +177,6 @@ export const de = {
   home: {
     processingStatusLink: 'Verarbeitungsstatus öffnen',
     changelogLinkLabel: 'Changelog',
-    reviewQueueLinkLabel: 'Prüfliste: Ampel nicht ok',
     githubCodeLinkLabel: 'Code auf GitHub',
     githubIssuesLinkLabel: 'Issue melden',
     launchBlogpostLinkLabel: 'Mehr im Launch-Blogpost…',
@@ -195,25 +194,6 @@ export const de = {
     reviewsStat: 'Prüfung',
     issuesStat: 'Problem',
     unmatchedLink: 'Liste: OSM ohne Treffer im amtlichen Export',
-  },
-
-  review: {
-    breadcrumb: 'Prüfliste',
-    title: 'Prüfliste: Ampel nicht ok',
-    intro:
-      'Schnellzugriff auf Grenzen, die in der letzten Auswertung voraussichtlich Nacharbeit brauchen. Gezeigt werden alle Einträge mit Bewertungsampel review oder issue.',
-    empty: 'Aktuell keine Einträge mit Ampel != ok gefunden.',
-    totalStatsAria: 'Anzahl betroffener Datensätze sowie Einträge mit review oder issue',
-    datasetCount: 'Datensätze',
-    reviewsCount: 'Prüfung',
-    issuesCount: 'Problem',
-    sectionCountSuffix: 'Einträge',
-    table: {
-      nameWithComparisonKey: 'Name (Vergleichs-Schlüssel)',
-      category: 'Kategorie',
-      issueLevel: 'Bewertung',
-      view: 'Detail',
-    },
   },
 
   status: {
@@ -707,7 +687,6 @@ export const de = {
     /** Feature detail page: short label = decoded canonicalMatchKey. */
     feature: (label: string) => `Lade Detaildaten für ${label}…`,
     changelog: 'Lade Changelog…',
-    review: 'Lade Prüfliste…',
     status: 'Lade Verarbeitungsstatus…',
     germanKey: 'Lade Schlüssel-Explorer…',
   },

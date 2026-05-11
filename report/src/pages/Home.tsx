@@ -84,12 +84,6 @@ export function Home() {
             <Link to="/changelog" className={homeLinkClass}>
               {de.home.changelogLinkLabel}
             </Link>
-            <span aria-hidden className="mx-1.5 text-slate-500">
-              ·
-            </span>
-            <Link to="/review" className={homeLinkClass}>
-              {de.home.reviewQueueLinkLabel}
-            </Link>
           </p>
         </div>
         <div className="hidden shrink-0 justify-end pt-1 md:flex">

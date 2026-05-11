@@ -5,7 +5,6 @@ import {
   listAreaLicenseSummaries,
   listComparisonAreaSummaries,
   listGeoDataSources,
-  listReviewQueueByArea,
 } from './listComparisonAreas.ts'
 import { resolveRuntimeRoot } from './runtimeDataRoot.ts'
 
@@ -25,9 +24,7 @@ const summaries = listComparisonAreaSummaries(runtimeRoot)
 const areas = summaries.map((s) => s.area)
 const geoDataSources = listGeoDataSources(runtimeRoot)
 const licenseSummaries = listAreaLicenseSummaries(runtimeRoot)
-const reviewQueueByArea = listReviewQueueByArea(runtimeRoot)
 const areasIndexOutPath = join(import.meta.dir, 'src', 'data', 'areasIndex.gen.ts')
-const reviewQueueOutPath = join(import.meta.dir, 'src', 'data', 'reviewQueue.gen.ts')
 
 writeGeneratedModule(areasIndexOutPath, 'areasIndex', {
   areas,
@@ -35,23 +32,16 @@ writeGeneratedModule(areasIndexOutPath, 'areasIndex', {
   geoDataSources,
   licenseSummaries,
 })
-writeGeneratedModule(reviewQueueOutPath, 'reviewQueue', reviewQueueByArea)
-const formatResult = spawnSync(
-  'bun',
-  ['x', 'oxfmt', '--write', areasIndexOutPath, reviewQueueOutPath],
-  {
-    stdio: 'inherit',
-  },
-)
+const formatResult = spawnSync('bun', ['x', 'oxfmt', '--write', areasIndexOutPath], {
+  stdio: 'inherit',
+})
 
 if (formatResult.status !== 0) {
   // Formatting failures should not block snapshot generation in CI.
   // The repository-level format/check step still enforces style separately.
   console.warn(
-    `Warning: failed to format generated files (${areasIndexOutPath}, ${reviewQueueOutPath}), keeping source as-is.`,
+    `Warning: failed to format generated file (${areasIndexOutPath}), keeping source as-is.`,
   )
 }
 
-console.log(
-  `Wrote ${areasIndexOutPath} (${areas.length} areas) and ${reviewQueueOutPath} (${reviewQueueByArea.length} areas with not-ok rows), DATA_ROOT=${runtimeRoot}`,
-)
+console.log(`Wrote ${areasIndexOutPath} (${areas.length} areas), DATA_ROOT=${runtimeRoot}`)

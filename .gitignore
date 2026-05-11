@@ -10,7 +10,6 @@ dist/
 /data/
 !report/src/data/
 !report/src/data/**
-report/src/data/reviewQueue.gen.ts
 report/src/data/relationResolverIndex.gen.ts
 
 # Transient tippecanoe input (removed after successful run; ignore if left behind)

@@ -33,7 +33,6 @@ import { GermanKeyExplorer } from './pages/GermanKeyExplorer'
 import { Home } from './pages/Home'
 import { ProcessingStatus } from './pages/ProcessingStatus'
 import { RelationResolver } from './pages/RelationResolver'
-import { ReviewQueue } from './pages/ReviewQueue'
 import type { ComparisonForReport } from './types/report'
 
 export type RouterContext = {
@@ -114,15 +113,6 @@ const changelogRoute = createRoute({
     meta: [{ title: `${de.changelog.heading} | ${de.appTitle}` }],
   }),
   component: Changelog,
-})
-
-const reviewRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/review',
-  head: () => ({
-    meta: [{ title: `${de.review.title} | ${de.appTitle}` }],
-  }),
-  component: ReviewQueue,
 })
 
 const germanKeyExplorerRoute = createRoute({
@@ -228,7 +218,6 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   statusRoute,
   changelogRoute,
-  reviewRoute,
   germanKeyExplorerRoute,
   areaRoute,
   featureRoute,
