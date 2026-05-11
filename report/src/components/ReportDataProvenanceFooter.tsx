@@ -468,7 +468,7 @@ export function ReportDataProvenanceFooter({
 
   return (
     <section
-      className={`mt-10 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 text-sm text-slate-400 shadow-sm ${className}`.trim()}
+      className={`overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 text-sm text-slate-400 shadow-sm ${className}`.trim()}
       aria-label={p.sectionAria}
     >
       <div className="px-4 py-6 sm:px-6">

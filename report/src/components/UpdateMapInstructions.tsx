@@ -75,7 +75,7 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
   const canDownloadOfficial = officialHref != null
 
   return (
-    <section className="mt-10 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm">
+    <section className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm">
       <div className="px-4 py-6 sm:px-6">
         <h2 className="text-base font-semibold text-slate-100">{u.title}</h2>
       </div>

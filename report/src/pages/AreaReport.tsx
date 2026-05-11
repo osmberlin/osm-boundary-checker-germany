@@ -16,7 +16,7 @@ import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import { AreaReportHeader } from '../components/AreaReportHeader'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
-import { KpiRow, KpiSection, KpiToggleCell } from '../components/FeatureStatBlocks'
+import { KpiRow, KpiSectionRow, KpiToggleCell } from '../components/FeatureStatBlocks'
 import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
@@ -177,7 +177,7 @@ export function AreaReport() {
   if (comparisonQuery.isError) {
     return (
       <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-10">
           {areaKey ? (
             <AreaReportHeader
               title={areaDisplayName || areaKey}
@@ -244,368 +244,386 @@ export function AreaReport() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-6">
-        {areaKey ? (
-          <AreaReportHeader
-            title={areaDisplayName || areaKey}
-            sourceName={pageSourceName}
-            sourceHref={pageSourceHref}
-          />
-        ) : null}
-        <DatasetDiscussionAlerts />
-        {showCompareFallbackNotice ? (
-          <div className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-            {de.areaReport.compareFallbackNotice}
-          </div>
-        ) : null}
-        {showCompareFailedNotice ? (
-          <div className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-            {de.areaReport.compareFailedNotice}
-          </div>
-        ) : null}
-      </div>
-      <section className="mt-6 mb-6" aria-label={st.summaryStatRowAria}>
-        <KpiRow className="mt-0">
-          <SummaryStatColumn
-            heading={de.areaReport.freshnessHeadingReport}
-            relativeLine={reportFresh.relativeLine ?? EM_DASH}
-            absoluteLine={reportFresh.absoluteLine || EM_DASH}
-            isOld={reportIsOld}
-          />
-          <SummaryStatColumn
-            heading={de.areaReport.freshnessHeadingOfficial}
-            relativeLine={officialFresh.relativeLine ?? EM_DASH}
-            absoluteLine={officialFresh.pairedAbsoluteLine}
-            isOld={officialIsOld}
-            headingAdornment={<OfficialDatasetAgeInfoButton side={officialSide} />}
-            hideDetailLine
-          />
-          <SummaryStatColumn
-            heading={de.areaReport.freshnessHeadingOsm}
-            relativeLine={osmFresh.relativeLine}
-            absoluteLine={osmFresh.absoluteLine}
-            isOld={osmIsOld}
-          />
-        </KpiRow>
-      </section>
+      <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-6">
+          {areaKey ? (
+            <AreaReportHeader
+              title={areaDisplayName || areaKey}
+              sourceName={pageSourceName}
+              sourceHref={pageSourceHref}
+            />
+          ) : null}
+          <DatasetDiscussionAlerts />
+          {showCompareFallbackNotice ? (
+            <div className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+              {de.areaReport.compareFallbackNotice}
+            </div>
+          ) : null}
+          {showCompareFailedNotice ? (
+            <div className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+              {de.areaReport.compareFailedNotice}
+            </div>
+          ) : null}
+        </div>
 
-      <KpiSection
-        className="mb-0 rounded-t-md rounded-b-none border-x border-t border-b-0 border-slate-500 !bg-[#F2F3F1] text-slate-900 hover:!bg-[#eaede7]"
-        aria-label={st.summaryLegendRowAria}
-      >
-        <KpiRow className="mt-0 [&>*]:!border-l [&>*]:!border-slate-500 [&>*]:pl-3 [&>*]:first:!border-l-0 [&>*]:first:pl-0 [&>*]:lg:pl-6">
-          <KpiToggleCell
-            inputId={`${statsInputId}-matched`}
-            checked={catCounts.matched === 0 ? false : isCategoryEnabled('matched')}
-            disabled={catCounts.matched === 0}
-            onChange={(on) => setCategoryEnabled('matched', on)}
-            label={categoryLabelDe('matched')}
-            value={formatDeInteger(catCounts.matched)}
-            swatch={<ReportCategorySquareSwatch category="matched" />}
-          />
-          <KpiToggleCell
-            inputId={`${statsInputId}-official`}
-            checked={catCounts.official_only === 0 ? false : isCategoryEnabled('official_only')}
-            disabled={catCounts.official_only === 0}
-            onChange={(on) => setCategoryEnabled('official_only', on)}
-            label={categoryLabelDe('official_only')}
-            value={formatDeInteger(catCounts.official_only)}
-            swatch={<ReportCategorySquareSwatch category="official_only" />}
-          />
-          <KpiToggleCell
-            inputId={`${statsInputId}-unmatched`}
-            checked={catCounts.unmatched_osm === 0 ? false : isCategoryEnabled('unmatched_osm')}
-            disabled={catCounts.unmatched_osm === 0}
-            onChange={(on) => setCategoryEnabled('unmatched_osm', on)}
-            label={categoryLabelDe('unmatched_osm')}
-            value={formatDeInteger(catCounts.unmatched_osm)}
-            swatch={<ReportCategorySquareSwatch category="unmatched_osm" />}
-          />
-        </KpiRow>
-      </KpiSection>
+        <section aria-label={st.summaryStatRowAria}>
+          <KpiRow className="mt-0">
+            <SummaryStatColumn
+              heading={de.areaReport.freshnessHeadingReport}
+              relativeLine={reportFresh.relativeLine ?? EM_DASH}
+              absoluteLine={reportFresh.absoluteLine || EM_DASH}
+              isOld={reportIsOld}
+            />
+            <SummaryStatColumn
+              heading={de.areaReport.freshnessHeadingOfficial}
+              relativeLine={officialFresh.relativeLine ?? EM_DASH}
+              absoluteLine={officialFresh.pairedAbsoluteLine}
+              isOld={officialIsOld}
+              headingAdornment={<OfficialDatasetAgeInfoButton side={officialSide} />}
+              hideDetailLine
+            />
+            <SummaryStatColumn
+              heading={de.areaReport.freshnessHeadingOsm}
+              relativeLine={osmFresh.relativeLine}
+              absoluteLine={osmFresh.absoluteLine}
+              isOld={osmIsOld}
+            />
+          </KpiRow>
+        </section>
 
-      <div className="mb-8">
-        <div className="h-px w-full bg-slate-500" />
-        <div className="w-full overflow-hidden rounded-b-md border-x border-b border-slate-500">
-          <div className="h-[420px] w-full">
-            {visibleRows.length === 0 ? (
-              <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
-                {st.mapNoVisibleCategories}
-              </div>
-            ) : data.hasPmtiles ? (
-              <Suspense
-                fallback={
-                  <div className="flex h-full items-center justify-center text-slate-500">
-                    {st.mapLoading}
+        <div className="flex w-full flex-col gap-0">
+          <KpiSectionRow
+            className="mb-0 rounded-t-md rounded-b-none border-x border-t border-b-0 border-slate-500 !bg-[#F2F3F1] text-slate-900 hover:!bg-[#eaede7]"
+            rowClassName="mt-0 [&>*]:!border-l [&>*]:!border-slate-500 [&>*]:pl-3 [&>*]:first:!border-l-0 [&>*]:first:pl-0 [&>*]:lg:pl-6"
+            aria-label={st.summaryLegendRowAria}
+          >
+            <KpiToggleCell
+              inputId={`${statsInputId}-matched`}
+              checked={catCounts.matched === 0 ? false : isCategoryEnabled('matched')}
+              disabled={catCounts.matched === 0}
+              onChange={(on) => setCategoryEnabled('matched', on)}
+              label={categoryLabelDe('matched')}
+              value={formatDeInteger(catCounts.matched)}
+              swatch={<ReportCategorySquareSwatch category="matched" />}
+            />
+            <KpiToggleCell
+              inputId={`${statsInputId}-official`}
+              checked={catCounts.official_only === 0 ? false : isCategoryEnabled('official_only')}
+              disabled={catCounts.official_only === 0}
+              onChange={(on) => setCategoryEnabled('official_only', on)}
+              label={categoryLabelDe('official_only')}
+              value={formatDeInteger(catCounts.official_only)}
+              swatch={<ReportCategorySquareSwatch category="official_only" />}
+            />
+            <KpiToggleCell
+              inputId={`${statsInputId}-unmatched`}
+              checked={catCounts.unmatched_osm === 0 ? false : isCategoryEnabled('unmatched_osm')}
+              disabled={catCounts.unmatched_osm === 0}
+              onChange={(on) => setCategoryEnabled('unmatched_osm', on)}
+              label={categoryLabelDe('unmatched_osm')}
+              value={formatDeInteger(catCounts.unmatched_osm)}
+              swatch={<ReportCategorySquareSwatch category="unmatched_osm" />}
+            />
+          </KpiSectionRow>
+
+          <div>
+            <div className="h-px w-full bg-slate-500" />
+            <div className="w-full overflow-hidden rounded-b-md border-x border-b border-slate-500">
+              <div className="h-[420px] w-full">
+                {visibleRows.length === 0 ? (
+                  <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
+                    {st.mapNoVisibleCategories}
                   </div>
-                }
-              >
-                <MapProvider>
-                  <ComparisonMapShell
-                    sources={{
-                      primary: {
-                        pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
-                        sourceLayer: data.tippecanoeLayer,
-                        allowedFeatureIds: mapAllowlist,
-                        officialOnlyFeatureIds: officialOnlyMapAllowlist,
-                      },
-                      unmatched: data.hasUnmatchedPmtiles
-                        ? {
-                            pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
+                ) : data.hasPmtiles ? (
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full items-center justify-center text-slate-500">
+                        {st.mapLoading}
+                      </div>
+                    }
+                  >
+                    <MapProvider>
+                      <ComparisonMapShell
+                        sources={{
+                          primary: {
+                            pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
                             sourceLayer: data.tippecanoeLayer,
-                            allowedFeatureIds: unmatchedMapAllowlist,
-                            visible: enabledSet.has('unmatched_osm') && mapLayers.showOsm,
-                          }
-                        : undefined,
-                    }}
-                    view={{
-                      featureId: null,
-                      mapBbox: overviewMapBbox,
-                      urlMapView: mapViewParam.mapView,
-                      onMoveEndCommitUrl: mapViewParam.commitMapViewFromMap,
-                    }}
-                    layers={{
-                      showOfficial: mapLayers.showOfficial,
-                      showOsm: mapLayers.showOsm,
-                      showDiff: mapLayers.showDiff,
-                    }}
-                    interaction={{
-                      onFeatureClick: (featureKeys) =>
-                        handleComparisonMapFeatureClick({
-                          featureKeys,
-                          areaKey,
-                          data,
-                          navigate,
-                          onOverlapPick: setOverlapPickKeys,
-                        }),
-                    }}
-                  />
-                </MapProvider>
-              </Suspense>
-            ) : (
-              <div className="flex h-full items-center justify-center p-4">
-                <div className="max-w-xl rounded border border-slate-700 bg-slate-900/50 p-4 text-sm text-slate-300">
-                  {de.feature.noPmtiles}
-                </div>
+                            allowedFeatureIds: mapAllowlist,
+                            officialOnlyFeatureIds: officialOnlyMapAllowlist,
+                          },
+                          unmatched: data.hasUnmatchedPmtiles
+                            ? {
+                                pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
+                                sourceLayer: data.tippecanoeLayer,
+                                allowedFeatureIds: unmatchedMapAllowlist,
+                                visible: enabledSet.has('unmatched_osm') && mapLayers.showOsm,
+                              }
+                            : undefined,
+                        }}
+                        view={{
+                          featureId: null,
+                          mapBbox: overviewMapBbox,
+                          urlMapView: mapViewParam.mapView,
+                          onMoveEndCommitUrl: mapViewParam.commitMapViewFromMap,
+                        }}
+                        layers={{
+                          showOfficial: mapLayers.showOfficial,
+                          showOsm: mapLayers.showOsm,
+                          showDiff: mapLayers.showDiff,
+                        }}
+                        interaction={{
+                          onFeatureClick: (featureKeys) =>
+                            handleComparisonMapFeatureClick({
+                              featureKeys,
+                              areaKey,
+                              data,
+                              navigate,
+                              onOverlapPick: setOverlapPickKeys,
+                            }),
+                        }}
+                      />
+                    </MapProvider>
+                  </Suspense>
+                ) : (
+                  <div className="flex h-full items-center justify-center p-4">
+                    <div className="max-w-xl rounded border border-slate-700 bg-slate-900/50 p-4 text-sm text-slate-300">
+                      {de.feature.noPmtiles}
+                    </div>
+                  </div>
+                )}
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex h-64 min-w-0 flex-col rounded border border-slate-700 bg-slate-900 p-2">
+          <h2 className="mb-3 border-b border-slate-700/80 pb-3 text-base font-semibold text-slate-100">
+            <span className="inline-flex flex-wrap items-center gap-1">
+              <span>{de.areaReport.chartTitle}</span>
+              <MeanIouInfoButton className="-ml-0.5" iconClassName="size-[0.95rem]" />
+            </span>
+          </h2>
+          <div ref={chartRef} className="min-h-0 min-w-0 flex-1">
+            {chartIsReady ? (
+              <LineChart
+                width={chartSize.width}
+                height={chartSize.height}
+                data={chartData}
+                margin={{ left: 8, right: 8 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+                <XAxis
+                  dataKey="id"
+                  tick={{ fontSize: 11, fill: chartTick }}
+                  stroke={chartAxisLine}
+                />
+                <YAxis
+                  domain={[0, 1]}
+                  tick={{ fontSize: 11, fill: chartTick }}
+                  stroke={chartAxisLine}
+                  tickFormatter={(v) => formatDeFixed(v, 2)}
+                />
+                <Tooltip
+                  contentStyle={tooltipStyles}
+                  formatter={(value) => [
+                    formatDeIou(Number(value ?? 0)),
+                    de.areaReport.chartTooltipIou,
+                  ]}
+                />
+                <Line type="monotone" dataKey="meanIou" stroke="#7c3aed" dot />
+              </LineChart>
+            ) : (
+              <div className="h-full w-full" aria-hidden />
             )}
           </div>
         </div>
-      </div>
 
-      <div className="mb-8 flex h-64 min-w-0 flex-col rounded border border-slate-700 bg-slate-900 p-2">
-        <h2 className="mb-3 border-b border-slate-700/80 pb-3 text-base font-semibold text-slate-100">
-          <span className="inline-flex flex-wrap items-center gap-1">
-            <span>{de.areaReport.chartTitle}</span>
-            <MeanIouInfoButton className="-ml-0.5" iconClassName="size-[0.95rem]" />
-          </span>
-        </h2>
-        <div ref={chartRef} className="min-h-0 min-w-0 flex-1">
-          {chartIsReady ? (
-            <LineChart
-              width={chartSize.width}
-              height={chartSize.height}
-              data={chartData}
-              margin={{ left: 8, right: 8 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
-              <XAxis dataKey="id" tick={{ fontSize: 11, fill: chartTick }} stroke={chartAxisLine} />
-              <YAxis
-                domain={[0, 1]}
-                tick={{ fontSize: 11, fill: chartTick }}
-                stroke={chartAxisLine}
-                tickFormatter={(v) => formatDeFixed(v, 2)}
-              />
-              <Tooltip
-                contentStyle={tooltipStyles}
-                formatter={(value) => [
-                  formatDeIou(Number(value ?? 0)),
-                  de.areaReport.chartTooltipIou,
-                ]}
-              />
-              <Line type="monotone" dataKey="meanIou" stroke="#7c3aed" dot />
-            </LineChart>
-          ) : (
-            <div className="h-full w-full" aria-hidden />
-          )}
-        </div>
-      </div>
-
-      <div className="overflow-x-auto rounded border border-slate-700">
-        <table className="min-w-full text-sm">
-          <thead className="bg-slate-900">
-            <tr>
-              <SortableTh
-                column="name"
-                label={de.areaReport.table.name}
-                align="left"
-                sortBy={sortBy}
-                sortDir={sortDir}
-                onSort={setColumn}
-              />
-              <SortableTh
-                column="category"
-                label={de.areaReport.table.category}
-                align="left"
-                sortBy={sortBy}
-                sortDir={sortDir}
-                onSort={setColumn}
-              />
-              <SortableTh
-                column="iou"
-                label={de.areaReport.table.iou}
-                align="right"
-                sortBy={sortBy}
-                sortDir={sortDir}
-                onSort={setColumn}
-                labelEnd={<IouInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />}
-              />
-              <SortableTh
-                column="area"
-                label={de.areaReport.table.areaDelta}
-                align="right"
-                sortBy={sortBy}
-                sortDir={sortDir}
-                onSort={setColumn}
-                labelEnd={
-                  <AreaDeltaInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
-                }
-              />
-              <SortableTh
-                column="haus"
-                label={de.areaReport.table.hausdorff}
-                align="right"
-                sortBy={sortBy}
-                sortDir={sortDir}
-                onSort={setColumn}
-                labelEnd={
-                  <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
-                }
-              />
-              <SortableTh
-                column="haus95"
-                label={de.areaReport.table.hausdorffP95}
-                align="right"
-                sortBy={sortBy}
-                sortDir={sortDir}
-                onSort={setColumn}
-                labelEnd={
-                  <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
-                }
-              />
-              <SortableTh
-                column="issue"
-                label={de.areaReport.table.issueIndicator}
-                align="left"
-                sortBy={sortBy}
-                sortDir={sortDir}
-                onSort={setColumn}
-                labelEnd={
-                  <IssueIndicatorInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
-                }
-              />
-              <th
-                className="px-3 py-2 text-right text-slate-100"
-                aria-label={de.areaReport.table.view}
-              />
-            </tr>
-          </thead>
-          <tbody>
-            {sortedRows.map((row) => {
-              const detailParams = {
-                areaId: areaKey,
-                featureKey: row.canonicalMatchKey,
-              } as const
-              const navigateToFeature = () =>
-                navigate({
-                  to: '/$areaId/feature/$featureKey',
-                  params: detailParams,
-                })
-              return (
-                <tr
-                  key={row.canonicalMatchKey}
-                  className="group cursor-pointer border-t border-slate-800 transition-colors focus-within:bg-slate-800/55 hover:bg-slate-800/55"
-                  tabIndex={0}
-                  onClick={() => {
-                    void navigateToFeature()
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      void navigateToFeature()
+        <div>
+          <div className="overflow-x-auto rounded border border-slate-700">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-900">
+                <tr>
+                  <SortableTh
+                    column="name"
+                    label={de.areaReport.table.name}
+                    align="left"
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    onSort={setColumn}
+                  />
+                  <SortableTh
+                    column="category"
+                    label={de.areaReport.table.category}
+                    align="left"
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    onSort={setColumn}
+                  />
+                  <SortableTh
+                    column="iou"
+                    label={de.areaReport.table.iou}
+                    align="right"
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    onSort={setColumn}
+                    labelEnd={<IouInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />}
+                  />
+                  <SortableTh
+                    column="area"
+                    label={de.areaReport.table.areaDelta}
+                    align="right"
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    onSort={setColumn}
+                    labelEnd={
+                      <AreaDeltaInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
                     }
-                  }}
-                >
-                  <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
-                  <td className="px-3 py-2">
-                    <ReportCategoryPill category={row.category}>
-                      {categoryLabelDe(row.category)}
-                    </ReportCategoryPill>
-                  </td>
-                  <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                    <MetricCellBar
-                      ratio={normalizedRatio(row.metrics?.iou, iouMax)}
-                      value={row.metrics ? formatDeIou(row.metrics.iou) : EM_DASH}
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                    <MetricCellBar
-                      ratio={normalizedRatio(absOrNull(row.metrics?.areaDiffPct), areaDiffAbsMax)}
-                      value={row.metrics ? formatDePercentPoints(row.metrics.areaDiffPct) : EM_DASH}
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                    <MetricCellBar
-                      ratio={normalizedRatio(row.metrics?.hausdorffM, hausdorffMax)}
-                      value={
-                        row.metrics
-                          ? formatDeOrDash(row.metrics.hausdorffM, formatDeMeters)
-                          : EM_DASH
-                      }
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                    <MetricCellBar
-                      ratio={normalizedRatio(row.metrics?.hausdorffP95M, hausdorffP95Max)}
-                      value={
-                        row.metrics
-                          ? formatDeOrDash(row.metrics.hausdorffP95M, formatDeMeters)
-                          : EM_DASH
-                      }
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-left text-slate-100">
-                    <IssueBadge level={row.metrics?.issueIndicator?.level} />
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <Link
-                      className="inline-flex items-center text-slate-500 transition-colors group-hover:text-sky-300 focus-visible:text-sky-300"
-                      to="/$areaId/feature/$featureKey"
-                      params={detailParams}
-                      onClick={(event) => event.stopPropagation()}
-                      aria-label={`${de.areaReport.table.view}: ${row.nameLabel}`}
-                    >
-                      <span className="sr-only">{de.areaReport.table.view}</span>
-                      <span aria-hidden>→</span>
-                    </Link>
-                  </td>
+                  />
+                  <SortableTh
+                    column="haus"
+                    label={de.areaReport.table.hausdorff}
+                    align="right"
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    onSort={setColumn}
+                    labelEnd={
+                      <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
+                    }
+                  />
+                  <SortableTh
+                    column="haus95"
+                    label={de.areaReport.table.hausdorffP95}
+                    align="right"
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    onSort={setColumn}
+                    labelEnd={
+                      <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
+                    }
+                  />
+                  <SortableTh
+                    column="issue"
+                    label={de.areaReport.table.issueIndicator}
+                    align="left"
+                    sortBy={sortBy}
+                    sortDir={sortDir}
+                    onSort={setColumn}
+                    labelEnd={
+                      <IssueIndicatorInfoButton
+                        className="-mr-0.5"
+                        iconClassName="size-[0.95rem]"
+                      />
+                    }
+                  />
+                  <th
+                    className="px-3 py-2 text-right text-slate-100"
+                    aria-label={de.areaReport.table.view}
+                  />
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {sortedRows.map((row) => {
+                  const detailParams = {
+                    areaId: areaKey,
+                    featureKey: row.canonicalMatchKey,
+                  } as const
+                  const navigateToFeature = () =>
+                    navigate({
+                      to: '/$areaId/feature/$featureKey',
+                      params: detailParams,
+                    })
+                  return (
+                    <tr
+                      key={row.canonicalMatchKey}
+                      className="group cursor-pointer border-t border-slate-800 transition-colors focus-within:bg-slate-800/55 hover:bg-slate-800/55"
+                      tabIndex={0}
+                      onClick={() => {
+                        void navigateToFeature()
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          void navigateToFeature()
+                        }
+                      }}
+                    >
+                      <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
+                      <td className="px-3 py-2">
+                        <ReportCategoryPill category={row.category}>
+                          {categoryLabelDe(row.category)}
+                        </ReportCategoryPill>
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
+                        <MetricCellBar
+                          ratio={normalizedRatio(row.metrics?.iou, iouMax)}
+                          value={row.metrics ? formatDeIou(row.metrics.iou) : EM_DASH}
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
+                        <MetricCellBar
+                          ratio={normalizedRatio(
+                            absOrNull(row.metrics?.areaDiffPct),
+                            areaDiffAbsMax,
+                          )}
+                          value={
+                            row.metrics ? formatDePercentPoints(row.metrics.areaDiffPct) : EM_DASH
+                          }
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
+                        <MetricCellBar
+                          ratio={normalizedRatio(row.metrics?.hausdorffM, hausdorffMax)}
+                          value={
+                            row.metrics
+                              ? formatDeOrDash(row.metrics.hausdorffM, formatDeMeters)
+                              : EM_DASH
+                          }
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
+                        <MetricCellBar
+                          ratio={normalizedRatio(row.metrics?.hausdorffP95M, hausdorffP95Max)}
+                          value={
+                            row.metrics
+                              ? formatDeOrDash(row.metrics.hausdorffP95M, formatDeMeters)
+                              : EM_DASH
+                          }
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-left text-slate-100">
+                        <IssueBadge level={row.metrics?.issueIndicator?.level} />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <Link
+                          className="inline-flex items-center text-slate-500 transition-colors group-hover:text-sky-300 focus-visible:text-sky-300"
+                          to="/$areaId/feature/$featureKey"
+                          params={detailParams}
+                          onClick={(event) => event.stopPropagation()}
+                          aria-label={`${de.areaReport.table.view}: ${row.nameLabel}`}
+                        >
+                          <span className="sr-only">{de.areaReport.table.view}</span>
+                          <span aria-hidden>→</span>
+                        </Link>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <MapOverlapPickDialog
+            open={overlapPickKeys !== null}
+            keys={overlapPickKeys}
+            areaKey={areaKey}
+            data={data}
+            onClose={() => setOverlapPickKeys(null)}
+          />
+        </div>
+
+        <ReportLicenseCompatibilitySection data={data} />
+        <ReportDataProvenanceFooter data={data} hideFreshnessSection />
       </div>
-
-      <MapOverlapPickDialog
-        open={overlapPickKeys !== null}
-        keys={overlapPickKeys}
-        areaKey={areaKey}
-        data={data}
-        onClose={() => setOverlapPickKeys(null)}
-      />
-
-      <ReportLicenseCompatibilitySection data={data} />
-      <ReportDataProvenanceFooter data={data} hideFreshnessSection />
     </div>
   )
 }

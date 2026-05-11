@@ -71,7 +71,7 @@ function FeatureDetailWithMapContext({
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-10">
         <FeatureDetailHeader titlePrefix={data.titlePrefix} row={row} />
         <DatasetDiscussionAlerts />
         {showCompareFailedNotice ? (
@@ -79,55 +79,55 @@ function FeatureDetailWithMapContext({
             {de.feature.compareFailedNotice}
           </div>
         ) : null}
-        <FeatureDetailStatsStrip row={row} mapLayers={mapLayers} data={data} />
-      </div>
+        <FeatureDetailStatsStrip row={row} data={data} />
 
-      <FeatureDetailMapSection
-        areaKey={areaKey}
-        data={data}
-        row={row}
-        interactionData={comparisonOverlayData}
-        mapLayers={mapLayers}
-        mapView={mapViewParam}
-        overpassGeojson={filteredLiveOverlays.overpassGeojson}
-        wfsGeojson={filteredLiveOverlays.wfsGeojson}
-      />
-
-      <UpdateMapInstructions areaId={areaKey} row={row} />
-
-      <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
-
-      <FeatureDatasetProperties row={row} data={data} />
-
-      <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
-
-      <OfficialOnlyCandidatesSection row={row} candidates={data.candidates} />
-
-      <MatcherContextSection areaKey={areaKey} data={data} row={row} />
-
-      {hasComparisonMap ? (
-        <LiveSourceProperties
-          featureKey={featureLookupKey}
+        <FeatureDetailMapSection
+          areaKey={areaKey}
           data={data}
           row={row}
-          getLiveQueryBbox={getLiveQueryBbox}
-          wfs={{
-            load: wfs.loadSource,
-            getStatus: wfs.getStatus,
-          }}
-          overpass={{
-            hasCachedData: overpass.hasCachedData,
-            hits: overpass.hits,
-            isRunPending: overpass.isRunPending,
-            runError: overpass.runError,
-            runLiveOverpass: overpass.runLiveOverpass,
-            resetLiveOverpass: overpass.resetLiveOverpass,
-            resetRunMutation: overpass.resetRunMutation,
-          }}
+          interactionData={comparisonOverlayData}
+          mapLayers={mapLayers}
+          mapView={mapViewParam}
+          overpassGeojson={filteredLiveOverlays.overpassGeojson}
+          wfsGeojson={filteredLiveOverlays.wfsGeojson}
         />
-      ) : null}
 
-      <ReportLicenseCompatibilitySection data={data} />
+        <UpdateMapInstructions areaId={areaKey} row={row} />
+
+        <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
+
+        <FeatureDatasetProperties row={row} data={data} />
+
+        <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
+
+        <OfficialOnlyCandidatesSection row={row} candidates={data.candidates} />
+
+        <MatcherContextSection areaKey={areaKey} data={data} row={row} />
+
+        {hasComparisonMap ? (
+          <LiveSourceProperties
+            featureKey={featureLookupKey}
+            data={data}
+            row={row}
+            getLiveQueryBbox={getLiveQueryBbox}
+            wfs={{
+              load: wfs.loadSource,
+              getStatus: wfs.getStatus,
+            }}
+            overpass={{
+              hasCachedData: overpass.hasCachedData,
+              hits: overpass.hits,
+              isRunPending: overpass.isRunPending,
+              runError: overpass.runError,
+              runLiveOverpass: overpass.runLiveOverpass,
+              resetLiveOverpass: overpass.resetLiveOverpass,
+              resetRunMutation: overpass.resetRunMutation,
+            }}
+          />
+        ) : null}
+
+        <ReportLicenseCompatibilitySection data={data} />
+      </div>
     </div>
   )
 }

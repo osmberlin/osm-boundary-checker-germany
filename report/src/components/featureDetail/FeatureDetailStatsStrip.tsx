@@ -1,4 +1,3 @@
-import { useId } from 'react'
 import { buildResolvedOsmSourceSide } from '../../../../scripts/shared/osmGermanyProvenance.ts'
 import { categoryLabelDe, de, issueLevelLabelDe } from '../../i18n/de'
 import { isOlderThanDays } from '../../lib/dataAge'
@@ -8,13 +7,12 @@ import {
   formatDeMeters,
   formatDeOrDash,
   formatDePercentPoints,
-  formatDeSquareKilometersFromM2,
 } from '../../lib/formatDe'
 import { reviewIssueAmpelTextClasses } from '../../lib/issueAmpelStyles'
 import { officialAreaSummaryFreshness } from '../../lib/officialAreaSummaryFreshness'
 import { kpiFreshnessLinesFromIso } from '../../lib/reportFreshnessLines'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
-import { KpiCell, KpiRow, KpiSection, KpiToggleCell } from '../FeatureStatBlocks'
+import { KpiCell, KpiRow, KpiSection } from '../FeatureStatBlocks'
 import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
@@ -22,24 +20,8 @@ import {
   IssueIndicatorInfoButton,
   SymDiffInfoButton,
 } from '../HausdorffInfoModal'
-import { mapLayerColors } from '../mapLayerColors'
-import { hexToRgba } from '../MapLegend'
 import { OfficialDatasetAgeInfoButton } from '../OfficialDatasetAgeInfoModal'
-import { LegendRectSwatch } from '../reportCategoryStyles'
 import { SummaryStatColumn } from '../SummaryStatColumn'
-
-type MapLayerControls = {
-  showOfficial: boolean
-  setShowOfficial: (v: boolean) => void
-  showOsm: boolean
-  setShowOsm: (v: boolean) => void
-  showDiff: boolean
-  setShowDiff: (v: boolean) => void
-}
-
-function symmetricDiffAreaM2(m: NonNullable<ReportRow['metrics']>): number {
-  return m.officialAreaM2 * (m.symmetricDiffPct / 100)
-}
 
 function isNonMatchedCategory(c: ReportRow['category']): c is 'official_only' | 'unmatched_osm' {
   return c === 'official_only' || c === 'unmatched_osm'
@@ -47,19 +29,13 @@ function isNonMatchedCategory(c: ReportRow['category']): c is 'official_only' | 
 
 export function FeatureDetailStatsStrip({
   row,
-  mapLayers,
   data,
 }: {
   row: ReportRow
-  mapLayers: MapLayerControls
   data: ComparisonForReport
 }) {
   const m = row.metrics
   const s = de.feature.stats
-  const layerId = useId()
-  const o = mapLayerColors.officialMatched
-  const osmC = mapLayerColors.osmPaired
-  const d = mapLayerColors.diff
   const reportFresh = kpiFreshnessLinesFromIso(data.generatedAt)
   const officialSide = data.sourceMetadata?.official
   const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
@@ -75,7 +51,7 @@ export function FeatureDetailStatsStrip({
   const osmIsOld = isOlderThanDays(osmCheckRawForRose, 5)
 
   return (
-    <>
+    <div className="flex w-full flex-col">
       <section className="mb-6" aria-label={de.areaReport.stats.summaryStatRowAria}>
         <KpiRow
           narrowLayout="none"
@@ -120,140 +96,75 @@ export function FeatureDetailStatsStrip({
         </KpiRow>
       </section>
 
-      {m && (
-        <>
-          <KpiSection className="mb-6" aria-label={s.diffMetricsRowAria}>
-            <KpiRow
-              narrowLayout="none"
-              className={
-                'mt-0 grid min-w-0 grid-cols-2 gap-x-0 gap-y-4 ' +
-                '[&>*]:min-w-0 [&>*]:border-l [&>*]:border-white/15 [&>*]:pl-3 ' +
-                /* 2 columns: row starts 1,3,5 */
-                'max-md:[&>*:nth-child(2n+1)]:border-l-0 max-md:[&>*:nth-child(2n+1)]:pl-0 ' +
-                /* 3 columns (md–lg): row starts 1,4 */
-                'md:max-lg:[&>*:nth-child(3n+1)]:border-l-0 md:max-lg:[&>*:nth-child(3n+1)]:pl-0 ' +
-                'md:grid-cols-3 ' +
-                /* 1 row × 5 flex cells: only first has no left border */
-                'lg:flex lg:flex-row lg:flex-nowrap lg:gap-x-0 lg:gap-y-0 ' +
-                'lg:[&>*]:min-w-0 lg:[&>*]:flex-1 lg:[&>*]:basis-0 ' +
-                'lg:[&>*]:border-l lg:[&>*]:border-white/15 lg:[&>*]:pl-6 ' +
-                'lg:[&>*:nth-child(5n+1)]:border-l-0 lg:[&>*:nth-child(5n+1)]:pl-0'
-              }
-            >
-              <KpiCell
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span>{s.iou}</span>
-                    <IouInfoButton />
-                  </span>
-                }
-                value={formatDeIou(m.iou)}
-              />
-              <KpiCell
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span>{s.areaDelta}</span>
-                    <AreaDeltaInfoButton />
-                  </span>
-                }
-                value={formatDePercentPoints(m.areaDiffPct)}
-              />
-              <KpiCell
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span className="lg:hidden">{s.symDiff}</span>
-                    <span className="hidden lg:inline">{s.symDiffShort}</span>
-                    <SymDiffInfoButton />
-                  </span>
-                }
-                value={formatDePercentPoints(m.symmetricDiffPct)}
-              />
-              <KpiCell
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span>{s.hausdorff}</span>
-                    <HausdorffInfoButton />
-                  </span>
-                }
-                value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
-              />
-              <KpiCell
-                label={
-                  <span className="inline-flex items-center gap-1">
-                    <span>{s.hausdorffP95}</span>
-                    <HausdorffInfoButton />
-                  </span>
-                }
-                value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}
-              />
-            </KpiRow>
-          </KpiSection>
-
-          <KpiSection
-            className="mb-0 rounded-t-md rounded-b-none border-x border-t border-b-0 border-slate-500 !bg-[#F2F3F1] text-slate-900 hover:!bg-[#eaede7]"
-            aria-label={s.layersRowAria}
+      {m ? (
+        <KpiSection className="mb-6" aria-label={s.diffMetricsRowAria}>
+          <KpiRow
+            narrowLayout="none"
+            className={
+              'mt-0 grid min-w-0 grid-cols-2 gap-x-0 gap-y-4 ' +
+              '[&>*]:min-w-0 [&>*]:border-l [&>*]:border-white/15 [&>*]:pl-3 ' +
+              /* 2 columns: row starts 1,3,5 */
+              'max-md:[&>*:nth-child(2n+1)]:border-l-0 max-md:[&>*:nth-child(2n+1)]:pl-0 ' +
+              /* 3 columns (md–lg): row starts 1,4 */
+              'md:max-lg:[&>*:nth-child(3n+1)]:border-l-0 md:max-lg:[&>*:nth-child(3n+1)]:pl-0 ' +
+              'md:grid-cols-3 ' +
+              /* 1 row × 5 flex cells: only first has no left border */
+              'lg:flex lg:flex-row lg:flex-nowrap lg:gap-x-0 lg:gap-y-0 ' +
+              'lg:[&>*]:min-w-0 lg:[&>*]:flex-1 lg:[&>*]:basis-0 ' +
+              'lg:[&>*]:border-l lg:[&>*]:border-white/15 lg:[&>*]:pl-6 ' +
+              'lg:[&>*:nth-child(5n+1)]:border-l-0 lg:[&>*:nth-child(5n+1)]:pl-0'
+            }
           >
-            <KpiRow className="mt-0 [&>*]:!border-l [&>*]:!border-slate-500 [&>*]:pl-3 [&>*]:first:!border-l-0 [&>*]:first:pl-0 [&>*]:lg:pl-6">
-              <KpiToggleCell
-                inputId={`${layerId}-official`}
-                checked={mapLayers.showOfficial}
-                onChange={mapLayers.setShowOfficial}
-                label={s.areaOfficial}
-                value={formatDeSquareKilometersFromM2(m.officialAreaM2)}
-                swatch={
-                  <LegendRectSwatch
-                    items={[
-                      {
-                        borderColor: o.line,
-                        backgroundColor: hexToRgba(o.fill, o.fillOpacity),
-                      },
-                    ]}
-                  />
-                }
-              />
-              <KpiToggleCell
-                inputId={`${layerId}-osm`}
-                checked={mapLayers.showOsm}
-                onChange={mapLayers.setShowOsm}
-                label={s.areaOsm}
-                value={formatDeSquareKilometersFromM2(m.osmAreaM2)}
-                swatch={
-                  <LegendRectSwatch
-                    items={[
-                      {
-                        borderColor: osmC.line,
-                        backgroundColor: hexToRgba(osmC.fill, osmC.fillOpacity),
-                      },
-                    ]}
-                  />
-                }
-              />
-              <KpiToggleCell
-                inputId={`${layerId}-diff`}
-                checked={mapLayers.showDiff}
-                onChange={mapLayers.setShowDiff}
-                label={de.map.diff}
-                value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(m))}
-                swatch={
-                  <LegendRectSwatch
-                    items={[
-                      {
-                        borderColor: d.official.line,
-                        backgroundColor: hexToRgba(d.official.fill, d.official.fillOpacity),
-                      },
-                      {
-                        borderColor: d.osm.line,
-                        backgroundColor: hexToRgba(d.osm.fill, d.osm.fillOpacity),
-                      },
-                    ]}
-                  />
-                }
-              />
-            </KpiRow>
-          </KpiSection>
-        </>
-      )}
-    </>
+            <KpiCell
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span>{s.iou}</span>
+                  <IouInfoButton />
+                </span>
+              }
+              value={formatDeIou(m.iou)}
+            />
+            <KpiCell
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span>{s.areaDelta}</span>
+                  <AreaDeltaInfoButton />
+                </span>
+              }
+              value={formatDePercentPoints(m.areaDiffPct)}
+            />
+            <KpiCell
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span className="lg:hidden">{s.symDiff}</span>
+                  <span className="hidden lg:inline">{s.symDiffShort}</span>
+                  <SymDiffInfoButton />
+                </span>
+              }
+              value={formatDePercentPoints(m.symmetricDiffPct)}
+            />
+            <KpiCell
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span>{s.hausdorff}</span>
+                  <HausdorffInfoButton />
+                </span>
+              }
+              value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
+            />
+            <KpiCell
+              label={
+                <span className="inline-flex items-center gap-1">
+                  <span>{s.hausdorffP95}</span>
+                  <HausdorffInfoButton />
+                </span>
+              }
+              value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}
+            />
+          </KpiRow>
+        </KpiSection>
+      ) : null}
+    </div>
   )
 }
 

@@ -88,7 +88,7 @@ export function ExpectedOsmTagsSection({
 
   return (
     <section
-      className="mt-10 overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm"
+      className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm"
       aria-label={de.feature.expectedOsmTagsSectionAria}
     >
       <div className="px-4 py-6 sm:px-6">

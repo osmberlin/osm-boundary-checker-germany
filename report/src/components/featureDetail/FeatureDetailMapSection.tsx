@@ -1,54 +1,16 @@
-import { useNavigate } from '@tanstack/react-router'
-import { lazy, Suspense, useState } from 'react'
+import { useState, useId } from 'react'
 import type { ViewState } from 'react-map-gl/maplibre'
-import {
-  comparisonPmtilesMaplibreUrl,
-  comparisonUnmatchedPmtilesMaplibreUrl,
-} from '../../data/paths'
 import { useFeatureDetailMapBoundaryScope } from '../../hooks/useFeatureDetailMapBoundaryScope'
 import { de } from '../../i18n/de'
-import { handleComparisonMapFeatureClick } from '../../lib/comparisonMapFeatureClick'
 import { featureDetailHasComparisonMap } from '../../lib/featureDetailHasComparisonMap'
 import type { MapViewQueryValue } from '../../lib/mapViewQueryParam'
 import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { InfoNotice } from '../InfoNotice'
 import { MapOverlapPickDialog } from '../map/MapOverlapPickDialog'
-import { FeatureDetailBoundaryScopeToggle } from './FeatureDetailBoundaryScopeToggle'
-
-const ComparisonMapShell = lazy(() => import('../map/ComparisonMapShell'))
-const DETAIL_MAP_MAX_BOUNDS_SCALE = 4
-
-function toDetailMapMaxBounds(
-  bbox: [number, number, number, number] | null,
-): [[number, number], [number, number]] | undefined {
-  if (!bbox) return undefined
-  const [west, south, east, north] = bbox
-  if (!(west < east && south < north)) return undefined
-
-  const paddingRatio = (DETAIL_MAP_MAX_BOUNDS_SCALE - 1) / 2
-  const lonPad = (east - west) * paddingRatio
-  const latPad = (north - south) * paddingRatio
-  const clampedWest = Math.max(-180, west - lonPad)
-  const clampedSouth = Math.max(-85, south - latPad)
-  const clampedEast = Math.min(180, east + lonPad)
-  const clampedNorth = Math.min(85, north + latPad)
-  if (!(clampedWest < clampedEast && clampedSouth < clampedNorth)) return undefined
-
-  return [
-    [clampedWest, clampedSouth],
-    [clampedEast, clampedNorth],
-  ]
-}
-
-type MapLayerControls = {
-  showOfficial: boolean
-  setShowOfficial: (v: boolean) => void
-  showOsm: boolean
-  setShowOsm: (v: boolean) => void
-  showDiff: boolean
-  setShowDiff: (v: boolean) => void
-}
+import { FeatureDetailComparisonMapPane } from './FeatureDetailComparisonMapPane'
+import { FeatureDetailMapLayerKpiSection } from './FeatureDetailMapLayerKpiSection'
+import { toDetailMapMaxBounds, type MapLayerControls } from './featureDetailMapSectionUtils'
 
 export function FeatureDetailMapSection({
   areaKey,
@@ -72,102 +34,42 @@ export function FeatureDetailMapSection({
   overpassGeojson: OverpassGeoJsonFeatureCollection | null
   wfsGeojson: GeoJSON.FeatureCollection | null
 }) {
-  const navigate = useNavigate()
   const { showOnlySelected } = useFeatureDetailMapBoundaryScope()
   const [overlapPickKeys, setOverlapPickKeys] = useState<string[] | null>(null)
   const hasRowMapTiles = featureDetailHasComparisonMap(row, data)
   const detailMaxBounds = toDetailMapMaxBounds(row.mapBbox)
+  const m = row.metrics
+  const layerId = useId()
 
   if (!hasRowMapTiles) {
-    return <InfoNotice className="mt-4">{de.feature.noPmtiles}</InfoNotice>
+    return <InfoNotice>{de.feature.noPmtiles}</InfoNotice>
   }
 
   return (
-    <>
-      <div className="w-full">
-        <div className="h-px w-full bg-slate-500" />
-      </div>
-      <div className="w-full overflow-hidden rounded-b-md border-x border-b border-slate-500">
-        <div className="h-[480px] w-full">
-          <Suspense
-            fallback={
-              <div className="flex h-full items-center justify-center text-slate-500">
-                {de.feature.loadingMap}
-              </div>
-            }
-          >
-            <ComparisonMapShell
-              sources={{
-                primary: {
-                  pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
-                  sourceLayer: data.tippecanoeLayer,
-                  allowedFeatureIds: showOnlySelected
-                    ? [row.canonicalMatchKey]
-                    : interactionData.rows.map((r) => r.canonicalMatchKey),
-                  officialOnlyFeatureIds: showOnlySelected
-                    ? row.category === 'official_only'
-                      ? [row.canonicalMatchKey]
-                      : []
-                    : interactionData.rows
-                        .filter((r) => r.category === 'official_only')
-                        .map((r) => r.canonicalMatchKey),
-                },
-                unmatched: data.hasUnmatchedPmtiles
-                  ? {
-                      pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
-                      sourceLayer: data.tippecanoeLayer,
-                      allowedFeatureIds: showOnlySelected
-                        ? row.category === 'unmatched_osm'
-                          ? [row.canonicalMatchKey]
-                          : []
-                        : interactionData.unmatchedOsm.map((r) => r.canonicalMatchKey),
-                      visible:
-                        (row.category === 'unmatched_osm' || !showOnlySelected) &&
-                        mapLayers.showOsm,
-                    }
-                  : undefined,
-              }}
-              view={{
-                featureId: showOnlySelected ? row.canonicalMatchKey : null,
-                mapBbox: row.mapBbox,
-                maxBounds: showOnlySelected ? detailMaxBounds : undefined,
-                urlMapView: mapView.mapView,
-                onMoveEndCommitUrl: mapView.commitMapViewFromMap,
-              }}
-              layers={{
-                showOfficial:
-                  row.category === 'unmatched_osm' && showOnlySelected
-                    ? false
-                    : mapLayers.showOfficial,
-                showOsm:
-                  row.category === 'unmatched_osm' && showOnlySelected ? false : mapLayers.showOsm,
-                showDiff:
-                  row.category === 'unmatched_osm' && showOnlySelected ? false : mapLayers.showDiff,
-              }}
-              overlays={{
-                overpassGeojson,
-                wfsGeojson,
-              }}
-              interaction={
-                showOnlySelected
-                  ? undefined
-                  : {
-                      onFeatureClick: (featureKeys) =>
-                        handleComparisonMapFeatureClick({
-                          featureKeys,
-                          areaKey,
-                          data: interactionData,
-                          navigate,
-                          onOverlapPick: setOverlapPickKeys,
-                        }),
-                    }
-              }
-            />
-          </Suspense>
-        </div>
-        <div className="border-t border-slate-500 bg-[#F2F3F1] px-3 py-2.5">
-          <FeatureDetailBoundaryScopeToggle />
-        </div>
+    <div className="w-full">
+      <div className="flex w-full flex-col gap-0">
+        {m ? (
+          <FeatureDetailMapLayerKpiSection
+            layerIdPrefix={layerId}
+            metrics={m}
+            mapLayers={mapLayers}
+          />
+        ) : null}
+
+        <FeatureDetailComparisonMapPane
+          areaKey={areaKey}
+          data={data}
+          interactionData={interactionData}
+          row={row}
+          mapLayers={mapLayers}
+          mapView={mapView}
+          overpassGeojson={overpassGeojson}
+          wfsGeojson={wfsGeojson}
+          showOnlySelected={showOnlySelected}
+          detailMaxBounds={detailMaxBounds}
+          hasMetrics={Boolean(m)}
+          onOverlapPick={setOverlapPickKeys}
+        />
       </div>
       <MapOverlapPickDialog
         open={overlapPickKeys !== null}
@@ -176,6 +78,6 @@ export function FeatureDetailMapSection({
         data={interactionData}
         onClose={() => setOverlapPickKeys(null)}
       />
-    </>
+    </div>
   )
 }
