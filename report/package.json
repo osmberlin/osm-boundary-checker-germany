@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate-areas": "bun ./generateAreasJson.ts",
+    "generate-areas": "bun ./generateAreasIndex.ts",
     "sync-discussions-registry": "bun ./syncDiscussionsRegistry.ts",
     "prepare-static-snapshot": "bun ./prepareStaticSnapshot.ts",
     "sync-runtime-assets": "bun run prepare-static-snapshot && bun run generate-areas && bun run sync-discussions-registry",
