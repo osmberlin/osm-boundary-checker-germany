@@ -487,25 +487,6 @@ export const de = {
     candidatesViewLink: 'Auf osm.org',
     candidatesNoName: '(ohne Name)',
     candidatesEmptyValue: '–',
-    matcherContextSectionAria: 'Vergleichsregeln für diesen Datensatz',
-    matcherContextSectionTitle: 'Abgleich: OSM-Referenz und Filter',
-    matcherContextSectionLead:
-      'Diese OSM-Grenze hat kein passendes amtliches Gegenstück in diesem Datensatz. So ist der Abgleich konfiguriert (ohne Live-Abfrage):',
-    matcherBoundaryTag: 'Overpass boundary',
-    matcherOfficialProperty: 'Amtliches Match-Feld',
-    matcherOfficialExtractFilter: 'Amtlicher Extract-Filter',
-    matcherOfficialExtractFilterValue: (property: string, valuePrefix: string) =>
-      `Feld \`${property}\`, Wert beginnt mit \`${valuePrefix}\``,
-    matcherOsmProperty: 'OSM Match-Tag',
-    matcherAdminLevels: 'admin_level (erwartet)',
-    matcherBboxFilter: 'Bounding-Box-Filter',
-    matcherOsmScope: 'OSM-Geometrie-Filter',
-    matcherIgnoreRelations: 'Ignorierte Relation-IDs',
-    matcherIdPreset: 'Schlüssel-Normalisierung',
-    matcherOsmCriteria: 'OSM-Match',
-    matcherCriteriaProperty: 'über Tag-Vergleich',
-    matcherCriteriaRelations: (ids: string) => `Relation-ID(s): ${ids}`,
-    matcherDecodeKeyLink: 'Schlüssel dekodieren',
 
     updateMap: {
       title: 'Daten in OSM bearbeiten',

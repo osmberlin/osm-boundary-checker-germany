@@ -227,7 +227,7 @@ export function tryBerlinBezirkCanonical5(
 
 /**
  * OSM tag keys whose values the Schlüssel-Explorer can decode (RS / AGS).
- * Mirrors `MatcherContextSection` gating for the "decode key" link.
+ * Matches gating for the Schlüssel-Explorer link in compare provenance (`ReportDataProvenanceFooter`).
  */
 export const GERMAN_KEY_EXPLORER_DISPLAY_KEYS = [
   'de:regionalschluessel',

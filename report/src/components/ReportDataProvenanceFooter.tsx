@@ -261,6 +261,17 @@ function compareFilterItems(
     )
   }
 
+  if (filter?.officialExtractFilter) {
+    const { property, valuePrefix } = filter.officialExtractFilter
+    officialItems.push(
+      <FilterItem
+        key="compare-official-extract-filter"
+        code={`officialExtractFilter.${property}=${valuePrefix}*`}
+        description={p.filterDescriptions.officialExtractFilter(property, valuePrefix)}
+      />,
+    )
+  }
+
   if (filter?.officialExtractLayer?.trim()) {
     officialItems.push(
       <FilterItem

@@ -8,7 +8,6 @@ import { FeatureDetailHeader } from '../components/featureDetail/FeatureDetailHe
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
 import { FeatureDetailStatsDiffMetricsSection } from '../components/featureDetail/FeatureDetailStatsDiffMetricsSection'
 import { FeatureDetailStatsSummarySection } from '../components/featureDetail/FeatureDetailStatsSummarySection'
-import { MatcherContextSection } from '../components/featureDetail/MatcherContextSection'
 import { OfficialOnlyCandidatesSection } from '../components/featureDetail/OfficialOnlyCandidatesSection'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
@@ -104,8 +103,6 @@ function FeatureDetailWithMapContext({
         <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
 
         <OfficialOnlyCandidatesSection row={row} candidates={data.candidates} />
-
-        <MatcherContextSection areaKey={areaKey} data={data} row={row} />
 
         {hasComparisonMap ? (
           <LiveSourceProperties
