@@ -249,6 +249,7 @@ function buildSharedAdminCandidatesOgrSql(workspaceRoot: string): {
   const sql = `
 SELECT ST_PointOnSurface(geometry) AS geometry,
        osm_id,
+       "type",
        "admin_level",
        "name",
        "de:regionalschluessel",

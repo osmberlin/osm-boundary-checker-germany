@@ -248,6 +248,32 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     expect(result.get('k2')).toEqual([])
   })
 
+  test('positive osm_id with type=boundary is treated as relation (GDAL multipolygon quirk)', () => {
+    const candidates = [
+      pointFeature(10, 50, {
+        osm_id: '1303470',
+        type: 'boundary',
+        admin_level: '8',
+        'de:regionalschluessel': '120620341341',
+      }),
+    ]
+    const result = matchCandidatesForOfficialOnly({
+      rows: [
+        { canonicalMatchKey: '120620341341', officialGeometryWgs84: squarePolygon(10, 50, 0.5) },
+      ],
+      officialKeySet: new Set(['120620341341']),
+      candidatePoints: candidates,
+      options: {
+        idNormalizationPreset: 'regional-12',
+        osmProfileId: 'admin_rs',
+        osmMatchProperty: 'de:regionalschluessel',
+      },
+    })
+    const matches = result.get('120620341341') ?? []
+    expect(matches).toHaveLength(1)
+    expect(matches[0]).toMatchObject({ osmType: 'relation', osmId: '1303470' })
+  })
+
   test('relation osm_id is decoded as negative and surfaces as relation/<id>', () => {
     const inputs: OfficialOnlyInput[] = [
       { canonicalMatchKey: 'k1', officialGeometryWgs84: squarePolygon(10, 50, 1) },
@@ -321,6 +347,17 @@ describe('selectEligibleCandidates', () => {
       ignoreRelationIds: new Set(['100']),
     })
     expect(filtered.map((f) => (f.properties as Record<string, unknown>).osm_id)).toEqual(['100'])
+  })
+
+  test('ignoreRelationIds drops positive osm_id when type=boundary implies relation', () => {
+    const features = [
+      pointFeature(10, 50, { osm_id: '100', type: 'boundary', admin_level: '6' }),
+      pointFeature(10, 50, { osm_id: '200', admin_level: '6' }),
+    ]
+    const filtered = selectEligibleCandidates(features, {
+      ignoreRelationIds: new Set(['100']),
+    })
+    expect(filtered.map((f) => (f.properties as Record<string, unknown>).osm_id)).toEqual(['200'])
   })
 
   test('bbox filter excludes points outside [w, s, e, n]', () => {

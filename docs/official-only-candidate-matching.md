@@ -38,8 +38,9 @@ Tag selection (admin):
 ```sql
 SELECT ST_PointOnSurface(geometry) AS geometry,
        osm_id,
-       admin_level,
-       name,
+       "type",
+       "admin_level",
+       "name",
        "de:regionalschluessel",
        "de:amtlicher_gemeindeschluessel"
 FROM multipolygons
@@ -47,8 +48,10 @@ WHERE boundary = 'administrative'
   AND admin_level IN (<union over area configs>)
 ```
 
-`@id` is **not** stored — derived in JS from `sign(osm_id)` to save ~600 KB across the
-admin candidates FGB.
+`@id` is **not** stored. Compare derives way vs relation from `sign(osm_id)` (GDAL
+convention) and, when `osm_id` is positive but `type=boundary`, treats the feature as a
+**relation** id so links match OSM (some boundary relations surface with a positive
+`osm_id` in the multipolygon layer).
 
 ## Eligibility rules
 

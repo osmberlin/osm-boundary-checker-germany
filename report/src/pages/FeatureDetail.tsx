@@ -94,6 +94,14 @@ function FeatureDetailWithMapContext({
           wfsGeojson={filteredLiveOverlays.wfsGeojson}
         />
 
+        <OfficialOnlyCandidatesSection
+          areaKey={areaKey}
+          row={row}
+          candidates={data.candidates}
+          filterConfigSummary={data.filterConfigSummary}
+          overpassBoundaryTag={data.overpassBoundaryTag}
+        />
+
         <UpdateMapInstructions areaId={areaKey} row={row} />
 
         <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
@@ -101,8 +109,6 @@ function FeatureDetailWithMapContext({
         <FeatureDatasetProperties row={row} data={data} />
 
         <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
-
-        <OfficialOnlyCandidatesSection row={row} candidates={data.candidates} />
 
         {hasComparisonMap ? (
           <LiveSourceProperties

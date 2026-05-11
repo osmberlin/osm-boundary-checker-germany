@@ -471,17 +471,28 @@ export const de = {
       'Diese Grenze ist in OpenStreetMap bisher nicht zugeordnet. Damit der Abgleich greift, sollte die passende Grenz-Relation folgende Tags enthalten (laut aktueller Datensatz-Konfiguration):',
     decodeKeyExplorerLink: 'Schlüssel-Felder dekodieren',
 
-    candidatesSectionAria: 'OSM-Kandidaten für diese amtliche Grenze',
-    candidatesSectionTitle: 'OSM-Kandidaten',
-    candidatesSectionLead:
-      'Kandidaten sind OSM-Objekte, die zum amtlichen Datensatz passen könnten, aber nicht über das konfigurierte Schlüssel-Tag zugeordnet werden konnten. Geprüft wird: gleiches boundary/admin_level- bzw. postal_code-Schema, der Mittelpunkt liegt im amtlichen Polygon (auf 70 % verkleinert). So lassen sich fehlende oder fehlerhafte Schlüssel-Tags schneller finden, ohne die strenge Schlüssel-Logik der Pipeline aufzuweichen.',
+    candidatesSectionAria: 'OSM-Matching-Kandidaten für diese amtliche Grenze',
+    candidatesSectionTitle: 'OSM-Matching-Kandidaten',
+    /** OSM tag names only (no „…“); joined with „“, „" in the caller. */
+    candidatesSectionLeadCore: (osmTagsJoined: string, officialMatchProperty: string) =>
+      `Kandidaten sind OSM-Objekte, die zum amtlichen Datensatz passen könnten, aber beim Abgleich über die OSM-Match-Tags „${osmTagsJoined}“ mit dem amtlichen Feld „${officialMatchProperty}“ nicht zugeordnet werden konnten.`,
+    candidatesSectionLeadChecksPostal: () =>
+      'Geprüft wird: Multipolygone mit boundary=postal_code und gesetztem postal_code-Tag auf dem Kandidaten; der repräsentative Innenpunkt (Point-on-surface) liegt im amtlichen Polygon (linear auf 70 % verkleinert). So lassen sich fehlende oder fehlerhafte Tags schneller finden.',
+    candidatesSectionLeadChecksAdminListed: (adminLevelsJoined: string) =>
+      `Geprüft wird: Multipolygone mit boundary=administrative, admin_level in {${adminLevelsJoined}}; der repräsentative Innenpunkt (Point-on-surface) liegt im amtlichen Polygon (linear auf 70 % verkleinert). So lassen sich fehlende oder fehlerhafte Tags schneller finden.`,
+    candidatesSectionLeadChecksAdminGeneric: () =>
+      'Geprüft wird: Multipolygone mit boundary=administrative und ein zur Datensatz-Konfiguration passendes admin_level; der repräsentative Innenpunkt (Point-on-surface) liegt im amtlichen Polygon (linear auf 70 % verkleinert). So lassen sich fehlende oder fehlerhafte Tags schneller finden.',
+    candidatesSectionMatchHintBeforePostal: () =>
+      'Zur Zuordnung dieser amtlichen Daten prüfen Sie die passende OSM-Fläche mit boundary=postal_code und erwägen Sie, sie mit dem Tag',
+    candidatesSectionMatchHintBeforeAdmin: () =>
+      'Zur Zuordnung dieser amtlichen Daten prüfen Sie die passende administrative Grenze in OSM (boundary=administrative) und erwägen Sie, sie mit dem Tag',
+    candidatesSectionMatchHintAfter: () => 'zu versehen.',
     candidatesEmpty: 'Keine Kandidaten gefunden.',
     candidatesColumnObject: 'OSM-Objekt',
     candidatesColumnName: 'Name',
     candidatesColumnAdminLevel: 'admin_level',
     candidatesColumnPostalCode: 'postal_code',
     candidatesColumnDeRs: 'de:regionalschluessel',
-    candidatesColumnDeAgs: 'de:amtlicher_gemeindeschluessel',
     candidatesColumnActions: 'Aktionen',
     candidatesEditLink: 'In iD bearbeiten',
     candidatesViewLink: 'Auf osm.org',

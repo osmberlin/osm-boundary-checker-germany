@@ -1,8 +1,42 @@
 import { de } from '../../i18n/de'
-import type { CandidateMatch, ReportRow } from '../../types/report'
+import { withSiteBasePath } from '../../lib/siteBasePath'
+import type {
+  CandidateMatch,
+  ComparisonFilterConfigSummary,
+  OverpassBoundaryTag,
+  ReportRow,
+} from '../../types/report'
+
+function boundaryModeFromData(
+  overpassBoundaryTag: OverpassBoundaryTag | undefined,
+): 'postal_code' | 'administrative' {
+  return overpassBoundaryTag === 'postal_code' ? 'postal_code' : 'administrative'
+}
+
+function osmMatchTagsJoinedForProse(
+  filter: ComparisonFilterConfigSummary | undefined,
+  boundaryMode: 'postal_code' | 'administrative',
+): string {
+  const list = filter?.osmMatchProperties?.map((s) => s.trim()).filter((s) => s.length > 0) ?? []
+  if (list.length > 0) return list.join('“, „')
+  return boundaryMode === 'postal_code' ? 'postal_code' : 'de:regionalschluessel'
+}
+
+function officialMatchPropertyOrPlaceholder(
+  filter: ComparisonFilterConfigSummary | undefined,
+): string {
+  const v = filter?.officialMatchProperty?.trim()
+  return v != null && v.length > 0 ? v : '–'
+}
+
+function adminLevelsSortedCsv(filter: ComparisonFilterConfigSummary | undefined): string {
+  const raw = filter?.adminLevels?.map((s) => s.trim()).filter((s) => s.length > 0) ?? []
+  if (raw.length === 0) return ''
+  return [...raw].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).join(', ')
+}
 
 const CANDIDATE_LIST_GRID =
-  'grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)_minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-sm'
+  'grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-sm'
 
 function osmObjectUrl(candidate: CandidateMatch): string {
   return `https://www.openstreetmap.org/${candidate.osmType}/${candidate.osmId}`
@@ -10,6 +44,22 @@ function osmObjectUrl(candidate: CandidateMatch): string {
 
 function osmEditUrl(candidate: CandidateMatch): string {
   return `https://www.openstreetmap.org/edit?${candidate.osmType}=${candidate.osmId}`
+}
+
+/** Same resolver as Live-OSM treffer (`LiveSourceProperties`). */
+function relationResolverHref(areaKey: string, relationId: string): string {
+  const query = new URLSearchParams()
+  const dataset = areaKey.trim()
+  if (dataset.length > 0) query.set('dataset', dataset)
+  const search = query.toString()
+  return withSiteBasePath(
+    `/resolve/relation/${encodeURIComponent(relationId)}${search ? `?${search}` : ''}`,
+  )
+}
+
+function candidateObjectHref(candidate: CandidateMatch, areaKey: string): string {
+  if (candidate.osmType === 'relation') return relationResolverHref(areaKey, candidate.osmId)
+  return osmObjectUrl(candidate)
 }
 
 function emptyValue(value: string | null | undefined): string {
@@ -21,9 +71,11 @@ function emptyValue(value: string | null | undefined): string {
 function CandidateRow({
   candidate,
   isPostalCodeProfile,
+  areaKey,
 }: {
   candidate: CandidateMatch
   isPostalCodeProfile: boolean
+  areaKey: string
 }) {
   const objectLabel = `${candidate.osmType}/${candidate.osmId}`
   const displayName =
@@ -32,11 +84,24 @@ function CandidateRow({
       : candidate.name
   const linkClass =
     'text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
+  const objectHref = candidateObjectHref(candidate, areaKey)
+  const objectLinkIsInternal = candidate.osmType === 'relation'
+  const objectLinkAria =
+    candidate.osmType === 'relation'
+      ? de.feature.liveOsmHitOpenBoundaryCheckerAria(candidate.osmType, Number(candidate.osmId))
+      : de.feature.liveOsmHitOpenLinkAria(candidate.osmType, Number(candidate.osmId))
 
   return (
     <div className="contents">
       <span className="min-w-0 font-mono text-xs break-words text-slate-100">
-        <a href={osmObjectUrl(candidate)} className={linkClass} target="_blank" rel="noreferrer">
+        <a
+          href={objectHref}
+          className={linkClass}
+          {...(objectLinkIsInternal
+            ? {}
+            : { target: '_blank' as const, rel: 'noreferrer' as const })}
+          aria-label={objectLinkAria}
+        >
           {objectLabel}
         </a>
       </span>
@@ -49,9 +114,6 @@ function CandidateRow({
           <span className="font-mono text-xs text-slate-500">
             {de.feature.candidatesEmptyValue}
           </span>
-          <span className="font-mono text-xs text-slate-500">
-            {de.feature.candidatesEmptyValue}
-          </span>
         </>
       ) : (
         <>
@@ -60,9 +122,6 @@ function CandidateRow({
           </span>
           <span className="min-w-0 font-mono text-xs break-words text-slate-100">
             {emptyValue(candidate.deRegionalRaw)}
-          </span>
-          <span className="min-w-0 font-mono text-xs break-words text-slate-100">
-            {emptyValue(candidate.deAgsRaw)}
           </span>
         </>
       )}
@@ -79,7 +138,7 @@ function CandidateRow({
 }
 
 /**
- * Renders the additive "OSM-Kandidaten" list for `official_only` rows. Candidate data
+ * Renders the additive "OSM-Matching-Kandidaten" list for `official_only` rows. Candidate data
  * is shipped only in the per-feature shard (`output/features/<key>.json`) so the main
  * comparison table stays slim — this component is therefore expected to be invoked with
  * `candidates !== undefined` only on detail pages where the shard was successfully loaded.
@@ -88,29 +147,67 @@ function CandidateRow({
  * Karte zeigen" button that fetches the candidate polygons via Overpass-by-id.
  */
 export function OfficialOnlyCandidatesSection({
+  areaKey,
   row,
   candidates,
+  filterConfigSummary,
+  overpassBoundaryTag,
 }: {
+  areaKey: string
   row: ReportRow
   candidates: CandidateMatch[] | undefined
+  filterConfigSummary: ComparisonFilterConfigSummary | undefined
+  overpassBoundaryTag: OverpassBoundaryTag | undefined
 }) {
   if (row.category !== 'official_only') return null
   if (candidates === undefined) return null
 
   const isPostalCodeProfile = candidates.some((candidate) => candidate.postalCodeRaw !== undefined)
+  const boundaryMode = boundaryModeFromData(overpassBoundaryTag)
+  const osmTagsJoined = osmMatchTagsJoinedForProse(filterConfigSummary, boundaryMode)
+  const officialProp = officialMatchPropertyOrPlaceholder(filterConfigSummary)
+  const leadChecks =
+    boundaryMode === 'postal_code'
+      ? de.feature.candidatesSectionLeadChecksPostal()
+      : (() => {
+          const levelsCsv = adminLevelsSortedCsv(filterConfigSummary)
+          return levelsCsv.length > 0
+            ? de.feature.candidatesSectionLeadChecksAdminListed(levelsCsv)
+            : de.feature.candidatesSectionLeadChecksAdminGeneric()
+        })()
+  const matchTag =
+    filterConfigSummary?.osmMatchProperties?.[0]?.trim() ||
+    (boundaryMode === 'postal_code' ? 'postal_code' : 'de:regionalschluessel')
+  const matchKey = row.canonicalMatchKey?.trim() ?? ''
+  const showMatchHint = matchKey.length > 0
+  const matchHintBefore =
+    boundaryMode === 'postal_code'
+      ? de.feature.candidatesSectionMatchHintBeforePostal()
+      : de.feature.candidatesSectionMatchHintBeforeAdmin()
 
   return (
     <section
-      className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm"
+      className="overflow-hidden rounded-lg border border-sky-800/50 bg-sky-950/45 shadow-sm"
       aria-label={de.feature.candidatesSectionAria}
     >
       <div className="px-4 py-6 sm:px-6">
         <h2 className="text-base font-semibold text-slate-100">
           {de.feature.candidatesSectionTitle}
         </h2>
-        <p className="mt-2 max-w-4xl text-sm text-slate-400">{de.feature.candidatesSectionLead}</p>
+        <p className="mt-2 max-w-4xl text-sm text-slate-400">
+          {de.feature.candidatesSectionLeadCore(osmTagsJoined, officialProp)} {leadChecks}
+        </p>
+        {showMatchHint ? (
+          <p className="mt-2 max-w-4xl text-sm text-slate-400">
+            {matchHintBefore}{' '}
+            <code className="rounded bg-slate-950/80 px-1.5 py-0.5 font-mono text-xs break-all text-slate-200 ring-1 ring-slate-700/80">
+              {matchTag}={matchKey}
+            </code>{' '}
+            {de.feature.candidatesSectionMatchHintAfter()}
+          </p>
+        ) : null}
       </div>
-      <div className="border-t border-slate-700 px-4 py-6 sm:px-6">
+      <div className="border-t border-sky-800/45 px-4 py-6 sm:px-6">
         {candidates.length === 0 ? (
           <p className="text-sm text-slate-400">{de.feature.candidatesEmpty}</p>
         ) : (
@@ -130,14 +227,12 @@ export function OfficialOnlyCandidatesSection({
               {isPostalCodeProfile ? '' : de.feature.candidatesColumnDeRs}
             </span>
             <span className="text-xs font-medium tracking-wide text-slate-400 uppercase">
-              {isPostalCodeProfile ? '' : de.feature.candidatesColumnDeAgs}
-            </span>
-            <span className="text-xs font-medium tracking-wide text-slate-400 uppercase">
               {de.feature.candidatesColumnActions}
             </span>
             {candidates.map((candidate) => (
               <CandidateRow
                 key={`${candidate.osmType}/${candidate.osmId}`}
+                areaKey={areaKey}
                 candidate={candidate}
                 isPostalCodeProfile={isPostalCodeProfile}
               />

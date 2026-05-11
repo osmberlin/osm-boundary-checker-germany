@@ -27,7 +27,10 @@ export const DEFAULT_CANDIDATE_SHRINK_FACTOR = 0.7
  * on demand. See `report/src/components/featureDetail/OfficialOnlyCandidatesSection.tsx`.
  */
 export type CandidateMatch = {
-  /** OSM object type derived from `osm_id` sign at extract time. */
+  /**
+   * OSM object type: normally from `osm_id` sign (negative ⇒ relation); candidate decode
+   * also treats positive `osm_id` + `type=boundary` as a relation (GDAL quirk).
+   */
   osmType: 'way' | 'relation'
   /** Numeric OSM id as string; combine with `osmType` for stable osm.org URLs. */
   osmId: string
@@ -92,6 +95,25 @@ function osmTypeAndIdFromOsmId(
   if (!Number.isFinite(numeric) || numeric === 0) return null
   if (numeric < 0) return { osmType: 'relation', osmId: String(Math.trunc(-numeric)) }
   return { osmType: 'way', osmId: String(Math.trunc(numeric)) }
+}
+
+/**
+ * Same sign convention as {@link osmTypeAndIdFromOsmId}, but boundary **relations** are
+ * sometimes emitted with a **positive** `osm_id` while `type` is still `boundary` on the
+ * GDAL multipolygon (e.g. relation/1303470 — there is no way/1303470). Prefer relation in
+ * that case so osm.org / iD links stay valid.
+ */
+function osmTypeAndIdFromCandidateProps(props: Record<string, unknown>): {
+  osmType: 'way' | 'relation'
+  osmId: string
+} | null {
+  const decoded = osmTypeAndIdFromOsmId(props.osm_id)
+  if (!decoded) return null
+  if (decoded.osmType === 'way') {
+    const t = trimmedOrNull(props.type)
+    if (t === 'boundary') return { osmType: 'relation', osmId: decoded.osmId }
+  }
+  return decoded
 }
 
 function trimmedOrNull(value: unknown): string | null {
@@ -211,7 +233,7 @@ export function selectEligibleCandidates(
   for (const f of rawFeatures) {
     if (!f.geometry || f.geometry.type !== 'Point') continue
     const props = (f.properties ?? {}) as Record<string, unknown>
-    const decoded = osmTypeAndIdFromOsmId(props.osm_id)
+    const decoded = osmTypeAndIdFromCandidateProps(props)
     if (!decoded) continue
     if (options.ignoreRelationIds && decoded.osmType === 'relation') {
       if (options.ignoreRelationIds.has(decoded.osmId)) continue
@@ -271,7 +293,7 @@ export function matchCandidatesForOfficialOnly(input: {
     const seen = new Set<string>()
     for (const hit of hits) {
       const props = (hit.properties ?? {}) as Record<string, unknown>
-      const decoded = osmTypeAndIdFromOsmId(props.osm_id)
+      const decoded = osmTypeAndIdFromCandidateProps(props)
       if (!decoded) continue
       const dedupeKey = `${decoded.osmType}/${decoded.osmId}`
       if (seen.has(dedupeKey)) continue
