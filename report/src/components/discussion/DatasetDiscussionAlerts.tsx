@@ -34,13 +34,16 @@ export function DatasetDiscussionAlerts() {
       ? formatLastTouchedRelative(syncMeta.registryCheckedAt)
       : null
 
-  const cardClass =
+  const openCardClass =
     'group block rounded-md border border-emerald-400 bg-emerald-100 p-4 outline-none transition-colors hover:border-emerald-500 hover:bg-emerald-200 dark:border-emerald-500 dark:bg-emerald-500/25 dark:hover:border-emerald-400 dark:hover:bg-emerald-500/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500'
+  const closedCardClass =
+    'group block rounded-md border border-slate-300 bg-slate-100 p-4 outline-none transition-colors hover:border-slate-400 hover:bg-slate-200 dark:border-slate-600 dark:bg-slate-800/50 dark:hover:border-slate-500 dark:hover:bg-slate-800/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500'
 
   return (
     <div className="space-y-3">
       {items.map((issue) => {
-        const stateLabel = issue.state === 'open' ? de.discuss.stateOpen : de.discuss.stateClosed
+        const isOpen = issue.state === 'open'
+        const stateLabel = isOpen ? de.discuss.stateOpen : de.discuss.stateClosed
         const statusParts = [
           `${de.discuss.alertStatusPrefix}: ${stateLabel}`,
           de.discuss.alertLastActive(formatLastTouchedRelative(issue.lastTouchedAt)),
@@ -55,26 +58,62 @@ export function DatasetDiscussionAlerts() {
             href={issue.url}
             target="_blank"
             rel="noreferrer"
-            className={cn(cardClass, 'cursor-pointer')}
+            className={cn(isOpen ? openCardClass : closedCardClass, 'cursor-pointer')}
           >
             <div className="flex">
               <div className="shrink-0">
                 <InformationCircleIcon
                   aria-hidden
-                  className="size-5 text-emerald-500 dark:text-emerald-400"
+                  className={cn(
+                    'size-5',
+                    isOpen
+                      ? 'text-emerald-500 dark:text-emerald-400'
+                      : 'text-slate-400 dark:text-slate-500',
+                  )}
                 />
               </div>
               <div className="ml-3 min-w-0 flex-1 md:flex md:items-start md:justify-between md:gap-6">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
-                    {de.discuss.alertTitle}
+                  <p
+                    className={cn(
+                      'text-sm font-medium',
+                      isOpen
+                        ? 'text-emerald-900 dark:text-emerald-100'
+                        : 'text-slate-800 dark:text-slate-100',
+                    )}
+                  >
+                    {isOpen ? (
+                      de.discuss.alertTitle
+                    ) : (
+                      <>
+                        {de.discuss.alertTitleClosedBefore}
+                        <strong className="font-semibold">
+                          {de.discuss.alertTitleClosedEmphasis}
+                        </strong>
+                        {de.discuss.alertTitleClosedAfter}
+                      </>
+                    )}
                   </p>
-                  <p className="mt-1 text-xs text-emerald-800/90 dark:text-emerald-300/80">
+                  <p
+                    className={cn(
+                      'mt-1 text-xs',
+                      isOpen
+                        ? 'text-emerald-800/90 dark:text-emerald-300/80'
+                        : 'text-slate-600/90 dark:text-slate-400/85',
+                    )}
+                  >
                     {statusLine}
                   </p>
                 </div>
                 <p className="mt-3 shrink-0 text-sm md:mt-0 md:ml-6">
-                  <span className="font-medium whitespace-nowrap text-emerald-800 group-hover:text-emerald-700 dark:text-emerald-200 dark:group-hover:text-emerald-100">
+                  <span
+                    className={cn(
+                      'font-medium whitespace-nowrap',
+                      isOpen
+                        ? 'text-emerald-800 group-hover:text-emerald-700 dark:text-emerald-200 dark:group-hover:text-emerald-100'
+                        : 'text-slate-700 group-hover:text-slate-600 dark:text-slate-300 dark:group-hover:text-slate-200',
+                    )}
+                  >
                     {de.discuss.openDiscussion}
                     <span aria-hidden> →</span>
                   </span>

@@ -258,6 +258,10 @@ export const de = {
     modalClose: 'Schließen',
     openNewIssue: 'Issue auf GitHub anlegen',
     alertTitle: 'Zu dieser Seite gibt es eine Diskussion auf GitHub.',
+    /** Closed-issue alert: segments around <strong>geschlossene</strong>. */
+    alertTitleClosedBefore: 'Zu dieser Seite gibt es eine ',
+    alertTitleClosedEmphasis: 'geschlossene',
+    alertTitleClosedAfter: ' Diskussion auf GitHub.',
     /** Prefix before open/closed in the alert status line, e.g. "Status: Offen · …". */
     alertStatusPrefix: 'Status',
     alertLastActive: (relativeTimeWithSuffix: string) => `Zuletzt aktiv ${relativeTimeWithSuffix}`,
