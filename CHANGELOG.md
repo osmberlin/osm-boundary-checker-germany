@@ -4,6 +4,22 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-05
 
+### `659ca97`
+
+Wenn man auf einer "nur Amtlich" Seite ist wird die List der möglichen OSM-Kandidaten prominenter angezeigt. Häufig findet man darüber schnell die OSM-Relation, an der man Tag anpassen muss, über den das Matching stattfindet.
+
+### `f62ef29`, `e10c012`
+
+Die Indikatoren haben jetzt einfarbies Signal, ob sie eher OK oder eher problematisch sind. Die Detail-Erklärungen hinter dem Info-i sind alle überarbeitet damit sie besser erklären, was der Indikator sagt und wie die Farb-Signale zu verstehen sind.
+
+### `6312c73`, `28fac50`, `e5577a4`, `6ef4b89`, `99ac786`, `9828197`, `bb0e097`
+
+Design und Layout Verbesserungen, bspw. einheitliches Design der Status-Indikatoren.
+
+### `310baf6`
+
+Die Seite `/review` ist wieder gelöscht um die App einfacher zu machen. Die einzelnen Datensätze erlauben bereits einen ausreichenden und schnellen Zugang zu den problematischen Grenzen. Und die Startseite zeigt gibt eine Übersicht.
+
 ### `069a8c5`
 
 Man kann jetzt auf Github einen speziellen Issue erstellen der dann in der App als Hinweis angezeigt wird. Damit ist es möglich gemeinsame über bestimmte, komplizierte Regionen zu sprechen. Nutzt den Button auf der Datensatz-Übersichtsseite oder der Detailseite "Datensatz diskutieren" um einen solchen Issue zu erstellen.
