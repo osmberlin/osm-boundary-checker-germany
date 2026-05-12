@@ -2,7 +2,6 @@ import { buildResolvedOsmSourceSide } from '../../../../scripts/shared/osmGerman
 import { categoryLabelDe, de, issueLevelLabelDe } from '../../i18n/de'
 import { isOlderThanDays } from '../../lib/dataAge'
 import { EM_DASH } from '../../lib/formatDe'
-import { reviewIssueAmpelTextClasses } from '../../lib/issueAmpelStyles'
 import { officialAreaSummaryFreshness } from '../../lib/officialAreaSummaryFreshness'
 import { kpiFreshnessLinesFromIso } from '../../lib/reportFreshnessLines'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
@@ -52,6 +51,14 @@ export function FeatureDetailStatsSummarySection({
             label={s.issueIndicator}
             level={m.issueIndicator?.level}
             reasons={m.issueIndicator?.reasons}
+            bandContext={{
+              issueLevel: m.issueIndicator?.level,
+              iou: m.iou,
+              symmetricDiffPct: m.symmetricDiffPct,
+              areaDiffPct: m.areaDiffPct,
+              hausdorffNorm: m.hausdorffNorm,
+              metricsCrs: data.metricsCrs,
+            }}
           />
         ) : isNonMatchedCategory(row.category) ? (
           <NoMatchCategoryStatColumn label={s.unmatchedCompareLabel} category={row.category} />
@@ -94,21 +101,21 @@ function issueReasonLabelDe(
 ): string {
   switch (reason) {
     case 'STRONG_OVERLAP_LOW_DIFF':
-      return 'starke Ueberlappung bei kleiner Flaechendifferenz'
+      return 'starke Überlappung bei kleiner Flächendifferenz'
     case 'BOUNDARY_OUTLIER_BUT_OVERLAP_STABLE':
-      return 'hohe Randabweichung, aber stabile Ueberlappung'
+      return 'hohe Randabweichung, aber stabile Überlappung'
     case 'LOW_IOU_HIGH_SYM_DIFF':
       return 'niedrige IoU mit hoher symmetrischer Differenz'
     case 'HIGH_AREA_DELTA':
-      return 'hohe Flaechenabweichung'
+      return 'hohe Flächenabweichung'
     case 'BASELINE_ANOMALY_IOU_DELTA':
-      return 'ungewoehnlicher IoU-Sprung ggü. letztem Lauf'
+      return 'ungewöhnlicher IoU-Sprung ggü. letztem Lauf'
     case 'BASELINE_ANOMALY_SYMDIFF_DELTA':
-      return 'ungewoehnlicher SymDiff-Sprung ggü. letztem Lauf'
+      return 'ungewöhnlicher SymDiff-Sprung ggü. letztem Lauf'
     case 'BASELINE_ANOMALY_AREA_DELTA':
-      return 'ungewoehnlicher Flaechen-Sprung ggü. letztem Lauf'
+      return 'ungewöhnlicher Flächen-Sprung ggü. letztem Lauf'
     case 'BASELINE_ANOMALY_HAUSDORFF_NORM_DELTA':
-      return 'ungewoehnlicher Hausdorff-Norm-Sprung ggü. letztem Lauf'
+      return 'ungewöhnlicher Hausdorff-Norm-Sprung ggü. letztem Lauf'
   }
 }
 
@@ -136,16 +143,25 @@ function IssueIndicatorStatColumn({
   label,
   level,
   reasons,
+  bandContext,
 }: {
   label: string
   level: 'ok' | 'review' | 'issue' | undefined
   reasons: IssueReasonCode[] | undefined
+  bandContext?: {
+    issueLevel?: 'ok' | 'review' | 'issue'
+    iou?: number
+    symmetricDiffPct?: number
+    areaDiffPct?: number
+    hausdorffNorm?: number
+    metricsCrs?: string
+  }
 }) {
   const primaryClass =
     level === 'ok'
       ? 'text-emerald-200'
       : level === 'review' || level === 'issue'
-        ? reviewIssueAmpelTextClasses
+        ? 'text-pink-200'
         : 'text-slate-400'
   const primaryText = level ? issueLevelLabelDe(level) : EM_DASH
   const reasonsLine = reasons?.length
@@ -157,7 +173,7 @@ function IssueIndicatorStatColumn({
       <dt className="text-sm font-medium text-slate-400">
         <span className="inline-flex items-center gap-1">
           <span>{label}</span>
-          <IssueIndicatorInfoButton />
+          <IssueIndicatorInfoButton bandContext={bandContext} />
         </span>
       </dt>
       <dd

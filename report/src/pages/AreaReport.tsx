@@ -166,6 +166,7 @@ export function AreaReport() {
         if (fromSnapshots.length > 0) return fromSnapshots
         return [{ id: 'current', meanIou: computeMeanIou(data.rows) }]
       })()
+  const latestMeanIou = chartData.length > 0 ? chartData[chartData.length - 1]?.meanIou : null
   const areaRunStatus = runStatusQuery.data?.areas?.[areaKey]
   const compareBranch = areaRunStatus?.compare
   const showCompareFallbackNotice =
@@ -400,7 +401,16 @@ export function AreaReport() {
           <h2 className="mb-3 border-b border-slate-700/80 pb-3 text-base font-semibold text-slate-100">
             <span className="inline-flex flex-wrap items-center gap-1">
               <span>{de.areaReport.chartTitle}</span>
-              <MeanIouInfoButton className="-ml-0.5" iconClassName="size-[0.95rem]" />
+              <MeanIouInfoButton
+                className="-ml-0.5"
+                iconClassName="size-[0.95rem]"
+                bandContext={{
+                  metricsCrs: data.metricsCrs,
+                  ...(latestMeanIou != null && Number.isFinite(latestMeanIou)
+                    ? { meanIou: latestMeanIou }
+                    : {}),
+                }}
+              />
             </span>
           </h2>
           <div ref={chartRef} className="min-h-0 min-w-0 flex-1">
@@ -466,7 +476,13 @@ export function AreaReport() {
                     sortBy={sortBy}
                     sortDir={sortDir}
                     onSort={setColumn}
-                    labelEnd={<IouInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />}
+                    labelEnd={
+                      <IouInfoButton
+                        className="-mr-0.5"
+                        iconClassName="size-[0.95rem]"
+                        bandContext={{ metricsCrs: data.metricsCrs }}
+                      />
+                    }
                   />
                   <SortableTh
                     column="area"
@@ -476,7 +492,11 @@ export function AreaReport() {
                     sortDir={sortDir}
                     onSort={setColumn}
                     labelEnd={
-                      <AreaDeltaInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
+                      <AreaDeltaInfoButton
+                        className="-mr-0.5"
+                        iconClassName="size-[0.95rem]"
+                        bandContext={{ metricsCrs: data.metricsCrs }}
+                      />
                     }
                   />
                   <SortableTh
@@ -487,7 +507,11 @@ export function AreaReport() {
                     sortDir={sortDir}
                     onSort={setColumn}
                     labelEnd={
-                      <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
+                      <HausdorffInfoButton
+                        className="-mr-0.5"
+                        iconClassName="size-[0.95rem]"
+                        bandContext={{ metricsCrs: data.metricsCrs }}
+                      />
                     }
                   />
                   <SortableTh
@@ -498,7 +522,11 @@ export function AreaReport() {
                     sortDir={sortDir}
                     onSort={setColumn}
                     labelEnd={
-                      <HausdorffInfoButton className="-mr-0.5" iconClassName="size-[0.95rem]" />
+                      <HausdorffInfoButton
+                        className="-mr-0.5"
+                        iconClassName="size-[0.95rem]"
+                        bandContext={{ metricsCrs: data.metricsCrs }}
+                      />
                     }
                   />
                   <SortableTh

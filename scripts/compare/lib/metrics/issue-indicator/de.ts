@@ -3,8 +3,9 @@ import type { MetricInfoCopy } from '../metricInfoCopy.ts'
 export const issueIndicatorModalDe: MetricInfoCopy = {
   triggerAria: 'Erklärung zur Bewertungsampel anzeigen',
   title: 'Was bedeutet die Bewertungsampel?',
-  lead: 'Die Ampel stuft Abweichungen als ok, review oder issue ein. Sie ist bewusst skalensensitiv und bewertet nicht nur den maximalen Hausdorff-Wert.',
-  paragraphs: [
+  lead: 'Die Ampel stuft Abweichungen als „Ok“, „Prüfen“ oder „Problem“ ein. Sie ist bewusst skalensensitiv und bewertet nicht nur den maximalen Hausdorff-Wert.',
+  howToRead: [],
+  technical: [
     'Die Entscheidung kombiniert mehrere Kennzahlen: IoU, symmetrische Differenz, Flächenabweichung sowie robuste Randdistanz (Hausdorff P95) und eine skalierte Distanznorm. Dadurch wird vermieden, dass große Regionen allein wegen einer hohen absoluten Distanz als Problem markiert werden.',
     'Ein hoher Maximal-Hausdorff kann bei großen Flächen auftreten, obwohl sich die Geometrien praktisch fast vollständig überlappen. In solchen Fällen kann die Ampel weiterhin "ok" sein.',
     'Zusätzlich wird ein robuster Basislinien-Check genutzt: Wenn sich ein Objekt gegenüber dem letzten Lauf ungewöhnlich stark verändert (MAD / modified z-score), wird es mindestens als "review" markiert.',

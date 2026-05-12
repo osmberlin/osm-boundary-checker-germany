@@ -5,6 +5,12 @@ import {
   formatDeOrDash,
   formatDePercentPoints,
 } from '../../lib/formatDe'
+import {
+  KPI_TIER_INFO_BUTTON_CLASS,
+  tierAreaDeltaAbs,
+  tierIou,
+  tierSymmetricDiffPct,
+} from '../../lib/kpiTier'
 import type { ReportRow } from '../../types/report'
 import { KpiCell, KpiRow, KpiSection } from '../FeatureStatBlocks'
 import {
@@ -27,8 +33,10 @@ const diffMetricsKpiRowClassName =
 
 export function FeatureDetailStatsDiffMetricsSection({
   metrics: m,
+  metricsCrs,
 }: {
   metrics: NonNullable<ReportRow['metrics']>
+  metricsCrs: string
 }) {
   const s = de.feature.stats
 
@@ -39,7 +47,10 @@ export function FeatureDetailStatsDiffMetricsSection({
           label={
             <span className="inline-flex items-center gap-1">
               <span>{s.iou}</span>
-              <IouInfoButton />
+              <IouInfoButton
+                bandContext={{ iou: m.iou, metricsCrs }}
+                className={KPI_TIER_INFO_BUTTON_CLASS[tierIou(m.iou)]}
+              />
             </span>
           }
           value={formatDeIou(m.iou)}
@@ -48,7 +59,10 @@ export function FeatureDetailStatsDiffMetricsSection({
           label={
             <span className="inline-flex items-center gap-1">
               <span>{s.areaDelta}</span>
-              <AreaDeltaInfoButton />
+              <AreaDeltaInfoButton
+                bandContext={{ areaDiffPct: m.areaDiffPct, metricsCrs }}
+                className={KPI_TIER_INFO_BUTTON_CLASS[tierAreaDeltaAbs(Math.abs(m.areaDiffPct))]}
+              />
             </span>
           }
           value={formatDePercentPoints(m.areaDiffPct)}
@@ -58,7 +72,12 @@ export function FeatureDetailStatsDiffMetricsSection({
             <span className="inline-flex items-center gap-1">
               <span className="lg:hidden">{s.symDiff}</span>
               <span className="hidden lg:inline">{s.symDiffShort}</span>
-              <SymDiffInfoButton />
+              <SymDiffInfoButton
+                bandContext={{ symmetricDiffPct: m.symmetricDiffPct, metricsCrs }}
+                className={
+                  KPI_TIER_INFO_BUTTON_CLASS[tierSymmetricDiffPct(Math.abs(m.symmetricDiffPct))]
+                }
+              />
             </span>
           }
           value={formatDePercentPoints(m.symmetricDiffPct)}
@@ -67,7 +86,14 @@ export function FeatureDetailStatsDiffMetricsSection({
           label={
             <span className="inline-flex items-center gap-1">
               <span>{s.hausdorff}</span>
-              <HausdorffInfoButton />
+              <HausdorffInfoButton
+                bandContext={{
+                  hausdorffM: m.hausdorffM,
+                  hausdorffNorm: m.hausdorffNorm,
+                  hausdorffP95M: m.hausdorffP95M,
+                  metricsCrs,
+                }}
+              />
             </span>
           }
           value={formatDeOrDash(m.hausdorffM, formatDeMeters)}
@@ -76,7 +102,13 @@ export function FeatureDetailStatsDiffMetricsSection({
           label={
             <span className="inline-flex items-center gap-1">
               <span>{s.hausdorffP95}</span>
-              <HausdorffInfoButton />
+              <HausdorffInfoButton
+                bandContext={{
+                  hausdorffP95M: m.hausdorffP95M,
+                  hausdorffNorm: m.hausdorffNorm,
+                  metricsCrs,
+                }}
+              />
             </span>
           }
           value={formatDeOrDash(m.hausdorffP95M, formatDeMeters)}

@@ -41,7 +41,6 @@ export function AreaReportHeader({ title, sourceName, sourceHref }: Props) {
               ) : (
                 sourceName
               )}
-              {de.footer.geoDataSuffix}
             </span>
           ) : null}
           {showSource ? <Middot /> : null}

@@ -7,14 +7,41 @@ export const hausdorffRustDocDe = {
   title: 'GeoRust `geo`: HausdorffDistance — wird im Rust-Geom-Sidecar für diese Metrik verwendet.',
 } as const
 
+/** Keep in sync with `de.feature.stats` in `report/src/i18n/de.ts` (KPI row labels). */
+const hausdorffKpiLabels = {
+  max: 'Max. Randabstand',
+  p95: 'Randabstand P95',
+} as const
+
 export const hausdorffModalDe: MetricInfoCopy = {
-  triggerAria: 'Erklärung zum Hausdorff-Abstand anzeigen',
-  title: 'Was ist der Hausdorff-Abstand?',
-  lead: 'Kurz gesagt: ein Maß dafür, wie weit die beiden Grenzlinien maximal auseinanderliegen — in Metern, im projizierten Koordinatensystem des Vergleichs.',
-  paragraphs: [
-    'Der Hausdorff-Abstand vergleicht die amtliche Grenze mit der OSM-Grenze. Er sucht die größte „Lücke“ zwischen den beiden Umrissen: An welcher Stelle muss man am weitesten von einem Rand zum anderen gehen? Dieser maximale Abstand (in beide Richtungen betrachtet) ist der angezeigte Wert.',
-    'Kleine Werte bedeuten: Die Linien liegen überall nah beieinander. Größere Werte deuten auf eine Stelle hin, an der eine der beiden Quellen stärker abweicht — zum Beispiel durch Vereinfachung der Geometrie, unterschiedliche Toleranzen oder lokale Kartierungsunterschiede.',
-    'Andere Spalten wie IoU oder Flächenabweichung beschreiben vor allem die Überlappung der Flächen. Der Hausdorff-Abstand ergänzt das: Er betont den schlechtesten Punkt entlang der Grenze, nicht nur den Durchschnitt.',
+  triggerAria: 'Erklärung zu Abständen an den Grenzen (Hausdorff, P95) anzeigen',
+  title: 'Abstände an den Grenzen (Hausdorff)',
+  lead: `Hier sehen Sie zwei Randabstände in Metern — dieselben Kennzahlen wie in der KPI-Zeile: ${hausdorffKpiLabels.max} und ${hausdorffKpiLabels.p95}.`,
+  howToReadHeading: 'Zwei Betrachtungen',
+  howToRead: [
+    `${hausdorffKpiLabels.max} reagiert stark auf einzelne Ausreißerpunkte an der Grenze.`,
+    `${hausdorffKpiLabels.p95} ist stabiler und damit meist besser für die Einordnung geeignet.`,
+  ],
+  howToReadAsList: true,
+  technical: [
+    'Aus den Grenzlinien werden Stützpunkte betrachtet und jeweils der kürzeste Abstand zur anderen Grenze ermittelt. Der maximale dieser Abstände entspricht dem größten sichtbaren „Spalt“ irgendwo entlang der Linie. Der P95-Wert verwirft die extremsten wenigen Prozent dieser Punktabstände und beschreibt damit typische Randabweichung robuster als ein reines Maximum.',
+  ],
+  references: [
+    hausdorffRustDocDe,
+    {
+      label: 'JTS: DiscreteHausdorffDistance (Referenz zum TS/JSTS-Ansatz)',
+      href: 'https://github.com/locationtech/jts/blob/master/modules/core/src/main/java/org/locationtech/jts/algorithm/distance/DiscreteHausdorffDistance.java',
+    },
+    {
+      label: 'Hausdorff Distance Image Comparison (Cornell)',
+      href: 'https://www.cs.cornell.edu/~dph/hausdorff/hausdorff.html',
+    },
+    {
+      label: 'Robust Hausdorff (Perzentil) — Dokumentation zur Idee',
+      href: 'https://segmentationmetrics.readthedocs.io/en/latest/segmentationmetrics.surface_distance.html',
+    },
   ],
   close: 'Schließen',
+  appendMetricsCrsNote: true,
+  metricsCrsNoteStyle: 'appendSentence',
 }

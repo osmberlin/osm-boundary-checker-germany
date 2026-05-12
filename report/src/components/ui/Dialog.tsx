@@ -40,7 +40,7 @@ export function Dialog({
             className={cn(
               className,
               sizes[size],
-              'row-start-2 w-full min-w-0 rounded-t-2xl bg-slate-900 p-6 shadow-lg ring-1 ring-white/10 sm:mb-auto sm:rounded-2xl',
+              'row-start-2 flex min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-t-2xl bg-slate-900 shadow-lg ring-1 ring-white/10 sm:mb-auto sm:rounded-2xl',
               'transition duration-100 will-change-transform data-closed:translate-y-3 data-closed:opacity-0 data-enter:ease-out data-leave:ease-in sm:data-closed:translate-y-0 sm:data-closed:scale-95',
             )}
           >
@@ -50,6 +50,44 @@ export function Dialog({
       </div>
     </HeadlessDialog>
   )
+}
+
+/** Panel edge uses `ring-white/10`; internal rules use the same weight for alignment. */
+const dialogRuleClass = 'border-white/10'
+
+export function AppDialogHeader({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
+  return <div {...props} className={cn('flex flex-col border-b', dialogRuleClass, className)} />
+}
+
+export function AppDialogHeaderSeparator({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<'div'>) {
+  return <div {...props} role="separator" className={cn('border-t', dialogRuleClass, className)} />
+}
+
+/** Title row: tighter top, padding below title matches lead row top (`py-3`) for even space around the separator line. */
+export function AppDialogHeaderTitleSlot({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<'div'>) {
+  return <div {...props} className={cn('px-6 pt-4 pb-3', className)} />
+}
+
+/** Lead / subtitle row: equal vertical padding above and below the copy block. */
+export function AppDialogHeaderLeadSlot({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<'div'>) {
+  return <div {...props} className={cn('px-6 py-3', className)} />
+}
+
+/** Header with title only (no lead): symmetric vertical padding. */
+export function AppDialogHeaderTitleSolo({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<'div'>) {
+  return <div {...props} className={cn('px-6 py-4', className)} />
 }
 
 export function AppDialogTitle({
@@ -71,13 +109,13 @@ export function AppDialogDescription({
   return (
     <Description
       {...props}
-      className={cn(className, 'mt-2 text-sm leading-6 text-pretty text-slate-400')}
+      className={cn('m-0 text-sm leading-6 text-pretty text-slate-400', className)}
     />
   )
 }
 
 export function AppDialogBody({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
-  return <div {...props} className={cn(className, 'mt-4 space-y-3')} />
+  return <div {...props} className={cn('min-w-0 space-y-3 px-6 py-4', className)} />
 }
 
 export function AppDialogActions({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
@@ -85,8 +123,9 @@ export function AppDialogActions({ className, ...props }: React.ComponentPropsWi
     <div
       {...props}
       className={cn(
+        'flex flex-col-reverse items-stretch justify-end gap-2 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-end',
+        dialogRuleClass,
         className,
-        'mt-6 flex flex-col-reverse items-stretch justify-end gap-2 sm:flex-row sm:items-center sm:justify-end',
       )}
     />
   )

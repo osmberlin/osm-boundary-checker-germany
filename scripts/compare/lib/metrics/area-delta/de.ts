@@ -3,11 +3,14 @@ import type { MetricInfoCopy } from '../metricInfoCopy.ts'
 export const areaDeltaModalDe: MetricInfoCopy = {
   triggerAria: 'Erklärung zu Δ Fläche % anzeigen',
   title: 'Was bedeutet „Δ Fläche %“?',
-  lead: 'Die Spalte zeigt, wie stark sich die eingeschlossene Fläche von OSM von der amtlichen Referenzfläche unterscheidet — als Prozent der amtlichen Fläche.',
-  paragraphs: [
-    'Berechnung: Betrag der Differenz aus OSM-Fläche minus amtlicher Fläche, geteilt durch die amtliche Fläche, mal 100. Angezeigt wird der absolute Wert (ohne Vorzeichen): Es geht nur um die Größe der Abweichung, nicht darum, ob OSM größer oder kleiner ist.',
-    'Eine kleine Prozentzahl heißt: Die Gesamtflächen sind annähernd gleich groß. Eine große Zahl kann auch dann auftreten, wenn die Grenzlinien lokal noch nah beieinander liegen — etwa bei unterschiedlicher Generalisierung oder wenn eine Quelle das Gebiet anders „füllt“.',
-    'Gemeinsam mit IoU hilft diese Kennzahl, Fälle zu erkennen, in denen die Flächenbilanz stark von der Referenz abweicht. Sie ergänzt IoU und Hausdorff: IoU betont Überlappung, Hausdorff den schlimmsten Punkt entlang der Linie, Δ Fläche % die reine Größenabweichung der Flächen.',
+  lead: 'Das Delta (Δ) der Fläche in Prozent zeigt, wie stark sich die eingeschlossene OSM-Fläche von der amtlichen Referenzfläche unterscheidet.',
+  howToRead: [],
+  technical: [
+    'Der Kennzahlwert entsteht aus dem Betrag der Differenz zwischen OSM- und amtlicher Fläche, geteilt durch die amtliche Fläche und mit 100 multipliziert — dieselbe Idee wie ein relativer Größenfehler in Prozent, wobei nur die Größe der Abweichung zählt (OSM größer oder kleiner spielt für den Betrag keine Rolle).',
+    'Höhere Werte entstehen typischerweise, wenn sich die eingeschlossenen Gebiete deutlich unterscheiden oder wenn die Referenzfläche sehr klein ist und schon moderate Flächenunterschiede relativ groß wirken.',
   ],
   close: 'Schließen',
+  appendMetricsCrsNote: true,
+  metricsCrsNoteStyle: 'appendSentence',
+  hideTechnicalHeading: true,
 }

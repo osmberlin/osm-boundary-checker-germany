@@ -1,5 +1,17 @@
 import type { Geometry, MultiPolygon, Polygon } from 'geojson'
 import DistanceOp from 'jsts/org/locationtech/jts/operation/distance/DistanceOp.js'
+import {
+  KPI_AREA_DELTA_HIGH,
+  KPI_AREA_DELTA_STRONG_OVERLAP_MAX,
+  KPI_HAUSDORFF_NORM_REVIEW,
+  KPI_HAUSDORFF_NORM_SEVERE,
+  KPI_IOU_LOW_WITH_HIGH_SYM_DIFF,
+  KPI_IOU_OVERLAP_GOOD,
+  KPI_IOU_OVERLAP_VERY_STRONG,
+  KPI_SYM_DIFF_HIGH_WITH_LOW_IOU,
+  KPI_SYM_DIFF_OVERLAP_GOOD_MAX,
+  KPI_SYM_DIFF_STRONG_OVERLAP_MAX,
+} from './kpiThresholds.ts'
 import { geoReader, jstsBoundaryLengthM } from './sharedGeom.ts'
 import type { IssueIndicator, IssueIndicatorReason, MetricResult } from './types.ts'
 
@@ -147,12 +159,16 @@ export function classifyIssueIndicator(
     ? Math.abs(metrics.hausdorffNorm!)
     : Number.NaN
 
-  const overlapVeryStrong = iou >= 0.995 && symDiff <= 0.35 && areaDelta <= 0.35
-  const overlapGood = iou >= 0.99 && symDiff <= 0.75
-  const boundaryOutlier = Number.isFinite(hausNorm) && hausNorm >= 0.02
-  const severeBoundaryOutlier = Number.isFinite(hausNorm) && hausNorm >= 0.04
-  const lowIouAndHighSymDiff = iou < 0.985 && symDiff > 1.5
-  const highAreaDelta = areaDelta > 1.2
+  const overlapVeryStrong =
+    iou >= KPI_IOU_OVERLAP_VERY_STRONG &&
+    symDiff <= KPI_SYM_DIFF_STRONG_OVERLAP_MAX &&
+    areaDelta <= KPI_AREA_DELTA_STRONG_OVERLAP_MAX
+  const overlapGood = iou >= KPI_IOU_OVERLAP_GOOD && symDiff <= KPI_SYM_DIFF_OVERLAP_GOOD_MAX
+  const boundaryOutlier = Number.isFinite(hausNorm) && hausNorm >= KPI_HAUSDORFF_NORM_REVIEW
+  const severeBoundaryOutlier = Number.isFinite(hausNorm) && hausNorm >= KPI_HAUSDORFF_NORM_SEVERE
+  const lowIouAndHighSymDiff =
+    iou < KPI_IOU_LOW_WITH_HIGH_SYM_DIFF && symDiff > KPI_SYM_DIFF_HIGH_WITH_LOW_IOU
+  const highAreaDelta = areaDelta > KPI_AREA_DELTA_HIGH
 
   addReason(reasons, 'STRONG_OVERLAP_LOW_DIFF', overlapVeryStrong)
   addReason(reasons, 'BOUNDARY_OUTLIER_BUT_OVERLAP_STABLE', boundaryOutlier && overlapGood)
@@ -166,7 +182,7 @@ export function classifyIssueIndicator(
     boundaryOutlier ||
     highAreaDelta ||
     baselineReasons.length > 0 ||
-    (!overlapVeryStrong && iou < 0.99)
+    (!overlapVeryStrong && iou < KPI_IOU_OVERLAP_GOOD)
   ) {
     level = 'review'
   }

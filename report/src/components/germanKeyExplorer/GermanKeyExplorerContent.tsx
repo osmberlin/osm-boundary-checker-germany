@@ -33,6 +33,10 @@ import {
   AppDialogActions,
   AppDialogBody,
   AppDialogDescription,
+  AppDialogHeader,
+  AppDialogHeaderLeadSlot,
+  AppDialogHeaderSeparator,
+  AppDialogHeaderTitleSlot,
   AppDialogTitle,
   Dialog,
 } from '../ui/Dialog'
@@ -613,8 +617,15 @@ export function GermanKeyExplorerContent({
       )}
 
       <Dialog open={pickHits !== null} onClose={() => setPickHits(null)} size="md">
-        <AppDialogTitle>{t.nameSearchPickTitle}</AppDialogTitle>
-        <AppDialogDescription>{t.nameSearchPickLead}</AppDialogDescription>
+        <AppDialogHeader>
+          <AppDialogHeaderTitleSlot>
+            <AppDialogTitle>{t.nameSearchPickTitle}</AppDialogTitle>
+          </AppDialogHeaderTitleSlot>
+          <AppDialogHeaderSeparator />
+          <AppDialogHeaderLeadSlot>
+            <AppDialogDescription>{t.nameSearchPickLead}</AppDialogDescription>
+          </AppDialogHeaderLeadSlot>
+        </AppDialogHeader>
         <AppDialogBody>
           <ul className="list-none space-y-3 p-0">
             {(pickHits ?? []).map((hit) => (

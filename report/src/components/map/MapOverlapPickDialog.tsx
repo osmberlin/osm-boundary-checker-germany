@@ -7,6 +7,10 @@ import {
   AppDialogActions,
   AppDialogBody,
   AppDialogDescription,
+  AppDialogHeader,
+  AppDialogHeaderLeadSlot,
+  AppDialogHeaderSeparator,
+  AppDialogHeaderTitleSlot,
   AppDialogTitle,
   Dialog,
 } from '../ui/Dialog'
@@ -28,8 +32,15 @@ export function MapOverlapPickDialog({
 }) {
   return (
     <Dialog open={open} onClose={onClose} size="md">
-      <AppDialogTitle>{st.mapOverlapPickerTitle}</AppDialogTitle>
-      <AppDialogDescription>{st.mapOverlapPickerLead}</AppDialogDescription>
+      <AppDialogHeader>
+        <AppDialogHeaderTitleSlot>
+          <AppDialogTitle>{st.mapOverlapPickerTitle}</AppDialogTitle>
+        </AppDialogHeaderTitleSlot>
+        <AppDialogHeaderSeparator />
+        <AppDialogHeaderLeadSlot>
+          <AppDialogDescription>{st.mapOverlapPickerLead}</AppDialogDescription>
+        </AppDialogHeaderLeadSlot>
+      </AppDialogHeader>
       <AppDialogBody>
         <ul className="list-none space-y-3 p-0">
           {(keys ?? []).map((key) => {

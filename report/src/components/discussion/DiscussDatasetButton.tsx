@@ -6,6 +6,10 @@ import {
   AppDialogActions,
   AppDialogBody,
   AppDialogDescription,
+  AppDialogHeader,
+  AppDialogHeaderLeadSlot,
+  AppDialogHeaderSeparator,
+  AppDialogHeaderTitleSlot,
   AppDialogTitle,
   Dialog,
 } from '../ui/Dialog'
@@ -33,11 +37,18 @@ export function DiscussDatasetButton({ className }: Props) {
       </button>
 
       <Dialog open={open} onClose={setOpen} size="lg">
-        <AppDialogTitle>{de.discuss.modalTitle}</AppDialogTitle>
-        <AppDialogDescription>{de.discuss.modalLead}</AppDialogDescription>
-        <AppDialogBody>
+        <AppDialogHeader>
+          <AppDialogHeaderTitleSlot>
+            <AppDialogTitle>{de.discuss.modalTitle}</AppDialogTitle>
+          </AppDialogHeaderTitleSlot>
+          <AppDialogHeaderSeparator />
+          <AppDialogHeaderLeadSlot>
+            <AppDialogDescription>{de.discuss.modalLead}</AppDialogDescription>
+          </AppDialogHeaderLeadSlot>
+        </AppDialogHeader>
+        <AppDialogBody className="space-y-2">
           {de.discuss.modalParagraphs.map((p) => (
-            <p key={p} className="text-sm leading-6 text-slate-300">
+            <p key={p} className="m-0 text-sm leading-6 text-slate-300">
               {p}
             </p>
           ))}

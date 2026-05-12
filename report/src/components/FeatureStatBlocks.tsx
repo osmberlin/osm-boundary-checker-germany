@@ -67,7 +67,7 @@ export function KpiSection({
     <section
       aria-label={ariaLabel}
       className={[
-        'overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 px-4 py-6 shadow-sm sm:px-6',
+        'overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 p-5 shadow-sm',
         className,
       ]
         .filter(Boolean)
@@ -78,15 +78,42 @@ export function KpiSection({
   )
 }
 
+/**
+ * {@link KpiSection} with exactly one {@link KpiRow}; use instead of nesting those two.
+ */
+export function KpiSectionRow({
+  children,
+  className = '',
+  rowClassName = '',
+  'aria-label': ariaLabel,
+  narrowLayout,
+}: {
+  children: ReactNode
+  className?: string
+  rowClassName?: string
+  'aria-label'?: string
+  narrowLayout?: 'default' | 'gridThreeTwoRows' | 'none'
+}) {
+  return (
+    <KpiSection className={className} aria-label={ariaLabel}>
+      <KpiRow className={rowClassName} narrowLayout={narrowLayout}>
+        {children}
+      </KpiRow>
+    </KpiSection>
+  )
+}
+
 /** KPI cell: label on top, large value underneath (optional unit). */
 export function KpiCell({
   label,
   value,
   unit,
+  hint,
 }: {
   label: ReactNode
   value: ReactNode
   unit?: ReactNode
+  hint?: ReactNode
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
@@ -97,6 +124,9 @@ export function KpiCell({
         </span>
         {unit ? <span className="text-sm text-slate-400">{unit}</span> : null}
       </dd>
+      {hint ? (
+        <dd className="m-0 text-xs leading-snug text-pretty text-slate-500">{hint}</dd>
+      ) : null}
     </div>
   )
 }

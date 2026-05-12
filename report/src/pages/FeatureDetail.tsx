@@ -81,7 +81,12 @@ function FeatureDetailWithMapContext({
           </div>
         ) : null}
         <FeatureDetailStatsSummarySection row={row} data={data} />
-        {row.metrics ? <FeatureDetailStatsDiffMetricsSection metrics={row.metrics} /> : null}
+        {row.metrics ? (
+          <FeatureDetailStatsDiffMetricsSection
+            metrics={row.metrics}
+            metricsCrs={data.metricsCrs}
+          />
+        ) : null}
 
         <FeatureDetailMapSection
           areaKey={areaKey}

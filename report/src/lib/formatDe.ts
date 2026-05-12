@@ -20,13 +20,8 @@ const nf1 = new Intl.NumberFormat(LOCALE, {
 })
 
 const nf3 = new Intl.NumberFormat(LOCALE, {
-  minimumFractionDigits: 3,
+  minimumFractionDigits: 0,
   maximumFractionDigits: 3,
-})
-
-const nf4 = new Intl.NumberFormat(LOCALE, {
-  minimumFractionDigits: 4,
-  maximumFractionDigits: 4,
 })
 
 const nfM0 = new Intl.NumberFormat(LOCALE, {
@@ -60,20 +55,36 @@ export function formatDeInteger(n: number): string {
 /** Fixed decimal places for compact KPI/table outputs. */
 export function formatDeFixed(n: number, fractionDigits: 0 | 1 | 2 | 3 | 4): string {
   if (fractionDigits === 0) return nf0.format(n)
-  if (fractionDigits === 1) return nf1.format(n)
-  if (fractionDigits === 2) return nf2.format(n)
-  if (fractionDigits === 3) return nf3.format(n)
-  return nf4.format(n)
+  return new Intl.NumberFormat(LOCALE, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: fractionDigits,
+  }).format(n)
 }
 
-/** IoU ∈ [0,1], three decimals. */
+/** IoU ∈ [0,1], up to three decimals. */
 export function formatDeIou(n: number): string {
   return nf3.format(n)
 }
 
-/** Percentage points (value already 0–100 scale), one decimal + %. */
+/**
+ * Percentage points (0–100 scale) + %.
+ * - exactly 0: `0 %` (no fractional noise)
+ * - |n| > 10: no fractional digits (rounded integer)
+ * - |n| ≤ 10 and two-decimal formatting of |n| is still `0`: up to three fractional digits (nearly-zero)
+ * - otherwise |n| ≤ 10: up to two fractional digits (previous behaviour)
+ */
 export function formatDePercentPoints(n: number): string {
-  return `${nf1.format(n)}\u00a0%`
+  if (n === 0) {
+    return `0\u00a0%`
+  }
+  if (Math.abs(n) > 10) {
+    return `${nf0.format(Math.round(n))}\u00a0%`
+  }
+  const zeroAtTwoDecimals = formatDeFixed(0, 2)
+  if (formatDeFixed(Math.abs(n), 2) === zeroAtTwoDecimals) {
+    return `${formatDeFixed(n, 3)}\u00a0%`
+  }
+  return `${formatDeFixed(n, 2)}\u00a0%`
 }
 
 /** Length in metres with tiered precision:

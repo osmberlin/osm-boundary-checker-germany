@@ -8,7 +8,14 @@ import {
   formatIsoTimestampToAbsoluteDe,
 } from '../lib/formatSourceDownloadedAt'
 import type { SourceMetadataSide } from '../types/report'
-import { AppDialogActions, AppDialogBody, AppDialogTitle, Dialog } from './ui/Dialog'
+import {
+  AppDialogActions,
+  AppDialogBody,
+  AppDialogHeader,
+  AppDialogHeaderTitleSolo,
+  AppDialogTitle,
+  Dialog,
+} from './ui/Dialog'
 
 function relativeAgeLineFromIso(raw: string | undefined): string {
   const t = raw?.trim()
@@ -88,9 +95,13 @@ function OfficialDatasetAgeDialog({
 
   return (
     <Dialog open={open} onClose={onClose} size="lg">
-      <AppDialogTitle className="text-xl font-semibold tracking-tight text-slate-50">
-        {copy.modalTitle}
-      </AppDialogTitle>
+      <AppDialogHeader>
+        <AppDialogHeaderTitleSolo>
+          <AppDialogTitle className="text-xl font-semibold tracking-tight text-slate-50">
+            {copy.modalTitle}
+          </AppDialogTitle>
+        </AppDialogHeaderTitleSolo>
+      </AppDialogHeader>
       <AppDialogBody>
         {!hasMetadata ? (
           <p className="text-sm leading-6 text-amber-200/80">{de.areaReport.sourceDateUnknown}</p>
@@ -107,8 +118,10 @@ function OfficialDatasetAgeDialog({
                 <h3 className="text-base leading-snug font-semibold tracking-tight text-slate-50">
                   {row.label}
                 </h3>
-                <p className="mt-2 text-sm text-slate-100 tabular-nums">{row.absoluteDisplay}</p>
-                <p className="mt-2 text-sm text-slate-300 tabular-nums">{relativeLine}</p>
+                <div className="mt-2 flex min-w-0 flex-nowrap items-baseline justify-between gap-4 text-sm tabular-nums">
+                  <span className="min-w-0 text-pretty text-slate-100">{row.absoluteDisplay}</span>
+                  <span className="shrink-0 text-slate-300">{relativeLine}</span>
+                </div>
                 <p className="mt-2 text-xs leading-snug text-slate-400">{row.explanation}</p>
               </section>
             )
