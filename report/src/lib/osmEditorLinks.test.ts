@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ReportRow } from '../types/report'
 import {
   buildJosmEditorLinks,
+  buildOpenStreetMapBrowseRelationUrl,
   buildOpenStreetMapIdEditUrl,
   CHANGESET_HASHTAG_GRENZABGLEICH,
   ID_DISABLE_FEATURES,
@@ -54,6 +55,18 @@ describe('buildOpenStreetMapIdEditUrl', () => {
     expect(hash.get('gpx')).toBeNull()
     expect(hash.get('disable_features')).toBe(ID_DISABLE_FEATURES)
     expect(hash.get('hashtags')).toBe(CHANGESET_HASHTAG_GRENZABGLEICH)
+  })
+})
+
+describe('buildOpenStreetMapBrowseRelationUrl', () => {
+  it('returns relation URL when id is set', () => {
+    expect(buildOpenStreetMapBrowseRelationUrl(makeReportRow())).toBe(
+      'https://www.openstreetmap.org/relation/55764',
+    )
+  })
+
+  it('returns null when relation id is empty', () => {
+    expect(buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: '' }))).toBeNull()
   })
 })
 

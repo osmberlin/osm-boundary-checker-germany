@@ -501,6 +501,9 @@ export const de = {
 
     updateMap: {
       title: 'Daten in OSM bearbeiten',
+      osmBrowseHeading: 'Auf osm.org',
+      openOsmOrg: 'Grenz-Relation auf osm.org öffnen',
+      openOsmOrgDisabledHint: 'Für diesen Eintrag ist keine OSM-Relation hinterlegt.',
       downloadOfficialHeading: 'Amtliches GeoJSON',
       idHeading: 'iD-Editor',
       josmHeading: 'JOSM (Remote Control)',
@@ -512,7 +515,8 @@ export const de = {
         'Hinweis: Beim Export werden die Umringe leicht vereinfacht (ca. 2,5 m Toleranz) und Koordinaten auf sechs Nachkommastellen gerundet — für überschaubare Dateigröße in iD/JOSM.',
       revealHintAriaLabel: 'Hinweis anzeigen',
       opensInNewWindowTitle: 'Öffnet in einem neuen Browser-Tab',
-      openId: 'In iD öffnen mit amtlicher Grenze (GeoJSON)',
+      openIdWithOfficialGeojson: 'In iD öffnen mit amtlicher Grenze (GeoJSON)',
+      openIdWithoutOfficialGeojson: 'In iD öffnen (ohne amtliche Grenze)',
       idDisableFeaturesHint:
         'Hinweis: In iD werden u. a. Gebäude, Wege und Bahn usw. ausgeblendet; Grenzen, Gewässer und übergeordnete Straßen bleiben sichtbar. Wichtig: Es kann sein, dass einzelne Punkte in dieser Ansicht nicht verschoben werden können. Wenn das passiert, musst du die Filtereinstellungen ändern und bspw. die Landnutzung einschalten. Denn diese Situation bedeutet, dass die Grenze mit einem Element verklebt ist, das zur Zeit versteckt ist — und daher darf sie nicht „blind“ verschoben werden. In diesem Fall dann die Verklebung lösen und die Elemente getrennt voneinander behandeln.',
       josmRemoteLead:

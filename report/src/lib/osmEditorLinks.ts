@@ -58,6 +58,13 @@ export function buildOpenStreetMapIdEditUrl(
   return url.toString()
 }
 
+/** Browse URL for the boundary relation on openstreetmap.org (read-only). */
+export function buildOpenStreetMapBrowseRelationUrl(row: ReportRow): string | null {
+  const id = row.osmRelationId.trim()
+  if (id === '') return null
+  return `https://www.openstreetmap.org/relation/${encodeURIComponent(id)}`
+}
+
 export type JosmEditorLinks = {
   loadObject: string | null
   importGeojson: string | null

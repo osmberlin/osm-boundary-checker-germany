@@ -5,6 +5,7 @@ import { de } from '../i18n/de'
 import {
   absoluteUrlFromPath,
   buildJosmEditorLinks,
+  buildOpenStreetMapBrowseRelationUrl,
   buildOpenStreetMapIdEditUrl,
 } from '../lib/osmEditorLinks'
 import type { ReportRow } from '../types/report'
@@ -71,8 +72,11 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
     : undefined
   const officialAbsolute = officialHref != null ? absoluteUrlFromPath(officialHref) : null
   const idUrl = buildOpenStreetMapIdEditUrl(row, officialAbsolute)
+  const osmBrowseUrl = buildOpenStreetMapBrowseRelationUrl(row)
   const josm = buildJosmEditorLinks(row, officialAbsolute)
   const canDownloadOfficial = officialHref != null
+  const idLinkLabel =
+    officialAbsolute != null ? u.openIdWithOfficialGeojson : u.openIdWithoutOfficialGeojson
 
   return (
     <section className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm">
@@ -120,6 +124,34 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
 
           <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
             <dt>
+              <h3 className="text-sm/6 font-medium text-slate-200">{u.osmBrowseHeading}</h3>
+            </dt>
+            <dd className="mt-2 md:col-span-2 md:mt-0">
+              <div className="flex flex-col gap-2">
+                {osmBrowseUrl != null ? (
+                  <a
+                    href={osmBrowseUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`${u.openOsmOrg} — ${u.opensInNewWindowTitle}`}
+                    className={sharedButtonClass}
+                  >
+                    {u.openOsmOrg}
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button type="button" disabled className={sharedButtonClass}>
+                      {u.openOsmOrg}
+                    </button>
+                    <p className="text-xs text-slate-500">{u.openOsmOrgDisabledHint}</p>
+                  </div>
+                )}
+              </div>
+            </dd>
+          </div>
+
+          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
+            <dt>
               <h3 className="text-sm/6 font-medium text-slate-200">{u.idHeading}</h3>
             </dt>
             <dd className="mt-2 md:col-span-2 md:mt-0">
@@ -129,10 +161,10 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
                     href={idUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    title={`${u.openId} — ${u.opensInNewWindowTitle}`}
+                    title={`${idLinkLabel} — ${u.opensInNewWindowTitle}`}
                     className={sharedButtonClass}
                   >
-                    {u.openId}
+                    {idLinkLabel}
                   </a>
                 </RevealInfoNote>
               </div>
