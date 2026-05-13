@@ -91,6 +91,15 @@ for (const dataFile of ['processing-state.json', 'processing-log.jsonl', 'run-st
   if (copied) copiedDataFiles.push(dataFile)
 }
 
+const relationResolverSrc = path.join(dataRoot, 'relation-resolver-index.json')
+const relationResolverDest = path.join(reportArtifactData, 'relation-resolver-index.json')
+if (!copyFileIfExists(relationResolverSrc, relationResolverDest)) {
+  throw new Error(
+    `[stage-report-runtime-artifact] Missing required data/relation-resolver-index.json (pipeline: generate-relation-resolver-index).`,
+  )
+}
+copiedDataFiles.push('relation-resolver-index.json')
+
 const summary: ReportArtifactSummary = {
   generatedAt: new Date().toISOString(),
   areasIncluded: copiedAreas.sort(),
