@@ -116,6 +116,17 @@
         "reviews": 0,
         "issues": 0
       }
+    },
+    {
+      "id": "2026-05-13",
+      "summary": {
+        "totalRows": 19,
+        "meanIou": 0.9997310420330867,
+        "matched": 19,
+        "unmatchedOsm": 0,
+        "reviews": 0,
+        "issues": 0
+      }
     }
   ]
 }
