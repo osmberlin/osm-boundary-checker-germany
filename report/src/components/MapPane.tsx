@@ -105,32 +105,47 @@ export default function MapPane({
   interaction?: MapPaneInteraction
   overlays?: MapPaneOverlays
   /**
-   * When set (e.g. via ComparisonMapShell), registers this map with MapProvider for `useMap()[mapId]`.
+   * When set, registers this map with `MapProvider` for `useMap()[mapId]` (e.g. comparison map id).
    * @see https://visgl.github.io/react-map-gl/docs/api-reference/mapbox/map#mapprovider
    */
   mapId?: string
-  /** Optional callback for zoom-aware UI hints outside the map component. */
-  onZoomChange?: (zoom: number) => void
   /**
    * Lowest zoom allowed (MapLibre `minZoom`); must match `compare.minZoom` / Tippecanoe
    * `--minimum-zoom` when > 0; use `0` for no floor.
    */
   mapMinZoom: number
 }) {
-  const skipNextMoveEndCommitRef = useRef(false)
-  const [isStripePatternReady, setIsStripePatternReady] = useState(false)
-  const onFeatureClick = interaction?.onFeatureClick
   const { primary, unmatched } = sources
   const { featureId, mapBbox, maxBounds, urlMapView, onMoveEndCommitUrl } = view
   const { showOfficial, showOsm, showDiff } = layers
   const overpassGeojson = overlays?.overpassGeojson ?? null
   const wfsGeojson = overlays?.wfsGeojson ?? null
 
+  const overviewBoundsCamera =
+    !urlMapView && mapBbox !== null && mapBbox[0] < mapBbox[2] && mapBbox[1] < mapBbox[3]
+
+  // Stable key when camera is driven by `?map=` — serializing the view here would change the key on every moveend URL sync and remount the map (flicker).
+  const openingKey = urlMapView
+    ? 'url'
+    : overviewBoundsCamera && mapBbox
+      ? `bbox:${mapBbox[0]},${mapBbox[1]},${mapBbox[2]},${mapBbox[3]}`
+      : 'default'
+
+  const prevOpeningKeyRef = useRef<string | null>(null)
+  const skipNextMoveEndCommitRef = useRef(false)
+  if (prevOpeningKeyRef.current !== openingKey) {
+    prevOpeningKeyRef.current = openingKey
+    skipNextMoveEndCommitRef.current = overviewBoundsCamera
+  }
+
   const hoveredFeatureRef = useRef<{
     source: string
     sourceLayer: string
     id: string | number
   } | null>(null)
+
+  const [isStripePatternReady, setIsStripePatternReady] = useState(false)
+  const onFeatureClick = interaction?.onFeatureClick
 
   const featureIdExpr = featureIdFilterExpr(featureId, primary.allowedFeatureIds ?? null)
   const officialOnlyFeatureIds = primary.officialOnlyFeatureIds ?? []
@@ -159,13 +174,21 @@ export default function MapPane({
     ? {
         longitude: urlMapView.longitude,
         latitude: urlMapView.latitude,
-        zoom: urlMapView.zoom,
+        zoom: Math.max(urlMapView.zoom, mapMinZoom),
       }
-    : {
-        longitude: mapBbox ? (mapBbox[0] + mapBbox[2]) / 2 : 13.4,
-        latitude: mapBbox ? (mapBbox[1] + mapBbox[3]) / 2 : 52.52,
-        zoom: 10,
-      }
+    : overviewBoundsCamera && mapBbox
+      ? {
+          bounds: [
+            [mapBbox[0], mapBbox[1]],
+            [mapBbox[2], mapBbox[3]],
+          ] as [[number, number], [number, number]],
+          fitBoundsOptions: { padding: 40 },
+        }
+      : {
+          longitude: mapBbox ? (mapBbox[0] + mapBbox[2]) / 2 : 13.4,
+          latitude: mapBbox ? (mapBbox[1] + mapBbox[3]) / 2 : 52.52,
+          zoom: Math.max(10, mapMinZoom),
+        }
 
   const clearHoveredFeature = (map: maplibregl.Map) => {
     const hovered = hoveredFeatureRef.current
@@ -184,20 +207,6 @@ export default function MapPane({
   function onLoad(e: { target: maplibregl.Map }) {
     ensureComparisonMapSprites(e.target)
     setIsStripePatternReady(true)
-    onZoomChange?.(e.target.getZoom())
-    if (urlMapView) return
-    if (!mapBbox) return
-    const [w, s, east, n] = mapBbox
-    if (w < east && s < n) {
-      skipNextMoveEndCommitRef.current = true
-      e.target.fitBounds(
-        [
-          [w, s],
-          [east, n],
-        ],
-        { padding: 40, duration: 0 },
-      )
-    }
   }
 
   function onMoveEnd(e: ViewStateChangeEvent) {
@@ -208,7 +217,6 @@ export default function MapPane({
     const nextSerialized = serializeMapViewQueryString(e.viewState)
     const currentSerialized = urlMapView ? serializeMapViewQueryString(urlMapView) : null
     if (nextSerialized === currentSerialized) return
-    onZoomChange?.(e.viewState.zoom)
     onMoveEndCommitUrl(e.viewState)
   }
 
@@ -259,6 +267,7 @@ export default function MapPane({
 
   return (
     <MapLibre
+      key={openingKey}
       id={mapId}
       mapLib={maplibregl}
       initialViewState={initialViewState}

@@ -25,6 +25,8 @@ import {
   MeanIouInfoButton,
 } from '../components/HausdorffInfoModal'
 import { IssueBadge } from '../components/IssueBadge'
+import { COMPARISON_MAP_ID } from '../components/map/comparisonMapConstants'
+import { ComparisonMapZoomHintOverlay } from '../components/map/ComparisonMapZoomHintOverlay'
 import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
 import { OfficialDatasetAgeInfoButton } from '../components/OfficialDatasetAgeInfoModal'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
@@ -55,7 +57,7 @@ import { kpiFreshnessLinesFromIso } from '../lib/reportFreshnessLines'
 import { areaDisplayNameForId } from '../lib/reportLookups'
 import type { AreaReportRow, ComparisonForReport, SnapshotsJson } from '../types/report'
 
-const ComparisonMapShell = lazy(() => import('../components/map/ComparisonMapShell'))
+const MapPane = lazy(() => import('../components/MapPane'))
 
 function unionMapBboxes(rows: AreaReportRow[]): [number, number, number, number] | null {
   const boxes = rows
@@ -344,45 +346,50 @@ export function AreaReport() {
                     }
                   >
                     <MapProvider>
-                      <ComparisonMapShell
-                        sources={{
-                          primary: {
-                            pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
-                            sourceLayer: data.tippecanoeLayer,
-                            allowedFeatureIds: mapAllowlist,
-                            officialOnlyFeatureIds: officialOnlyMapAllowlist,
-                          },
-                          unmatched: data.hasUnmatchedPmtiles
-                            ? {
-                                pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
-                                sourceLayer: data.tippecanoeLayer,
-                                allowedFeatureIds: unmatchedMapAllowlist,
-                                visible: enabledSet.has('unmatched_osm') && mapLayers.showOsm,
-                              }
-                            : undefined,
-                        }}
-                        view={{
-                          featureId: null,
-                          mapBbox: overviewMapBbox,
-                          urlMapView: mapViewParam.mapView,
-                          onMoveEndCommitUrl: mapViewParam.commitMapViewFromMap,
-                        }}
-                        layers={{
-                          showOfficial: mapLayers.showOfficial,
-                          showOsm: mapLayers.showOsm,
-                          showDiff: mapLayers.showDiff,
-                        }}
-                        interaction={{
-                          onFeatureClick: (featureKeys) =>
-                            handleComparisonMapFeatureClick({
-                              featureKeys,
-                              areaKey,
-                              data,
-                              navigate,
-                              onOverlapPick: setOverlapPickKeys,
-                            }),
-                        }}
-                      />
+                      <div className="relative h-full w-full">
+                        <MapPane
+                          mapId={COMPARISON_MAP_ID}
+                          mapMinZoom={data.filterConfigSummary.minZoom}
+                          sources={{
+                            primary: {
+                              pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),
+                              sourceLayer: data.tippecanoeLayer,
+                              allowedFeatureIds: mapAllowlist,
+                              officialOnlyFeatureIds: officialOnlyMapAllowlist,
+                            },
+                            unmatched: data.hasUnmatchedPmtiles
+                              ? {
+                                  pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),
+                                  sourceLayer: data.tippecanoeLayer,
+                                  allowedFeatureIds: unmatchedMapAllowlist,
+                                  visible: enabledSet.has('unmatched_osm') && mapLayers.showOsm,
+                                }
+                              : undefined,
+                          }}
+                          view={{
+                            featureId: null,
+                            mapBbox: overviewMapBbox,
+                            urlMapView: mapViewParam.mapView,
+                            onMoveEndCommitUrl: mapViewParam.commitMapViewFromMap,
+                          }}
+                          layers={{
+                            showOfficial: mapLayers.showOfficial,
+                            showOsm: mapLayers.showOsm,
+                            showDiff: mapLayers.showDiff,
+                          }}
+                          interaction={{
+                            onFeatureClick: (featureKeys) =>
+                              handleComparisonMapFeatureClick({
+                                featureKeys,
+                                areaKey,
+                                data,
+                                navigate,
+                                onOverlapPick: setOverlapPickKeys,
+                              }),
+                          }}
+                        />
+                        <ComparisonMapZoomHintOverlay />
+                      </div>
                     </MapProvider>
                   </Suspense>
                 ) : (

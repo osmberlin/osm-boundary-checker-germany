@@ -1,14 +1,19 @@
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import { useMap } from 'react-map-gl/maplibre'
+import { useMapViewParam } from '../../hooks/useMapViewParam'
 import { de } from '../../i18n/de'
 import { sharedButtonTinyClass } from '../sharedButtonStyles'
 import { COMPARISON_MAP_ID } from './comparisonMapConstants'
 
 const FULL_DETAIL_ZOOM = 15
 
-export function ComparisonMapZoomHintOverlay({ zoom }: { zoom: number }) {
-  const map = useMap()[COMPARISON_MAP_ID]
-  const needsZoomIn = zoom < FULL_DETAIL_ZOOM
+/** Renders under `MapProvider`; zoom from the `map` URL param (`useMapViewParam`). */
+export function ComparisonMapZoomHintOverlay() {
+  const { mapView } = useMapViewParam()
+  const mapRef = useMap()[COMPARISON_MAP_ID]
+
+  const zoomFromUrl = mapView?.zoom
+  const needsZoomIn = zoomFromUrl != null && zoomFromUrl < FULL_DETAIL_ZOOM
   if (!needsZoomIn) return null
 
   return (
@@ -20,9 +25,9 @@ export function ComparisonMapZoomHintOverlay({ zoom }: { zoom: number }) {
           <button
             type="button"
             className={sharedButtonTinyClass}
-            disabled={!map}
+            disabled={!mapRef}
             onClick={() => {
-              const maplibre = map?.getMap()
+              const maplibre = mapRef?.getMap()
               if (!maplibre) return
               maplibre.easeTo({ zoom: FULL_DETAIL_ZOOM, duration: 350 })
             }}
