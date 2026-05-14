@@ -360,7 +360,7 @@ function buildStaticPayloadBase(
   hasPmtiles: boolean,
   hasUnmatchedPmtiles: boolean,
   sourceMetadata: ComparisonSourceMetadata,
-  filterConfigSummary: ComparisonFilterConfigSummary | null,
+  filterConfigSummary: ComparisonFilterConfigSummary,
   ogcInspectSources: OgcWfsInspectSource[],
   compareRulesSummary: CompareRulesSummary | null,
 ): Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> {
@@ -378,6 +378,7 @@ function buildStaticPayloadBase(
       official: sourceMetadata.official,
       osm: sourceMetadata.osm,
     },
+    filterConfigSummary,
   }
   if (filterConfigSummary != null) out.filterConfigSummary = filterConfigSummary
   if (ogcInspectSources.length > 0) out.ogcInspectSources = ogcInspectSources
@@ -500,7 +501,7 @@ export function writeOutputs(
   metricsCrs: string,
   overpassBoundaryTag: OverpassBoundaryTag,
   sourceMetadata: ComparisonSourceMetadata,
-  filterConfigSummary: ComparisonFilterConfigSummary | null = null,
+  filterConfigSummary: ComparisonFilterConfigSummary,
   ogcInspectSources: OgcWfsInspectSource[] = [],
   compareRulesSummary: CompareRulesSummary | null = null,
   phaseLogger?: ComparePhaseLogger,
@@ -548,7 +549,9 @@ export function writeOutputs(
       instrumentation?.checkpoint?.('before_tippecanoe_main', {
         features: geometryFc.features.length,
       })
-      runTippecanoe(fgbPath, pmtilesPath, tippecanoeProfile)
+      runTippecanoe(fgbPath, pmtilesPath, {
+        minZoom: mapMinZoom,
+      })
       const tippecanoeMs = Date.now() - tTippecanoeMain
       phaseLogger?.('tippecanoe_main', tippecanoeMs, {
         features: geometryFc.features.length,
@@ -589,7 +592,9 @@ export function writeOutputs(
       instrumentation?.checkpoint?.('before_tippecanoe_unmatched', {
         features: unmatchedFc.features.length,
       })
-      runTippecanoe(unmatchedFgbPath, unmatchedPmtilesPath, tippecanoeProfile)
+      runTippecanoe(unmatchedFgbPath, unmatchedPmtilesPath, {
+        minZoom: mapMinZoom,
+      })
       phaseLogger?.('tippecanoe_unmatched', Date.now() - tTippecanoeUnmatched, {
         features: unmatchedFc.features.length,
       })

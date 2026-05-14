@@ -16,6 +16,7 @@
   },
   "metricsCrs": "EPSG:25832",
   "compare": {
+    "minZoom": 4,
     "officialMatchProperty": "ARS",
     "bboxFilter": "none",
     "osmScopeFilter": "none",

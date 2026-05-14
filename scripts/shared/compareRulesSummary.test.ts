@@ -16,6 +16,7 @@ describe('toCompareRulesSummary', () => {
         officialMatchProperty: 'ARS',
         bboxFilter: 'none' as const,
         osmScopeFilter: 'none' as const,
+        minZoom: 0,
       },
       osm: {
         matchCriteria: { kind: 'relation_id' as const, relationIds: ['51477'] },
@@ -40,6 +41,7 @@ describe('toCompareRulesSummary', () => {
         officialMatchProperty: 'ARS',
         bboxFilter: 'none' as const,
         osmScopeFilter: 'none' as const,
+        minZoom: 0,
       },
     } satisfies DatasetConfig
     expect(toCompareRulesSummary(cfg)).toEqual({

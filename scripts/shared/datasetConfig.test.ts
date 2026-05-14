@@ -17,6 +17,7 @@ describe('parseDatasetConfig', () => {
         officialMatchProperty: 'ars',
         bboxFilter: 'none',
         osmScopeFilter: 'none',
+        minZoom: 0,
       },
     })
     expect(parsed.officialMode).toBe('direct')
@@ -34,9 +35,30 @@ describe('parseDatasetConfig', () => {
         officialMatchProperty: 'ARS',
         bboxFilter: 'none',
         osmScopeFilter: 'none',
+        minZoom: 6,
       },
     })
     expect(parsed.officialMode).toBe('profile')
+    expect(parsed.compare).toMatchObject({ minZoom: 6 })
+  })
+
+  test('rejects compare.minZoom out of range', () => {
+    expect(() =>
+      parseDatasetConfig('bad', {
+        displayName: 'X',
+        titlePrefix: 'X',
+        officialProfile: 'bkg_vg25_gem',
+        osmProfile: 'admin_rs',
+        idNormalization: { preset: 'regional-12' },
+        metricsCrs: 'EPSG:25832',
+        compare: {
+          officialMatchProperty: 'ARS',
+          bboxFilter: 'none',
+          osmScopeFilter: 'none',
+          minZoom: 16,
+        },
+      }),
+    ).toThrow()
   })
 
   test('maps legacy osmScopeFilter centroid alias to intersects_official_coverage', () => {
@@ -51,6 +73,7 @@ describe('parseDatasetConfig', () => {
         officialMatchProperty: 'ARS',
         bboxFilter: 'none',
         osmScopeFilter: 'centroid_in_official_coverage',
+        minZoom: 0,
       },
     })
     expect(parsed.compare.osmScopeFilter).toBe('intersects_official_coverage')

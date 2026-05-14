@@ -26,6 +26,8 @@ export type CompareConfig = {
   osmScopeFilter: 'none' | 'intersects_official_coverage'
   /** Linear shrink factor (0..1] applied to each official_only polygon for candidate matching. */
   candidateShrinkFactor?: number
+  /** Lowest zoom for vector tiles and map UI (see `compare.minZoom` in dataset config). */
+  minZoom: number
 }
 
 export type OsmConfig = {
@@ -95,6 +97,7 @@ function toCompareConfig(compare: DatasetConfig['compare']): CompareConfig {
     ...(compare.candidateShrinkFactor !== undefined
       ? { candidateShrinkFactor: compare.candidateShrinkFactor }
       : {}),
+    minZoom: compare.minZoom,
   }
 }
 

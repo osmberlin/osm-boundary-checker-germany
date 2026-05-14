@@ -13,6 +13,7 @@
   },
   "metricsCrs": "EPSG:25832",
   "compare": {
+    "minZoom": 5,
     "officialMatchProperty": "ARS",
     "bboxFilter": "official_bbox_overlap",
     "bboxBufferDegrees": 0.02,

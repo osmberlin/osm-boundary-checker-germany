@@ -23,6 +23,7 @@ function profileCfg(
       officialMatchProperty: 'ars',
       bboxFilter: 'none',
       osmScopeFilter: 'none',
+      minZoom: 0,
     },
   }
 }
@@ -40,6 +41,7 @@ function directCfg(): Parameters<typeof officialSourceGroupKey>[0] {
       officialMatchProperty: 'ars',
       bboxFilter: 'none',
       osmScopeFilter: 'none',
+      minZoom: 0,
     },
   }
 }

@@ -28,6 +28,7 @@ export function tippecanoeArgs(
   inputVectorPath: string,
   outputPmtilesPath: string,
   profile: TippecanoeProfile = 'default',
+  options: { minZoom: number },
 ): string[] {
   const lowDetail = profile === 'fast_low_zoom' ? FAST_LOW_ZOOM_DETAIL : LOW_DETAIL_ZOOM
   const simplification =
@@ -42,6 +43,7 @@ export function tippecanoeArgs(
     `--full-detail=${FULL_DETAIL_ZOOM}`,
     `--low-detail=${lowDetail}`,
     `--simplification=${simplification}`,
+    ...(minZoom > 0 ? [`--minimum-zoom=${String(minZoom)}`] : []),
     '--drop-densest-as-needed',
     inputVectorPath,
   ]
@@ -55,9 +57,9 @@ export function tippecanoeArgs(
 export function runTippecanoe(
   inputVectorPath: string,
   outputPmtilesPath: string,
-  profile: TippecanoeProfile = 'default',
+  options: { minZoom: number },
 ): { stderr: string; stdout: string } {
-  const args = tippecanoeArgs(inputVectorPath, outputPmtilesPath, profile)
+  const args = tippecanoeArgs(inputVectorPath, outputPmtilesPath, options)
   const r = spawnSync('tippecanoe', args, {
     encoding: 'utf-8',
     maxBuffer: TIPPECANOE_MAX_BUFFER_BYTES,

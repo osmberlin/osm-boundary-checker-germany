@@ -49,6 +49,12 @@ const compareSchema = z
      * informational and does not influence the strong key-based join.
      */
     candidateShrinkFactor: z.number().finite().positive().max(1).optional(),
+    /**
+     * Lowest zoom for PMTiles generation (Tippecanoe `--minimum-zoom` when > 0) and map
+     * `minZoom` lock; must match current `--maximum-zoom` cap (15). Use `0` when tiles
+     * should be available from world view.
+     */
+    minZoom: z.number().int().min(0).max(15),
   })
   .strict()
   .superRefine((value, ctx) => {

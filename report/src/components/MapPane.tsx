@@ -97,7 +97,7 @@ export default function MapPane({
   interaction,
   overlays,
   mapId,
-  onZoomChange,
+  mapMinZoom,
 }: {
   sources: MapPaneSources
   view: MapPaneView
@@ -111,6 +111,11 @@ export default function MapPane({
   mapId?: string
   /** Optional callback for zoom-aware UI hints outside the map component. */
   onZoomChange?: (zoom: number) => void
+  /**
+   * Lowest zoom allowed (MapLibre `minZoom`); must match `compare.minZoom` / Tippecanoe
+   * `--minimum-zoom` when > 0; use `0` for no floor.
+   */
+  mapMinZoom: number
 }) {
   const skipNextMoveEndCommitRef = useRef(false)
   const [isStripePatternReady, setIsStripePatternReady] = useState(false)
@@ -264,6 +269,7 @@ export default function MapPane({
       }}
       mapStyle={COMPARISON_BASEMAP_STYLE}
       maxBounds={maxBounds}
+      minZoom={mapMinZoom}
       onLoad={onLoad}
       onMoveEnd={onMoveEnd}
       onClick={onFeatureClick ? onMapClick : undefined}

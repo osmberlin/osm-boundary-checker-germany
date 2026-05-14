@@ -81,6 +81,8 @@ export const comparisonFilterConfigSummarySchema = z.object({
   officialExtractFilter: officialExtractFilterSummarySchema.optional(),
   /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties: z.array(z.string().trim().min(1)).min(1).optional(),
+  /** From `compare.minZoom` in area config: Tippecanoe min zoom + map lock. */
+  minZoom: z.number().int().min(0).max(15),
 })
 
 export const idNormalizationPresetSchema = z.enum([
@@ -112,7 +114,7 @@ export const comparisonForReportSchema = z.object({
   hasUnmatchedPmtiles: z.boolean().optional(),
   tippecanoeLayer: z.string(),
   sourceMetadata: comparisonSourceMetadataEmbeddedSchema,
-  filterConfigSummary: comparisonFilterConfigSummarySchema.optional(),
+  filterConfigSummary: comparisonFilterConfigSummarySchema,
   /** From `idNormalization.preset` in area config; embedded once per file. */
   idNormalizationPreset: idNormalizationPresetSchema.optional(),
   /** From optional `osm.matchCriteria` in area config. */

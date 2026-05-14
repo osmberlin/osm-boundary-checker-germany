@@ -83,6 +83,8 @@ export type ComparisonFilterConfigSummary = {
   officialExtractFilter?: OfficialExtractFilterSummary
   /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties?: string[]
+  /** From `compare.minZoom` in area config. */
+  minZoom: number
 }
 
 /** WFS source for live property loading (mirrors `ogcInspectSources` in area config). */
@@ -152,8 +154,8 @@ export type ComparisonForReport = {
     official: SourceMetadataSide
     osm: OsmSourceMetadataPersisted
   }
-  /** Optional compact compare filter summary from `<area>/config.jsonc`. */
-  filterConfigSummary?: ComparisonFilterConfigSummary
+  /** Compact compare filter summary from `<area>/config.jsonc` (includes `minZoom`). */
+  filterConfigSummary: ComparisonFilterConfigSummary
   /** From `idNormalization.preset` in area config; one value per `comparison_table.json`. */
   idNormalizationPreset?: IdNormalizationPreset
   /** From optional `osm.matchCriteria` in area config. */

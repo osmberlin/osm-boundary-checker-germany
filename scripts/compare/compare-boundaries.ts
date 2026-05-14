@@ -92,6 +92,7 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
           },
         }
       : {}),
+    minZoom: configRaw.compare.minZoom,
   }
 }
 
@@ -291,6 +292,7 @@ async function main() {
       filterConfigSummary,
       ogcInspectSources,
       compareRulesSummary,
+      config.compare.minZoom,
       phaseLogger,
       {
         checkpoint: (name, cpMeta) => checkpoint(name, cpMeta),
