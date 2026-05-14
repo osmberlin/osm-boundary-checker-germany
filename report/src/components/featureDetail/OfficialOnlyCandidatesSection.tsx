@@ -14,23 +14,21 @@ function boundaryModeFromData(
 }
 
 function osmMatchTagsJoinedForProse(
-  filter: ComparisonFilterConfigSummary | undefined,
+  filter: ComparisonFilterConfigSummary,
   boundaryMode: 'postal_code' | 'administrative',
 ): string {
-  const list = filter?.osmMatchProperties?.map((s) => s.trim()).filter((s) => s.length > 0) ?? []
+  const list = filter.osmMatchProperties?.map((s) => s.trim()).filter((s) => s.length > 0) ?? []
   if (list.length > 0) return list.join('“, „')
   return boundaryMode === 'postal_code' ? 'postal_code' : 'de:regionalschluessel'
 }
 
-function officialMatchPropertyOrPlaceholder(
-  filter: ComparisonFilterConfigSummary | undefined,
-): string {
-  const v = filter?.officialMatchProperty?.trim()
+function officialMatchPropertyOrPlaceholder(filter: ComparisonFilterConfigSummary): string {
+  const v = filter.officialMatchProperty?.trim()
   return v != null && v.length > 0 ? v : '–'
 }
 
-function adminLevelsSortedCsv(filter: ComparisonFilterConfigSummary | undefined): string {
-  const raw = filter?.adminLevels?.map((s) => s.trim()).filter((s) => s.length > 0) ?? []
+function adminLevelsSortedCsv(filter: ComparisonFilterConfigSummary): string {
+  const raw = filter.adminLevels?.map((s) => s.trim()).filter((s) => s.length > 0) ?? []
   if (raw.length === 0) return ''
   return [...raw].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).join(', ')
 }
@@ -156,7 +154,7 @@ export function OfficialOnlyCandidatesSection({
   areaKey: string
   row: ReportRow
   candidates: CandidateMatch[] | undefined
-  filterConfigSummary: ComparisonFilterConfigSummary | undefined
+  filterConfigSummary: ComparisonFilterConfigSummary
   overpassBoundaryTag: OverpassBoundaryTag | undefined
 }) {
   if (row.category !== 'official_only') return null
@@ -176,7 +174,7 @@ export function OfficialOnlyCandidatesSection({
             : de.feature.candidatesSectionLeadChecksAdminGeneric()
         })()
   const matchTag =
-    filterConfigSummary?.osmMatchProperties?.[0]?.trim() ||
+    filterConfigSummary.osmMatchProperties?.[0]?.trim() ||
     (boundaryMode === 'postal_code' ? 'postal_code' : 'de:regionalschluessel')
   const matchKey = row.canonicalMatchKey?.trim() ?? ''
   const showMatchHint = matchKey.length > 0

@@ -77,11 +77,9 @@ export function ExpectedOsmTagsSection({
 
   const summary = areasIndex.summaries.find((s) => s.area === areaKey)
   const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
-  const adminLevels = summary?.osmAdminLevels ?? data.filterConfigSummary?.adminLevels
+  const adminLevels = summary?.osmAdminLevels ?? data.filterConfigSummary.adminLevels
   const matchProperties =
-    data.filterConfigSummary?.osmMatchProperties
-      ?.map((x) => x.trim())
-      .filter((x) => x.length > 0) ??
+    data.filterConfigSummary.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
     summary?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
     []
   const showKeyExplorer = matchProperties.some((mp) => isGermanKeyExplorerDisplayKey(mp))

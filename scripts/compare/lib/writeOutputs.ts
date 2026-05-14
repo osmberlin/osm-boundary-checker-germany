@@ -32,7 +32,7 @@ import type {
   UnmatchedOsmRow,
 } from './compare.ts'
 import { computeMeanIou } from './metrics.ts'
-import { runTippecanoe, TIPPECANOE_LAYER, type TippecanoeProfile } from './runTippecanoe.ts'
+import { runTippecanoe, TIPPECANOE_LAYER } from './runTippecanoe.ts'
 import { calculateDiffBatchWithRust } from './rustGeomSidecar.ts'
 
 const TABLE_JSON = 'comparison_table.json'
@@ -44,12 +44,6 @@ const OFFICIAL_FOR_EDIT_DIR = 'official_for_edit'
 const OFFICIAL_FOR_EDIT_SIMPLIFY_METERS = 2.5
 const OFFICIAL_FOR_EDIT_SIMPLIFY_DEGREES = OFFICIAL_FOR_EDIT_SIMPLIFY_METERS / 111_320
 const OFFICIAL_FOR_EDIT_COORD_PRECISION = 6
-// TODO: Move tippecanoe profile selection into per-dataset config (e.g. `compare.tippecanoeProfile`
-// in each `datasets/*/config.jsonc`) instead of hard-coding area ids here.
-// `de-staat` is intentionally omitted: local benchmarks showed no reliable speedup (high variance,
-// sometimes slower) for its tiny feature count, so it stays on the default profile.
-const FAST_LOW_ZOOM_TIPPECANOE_AREAS = new Set(['de-verwaltungsgemeinschaften', 'de-landkreise'])
-
 export type OverpassBoundaryTag = 'administrative' | 'postal_code'
 
 function compactOfficialSource(
@@ -380,7 +374,6 @@ function buildStaticPayloadBase(
     },
     filterConfigSummary,
   }
-  if (filterConfigSummary != null) out.filterConfigSummary = filterConfigSummary
   if (ogcInspectSources.length > 0) out.ogcInspectSources = ogcInspectSources
   if (compareRulesSummary != null) {
     out.idNormalizationPreset = compareRulesSummary.idNormalizationPreset
@@ -504,6 +497,7 @@ export function writeOutputs(
   filterConfigSummary: ComparisonFilterConfigSummary,
   ogcInspectSources: OgcWfsInspectSource[] = [],
   compareRulesSummary: CompareRulesSummary | null = null,
+  mapMinZoom: number,
   phaseLogger?: ComparePhaseLogger,
   instrumentation?: CompareInstrumentation,
 ): { snapshotId: string } {
@@ -513,10 +507,6 @@ export function writeOutputs(
 
   const snapshotId = todayStamp()
   const generatedAt = new Date().toISOString()
-  const tippecanoeProfile: TippecanoeProfile = FAST_LOW_ZOOM_TIPPECANOE_AREAS.has(areaFolder)
-    ? 'fast_low_zoom'
-    : 'default'
-
   const matched = rows.filter((r) => r.category === 'matched')
   const officialOnly = rows.filter((r) => r.category === 'official_only')
   const meanIou = computeMeanIou(rows)

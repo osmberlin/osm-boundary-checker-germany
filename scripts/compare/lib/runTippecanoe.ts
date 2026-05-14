@@ -5,52 +5,36 @@ export const TIPPECANOE_LAYER = 'boundaries'
 
 /**
  * User-facing map policy:
- * - geometry may be simplified below z15
- * - z10 should keep roughly sub-kilometer fidelity (target: ~500 m in Germany)
- * - z15 should preserve full geometry detail
+ * - Lower zooms: coarser tile coordinate precision (`--low-detail`) and normal simplification.
+ * - Deepest generated zoom: no line/polygon simplification (`--simplify-only-low-zooms`).
+ * - Above deepest generated zoom: rely on renderer overzoom.
  */
-const MAX_ZOOM = '15'
-const FULL_DETAIL_ZOOM = '15'
-const LOW_DETAIL_ZOOM = '11'
-const SIMPLIFICATION_FACTOR = '4'
-const FAST_LOW_ZOOM_DETAIL = '9'
-const FAST_LOW_ZOOM_SIMPLIFICATION_FACTOR = SIMPLIFICATION_FACTOR
+/** Tile coordinate detail at lower zooms (default full-detail stays at tippecanoe default). */
+const LOW_DETAIL_ZOOM = '9'
 const TIPPECANOE_MAX_BUFFER_BYTES = 256 * 1024 * 1024
 
-export type TippecanoeProfile = 'default' | 'fast_low_zoom'
-
-/**
- * argv passed to `tippecanoe` (after the executable name).
- * Documented in README; tune topology vs file size here.
+/** FlatGeobuf (`.fgb`) or GeoJSON; Felt tippecanoe infers format from the extension.
+ * @param options.minZoom Area `compare.minZoom` (0–15). When `0`, `--minimum-zoom` is omitted (tiles from z0).
  */
-/** FlatGeobuf (`.fgb`) or GeoJSON; Felt tippecanoe infers format from the extension. */
 export function tippecanoeArgs(
   inputVectorPath: string,
   outputPmtilesPath: string,
-  profile: TippecanoeProfile = 'default',
   options: { minZoom: number },
 ): string[] {
-  const lowDetail = profile === 'fast_low_zoom' ? FAST_LOW_ZOOM_DETAIL : LOW_DETAIL_ZOOM
-  const simplification =
-    profile === 'fast_low_zoom' ? FAST_LOW_ZOOM_SIMPLIFICATION_FACTOR : SIMPLIFICATION_FACTOR
+  const { minZoom } = options
   const args = [
     '--output',
     outputPmtilesPath,
     '--force',
     '--layer',
     TIPPECANOE_LAYER,
-    `--maximum-zoom=${MAX_ZOOM}`,
-    `--full-detail=${FULL_DETAIL_ZOOM}`,
-    `--low-detail=${lowDetail}`,
-    `--simplification=${simplification}`,
     ...(minZoom > 0 ? [`--minimum-zoom=${String(minZoom)}`] : []),
+    `--low-detail=${LOW_DETAIL_ZOOM}`,
+    '--simplify-only-low-zooms',
     '--drop-densest-as-needed',
+    '--no-simplification-of-shared-nodes',
     inputVectorPath,
   ]
-  // Keep adjacent polygons aligned after simplification (fewer seams/gaps).
-  // This is expensive on very large nationwide overlays, so the fast profile
-  // disables it and instead prioritizes render throughput for low zooms.
-  if (profile === 'default') args.splice(args.length - 2, 0, '--detect-shared-borders')
   return args
 }
 
