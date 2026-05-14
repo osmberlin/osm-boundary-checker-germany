@@ -26,7 +26,7 @@
     "changelog:husky": "changelog --non-interactive --ci --validate --generate --output-json-path report/public/changelog.gen.json --ignore-commit-term \"chore(data):\" --ignore-commit-term \"Update areasIndex.gen.ts\" --ignore-commit-term \"Update Changelog\" --ignore-commit-term \"chore(report): discussions registry\"",
     "changelog:remap": "changelog --non-interactive --ci --remap-refs",
     "update": "bun run update:deps && bun run update:gitdeps && bun run update:app",
-    "update:deps": "bunx taze latest --include-locked --interactive --write",
+    "update:deps": "bunx taze latest --include-locked --maturity-period 5 --interactive --write",
     "update:gitdeps": "bun update @tordans/changelog-kit",
     "update:app": "bun install && bun run check && bun run changelog"
   },

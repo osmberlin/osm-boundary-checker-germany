@@ -1,0 +1,4 @@
+# Reject registry tarballs newer than this age (supply-chain baseline).
+# 5 days = 432000 seconds. @see https://chrispennington.dev/blog/stop-installing-packages-the-second-theyre-published
+[install]
+minimumReleaseAge = 432000
