@@ -54,6 +54,10 @@ for (const entry of readdirSync(datasetsRoot, { withFileTypes: true })) {
     path.join(areaDest, 'output', 'comparison.pmtiles'),
   )
   copyFileIfExists(
+    path.join(areaSrc, 'output', 'comparison-diff.pmtiles'),
+    path.join(areaDest, 'output', 'comparison-diff.pmtiles'),
+  )
+  copyFileIfExists(
     path.join(areaSrc, 'output', 'unmatched.pmtiles'),
     path.join(areaDest, 'output', 'unmatched.pmtiles'),
   )

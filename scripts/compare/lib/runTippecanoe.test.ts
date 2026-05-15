@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { tippecanoeArgs } from './runTippecanoe.ts'
+import { tippecanoeArgs, TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM } from './runTippecanoe.ts'
 
 describe('tippecanoeArgs', () => {
   test('omits minimum-zoom when minZoom is zero', () => {
@@ -18,6 +18,13 @@ describe('tippecanoeArgs', () => {
     expect(minI).toBe(layerI + 1)
     expect(minI).toBeLessThan(lowDetailI)
     expect(args[minI]).toBe('--minimum-zoom=5')
+  })
+
+  test('uses diff-archive minimum zoom when requested', () => {
+    const args = tippecanoeArgs('/tmp/in.fgb', '/tmp/out.pmtiles', {
+      minZoom: TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM,
+    })
+    expect(args.some((x) => x === `--minimum-zoom=${TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM}`)).toBe(true)
   })
 
   test('uses defaults-first simplification/detail policy', () => {

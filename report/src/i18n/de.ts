@@ -659,6 +659,8 @@ export const de = {
     official: 'Amtliche Grenze',
     osm: 'OpenStreetMap-Grenze',
     diff: 'Abweichungsflächen',
+    /** Shown next to the diff layer toggle when diff PMTiles exist (detail map). */
+    diffFromZoom12Short: 'ab Zoomstufe 12',
     simplificationLikelyBelowZoom15:
       'Geometrien werden bis Zoom 15 wahrscheinlich vereinfacht dargestellt.',
     fullDetailFromZoom15: 'Geometrien sollten volle Details haben.',

@@ -49,6 +49,10 @@ async function main() {
       join(areaDest, 'output', 'comparison.pmtiles'),
     )
     await copyIfExists(
+      join(areaSrc, 'output', 'comparison-diff.pmtiles'),
+      join(areaDest, 'output', 'comparison-diff.pmtiles'),
+    )
+    await copyIfExists(
       join(areaSrc, 'output', 'unmatched.pmtiles'),
       join(areaDest, 'output', 'unmatched.pmtiles'),
     )

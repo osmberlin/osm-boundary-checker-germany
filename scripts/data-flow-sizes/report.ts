@@ -55,9 +55,19 @@ const WRITE_OUTPUTS_RULES: Rule[] = [
     why: 'unmatched layer used by MapLibre via PMTiles',
   },
   {
-    pattern: 'output/_build/geometries.fgb',
+    pattern: 'output/comparison-diff.pmtiles',
+    behavior: 'preserved',
+    why: 'diff-only map layer (z12+); written with comparison.pmtiles (NE bbox Point placeholder if no diff polygons)',
+  },
+  {
+    pattern: 'output/_build/overlay.fgb',
     behavior: 'removed_or_ephemeral',
-    why: 'temporary Tippecanoe input removed after pmtiles generation',
+    why: 'temporary Tippecanoe input removed after comparison.pmtiles generation',
+  },
+  {
+    pattern: 'output/_build/diff.fgb',
+    behavior: 'removed_or_ephemeral',
+    why: 'temporary Tippecanoe input removed after comparison-diff.pmtiles generation',
   },
   {
     pattern: 'output/_build/unmatched.fgb',
@@ -95,7 +105,12 @@ const PREPARE_SNAPSHOT_RULES: Rule[] = [
   {
     pattern: 'output/comparison.pmtiles',
     behavior: 'copied_to_public',
-    why: 'map source for comparison layer',
+    why: 'map source for comparison overlay layer',
+  },
+  {
+    pattern: 'output/comparison-diff.pmtiles',
+    behavior: 'copied_to_public',
+    why: 'map source for diff layer (detail page, optional)',
   },
   {
     pattern: 'output/unmatched.pmtiles',
@@ -159,6 +174,7 @@ function classifyRuntimeDatasetPath(relPath: string): string {
   if (areaRel === 'snapshots.json') return 'snapshots'
   if (areaRel === 'output/comparison_table.json') return 'comparison_table_json'
   if (areaRel === 'output/comparison.pmtiles') return 'comparison_pmtiles'
+  if (areaRel === 'output/comparison-diff.pmtiles') return 'comparison_diff_pmtiles'
   if (areaRel === 'output/unmatched.pmtiles') return 'unmatched_pmtiles'
   if (areaRel.startsWith('output/features/')) return 'feature_shards'
   if (areaRel.startsWith('output/official_for_edit/')) return 'official_for_edit'
@@ -391,12 +407,19 @@ async function main() {
     const areaComparisonPath = join(sourceRoot, area, 'output', 'comparison_table.json')
     const areaSnapshotsPath = join(sourceRoot, area, 'snapshots.json')
     const areaComparisonPmtilesPath = join(sourceRoot, area, 'output', 'comparison.pmtiles')
+    const areaComparisonDiffPmtilesPath = join(
+      sourceRoot,
+      area,
+      'output',
+      'comparison-diff.pmtiles',
+    )
     const areaUnmatchedPmtilesPath = join(sourceRoot, area, 'output', 'unmatched.pmtiles')
     const areaFeatureDir = join(sourceRoot, area, 'output', 'features')
 
     const areaComparisonBytes = await safeStat(areaComparisonPath)
     const areaSnapshotsBytes = await safeStat(areaSnapshotsPath)
     const areaComparisonPmtilesBytes = await safeStat(areaComparisonPmtilesPath)
+    const areaComparisonDiffPmtilesBytes = await safeStat(areaComparisonDiffPmtilesPath)
     const areaUnmatchedPmtilesBytes = await safeStat(areaUnmatchedPmtilesPath)
 
     let featureFiles = (await safeWalk(areaFeatureDir)).map((row) => ({
@@ -431,6 +454,12 @@ async function main() {
       'comparison pmtiles (range requested)',
       areaComparisonPmtilesBytes,
       relative(workspaceRoot, areaComparisonPmtilesPath),
+    )
+    areaRouteTotal += addSectionLine(
+      lines,
+      'comparison-diff pmtiles (range requested, detail diff toggle)',
+      areaComparisonDiffPmtilesBytes,
+      relative(workspaceRoot, areaComparisonDiffPmtilesPath),
     )
     areaRouteTotal += addSectionLine(
       lines,

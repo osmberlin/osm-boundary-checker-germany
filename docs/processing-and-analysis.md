@@ -49,12 +49,14 @@ flowchart LR
   subgraph out [Outputs]
     JSON[output/comparison_table.json]
     PM[output/comparison.pmtiles]
+    PMD[output/comparison-diff.pmtiles]
     UM[output/unmatched.pmtiles]
     SNAP[snapshots.json]
   end
 
   MET --> JSON
   MET --> PM
+  MET --> PMD
   MET --> UM
   JSON --> SNAP
 ```
@@ -153,12 +155,13 @@ For administrative datasets, `osm.adminLevels` is report-strict but match-permis
 
 ## Results: artifacts and what they tell us
 
-| Artifact                             | Role                                                                                                                                                                       |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `**output/comparison_table.json`\*\* | Machine-readable report: rows (official-first), per-row metrics when matched, bboxes, optional `officialForEditPath`, `sourceMetadata`, `unmatchedOsm`, flags for PMTiles. |
-| `**output/comparison.pmtiles`\*\*    | Map tiles: official / OSM / diff layers for exploration and per-feature drill-down.                                                                                        |
-| `**output/unmatched.pmtiles**`       | Tiles for OSM polygons with no official counterpart in **this** area’s export (tagging or coverage gaps).                                                                  |
-| `**snapshots.json`\*\*               | Index of runs with **summary** fields for charts (see below).                                                                                                              |
+| Artifact                               | Role                                                                                                                                                                                                                                                                                                                  |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `**output/comparison_table.json`\*\*   | Machine-readable report: rows (official-first), per-row metrics when matched, bboxes, optional `officialForEditPath`, `sourceMetadata`, `unmatchedOsm`, flags for PMTiles.                                                                                                                                            |
+| `**output/comparison.pmtiles`\*\*      | Map tiles: official and OSM overlay polygons (area overview + detail).                                                                                                                                                                                                                                                |
+| `**output/comparison-diff.pmtiles`\*\* | Symmetric-diff polygons only (Tippecanoe from zoom **12**); emitted whenever `comparison.pmtiles` is. If there are no drawable diff polygons, the archive still contains a single **Point** at the overlay bbox north-east (sentinel `featureId`, filtered out in the UI); fill/line diff layers stay visually empty. |
+| `**output/unmatched.pmtiles**`         | Tiles for OSM polygons with no official counterpart in **this** area’s export (tagging or coverage gaps).                                                                                                                                                                                                             |
+| `**snapshots.json`\*\*                 | Index of runs with **summary** fields for charts (see below).                                                                                                                                                                                                                                                         |
 
 **Interpretation:**
 

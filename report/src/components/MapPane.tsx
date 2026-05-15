@@ -6,6 +6,7 @@ import { Layer } from 'react-map-gl/maplibre'
 import MapLibre from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
 import type { OverpassGeoJsonFeatureCollection } from '../lib/overpassBbox'
+import { ComparisonDiffVectorLayers } from './map/ComparisonDiffVectorLayers'
 import {
   ALL_INTERACTIVE_LAYER_IDS,
   COMPARISON_BASEMAP_STYLE,
@@ -14,9 +15,7 @@ import {
 } from './map/comparisonMapConstants'
 import {
   featureIdFilterExpr,
-  filterOfficialDiff,
   filterOfficialOverlay,
-  filterOsmDiff,
   filterOsmOverlay,
   NEVER_MATCH_FILTER,
 } from './map/comparisonMapFilters'
@@ -36,6 +35,11 @@ type MapPaneSources = {
     sourceLayer: string
     allowedFeatureIds?: string[] | null
     officialOnlyFeatureIds?: string[] | null
+  }
+  /** Diff-only archive: mounted only when `layers.showDiff` is true. Same `featureId` keys as overlay; filters reuse `primary.allowedFeatureIds`. */
+  diff?: {
+    pmtilesUrl: string
+    sourceLayer: string
   }
   unmatched?: {
     pmtilesUrl: string
@@ -115,7 +119,7 @@ export default function MapPane({
    */
   mapMinZoom: number
 }) {
-  const { primary, unmatched } = sources
+  const { primary, diff: diffSource, unmatched } = sources
   const { featureId, mapBbox, maxBounds, urlMapView, onMoveEndCommitUrl } = view
   const { showOfficial, showOsm, showDiff } = layers
   const overpassGeojson = overlays?.overpassGeojson ?? null
@@ -292,14 +296,17 @@ export default function MapPane({
         sourceLayer={primary.sourceLayer}
         filterOfficialOverlay={officialMatchedFilter}
         filterOsmOverlay={filterOsmOverlay(featureIdExpr)}
-        filterOfficialDiff={filterOfficialDiff(featureIdExpr)}
-        filterOsmDiff={filterOsmDiff(featureIdExpr)}
         showOfficial={showOfficial}
         showOsm={showOsm}
-        showDiff={showDiff}
         osmOverlay={mapLayerColors.osmPaired}
         osmStripePatternId={OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID}
         stripePatternReady={isStripePatternReady}
+      />
+      <ComparisonDiffVectorLayers
+        diffSource={diffSource}
+        showDiff={showDiff}
+        featureId={featureId}
+        allowedFeatureIds={primary.allowedFeatureIds ?? null}
       />
       <Layer
         id={`${SOURCE_ID}-overlay-official-only-fill`}
@@ -340,11 +347,8 @@ export default function MapPane({
           filterOsmOverlay={filterOsmOverlay(
             featureIdFilterExpr(featureId, unmatched.allowedFeatureIds ?? null),
           )}
-          filterOfficialDiff={NEVER_MATCH_FILTER}
-          filterOsmDiff={NEVER_MATCH_FILTER}
           showOfficial={false}
           showOsm={unmatched.visible === true}
-          showDiff={false}
           osmOverlay={mapLayerColors.osmUnmatched}
           osmStripePatternId={OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID}
           stripePatternReady={isStripePatternReady}

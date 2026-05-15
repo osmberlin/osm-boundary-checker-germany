@@ -9,11 +9,8 @@ export function ComparisonVectorLayers({
   sourceLayer,
   filterOfficialOverlay,
   filterOsmOverlay,
-  filterOfficialDiff,
-  filterOsmDiff,
   showOfficial,
   showOsm,
-  showDiff,
   osmOverlay,
   osmStripePatternId,
   stripePatternReady = true,
@@ -23,18 +20,14 @@ export function ComparisonVectorLayers({
   sourceLayer: string
   filterOfficialOverlay: ExpressionSpecification
   filterOsmOverlay: ExpressionSpecification
-  filterOfficialDiff: ExpressionSpecification
-  filterOsmDiff: ExpressionSpecification
   showOfficial: boolean
   showOsm: boolean
-  showDiff: boolean
   osmOverlay: (typeof mapLayerColors)['osmPaired' | 'osmUnmatched']
   osmStripePatternId: string
   stripePatternReady?: boolean
 }) {
   const o = mapLayerColors.officialMatched
   const s = osmOverlay
-  const d = mapLayerColors.diff
 
   const hoveredExpr: ExpressionSpecification = ['boolean', ['feature-state', 'hover'], false]
   const useStripeFill = sourceId === UNMATCHED_SOURCE_ID && stripePatternReady
@@ -110,76 +103,6 @@ export function ComparisonVectorLayers({
         paint={{
           'line-color': s.line,
           'line-width': ['case', hoveredExpr, 4, 2],
-        }}
-      />
-      <Layer
-        id={`${sourceId}-diff-official-fill`}
-        type="fill"
-        source={sourceId}
-        source-layer={sourceLayer}
-        filter={filterOfficialDiff}
-        layout={{ visibility: showDiff ? 'visible' : 'none' }}
-        paint={{
-          'fill-color': d.official.fill,
-          'fill-opacity': [
-            'case',
-            hoveredExpr,
-            Math.min(1, d.official.fillOpacity + 0.05),
-            d.official.fillOpacity,
-          ],
-        }}
-      />
-      <Layer
-        id={`${sourceId}-diff-official-line`}
-        type="line"
-        source={sourceId}
-        source-layer={sourceLayer}
-        filter={filterOfficialDiff}
-        layout={{
-          visibility: showDiff ? 'visible' : 'none',
-          'line-cap': 'round',
-          'line-join': 'round',
-        }}
-        paint={{
-          'line-color': d.official.line,
-          'line-width': ['case', hoveredExpr, d.lineWidth + 2, d.lineWidth],
-          'line-opacity': d.official.lineOpacity,
-          'line-offset': d.lineWidth / 2,
-        }}
-      />
-      <Layer
-        id={`${sourceId}-diff-osm-fill`}
-        type="fill"
-        source={sourceId}
-        source-layer={sourceLayer}
-        filter={filterOsmDiff}
-        layout={{ visibility: showDiff ? 'visible' : 'none' }}
-        paint={{
-          'fill-color': d.osm.fill,
-          'fill-opacity': [
-            'case',
-            hoveredExpr,
-            Math.min(1, d.osm.fillOpacity + 0.05),
-            d.osm.fillOpacity,
-          ],
-        }}
-      />
-      <Layer
-        id={`${sourceId}-diff-osm-line`}
-        type="line"
-        source={sourceId}
-        source-layer={sourceLayer}
-        filter={filterOsmDiff}
-        layout={{
-          visibility: showDiff ? 'visible' : 'none',
-          'line-cap': 'round',
-          'line-join': 'round',
-        }}
-        paint={{
-          'line-color': d.osm.line,
-          'line-width': ['case', hoveredExpr, d.lineWidth + 2, d.lineWidth],
-          'line-opacity': d.osm.lineOpacity,
-          'line-offset': d.lineWidth / 2,
         }}
       />
     </Source>

@@ -1,5 +1,5 @@
 /**
- * Single source for comparison map paint (ComparisonVectorLayers).
+ * Single source for comparison map paint ({@link ComparisonVectorLayers} and diff display layers).
  * Category pills / legend swatches: `reportCategoryStyles.tsx` (reuses these values).
  */
 export const mapLayerColors = {

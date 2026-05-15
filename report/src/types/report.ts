@@ -139,6 +139,7 @@ export type ComparisonForReport = {
   metricsCrs: string
   /** Overpass `boundary=*` value for live OSM lookup; defaults to `administrative` when absent. */
   overpassBoundaryTag?: OverpassBoundaryTag
+  /** Overlay + split diff archives (`comparison.pmtiles` / `comparison-diff.pmtiles`) when true. */
   hasPmtiles: boolean
   /** PMTiles for `unmatchedOsm` geometries (`output/unmatched.pmtiles`), when non-empty. */
   hasUnmatchedPmtiles?: boolean

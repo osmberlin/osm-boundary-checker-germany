@@ -375,7 +375,7 @@ export function AreaReport() {
                           layers={{
                             showOfficial: mapLayers.showOfficial,
                             showOsm: mapLayers.showOsm,
-                            showDiff: mapLayers.showDiff,
+                            showDiff: false,
                           }}
                           interaction={{
                             onFeatureClick: (featureKeys) =>

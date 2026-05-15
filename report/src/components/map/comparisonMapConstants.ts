@@ -3,24 +3,17 @@ export const COMPARISON_MAP_ID = 'comparison'
 
 export const SOURCE_ID = 'comparison-pmtiles'
 export const UNMATCHED_SOURCE_ID = 'comparison-unmatched-pmtiles'
+/** Second vector source: diff-only PMTiles (detail map; display-only layers). */
+export const DIFF_SOURCE_ID = 'comparison-diff-pmtiles'
 
+/** Fills only: sibling line layers use the same promoted `featureId`. */
 export const COMPARISON_INTERACTIVE_LAYER_IDS = [
   `${SOURCE_ID}-overlay-official-fill`,
-  `${SOURCE_ID}-overlay-official-line`,
   `${SOURCE_ID}-overlay-official-only-fill`,
-  `${SOURCE_ID}-overlay-official-only-line`,
   `${SOURCE_ID}-overlay-osm-fill`,
-  `${SOURCE_ID}-overlay-osm-line`,
-  `${SOURCE_ID}-diff-official-fill`,
-  `${SOURCE_ID}-diff-official-line`,
-  `${SOURCE_ID}-diff-osm-fill`,
-  `${SOURCE_ID}-diff-osm-line`,
 ] as const
 
-export const UNMATCHED_INTERACTIVE_LAYER_IDS = [
-  `${UNMATCHED_SOURCE_ID}-overlay-osm-fill`,
-  `${UNMATCHED_SOURCE_ID}-overlay-osm-line`,
-] as const
+export const UNMATCHED_INTERACTIVE_LAYER_IDS = [`${UNMATCHED_SOURCE_ID}-overlay-osm-fill`] as const
 
 export const ALL_INTERACTIVE_LAYER_IDS = [
   ...COMPARISON_INTERACTIVE_LAYER_IDS,

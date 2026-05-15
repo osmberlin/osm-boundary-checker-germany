@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { lazy, Suspense } from 'react'
 import type { ViewState } from 'react-map-gl/maplibre'
 import {
+  comparisonDiffPmtilesMaplibreUrl,
   comparisonPmtilesMaplibreUrl,
   comparisonUnmatchedPmtilesMaplibreUrl,
 } from '../../data/paths'
@@ -87,6 +88,14 @@ export function FeatureDetailComparisonMapPane({
                           .filter((r) => r.category === 'official_only')
                           .map((r) => r.canonicalMatchKey),
                   },
+                  ...(data.hasPmtiles
+                    ? {
+                        diff: {
+                          pmtilesUrl: comparisonDiffPmtilesMaplibreUrl(areaKey),
+                          sourceLayer: data.tippecanoeLayer,
+                        },
+                      }
+                    : {}),
                   unmatched: data.hasUnmatchedPmtiles
                     ? {
                         pmtilesUrl: comparisonUnmatchedPmtilesMaplibreUrl(areaKey),

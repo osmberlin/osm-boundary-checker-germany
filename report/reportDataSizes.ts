@@ -41,6 +41,7 @@ function topRows(rows: SizedPath[], count = 12): SizedPath[] {
 function isUserFacing(pathAbs: string): boolean {
   return (
     pathAbs.includes('/output/comparison.pmtiles') ||
+    pathAbs.includes('/output/comparison-diff.pmtiles') ||
     pathAbs.includes('/output/unmatched.pmtiles') ||
     pathAbs.includes('/output/comparison_table.json') ||
     pathAbs.includes('/output/features/') ||

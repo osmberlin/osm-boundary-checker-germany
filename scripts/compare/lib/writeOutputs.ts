@@ -12,6 +12,7 @@ import { area, bbox, cleanCoords, featureCollection, simplify, truncate } from '
 import { geojson } from 'flatgeobuf'
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
 import type { CompareRulesSummary } from '../../shared/compareRulesSummary.ts'
+import { comparisonDiffPlaceholderFeatureCollection } from '../../shared/comparisonDiffPlaceholder.ts'
 import type {
   ComparisonFilterConfigSummary,
   ComparisonForReport,
@@ -32,14 +33,20 @@ import type {
   UnmatchedOsmRow,
 } from './compare.ts'
 import { computeMeanIou } from './metrics.ts'
-import { runTippecanoe, TIPPECANOE_LAYER } from './runTippecanoe.ts'
+import {
+  runTippecanoe,
+  TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM,
+  TIPPECANOE_LAYER,
+} from './runTippecanoe.ts'
 import { calculateDiffBatchWithRust } from './rustGeomSidecar.ts'
 
 const TABLE_JSON = 'comparison_table.json'
 const PMTILES = 'comparison.pmtiles'
+const PMTILES_DIFF = 'comparison-diff.pmtiles'
 const PMTILES_UNMATCHED = 'unmatched.pmtiles'
 const BUILD_DIR = '_build'
-const BUILD_FGB = 'geometries.fgb'
+const BUILD_FGB_OVERLAY = 'overlay.fgb'
+const BUILD_FGB_DIFF = 'diff.fgb'
 const OFFICIAL_FOR_EDIT_DIR = 'official_for_edit'
 const OFFICIAL_FOR_EDIT_SIMPLIFY_METERS = 2.5
 const OFFICIAL_FOR_EDIT_SIMPLIFY_DEGREES = OFFICIAL_FOR_EDIT_SIMPLIFY_METERS / 111_320
@@ -246,12 +253,13 @@ function appendDiffFeaturesForRowWithPrecomputed(
   }
 }
 
-function buildGeometryFeatureCollection(
+function buildOverlayAndDiffFeatureCollections(
   rows: CompareRow[],
   phaseLogger?: ComparePhaseLogger,
   instrumentation?: CompareInstrumentation,
-): FeatureCollection {
-  const features: Feature[] = []
+): { overlayFc: FeatureCollection; diffFc: FeatureCollection } {
+  const overlayFeatures: Feature[] = []
+  const diffFeatures: Feature[] = []
   console.log(`[writeOutputs] starting diff_rust rows=${rows.length}`)
   const tDiff = Date.now()
   instrumentation?.setInFlightPhase?.('diff')
@@ -283,7 +291,7 @@ function buildGeometryFeatureCollection(
 
   for (const r of rows) {
     if (r.officialGeometryWgs84) {
-      features.push({
+      overlayFeatures.push({
         type: 'Feature',
         properties: {
           featureId: r.canonicalMatchKey,
@@ -294,7 +302,7 @@ function buildGeometryFeatureCollection(
       })
     }
     if (r.osmGeometryWgs84) {
-      features.push({
+      overlayFeatures.push({
         type: 'Feature',
         properties: {
           featureId: r.canonicalMatchKey,
@@ -308,9 +316,12 @@ function buildGeometryFeatureCollection(
     if (!precomputed) {
       throw new Error(`Missing rust diff result for key "${r.canonicalMatchKey}"`)
     }
-    appendDiffFeaturesForRowWithPrecomputed(features, r, precomputed)
+    appendDiffFeaturesForRowWithPrecomputed(diffFeatures, r, precomputed)
   }
-  return { type: 'FeatureCollection', features }
+  return {
+    overlayFc: { type: 'FeatureCollection', features: overlayFeatures },
+    diffFc: { type: 'FeatureCollection', features: diffFeatures },
+  }
 }
 
 function buildUnmatchedOsmFeatureCollection(unmatched: UnmatchedOsmRow[]): FeatureCollection {
@@ -513,9 +524,15 @@ export function writeOutputs(
   const reviewCount = rows.filter((row) => row.metrics?.issueIndicator?.level === 'review').length
   const issueCount = rows.filter((row) => row.metrics?.issueIndicator?.level === 'issue').length
 
-  const geometryFc = buildGeometryFeatureCollection(rows, phaseLogger, instrumentation)
-  const fgbPath = join(buildDir, BUILD_FGB)
+  const { overlayFc, diffFc } = buildOverlayAndDiffFeatureCollections(
+    rows,
+    phaseLogger,
+    instrumentation,
+  )
+  const overlayFgbPath = join(buildDir, BUILD_FGB_OVERLAY)
+  const diffFgbPath = join(buildDir, BUILD_FGB_DIFF)
   const pmtilesPath = join(outDir, PMTILES)
+  const pmtilesDiffPath = join(outDir, PMTILES_DIFF)
   const unmatchedFgbPath = join(buildDir, 'unmatched.fgb')
   const unmatchedPmtilesPath = join(outDir, PMTILES_UNMATCHED)
 
@@ -529,34 +546,37 @@ export function writeOutputs(
   writeOfficialForEditGeojson(outDir, rows, sourceMetadata, stemByKeyForOfficial)
 
   let hasPmtiles = false
-  if (geometryFc.features.length > 0) {
+  if (overlayFc.features.length > 0) {
     mkdirSync(buildDir, { recursive: true })
-    writeFileSync(fgbPath, geojson.serialize(geometryFc))
+    writeFileSync(overlayFgbPath, geojson.serialize(overlayFc))
     try {
-      console.log(`[writeOutputs] starting tippecanoe_main features=${geometryFc.features.length}`)
+      // Tippecanoe: shared argv from `tippecanoeArgs` (layer, low-detail, simplification, shared nodes).
+      // Only `--minimum-zoom` differs per archive — see diff / unmatched below.
+      console.log(`[writeOutputs] starting tippecanoe_main features=${overlayFc.features.length}`)
       const tTippecanoeMain = Date.now()
       instrumentation?.setInFlightPhase?.('tippecanoe_main')
       instrumentation?.checkpoint?.('before_tippecanoe_main', {
-        features: geometryFc.features.length,
+        features: overlayFc.features.length,
       })
-      runTippecanoe(fgbPath, pmtilesPath, {
+      // `--minimum-zoom` = area `compare.minZoom` (also in `filterConfigSummary.minZoom` for the report).
+      runTippecanoe(overlayFgbPath, pmtilesPath, {
         minZoom: mapMinZoom,
       })
       const tippecanoeMs = Date.now() - tTippecanoeMain
       phaseLogger?.('tippecanoe_main', tippecanoeMs, {
-        features: geometryFc.features.length,
+        features: overlayFc.features.length,
       })
       console.log(
-        `[writeOutputs] tippecanoe_main done features=${geometryFc.features.length} elapsedMs=${tippecanoeMs}`,
+        `[writeOutputs] tippecanoe_main done features=${overlayFc.features.length} elapsedMs=${tippecanoeMs}`,
       )
       instrumentation?.checkpoint?.('after_tippecanoe_main', {
-        features: geometryFc.features.length,
+        features: overlayFc.features.length,
         elapsedMs: tippecanoeMs,
       })
       hasPmtiles = true
     } finally {
       try {
-        rmSync(fgbPath, { force: true })
+        rmSync(overlayFgbPath, { force: true })
       } catch {
         /* ignore */
       }
@@ -565,6 +585,54 @@ export function writeOutputs(
     if (existsSync(pmtilesPath)) {
       try {
         unlinkSync(pmtilesPath)
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  if (hasPmtiles) {
+    mkdirSync(buildDir, { recursive: true })
+    const diffFcForEncode =
+      diffFc.features.length > 0
+        ? diffFc
+        : comparisonDiffPlaceholderFeatureCollection(
+            bbox(overlayFc) as [number, number, number, number],
+          )
+    const diffEncodeNote =
+      diffFc.features.length > 0
+        ? { realDiffFeatures: diffFc.features.length }
+        : { placeholderOnly: true as const }
+    writeFileSync(diffFgbPath, geojson.serialize(diffFcForEncode))
+    try {
+      console.log(
+        `[writeOutputs] starting tippecanoe_diff ${JSON.stringify(diffEncodeNote)} featuresWritten=${diffFcForEncode.features.length}`,
+      )
+      const tTippecanoeDiff = Date.now()
+      instrumentation?.setInFlightPhase?.('tippecanoe_diff')
+      instrumentation?.checkpoint?.('before_tippecanoe_diff', diffEncodeNote)
+      // Same shared argv as main; only minimum zoom differs (fixed z12+ — see `TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM`).
+      runTippecanoe(diffFgbPath, pmtilesDiffPath, {
+        minZoom: TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM,
+      })
+      const tippecanoeDiffMs = Date.now() - tTippecanoeDiff
+      phaseLogger?.('tippecanoe_diff', tippecanoeDiffMs, diffEncodeNote)
+      console.log(`[writeOutputs] tippecanoe_diff done elapsedMs=${tippecanoeDiffMs}`)
+      instrumentation?.checkpoint?.('after_tippecanoe_diff', {
+        ...diffEncodeNote,
+        elapsedMs: tippecanoeDiffMs,
+      })
+    } finally {
+      try {
+        rmSync(diffFgbPath, { force: true })
+      } catch {
+        /* ignore */
+      }
+    }
+  } else {
+    if (existsSync(pmtilesDiffPath)) {
+      try {
+        unlinkSync(pmtilesDiffPath)
       } catch {
         /* ignore */
       }
@@ -582,6 +650,7 @@ export function writeOutputs(
       instrumentation?.checkpoint?.('before_tippecanoe_unmatched', {
         features: unmatchedFc.features.length,
       })
+      // Same shared argv as main overlay; same `minZoom` as overlay (`compare.minZoom`).
       runTippecanoe(unmatchedFgbPath, unmatchedPmtilesPath, {
         minZoom: mapMinZoom,
       })

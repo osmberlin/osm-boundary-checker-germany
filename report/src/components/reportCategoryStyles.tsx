@@ -17,7 +17,7 @@ const pillBase =
   'inline-flex max-w-full items-center rounded-md border-2 border-solid px-2 py-0.5 text-sm font-medium leading-snug tracking-tight'
 
 /**
- * Category legend swatches — same fills, strokes and split as ComparisonVectorLayers / StatsStrip layer toggles.
+ * Category legend swatches — same fills, strokes and split as comparison map layer toggles.
  */
 export function reportCategorySwatchStyle(category: ReportRow['category']): {
   className: string

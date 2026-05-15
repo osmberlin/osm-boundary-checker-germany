@@ -74,7 +74,8 @@ Runtime root: `/Users/tordans/Development/OSM/boundary-checker/osm-boundary-chec
 | `output/official_for_edit/*.geojson` | preserved            | official geometry exports for edit/download                     |
 | `output/comparison.pmtiles`          | preserved            | comparison map layer used by MapLibre via PMTiles               |
 | `output/unmatched.pmtiles`           | preserved            | unmatched layer used by MapLibre via PMTiles                    |
-| `output/_build/geometries.fgb`       | removed_or_ephemeral | temporary Tippecanoe input removed after pmtiles generation     |
+| `output/_build/overlay.fgb`          | removed_or_ephemeral | temporary Tippecanoe input for `comparison.pmtiles`             |
+| `output/_build/diff.fgb`             | removed_or_ephemeral | temporary Tippecanoe input for `comparison-diff.pmtiles`        |
 | `output/_build/unmatched.fgb`        | removed_or_ephemeral | temporary Tippecanoe input removed after pmtiles generation     |
 | `output/_build/`                     | removed_or_ephemeral | build staging directory is cleaned up after run                 |
 | `output/comparison_for_report.json`  | removed_or_ephemeral | legacy output deleted when present                              |

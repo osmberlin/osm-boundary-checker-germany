@@ -142,6 +142,7 @@ export function KpiToggleCell({
   label,
   value,
   disabled = false,
+  labelExtra,
 }: {
   inputId: string
   checked: boolean
@@ -150,6 +151,8 @@ export function KpiToggleCell({
   label: string
   value: ReactNode
   disabled?: boolean
+  /** Optional trailing content after the label (e.g. map zoom hint). */
+  labelExtra?: ReactNode
 }) {
   const interactive = `group flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-none ring-0 ${LIGHT_CHECKBOX_ROW_INTERACTIVE_CLASS} hover:ring-4 hover:ring-[#E1E4DF] focus-within:ring-4 focus-within:ring-[#E1E4DF]`
   const inert = `flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-none opacity-55`
@@ -195,6 +198,9 @@ export function KpiToggleCell({
               }}
             />
             <span className="min-w-0 truncate text-sm leading-snug">{label}</span>
+            {labelExtra != null ? (
+              <span className="shrink-0 text-xs font-normal whitespace-nowrap">{labelExtra}</span>
+            ) : null}
           </span>
           <span className="mr-2 inline-flex w-10 shrink-0 justify-end" aria-hidden>
             {swatch}

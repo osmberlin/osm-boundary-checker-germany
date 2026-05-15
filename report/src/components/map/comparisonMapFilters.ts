@@ -50,6 +50,9 @@ export function filterOsmOverlay(
 export function filterOfficialDiff(
   featureIdExpr: ExpressionSpecification | null,
 ): ExpressionSpecification {
+  // Real diff features use row keys as `featureId`. The empty-archive placeholder is a
+  // Point with `COMPARISON_DIFF_EMPTY_PLACEHOLDER_FEATURE_ID` (see
+  // scripts/shared/comparisonDiffPlaceholder.ts) and never passes `featureId` filters.
   return allWithOptionalFeature(featureIdExpr, [
     ['==', ['get', 'mapRole'], 'diff'],
     ['==', ['get', 'boundarySource'], 'external'],

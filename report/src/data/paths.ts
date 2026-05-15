@@ -56,6 +56,16 @@ export function comparisonPmtilesMaplibreUrl(area: string): string {
   return `pmtiles://${window.location.origin}${path}`
 }
 
+/** Path to diff-only PMTiles (`output/comparison-diff.pmtiles`). */
+export function comparisonDiffPmtilesPath(area: string): string {
+  return datasetDataPath(area, 'output/comparison-diff.pmtiles')
+}
+
+export function comparisonDiffPmtilesMaplibreUrl(area: string): string {
+  const path = comparisonDiffPmtilesPath(area)
+  return `pmtiles://${window.location.origin}${path}`
+}
+
 /** Latest-only: `output/unmatched.pmtiles` (no historic per-snapshot file). */
 export function comparisonUnmatchedPmtilesPath(area: string): string {
   return datasetDataPath(area, 'output/unmatched.pmtiles')

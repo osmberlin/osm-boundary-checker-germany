@@ -38,7 +38,6 @@ export function FeatureDetailMapSection({
   const [overlapPickKeys, setOverlapPickKeys] = useState<string[] | null>(null)
   const hasRowMapTiles = featureDetailHasComparisonMap(row, data)
   const detailMaxBounds = toDetailMapMaxBounds(row.mapBbox)
-  const m = row.metrics
   const layerId = useId()
 
   if (!hasRowMapTiles) {
@@ -48,13 +47,11 @@ export function FeatureDetailMapSection({
   return (
     <div className="w-full">
       <div className="flex w-full flex-col gap-0">
-        {m ? (
-          <FeatureDetailMapLayerKpiSection
-            layerIdPrefix={layerId}
-            metrics={m}
-            mapLayers={mapLayers}
-          />
-        ) : null}
+        <FeatureDetailMapLayerKpiSection
+          layerIdPrefix={layerId}
+          metrics={row.metrics}
+          mapLayers={mapLayers}
+        />
 
         <FeatureDetailComparisonMapPane
           areaKey={areaKey}
@@ -67,7 +64,7 @@ export function FeatureDetailMapSection({
           wfsGeojson={wfsGeojson}
           showOnlySelected={showOnlySelected}
           detailMaxBounds={detailMaxBounds}
-          hasMetrics={Boolean(m)}
+          hasMetrics={row.metrics != null}
           onOverlapPick={setOverlapPickKeys}
         />
       </div>

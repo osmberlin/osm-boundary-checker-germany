@@ -5,15 +5,18 @@ import { KpiSectionRow, KpiToggleCell } from '../FeatureStatBlocks'
 import { mapLayerColors } from '../mapLayerColors'
 import { hexToRgba } from '../MapLegend'
 import { LegendRectSwatch } from '../reportCategoryStyles'
+import { FeatureDetailDiffZoomHint } from './FeatureDetailDiffZoomHint'
 import { symmetricDiffAreaM2, type MapLayerControls } from './featureDetailMapSectionUtils'
 
 type Props = {
   layerIdPrefix: string
-  metrics: NonNullable<ReportRow['metrics']>
+  metrics: ReportRow['metrics']
   mapLayers: MapLayerControls
 }
 
 export function FeatureDetailMapLayerKpiSection({ layerIdPrefix, metrics, mapLayers }: Props) {
+  if (metrics == null) return null
+
   const featureStats = de.feature.stats
   const officialMatchedColors = mapLayerColors.officialMatched
   const osmPairedColors = mapLayerColors.osmPaired
@@ -67,6 +70,7 @@ export function FeatureDetailMapLayerKpiSection({ layerIdPrefix, metrics, mapLay
         checked={mapLayers.showDiff}
         onChange={mapLayers.setShowDiff}
         label={de.map.diff}
+        labelExtra={<FeatureDetailDiffZoomHint />}
         value={formatDeSquareKilometersFromM2(symmetricDiffAreaM2(metrics))}
         swatch={
           <LegendRectSwatch
