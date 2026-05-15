@@ -241,14 +241,6 @@ async function main() {
   console.log(cliMuted(`[compare] timing runId=${runId}`))
   const areaPath = datasetFolderPath(runtimeRoot, area)
   const previousMetricsByKey = loadPreviousMetricsByKey(areaPath)
-  const skipIssueIndicator = area === 'de-gemeinden'
-  if (skipIssueIndicator) {
-    console.log(
-      cliWarn(
-        `[compare] skipping issue-indicator enrichment for ${area} (isolated from parallel de-gemeinden split work)`,
-      ),
-    )
-  }
   try {
     checkpoint('before_run_compare')
     const { config, rows, unmatchedOsm, metricsCrs } = await runCompare(
@@ -267,10 +259,7 @@ async function main() {
           inFlightPhase = phase
         },
       },
-      {
-        previousMetricsByKey,
-        skipIssueIndicator,
-      },
+      { previousMetricsByKey },
     )
     checkpoint('after_run_compare', { rows: rows.length, unmatched: unmatchedOsm.length })
     const meta = buildComparisonSourceMetadata(readAreaSourceMetadataFile(areaPath))

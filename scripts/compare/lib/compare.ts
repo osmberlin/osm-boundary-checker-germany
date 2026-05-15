@@ -270,7 +270,6 @@ export async function runCompare(
   instrumentation?: CompareInstrumentation,
   options?: {
     previousMetricsByKey?: Map<string, MetricResult>
-    skipIssueIndicator?: boolean
   },
 ): Promise<{
   config: BoundaryConfig
@@ -555,7 +554,6 @@ export async function runCompare(
       })),
     )
     const baselineRows: Array<{ key: string; current: MetricResult; previous: MetricResult }> = []
-    const skipIssueIndicator = options?.skipIssueIndicator === true
     for (let i = 0; i < pendingMetrics.length; i++) {
       const pending = pendingMetrics[i]
       if (!pending) continue
@@ -566,10 +564,6 @@ export async function runCompare(
         row.metrics = null
         continue
       }
-      if (skipIssueIndicator) {
-        row.metrics = metric
-        continue
-      }
       const withRobust =
         isPoly(pending.officialProjected) && isPoly(pending.osmProjected)
           ? withRobustBoundaryMetrics(metric, pending.officialProjected, pending.osmProjected)
@@ -578,13 +572,11 @@ export async function runCompare(
       const previous = options?.previousMetricsByKey?.get(row.canonicalMatchKey)
       if (previous) baselineRows.push({ key: row.canonicalMatchKey, current: withRobust, previous })
     }
-    if (!skipIssueIndicator) {
-      const baselineByKey = computeBaselineAnomalies(baselineRows)
-      for (const row of rows) {
-        if (!row.metrics) continue
-        const baselineReasons = baselineByKey.get(row.canonicalMatchKey) ?? []
-        row.metrics.issueIndicator = classifyIssueIndicator(row.metrics, baselineReasons)
-      }
+    const baselineByKey = computeBaselineAnomalies(baselineRows)
+    for (const row of rows) {
+      if (!row.metrics) continue
+      const baselineReasons = baselineByKey.get(row.canonicalMatchKey) ?? []
+      row.metrics.issueIndicator = classifyIssueIndicator(row.metrics, baselineReasons)
     }
     const metricsMs = Date.now() - tMetrics
     phaseLogger?.('metrics', metricsMs, {
