@@ -1,8 +1,6 @@
 import maplibregl from 'maplibre-gl'
-import type { ExpressionSpecification } from 'maplibre-gl'
 import { useRef, useState } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
-import { Layer } from 'react-map-gl/maplibre'
 import MapLibre from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
 import type { OverpassGeoJsonFeatureCollection } from '../lib/overpassBbox'
@@ -11,22 +9,12 @@ import {
   ALL_INTERACTIVE_LAYER_IDS,
   COMPARISON_BASEMAP_STYLE,
   SOURCE_ID,
-  UNMATCHED_SOURCE_ID,
 } from './map/comparisonMapConstants'
-import {
-  featureIdFilterExpr,
-  filterOfficialOverlay,
-  filterOsmOverlay,
-  NEVER_MATCH_FILTER,
-} from './map/comparisonMapFilters'
-import {
-  ensureComparisonMapSprites,
-  OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID,
-} from './map/comparisonMapSprites'
-import { ComparisonVectorLayers } from './map/ComparisonVectorLayers'
+import { ensureComparisonMapSprites } from './map/comparisonMapSprites'
+import { MapPanePrimaryPmtilesSource } from './map/MapPanePrimaryPmtilesSource'
+import { MapPaneUnmatchedPmtilesSource } from './map/MapPaneUnmatchedPmtilesSource'
 import { OverpassOverlayLayers } from './map/OverpassOverlayLayers'
 import { WfsOverlayLayers } from './map/WfsOverlayLayers'
-import { mapLayerColors } from './mapLayerColors'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 type MapPaneSources = {
@@ -150,29 +138,12 @@ export default function MapPane({
 
   const [isStripePatternReady, setIsStripePatternReady] = useState(false)
   const onFeatureClick = interaction?.onFeatureClick
-
-  const featureIdExpr = featureIdFilterExpr(featureId, primary.allowedFeatureIds ?? null)
-  const officialOnlyFeatureIds = primary.officialOnlyFeatureIds ?? []
-  const officialOverlayFilterExpr = filterOfficialOverlay(featureIdExpr)
-  const officialOnlyListFilter: ExpressionSpecification =
-    officialOnlyFeatureIds.length === 0
-      ? NEVER_MATCH_FILTER
-      : ([
-          'in',
-          ['get', 'featureId'],
-          ['literal', officialOnlyFeatureIds],
-        ] as ExpressionSpecification)
-  const officialOnlyFilter: ExpressionSpecification = [
-    'all',
-    officialOverlayFilterExpr,
-    officialOnlyListFilter,
-  ] as ExpressionSpecification
-  const officialMatchedFilter: ExpressionSpecification = [
-    'all',
-    officialOverlayFilterExpr,
-    ['!', officialOnlyListFilter],
-  ] as ExpressionSpecification
-  const hoverExpr: ExpressionSpecification = ['boolean', ['feature-state', 'hover'], false]
+  const officialOnlyInteractiveFillId = `${SOURCE_ID}-overlay-official-only-fill`
+  const interactiveLayerIds =
+    onFeatureClick &&
+    ((primary.officialOnlyFeatureIds ?? []).length === 0
+      ? ALL_INTERACTIVE_LAYER_IDS.filter((id) => id !== officialOnlyInteractiveFillId)
+      : [...ALL_INTERACTIVE_LAYER_IDS])
 
   const initialViewState = urlMapView
     ? {
@@ -288,19 +259,14 @@ export default function MapPane({
       onClick={onFeatureClick ? onMapClick : undefined}
       onMouseMove={onFeatureClick ? onMapMouseMove : undefined}
       onMouseLeave={onFeatureClick ? onMapMouseLeave : undefined}
-      interactiveLayerIds={onFeatureClick ? [...ALL_INTERACTIVE_LAYER_IDS] : undefined}
+      interactiveLayerIds={interactiveLayerIds || undefined}
     >
-      <ComparisonVectorLayers
-        sourceId={SOURCE_ID}
-        pmtilesUrl={primary.pmtilesUrl}
-        sourceLayer={primary.sourceLayer}
-        filterOfficialOverlay={officialMatchedFilter}
-        filterOsmOverlay={filterOsmOverlay(featureIdExpr)}
+      <MapPanePrimaryPmtilesSource
+        primary={primary}
+        featureId={featureId}
         showOfficial={showOfficial}
         showOsm={showOsm}
-        osmOverlay={mapLayerColors.osmPaired}
-        osmStripePatternId={OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID}
-        stripePatternReady={isStripePatternReady}
+        isStripePatternReady={isStripePatternReady}
       />
       <ComparisonDiffVectorLayers
         diffSource={diffSource}
@@ -308,52 +274,11 @@ export default function MapPane({
         featureId={featureId}
         allowedFeatureIds={primary.allowedFeatureIds ?? null}
       />
-      <Layer
-        id={`${SOURCE_ID}-overlay-official-only-fill`}
-        type="fill"
-        source={SOURCE_ID}
-        source-layer={primary.sourceLayer}
-        filter={officialOnlyFilter}
-        layout={{ visibility: showOfficial ? 'visible' : 'none' }}
-        paint={{
-          'fill-color': mapLayerColors.officialOnly.fill,
-          'fill-opacity': [
-            'case',
-            hoverExpr,
-            Math.min(1, mapLayerColors.officialOnly.fillOpacity + 0.18),
-            mapLayerColors.officialOnly.fillOpacity,
-          ],
-        }}
+      <MapPaneUnmatchedPmtilesSource
+        unmatched={unmatched}
+        featureId={featureId}
+        isStripePatternReady={isStripePatternReady}
       />
-      <Layer
-        id={`${SOURCE_ID}-overlay-official-only-line`}
-        type="line"
-        source={SOURCE_ID}
-        source-layer={primary.sourceLayer}
-        filter={officialOnlyFilter}
-        layout={{ visibility: showOfficial ? 'visible' : 'none' }}
-        paint={{
-          'line-color': mapLayerColors.officialOnly.line,
-          'line-width': ['case', hoverExpr, 4, 2],
-          'line-offset': ['case', hoverExpr, -2, -1],
-        }}
-      />
-      {unmatched ? (
-        <ComparisonVectorLayers
-          sourceId={UNMATCHED_SOURCE_ID}
-          pmtilesUrl={unmatched.pmtilesUrl}
-          sourceLayer={unmatched.sourceLayer}
-          filterOfficialOverlay={NEVER_MATCH_FILTER}
-          filterOsmOverlay={filterOsmOverlay(
-            featureIdFilterExpr(featureId, unmatched.allowedFeatureIds ?? null),
-          )}
-          showOfficial={false}
-          showOsm={unmatched.visible === true}
-          osmOverlay={mapLayerColors.osmUnmatched}
-          osmStripePatternId={OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID}
-          stripePatternReady={isStripePatternReady}
-        />
-      ) : null}
       <WfsOverlayLayers geojson={wfsGeojson} />
       <OverpassOverlayLayers geojson={overpassGeojson} />
     </MapLibre>
