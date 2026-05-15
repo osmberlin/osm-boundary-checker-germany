@@ -6,6 +6,7 @@ import {
   comparisonPmtilesMaplibreUrl,
   comparisonUnmatchedPmtilesMaplibreUrl,
 } from '../../data/paths'
+import { useComparisonMapLayers } from '../../hooks/useComparisonMapLayers'
 import { de } from '../../i18n/de'
 import { cn } from '../../lib/cn'
 import { handleComparisonMapFeatureClick } from '../../lib/comparisonMapFeatureClick'
@@ -15,7 +16,6 @@ import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { COMPARISON_MAP_ID } from '../map/comparisonMapConstants'
 import { ComparisonMapZoomHintOverlay } from '../map/ComparisonMapZoomHintOverlay'
 import { FeatureDetailBoundaryScopeToggle } from './FeatureDetailBoundaryScopeToggle'
-import type { MapLayerControls } from './featureDetailMapSectionUtils'
 
 const MapPane = lazy(() => import('../MapPane'))
 
@@ -24,7 +24,6 @@ type Props = {
   data: ComparisonForReport
   interactionData: ComparisonForReport
   row: ReportRow
-  mapLayers: MapLayerControls
   mapView: {
     mapView: MapViewQueryValue | null
     commitMapViewFromMap: (viewState: ViewState) => void
@@ -42,7 +41,6 @@ export function FeatureDetailComparisonMapPane({
   data,
   interactionData,
   row,
-  mapLayers,
   mapView,
   overpassGeojson,
   wfsGeojson,
@@ -52,6 +50,8 @@ export function FeatureDetailComparisonMapPane({
   onOverlapPick,
 }: Props) {
   const navigate = useNavigate()
+  const { showOfficial, showOsm, showDiff } = useComparisonMapLayers()
+  const hidePrimaryVectorLayers = row.category === 'unmatched_osm' && showOnlySelected
 
   return (
     <div className="flex w-full flex-col gap-0">
@@ -105,9 +105,7 @@ export function FeatureDetailComparisonMapPane({
                             ? [row.canonicalMatchKey]
                             : []
                           : interactionData.unmatchedOsm.map((r) => r.canonicalMatchKey),
-                        visible:
-                          (row.category === 'unmatched_osm' || !showOnlySelected) &&
-                          mapLayers.showOsm,
+                        visible: (row.category === 'unmatched_osm' || !showOnlySelected) && showOsm,
                       }
                     : undefined,
                 }}
@@ -119,18 +117,9 @@ export function FeatureDetailComparisonMapPane({
                   onMoveEndCommitUrl: mapView.commitMapViewFromMap,
                 }}
                 layers={{
-                  showOfficial:
-                    row.category === 'unmatched_osm' && showOnlySelected
-                      ? false
-                      : mapLayers.showOfficial,
-                  showOsm:
-                    row.category === 'unmatched_osm' && showOnlySelected
-                      ? false
-                      : mapLayers.showOsm,
-                  showDiff:
-                    row.category === 'unmatched_osm' && showOnlySelected
-                      ? false
-                      : mapLayers.showDiff,
+                  showOfficial: hidePrimaryVectorLayers ? false : showOfficial,
+                  showOsm: hidePrimaryVectorLayers ? false : showOsm,
+                  showDiff: hidePrimaryVectorLayers ? false : showDiff,
                 }}
                 overlays={{
                   overpassGeojson,

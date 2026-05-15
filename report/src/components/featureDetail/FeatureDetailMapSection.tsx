@@ -1,5 +1,6 @@
 import { useState, useId } from 'react'
 import type { ViewState } from 'react-map-gl/maplibre'
+import { useComparisonMapLayers } from '../../hooks/useComparisonMapLayers'
 import { useFeatureDetailMapBoundaryScope } from '../../hooks/useFeatureDetailMapBoundaryScope'
 import { de } from '../../i18n/de'
 import { featureDetailHasComparisonMap } from '../../lib/featureDetailHasComparisonMap'
@@ -10,14 +11,13 @@ import { InfoNotice } from '../InfoNotice'
 import { MapOverlapPickDialog } from '../map/MapOverlapPickDialog'
 import { FeatureDetailComparisonMapPane } from './FeatureDetailComparisonMapPane'
 import { FeatureDetailMapLayerKpiSection } from './FeatureDetailMapLayerKpiSection'
-import { toDetailMapMaxBounds, type MapLayerControls } from './featureDetailMapSectionUtils'
+import { toDetailMapMaxBounds } from './featureDetailMapSectionUtils'
 
 export function FeatureDetailMapSection({
   areaKey,
   data,
   interactionData,
   row,
-  mapLayers,
   mapView,
   overpassGeojson,
   wfsGeojson,
@@ -26,7 +26,6 @@ export function FeatureDetailMapSection({
   data: ComparisonForReport
   interactionData: ComparisonForReport
   row: ReportRow
-  mapLayers: MapLayerControls
   mapView: {
     mapView: MapViewQueryValue | null
     commitMapViewFromMap: (viewState: ViewState) => void
@@ -34,6 +33,7 @@ export function FeatureDetailMapSection({
   overpassGeojson: OverpassGeoJsonFeatureCollection | null
   wfsGeojson: GeoJSON.FeatureCollection | null
 }) {
+  const mapLayers = useComparisonMapLayers()
   const { showOnlySelected } = useFeatureDetailMapBoundaryScope()
   const [overlapPickKeys, setOverlapPickKeys] = useState<string[] | null>(null)
   const hasRowMapTiles = featureDetailHasComparisonMap(row, data)
@@ -58,7 +58,6 @@ export function FeatureDetailMapSection({
           data={data}
           interactionData={interactionData}
           row={row}
-          mapLayers={mapLayers}
           mapView={mapView}
           overpassGeojson={overpassGeojson}
           wfsGeojson={wfsGeojson}

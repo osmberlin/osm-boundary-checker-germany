@@ -20,7 +20,6 @@ import {
   runStatusQueryOptions,
   type FeatureDetailComparison,
 } from '../data/load'
-import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useFeatureDetailOverpass } from '../hooks/useFeatureDetailOverpass'
 import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
 import { useFilteredLiveOverlays } from '../hooks/useFilteredLiveOverlays'
@@ -35,7 +34,6 @@ import type { ComparisonForReport, OgcWfsInspectSource, ReportRow } from '../typ
 
 const EMPTY_OGC_SOURCES: readonly OgcWfsInspectSource[] = []
 
-type MapLayerControls = ReturnType<typeof useComparisonMapLayers>
 type MapViewParam = ReturnType<typeof useMapViewParam>
 
 function FeatureDetailWithMapContext({
@@ -44,7 +42,6 @@ function FeatureDetailWithMapContext({
   row,
   data,
   comparisonOverlayData,
-  mapLayers,
   mapViewParam,
   showCompareFailedNotice,
 }: {
@@ -53,7 +50,6 @@ function FeatureDetailWithMapContext({
   row: ReportRow
   data: FeatureDetailComparison
   comparisonOverlayData: ComparisonForReport
-  mapLayers: MapLayerControls
   mapViewParam: MapViewParam
   showCompareFailedNotice: boolean
 }) {
@@ -93,7 +89,6 @@ function FeatureDetailWithMapContext({
           data={data}
           row={row}
           interactionData={comparisonOverlayData}
-          mapLayers={mapLayers}
           mapView={mapViewParam}
           overpassGeojson={filteredLiveOverlays.overpassGeojson}
           wfsGeojson={filteredLiveOverlays.wfsGeojson}
@@ -147,7 +142,6 @@ export function FeatureDetail() {
   const { areaId: areaKey, featureKey: featureLookupKey } = useParams({
     from: FEATURE_DETAIL_ROUTE_FROM,
   })
-  const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
   const featureQuery = useQuery(featureQueryOptions(areaKey, featureLookupKey))
   const comparisonQuery = useQuery(comparisonQueryOptions(areaKey))
@@ -187,7 +181,6 @@ export function FeatureDetail() {
         row={row}
         data={data}
         comparisonOverlayData={comparisonQuery.data ?? data}
-        mapLayers={mapLayers}
         mapViewParam={mapViewParam}
         showCompareFailedNotice={showCompareFailedNotice}
       />
