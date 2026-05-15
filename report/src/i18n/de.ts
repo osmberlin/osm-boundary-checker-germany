@@ -434,8 +434,7 @@ export const de = {
     /** Live-Abruf row inside "Attribute zum Zeitpunkt des Vergleichs". */
     datasetOsmLiveCardTitle: 'OSM-Daten (Live-Abruf)',
     datasetOsmLiveButton: 'Von Overpass abfragen',
-    datasetOsmLiveButtonHint: (kind: 'relation' | 'way', id: number) =>
-      `Aktuelle Attribute für ${kind} ${id}`,
+    datasetOsmLiveButtonHint: (id: number) => `Aktuelle Attribute für Relation ${id}`,
     /** Hint shown below the "Von Overpass abfragen" button to clarify the comparison purpose. */
     datasetOsmLiveCompareHint:
       'Nutze diese Funktion um weitere Werte aus den „Amtliche Daten“ oben mit OSM Daten abzugleichen.',
@@ -669,15 +668,9 @@ export const de = {
 
   relationResolver: {
     metaTitle: (relationId: string) => `Grenzabgleich für Relation ${relationId} öffnen`,
-    metaTitleObject: (kind: 'relation' | 'way', id: string) =>
-      kind === 'relation'
-        ? `Grenzabgleich für Relation ${id} öffnen`
-        : `Grenzabgleich für Way ${id} öffnen`,
+    metaTitleObject: (id: string) => `Grenzabgleich für Relation ${id} öffnen`,
     title: (relationId: string) => `Grenzabgleich für Relation ${relationId} öffnen`,
-    titleObject: (kind: 'relation' | 'way', id: string) =>
-      kind === 'relation'
-        ? `Grenzabgleich für Relation ${id} öffnen`
-        : `Grenzabgleich für Way ${id} öffnen`,
+    titleObject: (id: string) => `Grenzabgleich für Relation ${id} öffnen`,
     requestedDataset: (dataset: string) => `Dataset-Filter: ${dataset}`,
     notFound: 'Für diese Relation wurde kein Ziel im aktuellen Grenzvergleich gefunden.',
     notFoundObject: 'Für dieses OSM-Objekt wurde kein Ziel im aktuellen Grenzvergleich gefunden.',

@@ -447,9 +447,7 @@ function OsmLiveRelationTagsRow({
   osmRef: ParsedReportRowOsmRef
   officialProperties: Record<string, unknown>
 }) {
-  const live = useOverpassRelationTags(
-    osmRef.kind === 'way' ? `way/${osmRef.numericId}` : String(osmRef.numericId),
-  )
+  const live = useOverpassRelationTags(String(osmRef.numericId))
   const captionText =
     live.status === 'done' && live.replicationDate
       ? `${de.feature.datasetOsmLiveOverpassQueryLabel}: ${formatIsoTimestampToAbsoluteDe(live.replicationDate)}`
@@ -482,7 +480,7 @@ function OsmLiveRelationTagsRow({
                 {de.feature.datasetOsmLiveButton}
               </button>
               <span className="text-xs text-slate-400">
-                {de.feature.datasetOsmLiveButtonHint(osmRef.kind, osmRef.numericId)}
+                {de.feature.datasetOsmLiveButtonHint(osmRef.numericId)}
               </span>
             </div>
             <p className="flex items-center gap-1.5 text-xs text-slate-400">
@@ -547,9 +545,7 @@ export function FeatureDatasetProperties({
       : null
   const osmRef = parseReportRowOsmRef(row.osmRelationId)
   const osmHistoryUrl =
-    osmRef == null
-      ? null
-      : `https://www.openstreetmap.org/${osmRef.kind === 'way' ? 'way' : 'relation'}/${osmRef.numericId}/history`
+    osmRef == null ? null : `https://www.openstreetmap.org/relation/${osmRef.numericId}/history`
   const compactButtonClass =
     'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap shadow-sm ring-1 ring-inset transition-colors bg-slate-100 text-slate-900 ring-slate-300 hover:bg-slate-200'
 

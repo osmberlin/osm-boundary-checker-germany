@@ -46,7 +46,7 @@ export function buildOpenStreetMapIdEditUrl(
 
   const osmRef = parseReportRowOsmRef(row.osmRelationId)
   if (osmRef) {
-    hash.set('id', osmRef.kind === 'way' ? `w${osmRef.numericId}` : `r${osmRef.numericId}`)
+    hash.set('id', `r${osmRef.numericId}`)
   }
 
   hash.set('disable_features', ID_DISABLE_FEATURES)
@@ -64,8 +64,7 @@ export function buildOpenStreetMapIdEditUrl(
 export function buildOpenStreetMapBrowseRelationUrl(row: ReportRow): string | null {
   const ref = parseReportRowOsmRef(row.osmRelationId)
   if (!ref) return null
-  const path = ref.kind === 'way' ? 'way' : 'relation'
-  return `https://www.openstreetmap.org/${path}/${encodeURIComponent(String(ref.numericId))}`
+  return `https://www.openstreetmap.org/relation/${encodeURIComponent(String(ref.numericId))}`
 }
 
 export type JosmEditorLinks = {
@@ -81,9 +80,7 @@ export function buildJosmEditorLinks(
   const ref = parseReportRowOsmRef(row.osmRelationId)
   const loadObject =
     ref != null
-      ? ref.kind === 'way'
-        ? `${JOSM_REMOTE}/load_object?objects=w${ref.numericId}&${hashtagQs}`
-        : `${JOSM_REMOTE}/load_object?relation_members=true&objects=r${ref.numericId}&${hashtagQs}`
+      ? `${JOSM_REMOTE}/load_object?relation_members=true&objects=r${ref.numericId}&${hashtagQs}`
       : null
   const importGeojson = officialGeojsonAbsoluteUrl
     ? `${JOSM_REMOTE}/import?new_layer=true&${hashtagQs}&url=${encodeURIComponent(officialGeojsonAbsoluteUrl)}`

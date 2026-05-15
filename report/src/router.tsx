@@ -185,7 +185,6 @@ const relationResolverRoute = createRoute({
     }
     const resolverIndex = (await response.json()) as {
       byRelationId?: Record<string, readonly RelationResolverCandidate[]>
-      byWayId?: Record<string, readonly RelationResolverCandidate[]>
     }
     const candidates = [...(resolverIndex.byRelationId?.[relationId] ?? [])]
     const decision = decideRelationResolution({
@@ -202,7 +201,6 @@ const relationResolverRoute = createRoute({
       })
     }
     return {
-      objectKind: 'relation' as const,
       objectId: relationId,
       candidates: decision.candidates,
       requestedDataset: decision.requestedDataset,
@@ -211,53 +209,7 @@ const relationResolverRoute = createRoute({
   head: ({ params }) => ({
     meta: [
       {
-        title: `${de.relationResolver.metaTitleObject('relation', params.relationId)} | ${de.appTitle}`,
-      },
-    ],
-  }),
-  component: RelationResolver,
-})
-
-const wayResolverRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/resolve/way/$wayId',
-  validateSearch: (search: Record<string, unknown>) => validateRelationResolverSearch(search),
-  loaderDeps: ({ search }) => ({ dataset: search.dataset }),
-  loader: async ({ params, deps }) => {
-    const wayId = params.wayId
-    const response = await fetch(relationResolverIndexUrl())
-    if (!response.ok) {
-      throw new Error(`Failed to load relation resolver index: ${response.status}`)
-    }
-    const resolverIndex = (await response.json()) as {
-      byRelationId?: Record<string, readonly RelationResolverCandidate[]>
-      byWayId?: Record<string, readonly RelationResolverCandidate[]>
-    }
-    const candidates = [...(resolverIndex.byWayId?.[wayId] ?? [])]
-    const decision = decideRelationResolution({
-      candidates,
-      dataset: deps.dataset,
-    })
-    if (decision.kind === 'redirect') {
-      throw redirect({
-        to: '/$areaId/feature/$featureKey',
-        params: {
-          areaId: decision.candidate.areaId,
-          featureKey: decision.candidate.featureKey,
-        },
-      })
-    }
-    return {
-      objectKind: 'way' as const,
-      objectId: wayId,
-      candidates: decision.candidates,
-      requestedDataset: decision.requestedDataset,
-    }
-  },
-  head: ({ params }) => ({
-    meta: [
-      {
-        title: `${de.relationResolver.metaTitleObject('way', params.wayId)} | ${de.appTitle}`,
+        title: `${de.relationResolver.metaTitleObject(params.relationId)} | ${de.appTitle}`,
       },
     ],
   }),
@@ -281,7 +233,6 @@ const routeTree = rootRoute.addChildren([
   areaRoute,
   featureRoute,
   relationResolverRoute,
-  wayResolverRoute,
   fallbackRoute,
 ])
 

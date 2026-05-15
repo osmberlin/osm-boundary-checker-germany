@@ -10,15 +10,6 @@ relation(${relationId});
 out tags;`
 }
 
-/**
- * Overpass QL: tags for a single way by id (no geometry).
- */
-export function buildOverpassWayTagsQuery(wayId: number): string {
-  return `[out:json][timeout:25];
-way(${wayId});
-out tags;`
-}
-
 const OverpassRelationTagsResponseSchema = z.looseObject({
   osm3s: z
     .looseObject({
@@ -43,11 +34,7 @@ export type ParsedOverpassRelationTags = {
   replicationDate: string | null
 }
 
-function parseOverpassOsmTagsResponse(
-  jsonText: string,
-  expectedType: 'relation' | 'way',
-  osmId: number,
-): ParsedOverpassRelationTags {
+function parseOverpassOsmTagsResponse(jsonText: string, osmId: number): ParsedOverpassRelationTags {
   let parsed: unknown
   try {
     parsed = JSON.parse(jsonText)
@@ -58,7 +45,7 @@ function parseOverpassOsmTagsResponse(
   if (!validated.success) throw new Error('INVALID_OVERPASS_JSON')
   const replicationDate = validated.data.osm3s?.timestamp_osm_base?.trim() || null
   const match = (validated.data.elements ?? []).find(
-    (el) => el.type === expectedType && el.id === osmId,
+    (el) => el.type === 'relation' && el.id === osmId,
   )
   const tags = match?.tags && Object.keys(match.tags).length > 0 ? match.tags : null
   return { tags, replicationDate }
@@ -68,12 +55,5 @@ export function parseOverpassRelationTagsResponse(
   jsonText: string,
   relationId: number,
 ): ParsedOverpassRelationTags {
-  return parseOverpassOsmTagsResponse(jsonText, 'relation', relationId)
-}
-
-export function parseOverpassWayTagsResponse(
-  jsonText: string,
-  wayId: number,
-): ParsedOverpassRelationTags {
-  return parseOverpassOsmTagsResponse(jsonText, 'way', wayId)
+  return parseOverpassOsmTagsResponse(jsonText, relationId)
 }

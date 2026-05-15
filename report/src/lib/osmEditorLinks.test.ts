@@ -42,10 +42,10 @@ describe('buildOpenStreetMapIdEditUrl', () => {
     expect(hash.get('hashtags')).toBe(CHANGESET_HASHTAG_GRENZABGLEICH)
   })
 
-  it('uses w{id} hash for way osmRelationId', () => {
+  it('omits id when osmRelationId is way/… (not used in report rows)', () => {
     const url = buildOpenStreetMapIdEditUrl(makeReportRow({ osmRelationId: 'way/12345' }), null)
     const hash = new URLSearchParams(new URL(url).hash.slice(1))
-    expect(hash.get('id')).toBe('w12345')
+    expect(hash.get('id')).toBeNull()
   })
 
   it('omits id and map when row has no relation or bbox', () => {
@@ -75,10 +75,10 @@ describe('buildOpenStreetMapBrowseRelationUrl', () => {
     expect(buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: '' }))).toBeNull()
   })
 
-  it('returns way URL when osmRelationId is way/numeric', () => {
-    expect(buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: 'way/999' }))).toBe(
-      'https://www.openstreetmap.org/way/999',
-    )
+  it('returns null when osmRelationId is way/…', () => {
+    expect(
+      buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: 'way/999' })),
+    ).toBeNull()
   })
 
   it('normalizes relation/ prefix', () => {
@@ -112,13 +112,9 @@ describe('buildJosmEditorLinks', () => {
     expect(parsed.searchParams.get('url')).toBe(geoUrl)
   })
 
-  it('uses objects=w and omits relation_members for way', () => {
+  it('returns null load_object when osmRelationId is way/…', () => {
     const { loadObject } = buildJosmEditorLinks(makeReportRow({ osmRelationId: 'way/12345' }), null)
-    expect(loadObject).not.toBeNull()
-    const parsed = new URL(loadObject!)
-    expect(parsed.searchParams.get('objects')).toBe('w12345')
-    expect(parsed.searchParams.get('relation_members')).toBeNull()
-    expect(parsed.searchParams.get('changeset_hashtags')).toBe(CHANGESET_HASHTAG_GRENZABGLEICH)
+    expect(loadObject).toBeNull()
   })
 
   it('returns null load_object when no relation id', () => {

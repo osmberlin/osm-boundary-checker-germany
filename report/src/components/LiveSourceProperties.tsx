@@ -468,11 +468,11 @@ function OverpassLiveSourcesSection({
   const viewportBbox = getLiveQueryBbox()
 
   function buildBoundaryCheckerResolverLink(osmType: string, osmId: number): string | undefined {
-    if (osmType !== 'relation' && osmType !== 'way') return undefined
+    if (osmType !== 'relation') return undefined
     const query = new URLSearchParams()
     if (datasetForResolver !== '') query.set('dataset', datasetForResolver)
     const search = query.toString()
-    const base = osmType === 'relation' ? `/resolve/relation/${osmId}` : `/resolve/way/${osmId}`
+    const base = `/resolve/relation/${osmId}`
     return withSiteBasePath(`${base}${search ? `?${search}` : ''}`)
   }
 

@@ -3,7 +3,6 @@ import { de } from '../i18n/de'
 import type { RelationResolverCandidate } from '../lib/relationResolver'
 
 export type RelationResolverPageData = {
-  objectKind: 'relation' | 'way'
   objectId: string
   candidates: RelationResolverCandidate[]
   requestedDataset: string | null
@@ -16,7 +15,7 @@ export function RelationResolver() {
   return (
     <div className="mx-auto max-w-5xl px-4 pt-6 text-left sm:px-6 lg:px-8">
       <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-        {de.relationResolver.titleObject(data.objectKind, data.objectId)}
+        {de.relationResolver.titleObject(data.objectId)}
       </h1>
       {data.requestedDataset ? (
         <p className="mt-2 text-sm text-slate-400">
