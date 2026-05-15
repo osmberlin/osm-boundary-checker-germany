@@ -38,6 +38,7 @@ Tag selection (admin):
 ```sql
 SELECT ST_PointOnSurface(geometry) AS geometry,
        osm_id,
+       osm_way_id,
        "type",
        "admin_level",
        "name",
@@ -48,10 +49,10 @@ WHERE boundary = 'administrative'
   AND admin_level IN (<union over area configs>)
 ```
 
-`@id` is **not** stored. Compare derives way vs relation from `sign(osm_id)` (GDAL
-convention) and, when `osm_id` is positive but `type=boundary`, treats the feature as a
-**relation** id so links match OSM (some boundary relations surface with a positive
-`osm_id` in the multipolygon layer).
+`@id` is **not** stored on candidate points. Compare derives way vs relation from GDAL’s
+**`osm_way_id`** (non-empty ⇒ closed-way polygon) vs **`osm_id`** (relation-built polygon);
+those fields are mutually exclusive on the `multipolygons` layer when `osm_id=yes` in osmconf
+(see GDAL’s default `osmconf.ini` and `scripts/osm/extract-osm.ts`).
 
 ## Eligibility rules
 

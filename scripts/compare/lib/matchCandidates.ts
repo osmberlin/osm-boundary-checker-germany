@@ -28,8 +28,8 @@ export const DEFAULT_CANDIDATE_SHRINK_FACTOR = 0.7
  */
 export type CandidateMatch = {
   /**
-   * OSM object type: normally from `osm_id` sign (negative ⇒ relation); candidate decode
-   * also treats positive `osm_id` + `type=boundary` as a relation (GDAL quirk).
+   * OSM object type: from GDAL **`osm_way_id`** (way) vs **`osm_id`** (relation) on the
+   * `multipolygons` layer — mutually exclusive when `osm_id=yes` in osmconf (see `extract-osm.ts`).
    */
   osmType: 'way' | 'relation'
   /** Numeric OSM id as string; combine with `osmType` for stable osm.org URLs. */
@@ -77,43 +77,39 @@ export type MatchCandidatesOptions = {
   osmMatchProperty: string
 }
 
-const RELATION_ID_INT_PATTERN = /^-?\d+$/
+const INT_STRING_PATTERN = /^-?\d+$/
 
-function osmTypeAndIdFromOsmId(
-  rawOsmId: unknown,
-): { osmType: 'way' | 'relation'; osmId: string } | null {
-  // Extracts encode `osm_id` as a signed integer string (negative ⇒ relation, positive ⇒ way).
-  // Keep this aligned with `gdal-osm-boundaries.ini` + the SQL CASE in `extract-osm.ts`.
+/**
+ * Parses a non-zero integer OSM id from GDAL string/number fields (`osm_id`, `osm_way_id`).
+ * Returns the absolute numeric id as a decimal string, or null.
+ */
+function parseNonZeroOsmIntField(raw: unknown): string | null {
   const text =
-    typeof rawOsmId === 'string'
-      ? rawOsmId.trim()
-      : typeof rawOsmId === 'number'
-        ? String(rawOsmId)
+    typeof raw === 'string'
+      ? raw.trim()
+      : typeof raw === 'number' && Number.isFinite(raw)
+        ? String(Math.trunc(raw))
         : ''
-  if (text.length === 0 || !RELATION_ID_INT_PATTERN.test(text)) return null
+  if (text.length === 0 || !INT_STRING_PATTERN.test(text)) return null
   const numeric = Number(text)
   if (!Number.isFinite(numeric) || numeric === 0) return null
-  if (numeric < 0) return { osmType: 'relation', osmId: String(Math.trunc(-numeric)) }
-  return { osmType: 'way', osmId: String(Math.trunc(numeric)) }
+  return String(Math.trunc(Math.abs(numeric)))
 }
 
 /**
- * Same sign convention as {@link osmTypeAndIdFromOsmId}, but boundary **relations** are
- * sometimes emitted with a **positive** `osm_id` while `type` is still `boundary` on the
- * GDAL multipolygon (e.g. relation/1303470 — there is no way/1303470). Prefer relation in
- * that case so osm.org / iD links stay valid.
+ * Multipolygon layer: GDAL exposes **`osm_way_id`** for closed-way areas and **`osm_id`**
+ * for relation-built areas (mutually exclusive when `osm_id=yes` in osmconf). Do not infer
+ * primitive type from OSM’s `type=*` tag or from the sign of `osm_id`.
  */
 function osmTypeAndIdFromCandidateProps(props: Record<string, unknown>): {
   osmType: 'way' | 'relation'
   osmId: string
 } | null {
-  const decoded = osmTypeAndIdFromOsmId(props.osm_id)
-  if (!decoded) return null
-  if (decoded.osmType === 'way') {
-    const t = trimmedOrNull(props.type)
-    if (t === 'boundary') return { osmType: 'relation', osmId: decoded.osmId }
-  }
-  return decoded
+  const wayId = parseNonZeroOsmIntField(props.osm_way_id)
+  if (wayId) return { osmType: 'way', osmId: wayId }
+  const relationId = parseNonZeroOsmIntField(props.osm_id)
+  if (relationId) return { osmType: 'relation', osmId: relationId }
+  return null
 }
 
 function trimmedOrNull(value: unknown): string | null {
@@ -212,7 +208,8 @@ function searchByBbox(tree: CandidateIndex, bbox: BBox): Feature<Point, Record<s
 /**
  * Filter candidates to the eligible set for an area, evaluated lazily as features are
  * loaded so callers don't have to keep the full FGB in memory. Eligibility = passes the
- * area's `adminLevels` allowlist + `ignoreRelationIds` + bbox + has a usable osm_id.
+ * area's `adminLevels` allowlist + `ignoreRelationIds` + bbox + has a usable `osm_way_id`
+ * or `osm_id`.
  *
  * Candidates whose canonical key is already present in `officialKeySet` are *kept* here;
  * the per-row pass below filters them out. We need them in the index because they can

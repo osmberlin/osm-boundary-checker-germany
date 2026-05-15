@@ -56,8 +56,35 @@ const GDAL_OSM_BOUNDARIES_INI = join(
   'gdal-osm-boundaries.ini',
 )
 
+/**
+ * GDAL OSM `multipolygons` layer: there is **no** `osm_type` column. With `osm_id=yes` in
+ * `osmconf.ini`, upstream GDAL adds **`osm_way_id`** alongside **`osm_id`**: closed-way
+ * polygons set `osm_way_id` only; relation-built multipolygons set `osm_id` only (mutually
+ * exclusive — see GDAL’s default `osmconf.ini` comment on `[multipolygons]`).
+ *
+ * We materialize Overpass-style `@id` (`way/…` / `relation/…`) from those two fields only,
+ * without inferring primitive type from OSM’s `type=*` tag or from `osm_id` sign.
+ */
+const OSM_MULTIPOLYGON_AT_ID_SQL = `
+  CASE
+    WHEN osm_way_id IS NOT NULL
+         AND TRIM(CAST(osm_way_id AS TEXT)) <> ''
+         AND ABS(CAST(osm_way_id AS INTEGER)) > 0
+      THEN 'way/' || CAST(ABS(CAST(osm_way_id AS INTEGER)) AS TEXT)
+    WHEN osm_id IS NOT NULL
+         AND TRIM(CAST(osm_id AS TEXT)) <> ''
+         AND CAST(osm_id AS REAL) <> 0
+      THEN 'relation/' || CAST(ABS(CAST(osm_id AS INTEGER)) AS TEXT)
+    ELSE NULL
+  END AS "@id"`.trim()
+
 const SHARED_OSM_PLZ_OGR_SQL = `
-SELECT geometry, postal_code
+SELECT
+  geometry,
+  osm_id,
+  osm_way_id,
+  ${OSM_MULTIPOLYGON_AT_ID_SQL},
+  postal_code
 FROM multipolygons
 WHERE boundary = 'postal_code'
   AND postal_code IS NOT NULL
@@ -68,6 +95,7 @@ const SHARED_OSM_PLZ_CANDIDATES_OGR_SQL = `
 SELECT
   ST_PointOnSurface(geometry) AS geometry,
   osm_id,
+  osm_way_id,
   "name",
   "postal_code"
 FROM multipolygons
@@ -209,11 +237,8 @@ function buildSharedAdminOgrSql(workspaceRoot: string): {
   const selectColumns = [
     'geometry',
     'osm_id',
-    `CASE
-      WHEN osm_id < 0 THEN 'relation/' || CAST(-osm_id AS TEXT)
-      WHEN osm_id > 0 THEN 'way/' || CAST(osm_id AS TEXT)
-      ELSE NULL
-    END AS "@id"`,
+    'osm_way_id',
+    OSM_MULTIPOLYGON_AT_ID_SQL,
     ...cfg.selectProperties.map((property) => quoteSqlIdentifier(property)),
   ]
 
@@ -249,6 +274,7 @@ function buildSharedAdminCandidatesOgrSql(workspaceRoot: string): {
   const sql = `
 SELECT ST_PointOnSurface(geometry) AS geometry,
        osm_id,
+       osm_way_id,
        "type",
        "admin_level",
        "name",

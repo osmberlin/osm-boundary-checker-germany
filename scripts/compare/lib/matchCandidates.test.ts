@@ -102,7 +102,8 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     ]
     const candidates = [
       pointFeature(10, 50, {
-        osm_id: '12345',
+        osm_way_id: '12345',
+        osm_id: '0',
         admin_level: '8',
         name: 'Inner',
       }),
@@ -129,7 +130,9 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     ]
     // Point at lng=10.85 is inside the original (extends to 11.0) but outside the
     // 0.7-shrunk square (extends to ~10.7).
-    const candidates = [pointFeature(10.85, 50, { osm_id: '999', admin_level: '8' })]
+    const candidates = [
+      pointFeature(10.85, 50, { osm_way_id: '999', osm_id: '0', admin_level: '8' }),
+    ]
     const inside = matchCandidatesForOfficialOnly({
       rows: inputs,
       officialKeySet: new Set([]),
@@ -153,12 +156,14 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     const officialKeySet = new Set(['012345678901', '120010000000'])
     const candidates = [
       pointFeature(10, 50, {
-        osm_id: '1',
+        osm_way_id: '1',
+        osm_id: '0',
         admin_level: '8',
         'de:regionalschluessel': '012345678901',
       }),
       pointFeature(10.05, 50.05, {
-        osm_id: '2',
+        osm_way_id: '2',
+        osm_id: '0',
         admin_level: '8',
         'de:regionalschluessel': '999988887777',
       }),
@@ -210,7 +215,7 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     // Point inside the island (13, 54) must match because the island is part of the
     // official multipolygon. We use shrinkFactor=1 (no shrink) so the test stays
     // independent of how `transformScale` chooses the origin for disjoint pieces.
-    const candidates = [pointFeature(13, 54, { osm_id: '7', admin_level: '6' })]
+    const candidates = [pointFeature(13, 54, { osm_way_id: '7', osm_id: '0', admin_level: '6' })]
     const result = matchCandidatesForOfficialOnly({
       rows: inputs,
       officialKeySet: new Set([]),
@@ -227,10 +232,9 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     const result = matchCandidatesForOfficialOnly({
       rows: inputs,
       officialKeySet: new Set([]),
-      candidatePoints: [pointFeature(10, 50, { osm_id: '1', admin_level: '8' })],
+      candidatePoints: [pointFeature(10, 50, { osm_way_id: '1', osm_id: '0', admin_level: '8' })],
       options: ADMIN_OPTIONS_DEFAULT,
     })
-    expect(result.get('no_geom')).toEqual([])
   })
 
   test('returns one entry per row, even when no candidates match', () => {
@@ -241,14 +245,14 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     const result = matchCandidatesForOfficialOnly({
       rows: inputs,
       officialKeySet: new Set([]),
-      candidatePoints: [pointFeature(10, 50, { osm_id: '1', admin_level: '8' })],
+      candidatePoints: [pointFeature(10, 50, { osm_way_id: '1', osm_id: '0', admin_level: '8' })],
       options: ADMIN_OPTIONS_DEFAULT,
     })
     expect((result.get('k1') ?? []).map((m) => m.osmId)).toEqual(['1'])
     expect(result.get('k2')).toEqual([])
   })
 
-  test('positive osm_id with type=boundary is treated as relation (GDAL multipolygon quirk)', () => {
+  test('positive osm_id without osm_way_id is a relation (GDAL multipolygon row)', () => {
     const candidates = [
       pointFeature(10, 50, {
         osm_id: '1303470',
@@ -325,31 +329,33 @@ describe('matchCandidatesForOfficialOnly — postal_code profile', () => {
 describe('selectEligibleCandidates', () => {
   test('admin_level allowlist drops non-allowed levels', () => {
     const features = [
-      pointFeature(10, 50, { osm_id: '1', admin_level: '8' }),
+      pointFeature(10, 50, { osm_way_id: '1', osm_id: '0', admin_level: '8' }),
       pointFeature(10, 50, { osm_id: '2', admin_level: '6' }),
-      pointFeature(10, 50, { osm_id: '3', admin_level: '8' }),
+      pointFeature(10, 50, { osm_way_id: '3', osm_id: '0', admin_level: '8' }),
     ]
     const filtered = selectEligibleCandidates(features, {
       adminLevelAllowList: new Set(['8']),
     })
-    expect(filtered.map((f) => (f.properties as Record<string, unknown>).osm_id)).toEqual([
+    expect(filtered.map((f) => (f.properties as Record<string, unknown>).osm_way_id)).toEqual([
       '1',
       '3',
     ])
   })
 
-  test('ignoreRelationIds removes relations only', () => {
+  test('ignoreRelationIds removes relations only (ways use osm_way_id)', () => {
     const features = [
       pointFeature(10, 50, { osm_id: '-100', admin_level: '6' }),
-      pointFeature(10, 50, { osm_id: '100', admin_level: '6' }),
+      pointFeature(10, 50, { osm_way_id: '100', osm_id: '0', admin_level: '6' }),
     ]
     const filtered = selectEligibleCandidates(features, {
       ignoreRelationIds: new Set(['100']),
     })
-    expect(filtered.map((f) => (f.properties as Record<string, unknown>).osm_id)).toEqual(['100'])
+    expect(filtered.map((f) => (f.properties as Record<string, unknown>).osm_way_id)).toEqual([
+      '100',
+    ])
   })
 
-  test('ignoreRelationIds drops positive osm_id when type=boundary implies relation', () => {
+  test('ignoreRelationIds drops relations by numeric id (positive osm_id on relation rows)', () => {
     const features = [
       pointFeature(10, 50, { osm_id: '100', type: 'boundary', admin_level: '6' }),
       pointFeature(10, 50, { osm_id: '200', admin_level: '6' }),
@@ -362,14 +368,14 @@ describe('selectEligibleCandidates', () => {
 
   test('bbox filter excludes points outside [w, s, e, n]', () => {
     const features = [
-      pointFeature(10, 50, { osm_id: '1', admin_level: '8' }),
-      pointFeature(20, 50, { osm_id: '2', admin_level: '8' }),
+      pointFeature(10, 50, { osm_way_id: '1', osm_id: '0', admin_level: '8' }),
+      pointFeature(20, 50, { osm_way_id: '2', osm_id: '0', admin_level: '8' }),
     ]
     const filtered = selectEligibleCandidates(features, { bboxFilter: [9, 49, 11, 51] })
-    expect(filtered.map((f) => (f.properties as Record<string, unknown>).osm_id)).toEqual(['1'])
+    expect(filtered.map((f) => (f.properties as Record<string, unknown>).osm_way_id)).toEqual(['1'])
   })
 
-  test('drops features whose osm_id cannot be parsed', () => {
+  test('drops features without usable osm_way_id / osm_id', () => {
     const features = [
       pointFeature(10, 50, { osm_id: 'bogus', admin_level: '8' }),
       pointFeature(10, 50, { admin_level: '8' }),

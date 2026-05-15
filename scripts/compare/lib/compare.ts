@@ -213,16 +213,18 @@ function filterOsmByIgnoredRelationIds(
 function parseRelationId(rawId: unknown): string | null {
   const id = typeof rawId === 'string' ? rawId.trim() : ''
   if (id.length === 0) return null
+  if (/^way\/\d+$/i.test(id)) return null
   if (/^\d+$/.test(id)) return id
-  const slash = id.lastIndexOf('/')
-  if (slash < 0) return null
-  const tail = id.slice(slash + 1).trim()
-  return /^\d+$/.test(tail) ? tail : null
+  const rel = /^relation\/(\d+)$/i.exec(id)
+  if (rel?.[1]) return rel[1]
+  return null
 }
 
 function parseRelationIdFromOsmId(raw: unknown): string | null {
   if (typeof raw === 'number' && Number.isFinite(raw)) {
-    if (raw !== 0) return String(Math.trunc(Math.abs(raw)))
+    const n = Math.trunc(raw)
+    if (n < 0) return String(-n)
+    if (n > 0) return null
     return null
   }
   if (typeof raw !== 'string') return null
@@ -230,7 +232,8 @@ function parseRelationIdFromOsmId(raw: unknown): string | null {
   if (text.length === 0) return null
   const asNumber = Number(text)
   if (!Number.isFinite(asNumber)) return null
-  if (asNumber !== 0) return String(Math.trunc(Math.abs(asNumber)))
+  if (asNumber < 0) return String(-Math.trunc(asNumber))
+  if (asNumber > 0) return null
   return null
 }
 
