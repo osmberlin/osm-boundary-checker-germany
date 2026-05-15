@@ -13,6 +13,7 @@ import {
   germanKeyExplorerLinkValueOrNull,
   isGermanKeyExplorerDisplayKey,
 } from '../lib/germanKeyExplorer'
+import { parseReportRowOsmRef, type ParsedReportRowOsmRef } from '../lib/osmObjectRef'
 import type { ComparisonForReport, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
@@ -440,13 +441,15 @@ function DatasetExtractDataDateCaption({
 }
 
 function OsmLiveRelationTagsRow({
-  osmRelationId,
+  osmRef,
   officialProperties,
 }: {
-  osmRelationId: string
+  osmRef: ParsedReportRowOsmRef
   officialProperties: Record<string, unknown>
 }) {
-  const live = useOverpassRelationTags(osmRelationId)
+  const live = useOverpassRelationTags(
+    osmRef.kind === 'way' ? `way/${osmRef.numericId}` : String(osmRef.numericId),
+  )
   const captionText =
     live.status === 'done' && live.replicationDate
       ? `${de.feature.datasetOsmLiveOverpassQueryLabel}: ${formatIsoTimestampToAbsoluteDe(live.replicationDate)}`
@@ -479,7 +482,7 @@ function OsmLiveRelationTagsRow({
                 {de.feature.datasetOsmLiveButton}
               </button>
               <span className="text-xs text-slate-400">
-                {de.feature.datasetOsmLiveButtonHint(osmRelationId)}
+                {de.feature.datasetOsmLiveButtonHint(osmRef.kind, osmRef.numericId)}
               </span>
             </div>
             <p className="flex items-center gap-1.5 text-xs text-slate-400">
@@ -542,9 +545,11 @@ export function FeatureDatasetProperties({
     osmPick.checkedAtRaw && !osmPick.snapshotFromPbfHeader
       ? de.feature.datasetExtractOsmUncertainNote
       : null
-  const osmRelationId = row.osmRelationId.trim()
+  const osmRef = parseReportRowOsmRef(row.osmRelationId)
   const osmHistoryUrl =
-    osmRelationId === '' ? null : `https://www.openstreetmap.org/relation/${osmRelationId}/history`
+    osmRef == null
+      ? null
+      : `https://www.openstreetmap.org/${osmRef.kind === 'way' ? 'way' : 'relation'}/${osmRef.numericId}/history`
   const compactButtonClass =
     'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap shadow-sm ring-1 ring-inset transition-colors bg-slate-100 text-slate-900 ring-slate-300 hover:bg-slate-200'
 
@@ -601,8 +606,8 @@ export function FeatureDatasetProperties({
               <DatasetPropertyCard properties={osm} />
             </dd>
           </div>
-          {osmRelationId !== '' && (
-            <OsmLiveRelationTagsRow osmRelationId={osmRelationId} officialProperties={official} />
+          {osmRef != null && (
+            <OsmLiveRelationTagsRow osmRef={osmRef} officialProperties={official} />
           )}
         </dl>
       </div>

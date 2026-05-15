@@ -1,4 +1,5 @@
 import type { ReportRow } from '../types/report'
+import { parseReportRowOsmRef } from './osmObjectRef'
 
 const OSM_ID_EDITOR = 'https://ideditor.netlify.app/'
 
@@ -43,8 +44,9 @@ export function buildOpenStreetMapIdEditUrl(
     hash.set('map', `${zoom}/${lat.toFixed(6)}/${lon.toFixed(6)}`)
   }
 
-  if (row.osmRelationId.trim() !== '') {
-    hash.set('id', `r${row.osmRelationId.trim()}`)
+  const osmRef = parseReportRowOsmRef(row.osmRelationId)
+  if (osmRef) {
+    hash.set('id', osmRef.kind === 'way' ? `w${osmRef.numericId}` : `r${osmRef.numericId}`)
   }
 
   hash.set('disable_features', ID_DISABLE_FEATURES)
@@ -58,11 +60,12 @@ export function buildOpenStreetMapIdEditUrl(
   return url.toString()
 }
 
-/** Browse URL for the boundary relation on openstreetmap.org (read-only). */
+/** Browse URL for the matched OSM object on openstreetmap.org (read-only). */
 export function buildOpenStreetMapBrowseRelationUrl(row: ReportRow): string | null {
-  const id = row.osmRelationId.trim()
-  if (id === '') return null
-  return `https://www.openstreetmap.org/relation/${encodeURIComponent(id)}`
+  const ref = parseReportRowOsmRef(row.osmRelationId)
+  if (!ref) return null
+  const path = ref.kind === 'way' ? 'way' : 'relation'
+  return `https://www.openstreetmap.org/${path}/${encodeURIComponent(String(ref.numericId))}`
 }
 
 export type JosmEditorLinks = {
@@ -75,10 +78,12 @@ export function buildJosmEditorLinks(
   officialGeojsonAbsoluteUrl: string | null,
 ): JosmEditorLinks {
   const hashtagQs = `changeset_hashtags=${encodeURIComponent(CHANGESET_HASHTAG_GRENZABGLEICH)}`
-  const id = row.osmRelationId.trim()
+  const ref = parseReportRowOsmRef(row.osmRelationId)
   const loadObject =
-    id !== ''
-      ? `${JOSM_REMOTE}/load_object?relation_members=true&objects=r${id}&${hashtagQs}`
+    ref != null
+      ? ref.kind === 'way'
+        ? `${JOSM_REMOTE}/load_object?objects=w${ref.numericId}&${hashtagQs}`
+        : `${JOSM_REMOTE}/load_object?relation_members=true&objects=r${ref.numericId}&${hashtagQs}`
       : null
   const importGeojson = officialGeojsonAbsoluteUrl
     ? `${JOSM_REMOTE}/import?new_layer=true&${hashtagQs}&url=${encodeURIComponent(officialGeojsonAbsoluteUrl)}`

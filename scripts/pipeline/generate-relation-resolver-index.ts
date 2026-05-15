@@ -15,12 +15,14 @@ type RelationResolverCandidate = {
 
 type RelationResolverIndex = {
   byRelationId: Record<string, RelationResolverCandidate[]>
+  byWayId: Record<string, RelationResolverCandidate[]>
 }
 
 function buildRelationResolverIndex(runtimeRoot: string): RelationResolverIndex {
   const datasetsRoot = join(runtimeRoot, DATASETS_DIRECTORY)
   const byRelationId = new Map<string, RelationResolverCandidate[]>()
-  if (!existsSync(datasetsRoot)) return { byRelationId: {} }
+  const byWayId = new Map<string, RelationResolverCandidate[]>()
+  if (!existsSync(datasetsRoot)) return { byRelationId: {}, byWayId: {} }
 
   for (const entry of readdirSync(datasetsRoot, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.name.startsWith('.')) continue
@@ -31,7 +33,8 @@ function buildRelationResolverIndex(runtimeRoot: string): RelationResolverIndex 
       const parsed = comparisonForReportSchema.parse(
         JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown,
       )
-      const pushCandidate = (
+
+      const pushRelationCandidate = (
         osmRelationIdRaw: string,
         featureKey: string,
         featureName: string,
@@ -59,26 +62,66 @@ function buildRelationResolverIndex(runtimeRoot: string): RelationResolverIndex 
         }
       }
 
+      const pushWayCandidate = (
+        osmRelationIdRaw: string,
+        featureKey: string,
+        featureName: string,
+      ): void => {
+        const m = /^way\/(\d+)$/i.exec(osmRelationIdRaw.trim())
+        if (!m?.[1]) return
+        const wayId = Number.parseInt(m[1], 10)
+        if (!Number.isFinite(wayId) || wayId <= 0) return
+        const wayKey = String(wayId)
+        const next: RelationResolverCandidate = {
+          dataset: area,
+          areaId: area,
+          featureKey,
+          featureName,
+        }
+        const list = byWayId.get(wayKey) ?? []
+        if (
+          !list.some(
+            (existing) =>
+              existing.dataset === next.dataset &&
+              existing.areaId === next.areaId &&
+              existing.featureKey === next.featureKey,
+          )
+        ) {
+          list.push(next)
+          byWayId.set(wayKey, list)
+        }
+      }
+
       for (const row of parsed.rows) {
-        pushCandidate(row.osmRelationId, row.canonicalMatchKey, row.nameLabel)
+        pushRelationCandidate(row.osmRelationId, row.canonicalMatchKey, row.nameLabel)
+        pushWayCandidate(row.osmRelationId, row.canonicalMatchKey, row.nameLabel)
       }
       for (const row of parsed.unmatchedOsm) {
-        pushCandidate(row.osmRelationId, row.canonicalMatchKey, row.nameLabel)
+        pushRelationCandidate(row.osmRelationId, row.canonicalMatchKey, row.nameLabel)
+        pushWayCandidate(row.osmRelationId, row.canonicalMatchKey, row.nameLabel)
       }
     } catch {
       // ignore malformed area output file
     }
   }
 
+  const sortCandidates = (a: RelationResolverCandidate, b: RelationResolverCandidate) => {
+    const datasetCmp = a.dataset.localeCompare(b.dataset, 'de')
+    if (datasetCmp !== 0) return datasetCmp
+    return a.featureName.localeCompare(b.featureName, 'de')
+  }
+
   const byRelationIdObject: Record<string, RelationResolverCandidate[]> = {}
   for (const [relationId, candidates] of byRelationId.entries()) {
-    byRelationIdObject[relationId] = [...candidates].sort((a, b) => {
-      const datasetCmp = a.dataset.localeCompare(b.dataset, 'de')
-      if (datasetCmp !== 0) return datasetCmp
-      return a.featureName.localeCompare(b.featureName, 'de')
-    })
+    byRelationIdObject[relationId] = [...candidates].sort(sortCandidates)
   }
-  return { byRelationId: byRelationIdObject }
+
+  const byWayIdObject: Record<string, RelationResolverCandidate[]> = {}
+  for (const [wayId, candidates] of byWayId.entries()) {
+    byWayIdObject[wayId] = [...candidates].sort(sortCandidates)
+  }
+
+  return { byRelationId: byRelationIdObject, byWayId: byWayIdObject }
 }
 
 function main() {
@@ -89,7 +132,7 @@ function main() {
   mkdirSync(dirname(outPath), { recursive: true })
   writeFileSync(outPath, `${JSON.stringify(index, null, 2)}\n`, 'utf-8')
   console.log(
-    `[pipeline] wrote ${outPath} (${Object.keys(index.byRelationId).length} relation ids from ${runtimeRoot})`,
+    `[pipeline] wrote ${outPath} (${Object.keys(index.byRelationId).length} relation ids, ${Object.keys(index.byWayId).length} way ids from ${runtimeRoot})`,
   )
 }
 

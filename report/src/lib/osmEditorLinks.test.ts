@@ -42,6 +42,12 @@ describe('buildOpenStreetMapIdEditUrl', () => {
     expect(hash.get('hashtags')).toBe(CHANGESET_HASHTAG_GRENZABGLEICH)
   })
 
+  it('uses w{id} hash for way osmRelationId', () => {
+    const url = buildOpenStreetMapIdEditUrl(makeReportRow({ osmRelationId: 'way/12345' }), null)
+    const hash = new URLSearchParams(new URL(url).hash.slice(1))
+    expect(hash.get('id')).toBe('w12345')
+  })
+
   it('omits id and map when row has no relation or bbox', () => {
     const url = buildOpenStreetMapIdEditUrl(
       makeReportRow({ osmRelationId: '', mapBbox: null }),
@@ -68,6 +74,18 @@ describe('buildOpenStreetMapBrowseRelationUrl', () => {
   it('returns null when relation id is empty', () => {
     expect(buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: '' }))).toBeNull()
   })
+
+  it('returns way URL when osmRelationId is way/numeric', () => {
+    expect(buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: 'way/999' }))).toBe(
+      'https://www.openstreetmap.org/way/999',
+    )
+  })
+
+  it('normalizes relation/ prefix', () => {
+    expect(
+      buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: 'relation/42' })),
+    ).toBe('https://www.openstreetmap.org/relation/42')
+  })
 })
 
 describe('buildJosmEditorLinks', () => {
@@ -92,6 +110,15 @@ describe('buildJosmEditorLinks', () => {
     const parsed = new URL(importGeojson!)
     expect(parsed.searchParams.get('changeset_hashtags')).toBe(CHANGESET_HASHTAG_GRENZABGLEICH)
     expect(parsed.searchParams.get('url')).toBe(geoUrl)
+  })
+
+  it('uses objects=w and omits relation_members for way', () => {
+    const { loadObject } = buildJosmEditorLinks(makeReportRow({ osmRelationId: 'way/12345' }), null)
+    expect(loadObject).not.toBeNull()
+    const parsed = new URL(loadObject!)
+    expect(parsed.searchParams.get('objects')).toBe('w12345')
+    expect(parsed.searchParams.get('relation_members')).toBeNull()
+    expect(parsed.searchParams.get('changeset_hashtags')).toBe(CHANGESET_HASHTAG_GRENZABGLEICH)
   })
 
   it('returns null load_object when no relation id', () => {

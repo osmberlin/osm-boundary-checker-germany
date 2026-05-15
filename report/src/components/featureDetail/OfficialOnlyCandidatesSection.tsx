@@ -55,8 +55,17 @@ function relationResolverHref(areaKey: string, relationId: string): string {
   )
 }
 
+function wayResolverHref(areaKey: string, wayId: string): string {
+  const query = new URLSearchParams()
+  const dataset = areaKey.trim()
+  if (dataset.length > 0) query.set('dataset', dataset)
+  const search = query.toString()
+  return withSiteBasePath(`/resolve/way/${encodeURIComponent(wayId)}${search ? `?${search}` : ''}`)
+}
+
 function candidateObjectHref(candidate: CandidateMatch, areaKey: string): string {
   if (candidate.osmType === 'relation') return relationResolverHref(areaKey, candidate.osmId)
+  if (candidate.osmType === 'way') return wayResolverHref(areaKey, candidate.osmId)
   return osmObjectUrl(candidate)
 }
 
@@ -83,11 +92,10 @@ function CandidateRow({
   const linkClass =
     'text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
   const objectHref = candidateObjectHref(candidate, areaKey)
-  const objectLinkIsInternal = candidate.osmType === 'relation'
-  const objectLinkAria =
-    candidate.osmType === 'relation'
-      ? de.feature.liveOsmHitOpenBoundaryCheckerAria(candidate.osmType, Number(candidate.osmId))
-      : de.feature.liveOsmHitOpenLinkAria(candidate.osmType, Number(candidate.osmId))
+  const objectLinkIsInternal = candidate.osmType === 'relation' || candidate.osmType === 'way'
+  const objectLinkAria = objectLinkIsInternal
+    ? de.feature.liveOsmHitOpenBoundaryCheckerAria(candidate.osmType, Number(candidate.osmId))
+    : de.feature.liveOsmHitOpenLinkAria(candidate.osmType, Number(candidate.osmId))
 
   return (
     <div className="contents">

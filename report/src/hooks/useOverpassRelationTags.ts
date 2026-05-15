@@ -1,18 +1,23 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
-import { type OverpassRelationTagsQueryInput, overpassRelationTagsQueryOptions } from '../data/load'
+import { type OverpassOsmTagsQueryInput, overpassOsmTagsQueryOptions } from '../data/load'
+import { parseReportRowOsmRef } from '../lib/osmObjectRef'
 import { DEFAULT_OVERPASS_INTERPRETER_URL } from '../lib/overpassServers'
 
 type Status = 'idle' | 'loading' | 'done' | 'error'
 
-const VALID_RELATION_ID = /^[0-9]+$/
-const LIVE_STALE_TIME_MS = Number.POSITIVE_INFINITY
+/** Placeholder input when `osmRelationIdRaw` is not a relation or way id — query stays disabled. */
+const UNPARSED_INPUT: OverpassOsmTagsQueryInput = {
+  kind: 'relation',
+  id: 0,
+  interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
+}
 
 /**
- * Observes the per-relation Overpass tags cache. Same pattern as
+ * Observes the per-object Overpass tags cache (relation or way). Same pattern as
  * `useFeatureDetailOverpass`/`useFeatureDetailWfs`: the query is always
  * mounted with `enabled: false` and reads the shared TanStack cache, so
- * navigating back to a previously-loaded relation shows the result without
+ * navigating back to a previously-loaded object shows the result without
  * a second click. `run()` triggers the fetch via `queryClient.fetchQuery`.
  *
  * Status derives from cache state alone — no external React state.
@@ -20,49 +25,49 @@ const LIVE_STALE_TIME_MS = Number.POSITIVE_INFINITY
 export function useOverpassRelationTags(osmRelationIdRaw: string) {
   const queryClient = useQueryClient()
   const trimmed = osmRelationIdRaw.trim()
-  const valid = VALID_RELATION_ID.test(trimmed)
-  const relationId = valid ? Number(trimmed) : null
+  const parsed = parseReportRowOsmRef(trimmed)
+  const queryInput: OverpassOsmTagsQueryInput = parsed
+    ? {
+        kind: parsed.kind,
+        id: parsed.numericId,
+        interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
+      }
+    : UNPARSED_INPUT
 
-  // Hooks must be called unconditionally; for invalid IDs we observe a dummy
-  // key and clamp the public status to `idle` below.
-  const queryInput: OverpassRelationTagsQueryInput = {
-    relationId: relationId ?? 0,
-    interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
-  }
   const query = useQuery({
-    ...overpassRelationTagsQueryOptions(queryInput),
+    ...overpassOsmTagsQueryOptions(queryInput),
     enabled: false,
-    staleTime: LIVE_STALE_TIME_MS,
+    staleTime: Number.POSITIVE_INFINITY,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     retry: false,
   })
 
   const run = useCallback(async () => {
-    if (relationId == null) return
+    if (parsed == null) return
     await queryClient.fetchQuery({
-      ...overpassRelationTagsQueryOptions({
-        relationId,
+      ...overpassOsmTagsQueryOptions({
+        kind: parsed.kind,
+        id: parsed.numericId,
         interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
       }),
-      staleTime: LIVE_STALE_TIME_MS,
+      staleTime: Number.POSITIVE_INFINITY,
       retry: false,
     })
-  }, [queryClient, relationId])
+  }, [queryClient, parsed])
 
   const reset = useCallback(() => {
-    if (relationId == null) return
-    const queryKey = overpassRelationTagsQueryOptions({
-      relationId,
+    if (parsed == null) return
+    const queryKey = overpassOsmTagsQueryOptions({
+      kind: parsed.kind,
+      id: parsed.numericId,
       interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
     }).queryKey
     queryClient.removeQueries({ queryKey, exact: true })
-  }, [queryClient, relationId])
+  }, [queryClient, parsed])
 
-  // `isFetching` (not `isPending`): the latter is true forever for
-  // `enabled: false` queries that have never received data.
   const status: Status =
-    relationId == null
+    parsed == null
       ? 'idle'
       : query.data
         ? 'done'
@@ -73,7 +78,7 @@ export function useOverpassRelationTags(osmRelationIdRaw: string) {
             : 'idle'
 
   return {
-    canRun: relationId != null,
+    canRun: parsed != null,
     status,
     tags: query.data?.tags ?? null,
     replicationDate: query.data?.replicationDate ?? null,

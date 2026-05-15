@@ -188,7 +188,7 @@ function PropertyCard({
                   onClick={(e) => e.stopPropagation()}
                   className="inline-flex items-center gap-1 text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
                 >
-                  {de.feature.liveOsmHitOpenBoundaryChecker(osmBrowseLink.id)}
+                  {de.feature.liveOsmHitOpenBoundaryChecker(osmBrowseLink.type, osmBrowseLink.id)}
                   <ArrowTopRightOnSquareIcon aria-hidden="true" className="h-3.5 w-3.5" />
                 </a>
               ) : null}
@@ -467,12 +467,13 @@ function OverpassLiveSourcesSection({
   const overpassRowKeys = osmHits.map((hit) => overpassLiveRowKey(hit.type, hit.id))
   const viewportBbox = getLiveQueryBbox()
 
-  function buildBoundaryCheckerResolverLink(relationId: number) {
+  function buildBoundaryCheckerResolverLink(osmType: string, osmId: number): string | undefined {
+    if (osmType !== 'relation' && osmType !== 'way') return undefined
     const query = new URLSearchParams()
     if (datasetForResolver !== '') query.set('dataset', datasetForResolver)
     const search = query.toString()
-    const path = `/resolve/relation/${relationId}${search ? `?${search}` : ''}`
-    return withSiteBasePath(path)
+    const base = osmType === 'relation' ? `/resolve/relation/${osmId}` : `/resolve/way/${osmId}`
+    return withSiteBasePath(`${base}${search ? `?${search}` : ''}`)
   }
 
   async function submitLiveOverpass() {
@@ -633,7 +634,7 @@ function OverpassLiveSourcesSection({
                 rowKey={overpassLiveRowKey(hit.type, hit.id)}
                 title={de.feature.liveOsmHitTitle(hit.type, hit.id)}
                 osmBrowseLink={{ type: hit.type, id: hit.id }}
-                boundaryCheckerLink={buildBoundaryCheckerResolverLink(hit.id)}
+                boundaryCheckerLink={buildBoundaryCheckerResolverLink(hit.type, hit.id)}
                 properties={withoutNameStarTags(hit.tags) as Record<string, unknown>}
                 variant="osm"
                 germanKeyContext={{ data }}

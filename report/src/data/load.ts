@@ -24,7 +24,9 @@ import {
 } from '../lib/overpassBbox'
 import {
   buildOverpassRelationTagsQuery,
+  buildOverpassWayTagsQuery,
   parseOverpassRelationTagsResponse,
+  parseOverpassWayTagsResponse,
 } from '../lib/overpassRelationTags'
 import { textPreview } from '../lib/textPreview'
 import {
@@ -275,30 +277,39 @@ export function overpassLiveQueryOptions(input: OverpassLiveQueryInput) {
   })
 }
 
-export type OverpassRelationTagsQueryInput = {
-  relationId: number
+export type OverpassOsmTagsQueryInput = {
+  kind: 'relation' | 'way'
+  id: number
   interpreterUrl: string
 }
 
-export type OverpassRelationTagsQueryData = {
-  relationId: number
+export type OverpassOsmTagsQueryData = {
+  kind: 'relation' | 'way'
+  id: number
   tags: Record<string, string> | null
   replicationDate: string | null
 }
 
-export function overpassRelationTagsQueryOptions(input: OverpassRelationTagsQueryInput) {
+export function overpassOsmTagsQueryOptions(input: OverpassOsmTagsQueryInput) {
   return queryOptions({
-    queryKey: ['overpass-live-relation-tags', input.relationId, input.interpreterUrl],
-    queryFn: async (): Promise<OverpassRelationTagsQueryData> => {
-      const query = buildOverpassRelationTagsQuery(input.relationId)
+    queryKey: ['overpass-live-osm-tags', input.kind, input.id, input.interpreterUrl],
+    queryFn: async (): Promise<OverpassOsmTagsQueryData> => {
+      const query =
+        input.kind === 'relation'
+          ? buildOverpassRelationTagsQuery(input.id)
+          : buildOverpassWayTagsQuery(input.id)
       const res = await fetchOverpassQuery(query, input.interpreterUrl)
       const text = await res.text()
       if (!res.ok) {
         throw new Error(`Overpass request failed: ${res.status}`)
       }
-      const parsed = parseOverpassRelationTagsResponse(text, input.relationId)
+      const parsed =
+        input.kind === 'relation'
+          ? parseOverpassRelationTagsResponse(text, input.id)
+          : parseOverpassWayTagsResponse(text, input.id)
       return {
-        relationId: input.relationId,
+        kind: input.kind,
+        id: input.id,
         tags: parsed.tags,
         replicationDate: parsed.replicationDate,
       }

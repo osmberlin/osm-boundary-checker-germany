@@ -394,8 +394,8 @@ export const de = {
     liveSectionShowAllAria: 'Alle Treffer auf der Karte einblenden',
     liveOsmHitOpenLink: 'osm.org',
     liveOsmHitOpenLinkAria: (osmType: string, id: number) => `${osmType} ${id} auf osm.org öffnen`,
-    liveOsmHitOpenBoundaryChecker: (relationId: number) =>
-      `Grenzabgleich für Relation ${relationId} öffnen`,
+    liveOsmHitOpenBoundaryChecker: (osmType: string, id: number) =>
+      `Grenzabgleich für ${osmType} ${id} öffnen`,
     liveOsmHitOpenBoundaryCheckerAria: (osmType: string, id: number) =>
       `${osmType} ${id} im Grenzabgleich öffnen`,
 
@@ -434,14 +434,14 @@ export const de = {
     /** Live-Abruf row inside "Attribute zum Zeitpunkt des Vergleichs". */
     datasetOsmLiveCardTitle: 'OSM-Daten (Live-Abruf)',
     datasetOsmLiveButton: 'Von Overpass abfragen',
-    datasetOsmLiveButtonHint: (relationId: string) =>
-      `Aktuelle Attribute für relation ${relationId}`,
+    datasetOsmLiveButtonHint: (kind: 'relation' | 'way', id: number) =>
+      `Aktuelle Attribute für ${kind} ${id}`,
     /** Hint shown below the "Von Overpass abfragen" button to clarify the comparison purpose. */
     datasetOsmLiveCompareHint:
       'Nutze diese Funktion um weitere Werte aus den „Amtliche Daten“ oben mit OSM Daten abzugleichen.',
     datasetOsmLiveOverpassQueryLabel: 'Overpass-Abfrage',
     datasetOsmLiveLoading: 'Overpass antwortet …',
-    datasetOsmLiveEmpty: 'Relation nicht gefunden oder ohne Tags.',
+    datasetOsmLiveEmpty: 'OSM-Objekt nicht gefunden oder ohne Tags.',
     datasetOsmLiveAgain: 'Erneut abfragen',
     datasetOsmLiveErrorPrefix: 'Overpass-Anfrage fehlgeschlagen:',
     datasetOsmLiveInvalidJson: 'Unerwartete Overpass-Antwort.',
@@ -502,8 +502,8 @@ export const de = {
     updateMap: {
       title: 'Daten in OSM bearbeiten',
       osmBrowseHeading: 'Auf osm.org',
-      openOsmOrg: 'Grenz-Relation auf osm.org öffnen',
-      openOsmOrgDisabledHint: 'Für diesen Eintrag ist keine OSM-Relation hinterlegt.',
+      openOsmOrg: 'OSM-Objekt auf osm.org öffnen',
+      openOsmOrgDisabledHint: 'Für diesen Eintrag ist kein OSM-Objekt hinterlegt.',
       downloadOfficialHeading: 'Amtliches GeoJSON',
       idHeading: 'iD-Editor',
       josmHeading: 'JOSM (Remote Control)',
@@ -521,8 +521,8 @@ export const de = {
         'Hinweis: In iD werden u. a. Gebäude, Wege und Bahn usw. ausgeblendet; Grenzen, Gewässer und übergeordnete Straßen bleiben sichtbar. Wichtig: Es kann sein, dass einzelne Punkte in dieser Ansicht nicht verschoben werden können. Wenn das passiert, musst du die Filtereinstellungen ändern und bspw. die Landnutzung einschalten. Denn diese Situation bedeutet, dass die Grenze mit einem Element verklebt ist, das zur Zeit versteckt ist — und daher darf sie nicht „blind“ verschoben werden. In diesem Fall dann die Verklebung lösen und die Elemente getrennt voneinander behandeln.',
       josmRemoteLead:
         'Remote Control in den JOSM-Einstellungen aktivieren. Links rufen JOSM lokal auf (Port 8111).',
-      josmLoadObject: 'OSM Relation in JOSM laden',
-      josmLoadObjectTitle: 'Relation inkl. Mitglieder (Remote Control: load_object)',
+      josmLoadObject: 'OSM-Objekt in JOSM laden',
+      josmLoadObjectTitle: 'OSM-Objekt in JOSM laden (Remote Control: load_object)',
       josmImport: 'In JOSM öffnen mit amtlicher Grenze (GeoJSON)',
       josmImportTitle: 'Amtliches GeoJSON als neue Ebene (Remote Control: import)',
       josmImportDisabledHint:
@@ -669,9 +669,18 @@ export const de = {
 
   relationResolver: {
     metaTitle: (relationId: string) => `Grenzabgleich für Relation ${relationId} öffnen`,
+    metaTitleObject: (kind: 'relation' | 'way', id: string) =>
+      kind === 'relation'
+        ? `Grenzabgleich für Relation ${id} öffnen`
+        : `Grenzabgleich für Way ${id} öffnen`,
     title: (relationId: string) => `Grenzabgleich für Relation ${relationId} öffnen`,
+    titleObject: (kind: 'relation' | 'way', id: string) =>
+      kind === 'relation'
+        ? `Grenzabgleich für Relation ${id} öffnen`
+        : `Grenzabgleich für Way ${id} öffnen`,
     requestedDataset: (dataset: string) => `Dataset-Filter: ${dataset}`,
     notFound: 'Für diese Relation wurde kein Ziel im aktuellen Grenzvergleich gefunden.',
+    notFoundObject: 'Für dieses OSM-Objekt wurde kein Ziel im aktuellen Grenzvergleich gefunden.',
     listLead:
       'Mehrere oder keine passenden Ziele für den Dataset-Filter gefunden. Bitte Ziel auswählen:',
     datasetLabel: (dataset: string) => `Datensatz: ${dataset}`,

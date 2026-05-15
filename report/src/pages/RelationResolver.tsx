@@ -1,23 +1,22 @@
-import { Link, useLoaderData, useParams } from '@tanstack/react-router'
+import { Link, useLoaderData } from '@tanstack/react-router'
 import { de } from '../i18n/de'
 import type { RelationResolverCandidate } from '../lib/relationResolver'
 
 export type RelationResolverPageData = {
-  relationId: string
+  objectKind: 'relation' | 'way'
+  objectId: string
   candidates: RelationResolverCandidate[]
   requestedDataset: string | null
 }
 
 export function RelationResolver() {
-  const { relationId } = useParams({ strict: false })
   const data = useLoaderData({ strict: false }) as RelationResolverPageData
-  const shownRelationId = relationId ?? data.relationId
   const hasCandidates = data.candidates.length > 0
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-6 text-left sm:px-6 lg:px-8">
       <h1 className="text-2xl font-semibold tracking-tight text-slate-100">
-        {de.relationResolver.title(shownRelationId)}
+        {de.relationResolver.titleObject(data.objectKind, data.objectId)}
       </h1>
       {data.requestedDataset ? (
         <p className="mt-2 text-sm text-slate-400">
@@ -27,7 +26,7 @@ export function RelationResolver() {
 
       {!hasCandidates ? (
         <p className="mt-4 rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
-          {de.relationResolver.notFound}
+          {de.relationResolver.notFoundObject}
         </p>
       ) : (
         <>
