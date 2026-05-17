@@ -122,6 +122,17 @@
         "reviews": 282,
         "issues": 1016
       }
+    },
+    {
+      "id": "2026-05-17",
+      "summary": {
+        "totalRows": 2325,
+        "meanIou": 0.9668619915736215,
+        "matched": 1926,
+        "unmatchedOsm": 374,
+        "reviews": 282,
+        "issues": 1016
+      }
     }
   ]
 }
