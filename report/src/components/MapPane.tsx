@@ -127,12 +127,8 @@ export default function MapPane({
       ? `bbox:${mapBbox[0]},${mapBbox[1]},${mapBbox[2]},${mapBbox[3]}`
       : 'default'
 
-  const prevOpeningKeyRef = useRef<string | null>(null)
+  /** Skip the first `moveend` after remount (`key={openingKey}`) when fitBounds drives the camera. */
   const skipNextMoveEndCommitRef = useRef(false)
-  if (prevOpeningKeyRef.current !== openingKey) {
-    prevOpeningKeyRef.current = openingKey
-    skipNextMoveEndCommitRef.current = overviewBoundsCamera
-  }
 
   const hoveredFeatureRef = useRef<{
     source: string
@@ -184,6 +180,7 @@ export default function MapPane({
   }
 
   function onLoad(e: { target: maplibregl.Map }) {
+    skipNextMoveEndCommitRef.current = overviewBoundsCamera
     ensureComparisonMapSprites(e.target)
     setIsStripePatternReady(true)
   }

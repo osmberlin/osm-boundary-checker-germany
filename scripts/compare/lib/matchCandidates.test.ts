@@ -225,18 +225,6 @@ describe('matchCandidatesForOfficialOnly — admin profile', () => {
     expect((result.get('land') ?? []).map((m) => m.osmId)).toEqual(['7'])
   })
 
-  test('rows without polygonal geometry yield empty candidate arrays', () => {
-    const inputs: OfficialOnlyInput[] = [
-      { canonicalMatchKey: 'no_geom', officialGeometryWgs84: null },
-    ]
-    const result = matchCandidatesForOfficialOnly({
-      rows: inputs,
-      officialKeySet: new Set([]),
-      candidatePoints: [pointFeature(10, 50, { osm_way_id: '1', osm_id: '0', admin_level: '8' })],
-      options: ADMIN_OPTIONS_DEFAULT,
-    })
-  })
-
   test('returns one entry per row, even when no candidates match', () => {
     const inputs: OfficialOnlyInput[] = [
       { canonicalMatchKey: 'k1', officialGeometryWgs84: squarePolygon(10, 50, 1) },
