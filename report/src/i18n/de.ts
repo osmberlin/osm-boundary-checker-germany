@@ -365,6 +365,8 @@ export const de = {
     liveOfficialFeatureTitle: (index1: number, id: string) =>
       `Datensatz ${index1}${id ? ` · ${id}` : ''}`,
     liveOsmHeading: 'OpenStreetMap (Overpass)',
+    liveOsmBoundariesRowHeading: 'OSM-Grenzen',
+    livePlzAddrRowHeading: 'PLZ-Punktdaten (addr:postcode)',
     liveOsmLoad: 'OSM-Grenzen im Ausschnitt laden …',
     liveOsmOverpassWarnTitle: 'Overpass-Anfrage',
     liveOsmOverpassWarnLead:
@@ -380,6 +382,18 @@ export const de = {
     liveOsmLastErrorHint:
       'Server oder Abfrage anpassen und erneut senden — oder „Abbrechen“ und den Dialog schließen.',
     liveOsmAgain: 'Neue Overpass-Abfrage',
+    livePlzAddrPostcodeButton: 'PLZ-Punktdaten im Gebiet anzeigen',
+    livePlzAddrPostcodeLead:
+      'Zum Vergleich der Flächen-Daten kannst du dir die `addr:postcode`-Daten an Punkt- und Flächen-Daten im Kartenausschnitt anzeigen lassen.',
+    livePlzAddrColorHint: 'Farbe nach letzter PLZ-Ziffer (0–9).',
+    livePlzAddrLoading: 'Overpass lädt `addr:postcode` …',
+    livePlzAddrEmpty: 'Keine Treffer mit `addr:postcode` in diesem Kartenausschnitt.',
+    livePlzAddrLastErrorTitle: 'Overpass-Fehler',
+    livePlzAddrLastErrorHint:
+      'Kartenausschnitt verkleinern und erneut laden, oder später noch einmal versuchen.',
+    livePlzAddrAgain: 'PLZ-Punktdaten zurücksetzen',
+    livePlzAddrHitTitle: (osmType: string, id: number, postcode: string) =>
+      `${postcode} · ${osmType} ${id}`,
     liveOsmLoading: 'Overpass antwortet …',
     liveOsmEmpty: 'Keine Treffer (`boundary=*` passend zum Datensatz in diesem Kasten).',
     liveOsmHitNoTags: '(keine Tags)',

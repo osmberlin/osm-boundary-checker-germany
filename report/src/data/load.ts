@@ -17,7 +17,13 @@ import {
 import { germanKeyLookupBundleSchema } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import {
+  type AddrPostcodeGeoJsonFeatureCollection,
+  type AddrPostcodeHit,
   fetchOverpassQuery,
+  parseOverpassAddrPostcodeData,
+} from '../lib/overpassAddrPostcode'
+import {
+  fetchOverpassQuery as fetchOverpassQueryBoundary,
   type OverpassBoundaryHit,
   type OverpassGeoJsonFeatureCollection,
   parseOverpassBoundaryData,
@@ -260,7 +266,7 @@ export function overpassLiveQueryOptions(input: OverpassLiveQueryInput) {
   return queryOptions({
     queryKey: ['overpass-live', input.featureKey],
     queryFn: async (): Promise<OverpassLiveQueryData> => {
-      const res = await fetchOverpassQuery(input.query, input.interpreterUrl)
+      const res = await fetchOverpassQueryBoundary(input.query, input.interpreterUrl)
       const text = await res.text()
       if (!res.ok) {
         throw new Error(`Overpass request failed: ${res.status}`)
@@ -269,6 +275,44 @@ export function overpassLiveQueryOptions(input: OverpassLiveQueryInput) {
       return {
         featureKey: input.featureKey,
         hits: [...parsed.hits].sort(sortOverpassHits),
+        geojson: parsed.geojson,
+      }
+    },
+  })
+}
+
+export type OverpassAddrPostcodeLiveQueryInput = {
+  featureKey: string
+  query: string
+  interpreterUrl: string
+}
+
+export type OverpassAddrPostcodeLiveQueryData = {
+  featureKey: string
+  hits: AddrPostcodeHit[]
+  geojson: AddrPostcodeGeoJsonFeatureCollection
+}
+
+function sortAddrPostcodeHits(a: AddrPostcodeHit, b: AddrPostcodeHit): number {
+  const o = (t: string) => (t === 'node' ? 0 : 1)
+  const c = o(a.type) - o(b.type)
+  if (c !== 0) return c
+  return a.id - b.id
+}
+
+export function overpassAddrPostcodeLiveQueryOptions(input: OverpassAddrPostcodeLiveQueryInput) {
+  return queryOptions({
+    queryKey: ['overpass-live-addr-postcode', input.featureKey],
+    queryFn: async (): Promise<OverpassAddrPostcodeLiveQueryData> => {
+      const res = await fetchOverpassQuery(input.query, input.interpreterUrl)
+      const text = await res.text()
+      if (!res.ok) {
+        throw new Error(`Overpass request failed: ${res.status}`)
+      }
+      const parsed = parseOverpassAddrPostcodeData(text)
+      return {
+        featureKey: input.featureKey,
+        hits: [...parsed.hits].sort(sortAddrPostcodeHits),
         geojson: parsed.geojson,
       }
     },

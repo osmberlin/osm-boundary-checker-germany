@@ -21,6 +21,7 @@ import {
   type FeatureDetailComparison,
 } from '../data/load'
 import { useFeatureDetailOverpass } from '../hooks/useFeatureDetailOverpass'
+import { useFeatureDetailOverpassAddrPostcode } from '../hooks/useFeatureDetailOverpassAddrPostcode'
 import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
 import { useFilteredLiveOverlays } from '../hooks/useFilteredLiveOverlays'
 import { useLiveQueryBboxFromMap } from '../hooks/useLiveQueryBboxFromMap'
@@ -55,6 +56,7 @@ function FeatureDetailWithMapContext({
 }) {
   const { getLiveQueryBbox } = useLiveQueryBboxFromMap()
   const overpass = useFeatureDetailOverpass(featureLookupKey)
+  const addrPostcode = useFeatureDetailOverpassAddrPostcode(featureLookupKey)
   const wfs = useFeatureDetailWfs({
     featureKey: featureLookupKey,
     sources: data.ogcInspectSources ?? EMPTY_OGC_SOURCES,
@@ -63,6 +65,7 @@ function FeatureDetailWithMapContext({
     featureKey: featureLookupKey,
     wfsGeojson: wfs.geojson,
     overpassGeojson: overpass.geojson,
+    addrPostcodeGeojson: addrPostcode.geojson,
   })
   const hasComparisonMap = featureDetailHasComparisonMap(row, data)
 
@@ -91,6 +94,7 @@ function FeatureDetailWithMapContext({
           interactionData={comparisonOverlayData}
           mapView={mapViewParam}
           overpassGeojson={filteredLiveOverlays.overpassGeojson}
+          addrPostcodeGeojson={filteredLiveOverlays.addrPostcodeGeojson}
           wfsGeojson={filteredLiveOverlays.wfsGeojson}
         />
 
@@ -128,6 +132,15 @@ function FeatureDetailWithMapContext({
               runLiveOverpass: overpass.runLiveOverpass,
               resetLiveOverpass: overpass.resetLiveOverpass,
               resetRunMutation: overpass.resetRunMutation,
+            }}
+            addrPostcode={{
+              hasCachedData: addrPostcode.hasCachedData,
+              hits: addrPostcode.hits,
+              isRunPending: addrPostcode.isRunPending,
+              runError: addrPostcode.runError,
+              runLiveOverpass: addrPostcode.runLiveOverpass,
+              resetLiveOverpass: addrPostcode.resetLiveOverpass,
+              resetRunMutation: addrPostcode.resetRunMutation,
             }}
           />
         ) : null}

@@ -3,7 +3,9 @@ import { useRef, useState } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
 import MapLibre from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
+import type { AddrPostcodeGeoJsonFeatureCollection } from '../lib/overpassAddrPostcode'
 import type { OverpassGeoJsonFeatureCollection } from '../lib/overpassBbox'
+import { AddrPostcodeOverlayLayers } from './map/AddrPostcodeOverlayLayers'
 import { ComparisonDiffVectorLayers } from './map/ComparisonDiffVectorLayers'
 import {
   ALL_INTERACTIVE_LAYER_IDS,
@@ -60,6 +62,7 @@ type MapPaneInteraction = {
 
 type MapPaneOverlays = {
   overpassGeojson?: OverpassGeoJsonFeatureCollection | null
+  addrPostcodeGeojson?: AddrPostcodeGeoJsonFeatureCollection | null
   wfsGeojson?: GeoJSON.FeatureCollection | null
 }
 
@@ -111,6 +114,7 @@ export default function MapPane({
   const { featureId, mapBbox, maxBounds, urlMapView, onMoveEndCommitUrl } = view
   const { showOfficial, showOsm, showDiff } = layers
   const overpassGeojson = overlays?.overpassGeojson ?? null
+  const addrPostcodeGeojson = overlays?.addrPostcodeGeojson ?? null
   const wfsGeojson = overlays?.wfsGeojson ?? null
 
   const overviewBoundsCamera =
@@ -281,6 +285,7 @@ export default function MapPane({
       />
       <WfsOverlayLayers geojson={wfsGeojson} />
       <OverpassOverlayLayers geojson={overpassGeojson} />
+      <AddrPostcodeOverlayLayers geojson={addrPostcodeGeojson} />
     </MapLibre>
   )
 }

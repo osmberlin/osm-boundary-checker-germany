@@ -5,6 +5,7 @@ import { useFeatureDetailMapBoundaryScope } from '../../hooks/useFeatureDetailMa
 import { de } from '../../i18n/de'
 import { featureDetailHasComparisonMap } from '../../lib/featureDetailHasComparisonMap'
 import type { MapViewQueryValue } from '../../lib/mapViewQueryParam'
+import type { AddrPostcodeGeoJsonFeatureCollection } from '../../lib/overpassAddrPostcode'
 import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { InfoNotice } from '../InfoNotice'
@@ -20,6 +21,7 @@ export function FeatureDetailMapSection({
   row,
   mapView,
   overpassGeojson,
+  addrPostcodeGeojson,
   wfsGeojson,
 }: {
   areaKey: string
@@ -31,6 +33,7 @@ export function FeatureDetailMapSection({
     commitMapViewFromMap: (viewState: ViewState) => void
   }
   overpassGeojson: OverpassGeoJsonFeatureCollection | null
+  addrPostcodeGeojson: AddrPostcodeGeoJsonFeatureCollection | null
   wfsGeojson: GeoJSON.FeatureCollection | null
 }) {
   const mapLayers = useComparisonMapLayers()
@@ -60,6 +63,7 @@ export function FeatureDetailMapSection({
           row={row}
           mapView={mapView}
           overpassGeojson={overpassGeojson}
+          addrPostcodeGeojson={addrPostcodeGeojson}
           wfsGeojson={wfsGeojson}
           showOnlySelected={showOnlySelected}
           detailMaxBounds={detailMaxBounds}

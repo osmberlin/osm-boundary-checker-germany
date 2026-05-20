@@ -8,10 +8,17 @@ import {
 } from '../lib/germanKeyExplorer'
 import {
   type LiveRowKey,
+  addrPostcodeLiveRowKey,
   overpassLiveRowKey,
   wfsFeatureIdPart,
   wfsLiveRowKey,
 } from '../lib/liveRowKey'
+import {
+  addrPostcodeColorIndex,
+  buildOverpassAddrPostcodeQuery,
+  isPlzDatasetForReport,
+  type AddrPostcodeHit,
+} from '../lib/overpassAddrPostcode'
 import { buildOverpassBoundaryQuery, type OverpassBoundaryHit } from '../lib/overpassBbox'
 import { DEFAULT_OVERPASS_INTERPRETER_URL, OVERPASS_INSTANCES } from '../lib/overpassServers'
 import { withSiteBasePath } from '../lib/siteBasePath'
@@ -29,6 +36,8 @@ import type {
 } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { mapLayerColors } from './mapLayerColors'
+import { ProvenanceGridRow } from './ProvenanceGridRow'
+import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 import { sharedButtonClass } from './sharedButtonStyles'
 
 type OfficialSlot =
@@ -93,6 +102,7 @@ function PropertyCard({
   title,
   properties,
   variant,
+  addrPostcodeColorIndex: postcodeColorIndex,
   osmBrowseLink,
   boundaryCheckerLink,
   germanKeyContext,
@@ -101,7 +111,9 @@ function PropertyCard({
 }: {
   title: string
   properties: Record<string, unknown>
-  variant: 'official' | 'osm'
+  variant: 'official' | 'osm' | 'addrPostcode'
+  /** For `addrPostcode`: palette bucket from postcode label. */
+  addrPostcodeColorIndex?: number
   /** When set (Overpass hit), an icon link to osm.org is rendered on the right of the summary row. */
   osmBrowseLink?: { type: string; id: number }
   /** Optional deep link to this app's relation resolver route. */
@@ -112,9 +124,33 @@ function PropertyCard({
   disclosure: PropertyCardDisclosure
 }) {
   const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
-  const color = variant === 'official' ? mapLayerColors.wfs : mapLayerColors.overpass
-  const keyText = variant === 'official' ? 'text-slate-400' : 'text-violet-200/75'
-  const valueText = variant === 'official' ? 'text-slate-100' : 'text-violet-100'
+  const paletteEntry =
+    variant === 'addrPostcode'
+      ? mapLayerColors.addrPostcode.palette[
+          Math.min(
+            Math.max(0, postcodeColorIndex ?? 0),
+            mapLayerColors.addrPostcode.palette.length - 1,
+          )
+        ]
+      : null
+  const color =
+    variant === 'official'
+      ? mapLayerColors.wfs
+      : variant === 'addrPostcode' && paletteEntry
+        ? { line: paletteEntry.point, fillOpacity: 0.25 }
+        : mapLayerColors.overpass
+  const keyText =
+    variant === 'official'
+      ? 'text-slate-400'
+      : variant === 'addrPostcode'
+        ? 'text-slate-400'
+        : 'text-violet-200/75'
+  const valueText =
+    variant === 'official'
+      ? 'text-slate-100'
+      : variant === 'addrPostcode'
+        ? 'text-slate-100'
+        : 'text-violet-100'
   const verifyLinkClass =
     'shrink-0 text-xs font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
   const cardStyle = {
@@ -122,7 +158,9 @@ function PropertyCard({
     backgroundColor:
       variant === 'official'
         ? `rgb(76 29 149 / ${mapLayerColors.wfs.fillOpacity})`
-        : `rgb(112 26 117 / ${mapLayerColors.overpass.fillOpacity})`,
+        : variant === 'addrPostcode' && paletteEntry
+          ? `${paletteEntry.point}33`
+          : `rgb(112 26 117 / ${mapLayerColors.overpass.fillOpacity})`,
   } satisfies React.CSSProperties
 
   const isOpen = !disclosure.isHidden
@@ -157,6 +195,13 @@ function PropertyCard({
                 <EyeIcon aria-hidden="true" className="h-4 w-4" />
               )}
             </span>
+            {variant === 'addrPostcode' && paletteEntry ? (
+              <span
+                aria-hidden="true"
+                className="h-3 w-3 shrink-0 rounded-full ring-1 ring-slate-900/80"
+                style={{ backgroundColor: paletteEntry.point }}
+              />
+            ) : null}
             <span className="min-w-0 text-sm/6 font-medium break-words text-slate-100">
               {title}
             </span>
@@ -313,14 +358,27 @@ function withoutNameStarTags(tags: Record<string, string>): Record<string, strin
   return out
 }
 
-function formatOverpassRunError(error: unknown): string {
+function formatOverpassRunError(
+  error: unknown,
+  invalidJsonMessage = de.feature.liveOsmInvalidJson,
+): string {
   const rawMessage =
     error instanceof Error ? error.message : typeof error === 'string' ? error : String(error)
-  if (rawMessage === 'INVALID_OVERPASS_JSON') return de.feature.liveOsmInvalidJson
+  if (rawMessage === 'INVALID_OVERPASS_JSON') return invalidJsonMessage
   if (rawMessage.startsWith('Overpass request failed:')) {
     return `${de.feature.liveOsmHttp} ${rawMessage.replace('Overpass request failed:', '').trim()}`
   }
   return rawMessage
+}
+
+type AddrPostcodeLiveController = {
+  hasCachedData: boolean
+  hits: AddrPostcodeHit[]
+  isRunPending: boolean
+  runError: unknown
+  runLiveOverpass: (query: string, interpreterUrl: string) => Promise<void>
+  resetLiveOverpass: () => void
+  resetRunMutation: () => void
 }
 
 type WfsLiveController = {
@@ -371,79 +429,82 @@ function OfficialLiveSourcesSection({
   const viewportBbox = getLiveQueryBbox()
 
   return (
-    <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-      <dt>
-        <h3 className="text-sm/6 font-medium text-slate-200">{de.feature.liveOfficialHeading}</h3>
-        <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={wfsRowKeys} />
-      </dt>
-      <dd className="mt-2 space-y-4 md:col-span-2 md:mt-0">
-        {!viewportBbox && (
-          <p className="text-sm text-amber-300/90">{de.feature.liveMapViewportPending}</p>
-        )}
-        {sources.map((src) => {
-          const slot = wfs.getStatus(src.id)
-          const officialErrorMessage =
-            slot.status === 'error' && slot.message === 'INVALID_WFS_XML'
-              ? de.feature.liveOfficialInvalidJson
-              : slot.status === 'error' &&
-                  slot.message.includes("output/input format 'application/json'")
-                ? de.feature.liveOfficialUnsupportedFormat
-                : slot.status === 'error' && slot.message.startsWith('WFS request failed:')
-                  ? `${de.feature.liveOfficialHttp} ${slot.message.replace('WFS request failed:', '').trim()}`
-                  : slot.status === 'error'
-                    ? slot.message
-                    : null
-          return (
-            <div key={src.id} className="space-y-2">
-              {slot.status !== 'done' && (
-                <button
-                  type="button"
-                  disabled={!viewportBbox || slot.status === 'loading'}
-                  onClick={() => void loadOfficial(src)}
-                  className={sharedButtonClass}
-                >
-                  {slot.status === 'loading'
-                    ? de.feature.liveOfficialLoading
-                    : `${de.feature.liveOfficialLoad}: ${src.label}`}
-                </button>
-              )}
-              {slot.status === 'error' && officialErrorMessage && (
-                <p className="text-sm text-red-400">{officialErrorMessage}</p>
-              )}
-              {slot.status === 'done' && slot.features.length === 0 && (
-                <p className="text-sm text-slate-400">{de.feature.liveOfficialEmpty}</p>
-              )}
-              {slot.status === 'done' && slot.features.length > 0 && (
-                <div className="space-y-3">
-                  {slot.features.map((f, i) => {
-                    const props = f.properties ?? {}
-                    const idPart = wfsFeatureIdPart(f, i)
-                    const title =
-                      f.id != null ? idPart : de.feature.liveOfficialFeatureTitle(i + 1, '')
-                    return (
-                      <LiveResultCard
-                        key={`${src.id}-${idPart}`}
-                        featureKey={featureKey}
-                        rowKey={wfsLiveRowKey(src.id, idPart)}
-                        title={title}
-                        properties={props}
-                        variant="official"
-                        germanKeyContext={{ data }}
-                        datasetSnapshotValueMatches={datasetSnapshotValueMatches}
-                      />
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </dd>
-    </div>
+    <ProvenanceGridRow
+      asDl
+      rightColumnClassName="mt-2 space-y-4"
+      title={
+        <>
+          <h3 className="text-sm/6 font-medium text-slate-200">{de.feature.liveOfficialHeading}</h3>
+          <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={wfsRowKeys} />
+        </>
+      }
+    >
+      {!viewportBbox && (
+        <p className="text-sm text-amber-300/90">{de.feature.liveMapViewportPending}</p>
+      )}
+      {sources.map((src) => {
+        const slot = wfs.getStatus(src.id)
+        const officialErrorMessage =
+          slot.status === 'error' && slot.message === 'INVALID_WFS_XML'
+            ? de.feature.liveOfficialInvalidJson
+            : slot.status === 'error' &&
+                slot.message.includes("output/input format 'application/json'")
+              ? de.feature.liveOfficialUnsupportedFormat
+              : slot.status === 'error' && slot.message.startsWith('WFS request failed:')
+                ? `${de.feature.liveOfficialHttp} ${slot.message.replace('WFS request failed:', '').trim()}`
+                : slot.status === 'error'
+                  ? slot.message
+                  : null
+        return (
+          <div key={src.id} className="space-y-2">
+            {slot.status !== 'done' && (
+              <button
+                type="button"
+                disabled={!viewportBbox || slot.status === 'loading'}
+                onClick={() => void loadOfficial(src)}
+                className={sharedButtonClass}
+              >
+                {slot.status === 'loading'
+                  ? de.feature.liveOfficialLoading
+                  : `${de.feature.liveOfficialLoad}: ${src.label}`}
+              </button>
+            )}
+            {slot.status === 'error' && officialErrorMessage && (
+              <p className="text-sm text-red-400">{officialErrorMessage}</p>
+            )}
+            {slot.status === 'done' && slot.features.length === 0 && (
+              <p className="text-sm text-slate-400">{de.feature.liveOfficialEmpty}</p>
+            )}
+            {slot.status === 'done' && slot.features.length > 0 && (
+              <div className="space-y-3">
+                {slot.features.map((f, i) => {
+                  const props = f.properties ?? {}
+                  const idPart = wfsFeatureIdPart(f, i)
+                  const title =
+                    f.id != null ? idPart : de.feature.liveOfficialFeatureTitle(i + 1, '')
+                  return (
+                    <LiveResultCard
+                      key={`${src.id}-${idPart}`}
+                      featureKey={featureKey}
+                      rowKey={wfsLiveRowKey(src.id, idPart)}
+                      title={title}
+                      properties={props}
+                      variant="official"
+                      germanKeyContext={{ data }}
+                      datasetSnapshotValueMatches={datasetSnapshotValueMatches}
+                    />
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </ProvenanceGridRow>
   )
 }
 
-function OverpassLiveSourcesSection({
+function OverpassBoundaryLiveRow({
   featureKey,
   data,
   getLiveQueryBbox,
@@ -487,177 +548,333 @@ function OverpassLiveSourcesSection({
   }
 
   return (
-    <div className="bg-violet-950/8 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-      <dt>
-        <h3 className="text-sm/6 font-medium text-slate-200">{de.feature.liveOsmHeading}</h3>
-        <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={overpassRowKeys} />
-      </dt>
-      <dd className="mt-2 space-y-3 md:col-span-2 md:mt-0">
-        {!viewportBbox && (
-          <p className="text-sm text-amber-300/90">{de.feature.liveMapViewportPending}</p>
-        )}
-        {!overpass.hasCachedData && overpassDraft == null && (
+    <ProvenanceGridRow
+      asDl
+      surfaceClassName="bg-violet-950/8"
+      rightColumnClassName="mt-2 space-y-3"
+      title={
+        <>
+          <h3 className="text-sm/6 font-medium text-slate-200">
+            {de.feature.liveOsmBoundariesRowHeading}
+          </h3>
+          <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={overpassRowKeys} />
+        </>
+      }
+    >
+      {!viewportBbox && (
+        <p className="text-sm text-amber-300/90">{de.feature.liveMapViewportPending}</p>
+      )}
+      {!overpass.hasCachedData && overpassDraft == null && (
+        <button
+          type="button"
+          disabled={!viewportBbox}
+          onClick={() => {
+            const bbox = getLiveQueryBbox()
+            if (!bbox) return
+            overpass.resetRunMutation()
+            setOverpassDraft({
+              query: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
+              interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
+            })
+          }}
+          className={sharedButtonClass}
+        >
+          {de.feature.liveOsmLoad}
+        </button>
+      )}
+
+      {overpassDraft != null && !overpass.isRunPending && (
+        <div
+          className="rounded-lg border border-amber-900/50 bg-amber-950/20 p-3"
+          role="dialog"
+          aria-labelledby="overpass-confirm-title"
+        >
+          <p id="overpass-confirm-title" className="text-sm font-medium text-amber-100">
+            {de.feature.liveOsmOverpassWarnTitle}
+          </p>
+          <p className="mt-2 text-sm text-amber-200/90">{de.feature.liveOsmOverpassWarnLead}</p>
+          <p className="mt-1 text-sm font-medium text-amber-100">
+            {de.feature.liveOsmOverpassWarnScope}
+          </p>
+          {overpass.runError != null && (
+            <div
+              className="mt-3 rounded-md border border-red-900/60 bg-red-950/35 px-3 py-2 text-sm text-red-100"
+              role="alert"
+            >
+              <p className="font-medium">{de.feature.liveOsmLastErrorTitle}</p>
+              <p className="mt-1 break-words whitespace-pre-wrap">
+                {formatOverpassRunError(overpass.runError)}
+              </p>
+              <p className="mt-2 text-xs text-red-200/85">{de.feature.liveOsmLastErrorHint}</p>
+            </div>
+          )}
+          <label
+            htmlFor="overpass-server"
+            className="mt-3 block text-xs font-medium tracking-wide text-slate-400 uppercase"
+          >
+            {de.feature.liveOsmServerLabel}
+          </label>
+          <select
+            id="overpass-server"
+            value={overpassDraft.interpreterUrl}
+            onChange={(e) =>
+              setOverpassDraft((d) => (d ? { ...d, interpreterUrl: e.target.value } : null))
+            }
+            className="mt-1 block w-full max-w-full rounded-md border border-slate-600 bg-slate-950 px-2 py-1.5 font-mono text-[11px] text-slate-100 shadow-sm focus:border-amber-600 focus:ring-1 focus:ring-amber-600/30 focus:outline-none"
+          >
+            {OVERPASS_INSTANCES.map((inst) => (
+              <option key={inst.interpreterUrl} value={inst.interpreterUrl}>
+                {inst.interpreterUrl}
+              </option>
+            ))}
+          </select>
+          <label
+            htmlFor="overpass-query-draft"
+            className="mt-3 block text-xs font-medium tracking-wide text-slate-400 uppercase"
+          >
+            {de.feature.liveOsmOverpassWarnQuery}
+          </label>
+          <textarea
+            id="overpass-query-draft"
+            value={overpassDraft.query}
+            onChange={(e) => setOverpassDraft((d) => (d ? { ...d, query: e.target.value } : null))}
+            spellCheck={false}
+            rows={10}
+            className="mt-1 max-h-64 min-h-[8rem] w-full resize-y rounded border border-slate-600 bg-slate-950 p-2 font-mono text-[11px] leading-snug text-slate-200 shadow-inner focus:border-amber-600 focus:ring-1 focus:ring-amber-600/30 focus:outline-none"
+          />
           <button
             type="button"
-            disabled={!viewportBbox}
             onClick={() => {
               const bbox = getLiveQueryBbox()
               if (!bbox) return
-              overpass.resetRunMutation()
-              setOverpassDraft({
-                query: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
-                interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
-              })
+              setOverpassDraft((d) =>
+                d
+                  ? {
+                      ...d,
+                      query: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
+                    }
+                  : null,
+              )
             }}
-            className={sharedButtonClass}
+            className="mt-2 text-xs text-amber-200/85 underline decoration-amber-400/35 underline-offset-2 hover:text-amber-100"
           >
-            {de.feature.liveOsmLoad}
+            {de.feature.liveOsmQueryReset}
           </button>
-        )}
-
-        {overpassDraft != null && !overpass.isRunPending && (
-          <div
-            className="rounded-lg border border-amber-900/50 bg-amber-950/20 p-3"
-            role="dialog"
-            aria-labelledby="overpass-confirm-title"
-          >
-            <p id="overpass-confirm-title" className="text-sm font-medium text-amber-100">
-              {de.feature.liveOsmOverpassWarnTitle}
-            </p>
-            <p className="mt-2 text-sm text-amber-200/90">{de.feature.liveOsmOverpassWarnLead}</p>
-            <p className="mt-1 text-sm font-medium text-amber-100">
-              {de.feature.liveOsmOverpassWarnScope}
-            </p>
-            {overpass.runError != null && (
-              <div
-                className="mt-3 rounded-md border border-red-900/60 bg-red-950/35 px-3 py-2 text-sm text-red-100"
-                role="alert"
-              >
-                <p className="font-medium">{de.feature.liveOsmLastErrorTitle}</p>
-                <p className="mt-1 break-words whitespace-pre-wrap">
-                  {formatOverpassRunError(overpass.runError)}
-                </p>
-                <p className="mt-2 text-xs text-red-200/85">{de.feature.liveOsmLastErrorHint}</p>
-              </div>
-            )}
-            <label
-              htmlFor="overpass-server"
-              className="mt-3 block text-xs font-medium tracking-wide text-slate-400 uppercase"
-            >
-              {de.feature.liveOsmServerLabel}
-            </label>
-            <select
-              id="overpass-server"
-              value={overpassDraft.interpreterUrl}
-              onChange={(e) =>
-                setOverpassDraft((d) => (d ? { ...d, interpreterUrl: e.target.value } : null))
-              }
-              className="mt-1 block w-full max-w-full rounded-md border border-slate-600 bg-slate-950 px-2 py-1.5 font-mono text-[11px] text-slate-100 shadow-sm focus:border-amber-600 focus:ring-1 focus:ring-amber-600/30 focus:outline-none"
-            >
-              {OVERPASS_INSTANCES.map((inst) => (
-                <option key={inst.interpreterUrl} value={inst.interpreterUrl}>
-                  {inst.interpreterUrl}
-                </option>
-              ))}
-            </select>
-            <label
-              htmlFor="overpass-query-draft"
-              className="mt-3 block text-xs font-medium tracking-wide text-slate-400 uppercase"
-            >
-              {de.feature.liveOsmOverpassWarnQuery}
-            </label>
-            <textarea
-              id="overpass-query-draft"
-              value={overpassDraft.query}
-              onChange={(e) =>
-                setOverpassDraft((d) => (d ? { ...d, query: e.target.value } : null))
-              }
-              spellCheck={false}
-              rows={10}
-              className="mt-1 max-h-64 min-h-[8rem] w-full resize-y rounded border border-slate-600 bg-slate-950 p-2 font-mono text-[11px] leading-snug text-slate-200 shadow-inner focus:border-amber-600 focus:ring-1 focus:ring-amber-600/30 focus:outline-none"
-            />
+          <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => {
-                const bbox = getLiveQueryBbox()
-                if (!bbox) return
-                setOverpassDraft((d) =>
-                  d
-                    ? {
-                        ...d,
-                        query: buildOverpassBoundaryQuery(bbox, overpassBoundaryTag),
-                      }
-                    : null,
-                )
+                setOverpassDraft(null)
+                overpass.resetRunMutation()
               }}
-              className="mt-2 text-xs text-amber-200/85 underline decoration-amber-400/35 underline-offset-2 hover:text-amber-100"
+              className={sharedButtonClass}
             >
-              {de.feature.liveOsmQueryReset}
+              {de.feature.liveOsmConfirmNo}
             </button>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setOverpassDraft(null)
-                  overpass.resetRunMutation()
-                }}
-                className={sharedButtonClass}
-              >
-                {de.feature.liveOsmConfirmNo}
-              </button>
-              <button
-                type="button"
-                disabled={overpassDraft.query.trim() === ''}
-                onClick={() => void submitLiveOverpass()}
-                className={sharedButtonClass}
-              >
-                {de.feature.liveOsmConfirmYes}
-              </button>
-            </div>
+            <button
+              type="button"
+              disabled={overpassDraft.query.trim() === ''}
+              onClick={() => void submitLiveOverpass()}
+              className={sharedButtonClass}
+            >
+              {de.feature.liveOsmConfirmYes}
+            </button>
           </div>
-        )}
+        </div>
+      )}
 
-        {overpass.isRunPending && (
-          <p className="text-sm text-slate-400">{de.feature.liveOsmLoading}</p>
-        )}
+      {overpass.isRunPending && (
+        <p className="text-sm text-slate-400">{de.feature.liveOsmLoading}</p>
+      )}
 
-        {overpass.hasCachedData && osmHits.length === 0 && (
-          <p className="text-sm text-slate-400">{de.feature.liveOsmEmpty}</p>
-        )}
+      {overpass.hasCachedData && osmHits.length === 0 && (
+        <p className="text-sm text-slate-400">{de.feature.liveOsmEmpty}</p>
+      )}
 
-        {overpass.hasCachedData && osmHits.length > 0 && (
-          <div className="space-y-3">
-            {osmHits.map((hit) => (
+      {overpass.hasCachedData && osmHits.length > 0 && (
+        <div className="space-y-3">
+          {osmHits.map((hit) => (
+            <LiveResultCard
+              key={`${hit.type}-${hit.id}`}
+              featureKey={featureKey}
+              rowKey={overpassLiveRowKey(hit.type, hit.id)}
+              title={de.feature.liveOsmHitTitle(hit.type, hit.id)}
+              osmBrowseLink={{ type: hit.type, id: hit.id }}
+              boundaryCheckerLink={buildBoundaryCheckerResolverLink(hit.type, hit.id)}
+              properties={withoutNameStarTags(hit.tags) as Record<string, unknown>}
+              variant="osm"
+              germanKeyContext={{ data }}
+              datasetSnapshotValueMatches={datasetSnapshotValueMatches}
+            />
+          ))}
+        </div>
+      )}
+
+      {overpass.hasCachedData && (
+        <button
+          type="button"
+          onClick={() => {
+            overpass.resetLiveOverpass()
+            setOverpassDraft(null)
+          }}
+          className="text-sm text-violet-300/90 underline decoration-violet-400/30 underline-offset-2 hover:text-violet-200"
+        >
+          {de.feature.liveOsmAgain}
+        </button>
+      )}
+    </ProvenanceGridRow>
+  )
+}
+
+function OverpassPlzAddrLiveRow({
+  featureKey,
+  data,
+  getLiveQueryBbox,
+  addrPostcode,
+  datasetSnapshotValueMatches,
+}: {
+  featureKey: string
+  data: ComparisonForReport
+  getLiveQueryBbox: () => [number, number, number, number] | null
+  addrPostcode: AddrPostcodeLiveController
+  datasetSnapshotValueMatches: ReadonlySet<string>
+}) {
+  const addrHits = addrPostcode.hits
+  const addrRowKeys = addrHits.map((hit) => addrPostcodeLiveRowKey(hit.type, hit.id))
+  const viewportBbox = getLiveQueryBbox()
+
+  async function loadAddrPostcodeLive() {
+    const bbox = getLiveQueryBbox()
+    if (!bbox) return
+    addrPostcode.resetRunMutation()
+    try {
+      await addrPostcode.runLiveOverpass(
+        buildOverpassAddrPostcodeQuery(bbox),
+        DEFAULT_OVERPASS_INTERPRETER_URL,
+      )
+    } catch {
+      /* Error surfaced via addrPostcode.runError */
+    }
+  }
+
+  return (
+    <ProvenanceGridRow
+      asDl
+      surfaceClassName="bg-violet-950/8"
+      rightColumnClassName="mt-2 space-y-3"
+      title={
+        <>
+          <h3 className="text-sm/6 font-medium text-slate-200">
+            {de.feature.livePlzAddrRowHeading}
+          </h3>
+          <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={addrRowKeys} />
+        </>
+      }
+    >
+      <p className="text-sm text-slate-400">{de.feature.livePlzAddrPostcodeLead}</p>
+      <p className="text-xs text-slate-500">{de.feature.livePlzAddrColorHint}</p>
+      {!viewportBbox && (
+        <p className="text-sm text-amber-300/90">{de.feature.liveMapViewportPending}</p>
+      )}
+      <button
+        type="button"
+        disabled={!viewportBbox || addrPostcode.isRunPending}
+        onClick={() => void loadAddrPostcodeLive()}
+        className={sharedButtonClass}
+      >
+        {de.feature.livePlzAddrPostcodeButton}
+      </button>
+      {addrPostcode.runError != null && !addrPostcode.isRunPending && (
+        <div
+          className="rounded-md border border-red-900/60 bg-red-950/35 px-3 py-2 text-sm text-red-100"
+          role="alert"
+        >
+          <p className="font-medium">{de.feature.livePlzAddrLastErrorTitle}</p>
+          <p className="mt-1 break-words whitespace-pre-wrap">
+            {formatOverpassRunError(addrPostcode.runError, de.feature.liveOsmInvalidJson)}
+          </p>
+          <p className="mt-2 text-xs text-red-200/85">{de.feature.livePlzAddrLastErrorHint}</p>
+        </div>
+      )}
+      {addrPostcode.isRunPending && (
+        <p className="text-sm text-slate-400">{de.feature.livePlzAddrLoading}</p>
+      )}
+      {addrPostcode.hasCachedData && addrHits.length > 0 && (
+        <div className="space-y-3">
+          {addrHits.map((hit) => {
+            const postcode = hit.tags['addr:postcode'] ?? ''
+            return (
               <LiveResultCard
-                key={`${hit.type}-${hit.id}`}
+                key={`addr-${hit.type}-${hit.id}`}
                 featureKey={featureKey}
-                rowKey={overpassLiveRowKey(hit.type, hit.id)}
-                title={de.feature.liveOsmHitTitle(hit.type, hit.id)}
+                rowKey={addrPostcodeLiveRowKey(hit.type, hit.id)}
+                title={de.feature.livePlzAddrHitTitle(hit.type, hit.id, postcode || String(hit.id))}
                 osmBrowseLink={{ type: hit.type, id: hit.id }}
-                boundaryCheckerLink={buildBoundaryCheckerResolverLink(hit.type, hit.id)}
                 properties={withoutNameStarTags(hit.tags) as Record<string, unknown>}
-                variant="osm"
+                variant="addrPostcode"
+                addrPostcodeColorIndex={addrPostcodeColorIndex(postcode)}
                 germanKeyContext={{ data }}
                 datasetSnapshotValueMatches={datasetSnapshotValueMatches}
               />
-            ))}
-          </div>
-        )}
+            )
+          })}
+        </div>
+      )}
+      {addrPostcode.hasCachedData && addrHits.length === 0 && !addrPostcode.isRunPending && (
+        <p className="text-sm text-slate-400">{de.feature.livePlzAddrEmpty}</p>
+      )}
+      {addrPostcode.hasCachedData && (
+        <button
+          type="button"
+          onClick={() => addrPostcode.resetLiveOverpass()}
+          className="text-sm text-slate-300/90 underline decoration-slate-400/30 underline-offset-2 hover:text-slate-100"
+        >
+          {de.feature.livePlzAddrAgain}
+        </button>
+      )}
+    </ProvenanceGridRow>
+  )
+}
 
-        {overpass.hasCachedData && (
-          <button
-            type="button"
-            onClick={() => {
-              overpass.resetLiveOverpass()
-              setOverpassDraft(null)
-            }}
-            className="text-sm text-violet-300/90 underline decoration-violet-400/30 underline-offset-2 hover:text-violet-200"
-          >
-            {de.feature.liveOsmAgain}
-          </button>
-        )}
-      </dd>
-    </div>
+function OverpassLiveSourcesSection({
+  featureKey,
+  data,
+  getLiveQueryBbox,
+  overpassBoundaryTag,
+  overpass,
+  addrPostcode,
+  datasetSnapshotValueMatches,
+}: {
+  featureKey: string
+  data: ComparisonForReport
+  getLiveQueryBbox: () => [number, number, number, number] | null
+  overpassBoundaryTag: OverpassBoundaryTag
+  overpass: OverpassLiveController
+  addrPostcode: AddrPostcodeLiveController
+  datasetSnapshotValueMatches: ReadonlySet<string>
+}) {
+  const showPlzAddr = isPlzDatasetForReport(data)
+
+  return (
+    <>
+      <OverpassBoundaryLiveRow
+        featureKey={featureKey}
+        data={data}
+        getLiveQueryBbox={getLiveQueryBbox}
+        overpassBoundaryTag={overpassBoundaryTag}
+        overpass={overpass}
+        datasetSnapshotValueMatches={datasetSnapshotValueMatches}
+      />
+      {showPlzAddr ? (
+        <OverpassPlzAddrLiveRow
+          featureKey={featureKey}
+          data={data}
+          getLiveQueryBbox={getLiveQueryBbox}
+          addrPostcode={addrPostcode}
+          datasetSnapshotValueMatches={datasetSnapshotValueMatches}
+        />
+      ) : null}
+    </>
   )
 }
 
@@ -668,6 +885,7 @@ export function LiveSourceProperties({
   getLiveQueryBbox,
   wfs,
   overpass,
+  addrPostcode,
 }: {
   /** Stable id for this feature detail page; used as scope for live overlay visibility. */
   featureKey: string
@@ -676,6 +894,7 @@ export function LiveSourceProperties({
   getLiveQueryBbox: () => [number, number, number, number] | null
   wfs: WfsLiveController
   overpass: OverpassLiveController
+  addrPostcode: AddrPostcodeLiveController
 }) {
   const sources = data.ogcInspectSources ?? []
   const overpassBoundaryTag = data.overpassBoundaryTag ?? 'administrative'
@@ -691,12 +910,9 @@ export function LiveSourceProperties({
       className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm"
       aria-label={de.feature.liveSourcesSectionAria}
     >
-      <div className="px-4 py-6 sm:px-6">
-        <h2 className="text-base font-semibold text-slate-100">
-          {de.feature.liveSourcesSectionTitle}
-        </h2>
+      <ProvenanceGridSectionHeader title={de.feature.liveSourcesSectionTitle}>
         <p className="mt-2 max-w-4xl text-sm text-slate-400">{de.feature.liveSourcesSectionLead}</p>
-      </div>
+      </ProvenanceGridSectionHeader>
 
       <div className="border-t border-slate-700">
         <dl className="divide-y divide-slate-700/80">
@@ -718,6 +934,7 @@ export function LiveSourceProperties({
               getLiveQueryBbox={getLiveQueryBbox}
               overpassBoundaryTag={overpassBoundaryTag}
               overpass={overpass}
+              addrPostcode={addrPostcode}
               datasetSnapshotValueMatches={datasetSnapshotValueMatches}
             />
           )}

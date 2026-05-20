@@ -1,3 +1,4 @@
+import type { AddrPostcodeGeoJsonFeature } from './overpassAddrPostcode'
 import type { OverpassGeoJsonFeature } from './overpassBbox'
 
 /**
@@ -11,6 +12,10 @@ export type LiveRowKey = string
 
 export function overpassLiveRowKey(type: string, id: number): LiveRowKey {
   return `overpass:${type}:${id}`
+}
+
+export function addrPostcodeLiveRowKey(type: string, id: number): LiveRowKey {
+  return `addr-postcode:${type}:${id}`
 }
 
 export function wfsLiveRowKey(sourceId: string, idPart: string): LiveRowKey {
@@ -38,4 +43,15 @@ export function overpassFeatureRowKey(feature: OverpassGeoJsonFeature): LiveRowK
   const id = props.relation_id ?? props.way_id ?? props.id
   if (id == null || !props.type) return null
   return overpassLiveRowKey(props.type, id)
+}
+
+/** Read stamped `__liveRowKey` or derive from addr:postcode live feature properties. */
+export function addrPostcodeFeatureRowKey(feature: AddrPostcodeGeoJsonFeature): LiveRowKey | null {
+  const props = feature.properties
+  if (!props) return null
+  const stamped = props[LIVE_ROW_KEY_PROPERTY]
+  if (typeof stamped === 'string' && stamped.length > 0) return stamped
+  const id = props.node_id ?? props.way_id ?? props.id
+  if (id == null || !props.type) return null
+  return addrPostcodeLiveRowKey(props.type, id)
 }
