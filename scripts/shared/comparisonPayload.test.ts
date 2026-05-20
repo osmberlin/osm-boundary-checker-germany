@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { candidateMatchSchema, featureDetailShardSchema } from './comparisonPayload.ts'
+import {
+  candidateMatchSchema,
+  comparisonForReportSchema,
+  featureDetailShardSchema,
+} from './comparisonPayload.ts'
 
 const validRow = {
   canonicalMatchKey: 'k1',
@@ -12,6 +16,35 @@ const validRow = {
   officialProperties: null,
   osmProperties: null,
 }
+
+describe('comparisonForReportSchema', () => {
+  test('defaults filterConfigSummary.minZoom to 0 when absent (pre-refresh artifacts)', () => {
+    const parsed = comparisonForReportSchema.parse({
+      area: 'demo',
+      displayName: 'Demo',
+      titlePrefix: 'T',
+      generatedAt: '2026-01-01T00:00:00.000Z',
+      metricsCrs: 'EPSG:25832',
+      hasPmtiles: true,
+      tippecanoeLayer: 'comparison',
+      sourceMetadata: {
+        official: {
+          sourcePublicUrl: 'https://example.com/source',
+          sourceDownloadUrl: 'https://example.com/download',
+        },
+        osm: {},
+      },
+      filterConfigSummary: {
+        officialMatchProperty: 'id',
+        bboxFilter: 'none',
+        osmScopeFilter: 'none',
+      },
+      rows: [],
+      unmatchedOsm: [],
+    })
+    expect(parsed.filterConfigSummary.minZoom).toBe(0)
+  })
+})
 
 describe('candidateMatchSchema', () => {
   test('accepts a minimal admin candidate (only required fields)', () => {

@@ -81,8 +81,11 @@ export const comparisonFilterConfigSummarySchema = z.object({
   officialExtractFilter: officialExtractFilterSummarySchema.optional(),
   /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties: z.array(z.string().trim().min(1)).min(1).optional(),
-  /** From `compare.minZoom` in area config: Tippecanoe min zoom + map lock. */
-  minZoom: z.number().int().min(0).max(15),
+  /**
+   * From `compare.minZoom` in area config: Tippecanoe min zoom + map lock.
+   * Defaults to 0 for comparison tables produced before this field was embedded.
+   */
+  minZoom: z.number().int().min(0).max(15).default(0),
 })
 
 export const idNormalizationPresetSchema = z.enum([
