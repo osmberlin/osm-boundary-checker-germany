@@ -1,3 +1,8 @@
+# Reject registry tarballs newer than this age (supply-chain baseline).
+# 5 days = 432000 seconds. Root bunfig.toml applies to workspace installs from repo root.
+[install]
+minimumReleaseAge = 432000
+
 # Tailwind v4 for HTML bundler (dev + build)
 # @see https://bun.sh/docs/bundler/html
 [serve.static]
