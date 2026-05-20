@@ -210,3 +210,29 @@ entries:
       - '659ca97'
     descriptionMd: |
       Wenn man auf einer "nur Amtlich" Seite ist wird die List der möglichen OSM-Kandidaten prominenter angezeigt. Häufig findet man darüber schnell die OSM-Relation, an der man Tag anpassen muss, über den das Matching stattfindet.
+  - refs:
+      - '05c94cf'
+      - 'e2515b2'
+      - '9787323'
+      - 'f74768f'
+    hide: true
+  - refs:
+      - '2405473'
+      - 'cf0227b'
+      - '4d9b6a7'
+      - '1e556b5'
+      - 'bf8433b'
+      - '8f7e73a'
+      - '2b7e123'
+    descriptionMd: |
+      Die Daten auf den Karten sind jetzt etwas kleiner und besser optimiert.
+  - refs:
+      - 'd69bf9f'
+      - 'af0a7a8'
+      - 'fe52dd4'
+    descriptionMd: |
+      Die Links zu anderen OSM-Kandidaten funktionieren zuverlässiger.
+  - refs:
+      - '30ac4b3'
+    descriptionMd: |
+      Bei PLZ-Datensätzen gibt es einen Button, der in der Karte Puntkdaten der `addr:postcode` anzeigt, so dass man prüfen kann, wie die Grenzen sich auf die übrigen Daten in OSM auswirken würden.

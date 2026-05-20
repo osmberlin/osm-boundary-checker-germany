@@ -4,6 +4,18 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-05
 
+### `d69bf9f`, `af0a7a8`, `fe52dd4`
+
+Die Links zu anderen OSM-Kandidaten funktionieren zuverlässiger.
+
+### `30ac4b3`
+
+Bei PLZ-Datensätzen gibt es einen Button, der in der Karte Puntkdaten der `addr:postcode` anzeigt, so dass man prüfen kann, wie die Grenzen sich auf die übrigen Daten in OSM auswirken würden.
+
+### `2405473`, `cf0227b`, `4d9b6a7`, `1e556b5`, `bf8433b`, `8f7e73a`, `2b7e123`
+
+Die Daten auf den Karten sind jetzt etwas kleiner und besser optimiert.
+
 ### `659ca97`
 
 Wenn man auf einer "nur Amtlich" Seite ist wird die List der möglichen OSM-Kandidaten prominenter angezeigt. Häufig findet man darüber schnell die OSM-Relation, an der man Tag anpassen muss, über den das Matching stattfindet.
