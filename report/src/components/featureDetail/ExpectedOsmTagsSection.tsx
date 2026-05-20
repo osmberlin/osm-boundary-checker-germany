@@ -7,6 +7,8 @@ import {
 } from '../../lib/germanKeyExplorer'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { GermanKeyVerifyLink } from '../GermanKeyVerifyLink'
+import { ProvenanceGridRow } from '../ProvenanceGridRow'
+import { ProvenanceGridSectionHeader } from '../ProvenanceGridSectionHeader'
 
 function TagRows({
   boundaryValue,
@@ -89,10 +91,7 @@ export function ExpectedOsmTagsSection({
       className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm"
       aria-label={de.feature.expectedOsmTagsSectionAria}
     >
-      <div className="px-4 py-6 sm:px-6">
-        <h2 className="text-base font-semibold text-slate-100">
-          {de.feature.expectedOsmTagsSectionTitle}
-        </h2>
+      <ProvenanceGridSectionHeader title={de.feature.expectedOsmTagsSectionTitle}>
         <p className="mt-2 max-w-4xl text-sm text-slate-400">
           {de.feature.expectedOsmTagsSectionLead}
         </p>
@@ -107,20 +106,22 @@ export function ExpectedOsmTagsSection({
             </Link>
           </p>
         ) : null}
-      </div>
+      </ProvenanceGridSectionHeader>
       <div className="border-t border-slate-700">
         <dl>
-          <div className="bg-red-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt className="text-sm/6 font-medium text-slate-200">OSM</dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <TagRows
-                boundaryValue={boundaryValue}
-                adminLevels={adminLevels}
-                matchProperties={matchProperties}
-                matchValue={row.canonicalMatchKey}
-              />
-            </dd>
-          </div>
+          <ProvenanceGridRow
+            asDl
+            surfaceClassName="bg-red-950/18"
+            rightColumnClassName="mt-2"
+            title={<span className="text-sm/6 font-medium text-slate-200">OSM</span>}
+          >
+            <TagRows
+              boundaryValue={boundaryValue}
+              adminLevels={adminLevels}
+              matchProperties={matchProperties}
+              matchValue={row.canonicalMatchKey}
+            />
+          </ProvenanceGridRow>
         </dl>
       </div>
     </section>

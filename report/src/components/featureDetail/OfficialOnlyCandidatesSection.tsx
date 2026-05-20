@@ -6,6 +6,7 @@ import type {
   OverpassBoundaryTag,
   ReportRow,
 } from '../../types/report'
+import { ProvenanceGridSectionHeader } from '../ProvenanceGridSectionHeader'
 
 function boundaryModeFromData(
   overpassBoundaryTag: OverpassBoundaryTag | undefined,
@@ -187,10 +188,7 @@ export function OfficialOnlyCandidatesSection({
       className="overflow-hidden rounded-lg border border-sky-800/50 bg-sky-950/45 shadow-sm"
       aria-label={de.feature.candidatesSectionAria}
     >
-      <div className="px-4 py-6 sm:px-6">
-        <h2 className="text-base font-semibold text-slate-100">
-          {de.feature.candidatesSectionTitle}
-        </h2>
+      <ProvenanceGridSectionHeader title={de.feature.candidatesSectionTitle}>
         <p className="mt-2 max-w-4xl text-sm text-slate-400">
           {de.feature.candidatesSectionLeadCore(osmTagsJoined, officialProp)} {leadChecks}
         </p>
@@ -203,7 +201,7 @@ export function OfficialOnlyCandidatesSection({
             {de.feature.candidatesSectionMatchHintAfter()}
           </p>
         ) : null}
-      </div>
+      </ProvenanceGridSectionHeader>
       <div className="border-t border-sky-800/45 px-4 py-6 sm:px-6">
         {candidates.length === 0 ? (
           <p className="text-sm text-slate-400">{de.feature.candidatesEmpty}</p>

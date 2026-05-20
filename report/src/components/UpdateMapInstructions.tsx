@@ -9,6 +9,8 @@ import {
   buildOpenStreetMapIdEditUrl,
 } from '../lib/osmEditorLinks'
 import type { ReportRow } from '../types/report'
+import { ProvenanceGridRow } from './ProvenanceGridRow'
+import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 import { sharedButtonClass } from './sharedButtonStyles'
 
 /** Stem + dot from Heroicons outline InformationCircleIcon (`circle` path removed; dot anchored at `M12 8.25…`). */
@@ -80,136 +82,132 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
 
   return (
     <section className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm">
-      <div className="px-4 py-6 sm:px-6">
-        <h2 className="text-base font-semibold text-slate-100">{u.title}</h2>
-      </div>
+      <ProvenanceGridSectionHeader title={u.title} />
 
       <div className="border-t border-slate-700">
         <dl className="divide-y divide-slate-700/80">
-          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt>
+          <ProvenanceGridRow
+            asDl
+            rightColumnClassName="mt-2"
+            title={
               <h3 className="text-sm/6 font-medium text-slate-200">{u.downloadOfficialHeading}</h3>
-            </dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <div className="flex flex-col gap-2">
-                {canDownloadOfficial && officialHref != null ? (
-                  <RevealInfoNote
-                    text={u.downloadOfficialPipelineHint}
-                    ariaLabel={u.revealHintAriaLabel}
-                  >
-                    <a
-                      href={officialHref}
-                      download={officialDownloadFilename}
-                      className={sharedButtonClass}
-                    >
-                      {u.downloadOfficial}
-                    </a>
-                  </RevealInfoNote>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      disabled
-                      title={u.downloadOfficialDisabledHint}
-                      className={sharedButtonClass}
-                    >
-                      {u.downloadOfficial}
-                    </button>
-                    <p className="text-xs text-slate-500">{u.downloadOfficialDisabledHint}</p>
-                  </div>
-                )}
-              </div>
-            </dd>
-          </div>
-
-          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt>
-              <h3 className="text-sm/6 font-medium text-slate-200">{u.osmBrowseHeading}</h3>
-            </dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <div className="flex flex-col gap-2">
-                {osmBrowseUrl != null ? (
+            }
+          >
+            <div className="flex flex-col gap-2">
+              {canDownloadOfficial && officialHref != null ? (
+                <RevealInfoNote
+                  text={u.downloadOfficialPipelineHint}
+                  ariaLabel={u.revealHintAriaLabel}
+                >
                   <a
-                    href={osmBrowseUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`${u.openOsmOrg} — ${u.opensInNewWindowTitle}`}
+                    href={officialHref}
+                    download={officialDownloadFilename}
                     className={sharedButtonClass}
                   >
-                    {u.openOsmOrg}
-                  </a>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <button type="button" disabled className={sharedButtonClass}>
-                      {u.openOsmOrg}
-                    </button>
-                    <p className="text-xs text-slate-500">{u.openOsmOrgDisabledHint}</p>
-                  </div>
-                )}
-              </div>
-            </dd>
-          </div>
-
-          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt>
-              <h3 className="text-sm/6 font-medium text-slate-200">{u.idHeading}</h3>
-            </dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <div className="flex flex-col gap-2">
-                <RevealInfoNote text={u.idDisableFeaturesHint} ariaLabel={u.revealHintAriaLabel}>
-                  <a
-                    href={idUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`${idLinkLabel} — ${u.opensInNewWindowTitle}`}
-                    className={sharedButtonClass}
-                  >
-                    {idLinkLabel}
+                    {u.downloadOfficial}
                   </a>
                 </RevealInfoNote>
-              </div>
-            </dd>
-          </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    disabled
+                    title={u.downloadOfficialDisabledHint}
+                    className={sharedButtonClass}
+                  >
+                    {u.downloadOfficial}
+                  </button>
+                  <p className="text-xs text-slate-500">{u.downloadOfficialDisabledHint}</p>
+                </div>
+              )}
+            </div>
+          </ProvenanceGridRow>
 
-          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt>
-              <h3 className="text-sm/6 font-medium text-slate-200">{u.josmHeading}</h3>
-            </dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <div className="flex flex-col gap-2">
-                {josm.importGeojson != null ? (
-                  <a
-                    href={josm.importGeojson}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`${u.josmImportTitle} — ${u.opensInNewWindowTitle}`}
-                    className={sharedButtonClass}
-                  >
-                    {u.josmImport}
-                  </a>
-                ) : (
+          <ProvenanceGridRow
+            asDl
+            rightColumnClassName="mt-2"
+            title={<h3 className="text-sm/6 font-medium text-slate-200">{u.osmBrowseHeading}</h3>}
+          >
+            <div className="flex flex-col gap-2">
+              {osmBrowseUrl != null ? (
+                <a
+                  href={osmBrowseUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${u.openOsmOrg} — ${u.opensInNewWindowTitle}`}
+                  className={sharedButtonClass}
+                >
+                  {u.openOsmOrg}
+                </a>
+              ) : (
+                <div className="flex items-center gap-3">
                   <button type="button" disabled className={sharedButtonClass}>
-                    {u.josmImport}
+                    {u.openOsmOrg}
                   </button>
-                )}
-                {josm.loadObject != null ? (
-                  <a
-                    href={josm.loadObject}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={`${u.josmLoadObjectTitle} — ${u.opensInNewWindowTitle}`}
-                    className={sharedButtonClass}
-                  >
-                    {u.josmLoadObject}
-                  </a>
-                ) : (
-                  <button type="button" disabled className={sharedButtonClass}>
-                    {u.josmLoadObject}
-                  </button>
-                )}
-              </div>
-            </dd>
-          </div>
+                  <p className="text-xs text-slate-500">{u.openOsmOrgDisabledHint}</p>
+                </div>
+              )}
+            </div>
+          </ProvenanceGridRow>
+
+          <ProvenanceGridRow
+            asDl
+            rightColumnClassName="mt-2"
+            title={<h3 className="text-sm/6 font-medium text-slate-200">{u.idHeading}</h3>}
+          >
+            <div className="flex flex-col gap-2">
+              <RevealInfoNote text={u.idDisableFeaturesHint} ariaLabel={u.revealHintAriaLabel}>
+                <a
+                  href={idUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${idLinkLabel} — ${u.opensInNewWindowTitle}`}
+                  className={sharedButtonClass}
+                >
+                  {idLinkLabel}
+                </a>
+              </RevealInfoNote>
+            </div>
+          </ProvenanceGridRow>
+
+          <ProvenanceGridRow
+            asDl
+            rightColumnClassName="mt-2"
+            title={<h3 className="text-sm/6 font-medium text-slate-200">{u.josmHeading}</h3>}
+          >
+            <div className="flex flex-col gap-2">
+              {josm.importGeojson != null ? (
+                <a
+                  href={josm.importGeojson}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${u.josmImportTitle} — ${u.opensInNewWindowTitle}`}
+                  className={sharedButtonClass}
+                >
+                  {u.josmImport}
+                </a>
+              ) : (
+                <button type="button" disabled className={sharedButtonClass}>
+                  {u.josmImport}
+                </button>
+              )}
+              {josm.loadObject != null ? (
+                <a
+                  href={josm.loadObject}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${u.josmLoadObjectTitle} — ${u.opensInNewWindowTitle}`}
+                  className={sharedButtonClass}
+                >
+                  {u.josmLoadObject}
+                </a>
+              ) : (
+                <button type="button" disabled className={sharedButtonClass}>
+                  {u.josmLoadObject}
+                </button>
+              )}
+            </div>
+          </ProvenanceGridRow>
         </dl>
       </div>
 

@@ -14,6 +14,8 @@ import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshness
 import type { ComparisonFilterConfigSummary, ComparisonForReport, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
+import { ProvenanceGridRow } from './ProvenanceGridRow'
+import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 
 export type ReportDataProvenanceFooterProps = {
   data: ComparisonForReport
@@ -321,104 +323,97 @@ function compareProvenanceDlRows(
 
   if (mappingItems.length === 0 && osmItems.length === 0 && officialItems.length === 0) {
     return (
-      <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-        <dt className="sr-only">{p.compareHeading}</dt>
-        <dd className="mt-3 md:col-span-2 md:mt-0">
-          <p className="text-slate-500" role="note">
-            {p.compareNoCompareConfig}
-          </p>
-        </dd>
-      </div>
+      <ProvenanceGridRow asDl leftColumnClassName="sr-only" title={p.compareHeading}>
+        <p className="text-slate-500" role="note">
+          {p.compareNoCompareConfig}
+        </p>
+      </ProvenanceGridRow>
     )
   }
 
   return (
     <Fragment>
       {compareDataItems.length > 0 ? (
-        <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-          <dt>
-            <h3 className="text-sm/6 font-medium text-slate-200">{p.compareDataHeading}</h3>
-          </dt>
-          <dd className="mt-3 md:col-span-2 md:mt-0">
-            <p className="text-xs text-slate-400">{p.compareDataLead}</p>
-            <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
-              {compareDataItems.map((item) => (
-                <li key={item.key}>
-                  <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-2">
-                      <code
-                        className={
-                          item.code === p.compareDataMissing
-                            ? 'font-medium break-all text-rose-300'
-                            : 'break-all text-slate-500'
-                        }
-                      >
-                        {item.code}
-                      </code>
-                      <span>{item.label}</span>
-                    </span>
-                    {row != null && item.showExplorerLink && explorerKey != null ? (
-                      <GermanKeyVerifyLink
-                        keyValue={explorerKey}
-                        className="shrink-0 text-sm font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-                      />
-                    ) : null}
+        <ProvenanceGridRow
+          asDl
+          title={<h3 className="text-sm/6 font-medium text-slate-200">{p.compareDataHeading}</h3>}
+        >
+          <p className="text-xs text-slate-400">{p.compareDataLead}</p>
+          <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+            {compareDataItems.map((item) => (
+              <li key={item.key}>
+                <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <span className="inline-flex min-w-0 flex-wrap items-baseline gap-x-2">
+                    <code
+                      className={
+                        item.code === p.compareDataMissing
+                          ? 'font-medium break-all text-rose-300'
+                          : 'break-all text-slate-500'
+                      }
+                    >
+                      {item.code}
+                    </code>
+                    <span>{item.label}</span>
                   </span>
-                </li>
-              ))}
-            </ul>
-          </dd>
-        </div>
+                  {row != null && item.showExplorerLink && explorerKey != null ? (
+                    <GermanKeyVerifyLink
+                      keyValue={explorerKey}
+                      className="shrink-0 text-sm font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+                    />
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </ProvenanceGridRow>
       ) : null}
 
-      <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-        <dt>
-          <h3 className="text-sm/6 font-medium text-slate-200">{p.compareMappingHeading}</h3>
-        </dt>
-        <dd className="mt-3 md:col-span-2 md:mt-0">
-          <p className="text-xs text-slate-400">
-            {p.compareMappingLeadWithMetricsCrs(data.metricsCrs)}
-          </p>
-          {mappingItems.length > 0 ? (
-            <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
-              {mappingItems}
-            </ul>
-          ) : (
-            <p className="mt-2 text-slate-500">{p.compareMappingEmpty}</p>
-          )}
-        </dd>
-      </div>
+      <ProvenanceGridRow
+        asDl
+        title={<h3 className="text-sm/6 font-medium text-slate-200">{p.compareMappingHeading}</h3>}
+      >
+        <p className="text-xs text-slate-400">
+          {p.compareMappingLeadWithMetricsCrs(data.metricsCrs)}
+        </p>
+        {mappingItems.length > 0 ? (
+          <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+            {mappingItems}
+          </ul>
+        ) : (
+          <p className="mt-2 text-slate-500">{p.compareMappingEmpty}</p>
+        )}
+      </ProvenanceGridRow>
 
-      <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-        <dt>
+      <ProvenanceGridRow
+        asDl
+        title={
           <h3 className="text-sm/6 font-medium text-slate-200">{p.compareOsmFilterHeading}</h3>
-        </dt>
-        <dd className="mt-3 md:col-span-2 md:mt-0">
-          <p className="text-xs text-slate-400">{p.compareFilterLead}</p>
-          {osmItems.length > 0 ? (
-            <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
-              {osmItems}
-            </ul>
-          ) : (
-            <p className="mt-2 text-slate-500">{p.compareFilterEmpty}</p>
-          )}
-        </dd>
-      </div>
+        }
+      >
+        <p className="text-xs text-slate-400">{p.compareFilterLead}</p>
+        {osmItems.length > 0 ? (
+          <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+            {osmItems}
+          </ul>
+        ) : (
+          <p className="mt-2 text-slate-500">{p.compareFilterEmpty}</p>
+        )}
+      </ProvenanceGridRow>
 
-      <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-        <dt>
+      <ProvenanceGridRow
+        asDl
+        title={
           <h3 className="text-sm/6 font-medium text-slate-200">{p.compareOfficialFilterHeading}</h3>
-        </dt>
-        <dd className="mt-3 md:col-span-2 md:mt-0">
-          {officialItems.length > 0 ? (
-            <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
-              {officialItems}
-            </ul>
-          ) : (
-            <p className="mt-2 text-slate-500">{p.compareFilterEmpty}</p>
-          )}
-        </dd>
-      </div>
+        }
+      >
+        {officialItems.length > 0 ? (
+          <ul className="list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
+            {officialItems}
+          </ul>
+        ) : (
+          <p className="mt-2 text-slate-500">{p.compareFilterEmpty}</p>
+        )}
+      </ProvenanceGridRow>
     </Fragment>
   )
 }
@@ -482,9 +477,7 @@ export function ReportDataProvenanceFooter({
       className={`overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 text-sm text-slate-400 shadow-sm ${className}`.trim()}
       aria-label={p.sectionAria}
     >
-      <div className="px-4 py-6 sm:px-6">
-        <h2 className="text-base font-semibold text-slate-100">{p.title}</h2>
-      </div>
+      <ProvenanceGridSectionHeader title={p.title} />
 
       {!hideFreshnessSection ? (
         <div className="space-y-3 border-t border-b border-slate-700 px-4 py-6 sm:px-6">
@@ -525,36 +518,35 @@ export function ReportDataProvenanceFooter({
         <dl className="divide-y divide-slate-700/80">
           {compareProvenanceDlRows(data, row, filter)}
 
-          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt className="flex flex-col gap-1">
+          <ProvenanceGridRow
+            asDl
+            title={
               <h3 className="text-sm/6 font-medium text-slate-200">{p.officialSourceHeading}</h3>
-              <OfficialDatasetAgeInfoLink side={official} />
-            </dt>
-            <dd className="mt-3 md:col-span-2 md:mt-0">
-              <ul className="list-disc space-y-2 pl-5 text-slate-300 marker:text-slate-500">
-                <SourceLinksList
-                  sourcePublicUrl={official.sourcePublicUrl}
-                  sourceDownloadUrl={official.sourceDownloadUrl}
-                  sourceDownloadDetails={officialDownloadDetails}
-                />
-              </ul>
-            </dd>
-          </div>
+            }
+            titleAside={<OfficialDatasetAgeInfoLink side={official} />}
+            leftColumnClassName="flex flex-col gap-1"
+          >
+            <ul className="list-disc space-y-2 pl-5 text-slate-300 marker:text-slate-500">
+              <SourceLinksList
+                sourcePublicUrl={official.sourcePublicUrl}
+                sourceDownloadUrl={official.sourceDownloadUrl}
+                sourceDownloadDetails={officialDownloadDetails}
+              />
+            </ul>
+          </ProvenanceGridRow>
 
-          <div className="px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt>
-              <h3 className="text-sm/6 font-medium text-slate-200">{p.osmSourceHeading}</h3>
-            </dt>
-            <dd className="mt-3 md:col-span-2 md:mt-0">
-              <ul className="list-disc space-y-2 pl-5 text-slate-300 marker:text-slate-500">
-                <SourceLinksList
-                  sourcePublicUrl={osm.sourcePublicUrl}
-                  sourceDownloadUrl={osm.sourceDownloadUrl}
-                  sourceDownloadDetails={osmDownloadDetails}
-                />
-              </ul>
-            </dd>
-          </div>
+          <ProvenanceGridRow
+            asDl
+            title={<h3 className="text-sm/6 font-medium text-slate-200">{p.osmSourceHeading}</h3>}
+          >
+            <ul className="list-disc space-y-2 pl-5 text-slate-300 marker:text-slate-500">
+              <SourceLinksList
+                sourcePublicUrl={osm.sourcePublicUrl}
+                sourceDownloadUrl={osm.sourceDownloadUrl}
+                sourceDownloadDetails={osmDownloadDetails}
+              />
+            </ul>
+          </ProvenanceGridRow>
         </dl>
       </div>
     </section>

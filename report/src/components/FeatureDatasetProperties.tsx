@@ -17,6 +17,8 @@ import { parseReportRowOsmRef, type ParsedReportRowOsmRef } from '../lib/osmObje
 import type { ComparisonForReport, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
+import { ProvenanceGridRow } from './ProvenanceGridRow'
+import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 import { sharedButtonClass } from './sharedButtonStyles'
 
 function formatPropertyValue(value: unknown): string {
@@ -463,67 +465,70 @@ function OsmLiveRelationTagsRow({
   })()
 
   return (
-    <div className="bg-red-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-      <dt className="flex flex-col gap-1">
+    <ProvenanceGridRow
+      asDl
+      surfaceClassName="bg-red-950/18"
+      leftColumnClassName="flex flex-col gap-1"
+      rightColumnClassName="mt-2"
+      title={
         <span className="text-sm/6 font-medium text-slate-200">
           {de.feature.datasetOsmLiveCardTitle}
         </span>
-        {captionText ? (
-          <p className="text-xs leading-normal text-slate-400">{captionText}</p>
-        ) : null}
-      </dt>
-      <dd className="mt-2 md:col-span-2 md:mt-0">
-        {live.status === 'idle' && (
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => void live.run()} className={sharedButtonClass}>
-                {de.feature.datasetOsmLiveButton}
-              </button>
-              <span className="text-xs text-slate-400">
-                {de.feature.datasetOsmLiveButtonHint(osmRef.numericId)}
-              </span>
-            </div>
-            <p className="flex items-center gap-1.5 text-xs text-slate-400">
-              <InformationCircleIcon aria-hidden="true" className="size-4 shrink-0 text-sky-300" />
-              <span>{de.feature.datasetOsmLiveCompareHint}</span>
-            </p>
-          </div>
-        )}
-
-        {live.status === 'loading' && (
-          <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveLoading}</p>
-        )}
-
-        {live.status === 'error' && errorMessage && (
-          <div className="space-y-2">
-            <p className="text-sm text-red-400">{errorMessage}</p>
+      }
+      titleAside={
+        captionText ? <p className="text-xs leading-normal text-slate-400">{captionText}</p> : null
+      }
+    >
+      {live.status === 'idle' && (
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => void live.run()} className={sharedButtonClass}>
-              {de.feature.datasetOsmLiveAgain}
+              {de.feature.datasetOsmLiveButton}
             </button>
+            <span className="text-xs text-slate-400">
+              {de.feature.datasetOsmLiveButtonHint(osmRef.numericId)}
+            </span>
           </div>
-        )}
+          <p className="flex items-center gap-1.5 text-xs text-slate-400">
+            <InformationCircleIcon aria-hidden="true" className="size-4 shrink-0 text-sky-300" />
+            <span>{de.feature.datasetOsmLiveCompareHint}</span>
+          </p>
+        </div>
+      )}
 
-        {live.status === 'done' && (
-          <div className="space-y-3">
-            {live.tags ? (
-              <DatasetLiveComparedPropertyCard
-                properties={live.tags}
-                officialProperties={officialProperties}
-              />
-            ) : (
-              <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveEmpty}</p>
-            )}
-            <button
-              type="button"
-              onClick={() => void live.run()}
-              className="text-sm text-violet-300/90 underline decoration-violet-400/30 underline-offset-2 hover:text-violet-200"
-            >
-              {de.feature.datasetOsmLiveAgain}
-            </button>
-          </div>
-        )}
-      </dd>
-    </div>
+      {live.status === 'loading' && (
+        <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveLoading}</p>
+      )}
+
+      {live.status === 'error' && errorMessage && (
+        <div className="space-y-2">
+          <p className="text-sm text-red-400">{errorMessage}</p>
+          <button type="button" onClick={() => void live.run()} className={sharedButtonClass}>
+            {de.feature.datasetOsmLiveAgain}
+          </button>
+        </div>
+      )}
+
+      {live.status === 'done' && (
+        <div className="space-y-3">
+          {live.tags ? (
+            <DatasetLiveComparedPropertyCard
+              properties={live.tags}
+              officialProperties={officialProperties}
+            />
+          ) : (
+            <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveEmpty}</p>
+          )}
+          <button
+            type="button"
+            onClick={() => void live.run()}
+            className="text-sm text-violet-300/90 underline decoration-violet-400/30 underline-offset-2 hover:text-violet-200"
+          >
+            {de.feature.datasetOsmLiveAgain}
+          </button>
+        </div>
+      )}
+    </ProvenanceGridRow>
   )
 }
 
@@ -554,54 +559,60 @@ export function FeatureDatasetProperties({
       className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm"
       aria-label={de.feature.datasetPropertiesSectionAria}
     >
-      <div className="px-4 py-6 sm:px-6">
-        <h2 className="text-base font-semibold text-slate-100">
-          {de.feature.datasetPropertiesSectionTitle}
-        </h2>
-      </div>
+      <ProvenanceGridSectionHeader title={de.feature.datasetPropertiesSectionTitle} />
       <div className="border-t border-slate-700">
         <dl className="divide-y divide-slate-700/80">
-          <div className="bg-blue-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt className="flex flex-col gap-1">
+          <ProvenanceGridRow
+            asDl
+            surfaceClassName="bg-blue-950/18"
+            leftColumnClassName="flex flex-col gap-1"
+            rightColumnClassName="mt-2"
+            title={
               <span className="text-sm/6 font-medium text-slate-200">
                 {de.feature.datasetOfficialCardTitle}
               </span>
-              <OfficialDatasetAgeInfoLink side={data.sourceMetadata?.official} />
-            </dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <DatasetPropertyCard properties={official} />
-            </dd>
-          </div>
-          <div className="bg-red-950/18 px-4 py-6 sm:px-6 md:grid md:grid-cols-3 md:gap-6">
-            <dt className="flex flex-col gap-2">
+            }
+            titleAside={<OfficialDatasetAgeInfoLink side={data.sourceMetadata?.official} />}
+          >
+            <DatasetPropertyCard properties={official} />
+          </ProvenanceGridRow>
+          <ProvenanceGridRow
+            asDl
+            surfaceClassName="bg-red-950/18"
+            leftColumnClassName="flex flex-col gap-2"
+            rightColumnClassName="mt-2"
+            title={
               <h3 className="text-sm/6 font-medium text-slate-200">
                 {de.feature.datasetOsmCardTitle}
               </h3>
-              <DatasetExtractDataDateCaption
-                sourceDateRaw={osmPick.sourceDateRaw}
-                checkedAtRaw={osmPick.checkedAtRaw}
-                hasMetadata
-                note={osmDataNote}
-                labels={{
-                  source: de.feature.datasetExtractOsmSnapshotLabel,
-                  checked: de.feature.datasetExtractOsmExtractLabel,
-                }}
-              />
-              {osmHistoryUrl && (
-                <a
-                  href={osmHistoryUrl}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className={`${compactButtonClass} self-start`}
-                >
-                  {de.feature.datasetOsmOpenHistory}
-                </a>
-              )}
-            </dt>
-            <dd className="mt-2 md:col-span-2 md:mt-0">
-              <DatasetPropertyCard properties={osm} />
-            </dd>
-          </div>
+            }
+            titleAside={
+              <>
+                <DatasetExtractDataDateCaption
+                  sourceDateRaw={osmPick.sourceDateRaw}
+                  checkedAtRaw={osmPick.checkedAtRaw}
+                  hasMetadata
+                  note={osmDataNote}
+                  labels={{
+                    source: de.feature.datasetExtractOsmSnapshotLabel,
+                    checked: de.feature.datasetExtractOsmExtractLabel,
+                  }}
+                />
+                {osmHistoryUrl ? (
+                  <a
+                    href={osmHistoryUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className={`${compactButtonClass} self-start`}
+                  >
+                    {de.feature.datasetOsmOpenHistory}
+                  </a>
+                ) : null}
+              </>
+            }
+          >
+            <DatasetPropertyCard properties={osm} />
+          </ProvenanceGridRow>
           {osmRef != null && (
             <OsmLiveRelationTagsRow osmRef={osmRef} officialProperties={official} />
           )}
