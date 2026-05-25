@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { de } from '../i18n/de'
 import type { ReportRow } from '../types/report'
 import { mapLayerColors } from './mapLayerColors'
 import { hexToRgba } from './MapLegend'
@@ -101,6 +102,26 @@ export function ReportCategorySwatch({ category }: { category: ReportRow['catego
   return <div className={s.className} style={s.style} aria-hidden />
 }
 
+const legendRectClass = 'inline-block h-[18px] w-[18px] rounded-[2px] border-2 border-solid'
+
+function LegendRect({
+  borderColor,
+  backgroundColor = 'transparent',
+  title,
+}: {
+  borderColor: string
+  backgroundColor?: string
+  title?: string
+}) {
+  return (
+    <span
+      title={title}
+      className={legendRectClass}
+      style={{ borderColor, backgroundColor }}
+    />
+  )
+}
+
 export type LegendRectItem = {
   borderColor: string
   backgroundColor?: string
@@ -110,14 +131,7 @@ export function LegendRectSwatch({ items }: { items: LegendRectItem[] }) {
   return (
     <span className="inline-flex items-center gap-1" aria-hidden>
       {items.map((item, idx) => (
-        <span
-          key={`${item.borderColor}-${idx}`}
-          className="inline-block h-[18px] w-[18px] rounded-[2px] border-2 border-solid"
-          style={{
-            borderColor: item.borderColor,
-            backgroundColor: item.backgroundColor ?? 'transparent',
-          }}
-        />
+        <LegendRect key={`${item.borderColor}-${idx}`} {...item} />
       ))}
     </span>
   )
@@ -125,16 +139,16 @@ export function LegendRectSwatch({ items }: { items: LegendRectItem[] }) {
 
 export function ReportCategorySquareSwatch({ category }: { category: ReportRow['category'] }) {
   if (category === 'matched') {
+    const layerLabels = de.feature.stats
     return (
-      <LegendRectSwatch
-        items={[
-          { borderColor: o.line, backgroundColor: 'transparent' },
-          {
-            borderColor: OSM_PAIRED_LINE_BORDER_UI,
-            backgroundColor: hexToRgba(osmPaired.fill, osmPaired.fillOpacity),
-          },
-        ]}
-      />
+      <span className="inline-flex items-center gap-1" aria-hidden>
+        <LegendRect borderColor={o.line} title={layerLabels.areaOfficial} />
+        <LegendRect
+          borderColor={OSM_PAIRED_LINE_BORDER_UI}
+          backgroundColor={hexToRgba(osmPaired.fill, osmPaired.fillOpacity)}
+          title={layerLabels.areaOsm}
+        />
+      </span>
     )
   }
 
