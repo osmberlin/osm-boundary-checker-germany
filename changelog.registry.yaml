@@ -237,3 +237,10 @@ entries:
       - '30ac4b3'
     descriptionMd: |
       Bei PLZ-Datensätzen gibt es einen Button, der in der Karte Puntkdaten der `addr:postcode` anzeigt, so dass man prüfen kann, wie die Grenzen sich auf die übrigen Daten in OSM auswirken würden.
+  - refs:
+      - '1fd24fc'
+    hide: true
+  - refs:
+      - 'edcfc9e'
+    descriptionMd: |
+      In der Legende der Übersichtsseite haben die Symbole für „Zugeordnet“ jetzt einen Tooltip, der die Farben erklärt (amtliche und OSM-Fläche).

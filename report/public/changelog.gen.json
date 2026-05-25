@@ -1,9 +1,16 @@
 {
-  "generatedAt": "2026-05-20T18:59:11.264Z",
+  "generatedAt": "2026-05-25T08:33:49.401Z",
   "months": [
     {
       "month": "2026-05",
       "entries": [
+        {
+          "refs": ["edcfc9e"],
+          "descriptionMd": "In der Legende der Übersichtsseite haben die Symbole für „Zugeordnet“ jetzt einen Tooltip, der die Farben erklärt (amtliche und OSM-Fläche).",
+          "committedAtIso": "2026-05-25T10:32:41+02:00",
+          "committedAtShort": "2026-05-25",
+          "refsDisplay": ["edcfc9e"]
+        },
         {
           "refs": ["d69bf9f", "af0a7a8", "fe52dd4"],
           "descriptionMd": "Die Links zu anderen OSM-Kandidaten funktionieren zuverlässiger.",

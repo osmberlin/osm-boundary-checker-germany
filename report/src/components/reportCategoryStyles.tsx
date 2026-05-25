@@ -113,13 +113,7 @@ function LegendRect({
   backgroundColor?: string
   title?: string
 }) {
-  return (
-    <span
-      title={title}
-      className={legendRectClass}
-      style={{ borderColor, backgroundColor }}
-    />
-  )
+  return <span title={title} className={legendRectClass} style={{ borderColor, backgroundColor }} />
 }
 
 export type LegendRectItem = {

@@ -4,6 +4,10 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-05
 
+### `edcfc9e`
+
+In der Legende der Übersichtsseite haben die Symbole für „Zugeordnet“ jetzt einen Tooltip, der die Farben erklärt (amtliche und OSM-Fläche).
+
 ### `d69bf9f`, `af0a7a8`, `fe52dd4`
 
 Die Links zu anderen OSM-Kandidaten funktionieren zuverlässiger.
