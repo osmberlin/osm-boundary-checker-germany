@@ -1,6 +1,18 @@
 {
-  "generatedAt": "2026-05-25T08:33:49.401Z",
+  "generatedAt": "2026-06-01T21:39:51.792Z",
   "months": [
+    {
+      "month": "2026-06",
+      "entries": [
+        {
+          "refs": ["163cfb9"],
+          "descriptionMd": "Die Seite `/status` wurde überarbeitet: eine Zeitleiste über 21 Tage (10 zurück, 10 voraus) zeigt geplante und durchgeführte Pipeline-Läufe (Download, Extraktion, Vergleich) mit Sprungmarken zu Details. KPI-Karten fassen die letzten erfolgreichen Schritte zusammen; Zeitangaben erscheinen absolut und relativ in Europe/Berlin.",
+          "committedAtIso": "2026-06-01T23:37:55+02:00",
+          "committedAtShort": "2026-06-01",
+          "refsDisplay": ["163cfb9"]
+        }
+      ]
+    },
     {
       "month": "2026-05",
       "entries": [

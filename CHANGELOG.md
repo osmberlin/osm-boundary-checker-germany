@@ -2,6 +2,12 @@
 
 Automatisch aus `changelog.registry.yaml` erzeugt.
 
+## 2026-06
+
+### `163cfb9`
+
+Die Seite `/status` wurde überarbeitet: eine Zeitleiste über 21 Tage (10 zurück, 10 voraus) zeigt geplante und durchgeführte Pipeline-Läufe (Download, Extraktion, Vergleich) mit Sprungmarken zu Details. KPI-Karten fassen die letzten erfolgreichen Schritte zusammen; Zeitangaben erscheinen absolut und relativ in Europe/Berlin.
+
 ## 2026-05
 
 ### `edcfc9e`
