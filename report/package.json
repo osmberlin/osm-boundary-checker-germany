@@ -25,6 +25,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.5.0",
     "@fontsource-variable/inter": "^5.2.8",
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",

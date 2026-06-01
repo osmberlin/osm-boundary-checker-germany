@@ -1,13 +1,8 @@
-const DEFAULT_REFRESH_TIMEZONE = 'Europe/Berlin'
-const DEFAULT_NOT_BEFORE_LOCAL_HOUR = 1
-const ONE_DAY_MS = 24 * 60 * 60 * 1000
+import { BERLIN_TIME_ZONE } from '../../report/src/lib/time/constants.ts'
+import { refreshWindowKey } from '../../report/src/lib/time/refreshWindow.ts'
 
-type LocalParts = {
-  year: number
-  month: number
-  day: number
-  hour: number
-}
+const DEFAULT_REFRESH_TIMEZONE = BERLIN_TIME_ZONE
+const DEFAULT_NOT_BEFORE_LOCAL_HOUR = 1
 
 export type DailyRefreshDecisionReason =
   | 'force'
@@ -25,39 +20,6 @@ export type DailyRefreshDecision = {
   notBeforeLocalHour: number
   currentWindowKey: string
   cachedWindowKey?: string
-}
-
-function readLocalParts(at: Date, timezone: string): LocalParts {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(at)
-  const pick = (type: string) => Number(parts.find((part) => part.type === type)?.value)
-  return {
-    year: pick('year'),
-    month: pick('month'),
-    day: pick('day'),
-    hour: pick('hour'),
-  }
-}
-
-function dayKey(parts: Pick<LocalParts, 'year' | 'month' | 'day'>): string {
-  const y = String(parts.year).padStart(4, '0')
-  const m = String(parts.month).padStart(2, '0')
-  const d = String(parts.day).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function refreshWindowKey(at: Date, timezone: string, notBeforeLocalHour: number): string {
-  const local = readLocalParts(at, timezone)
-  if (local.hour >= notBeforeLocalHour) return dayKey(local)
-  const previousDay = new Date(at.getTime() - ONE_DAY_MS)
-  const previousLocal = readLocalParts(previousDay, timezone)
-  return dayKey(previousLocal)
 }
 
 export function resolveRefreshTimezone(env: NodeJS.ProcessEnv = process.env): string {

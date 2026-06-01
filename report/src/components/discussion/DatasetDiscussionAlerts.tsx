@@ -1,7 +1,7 @@
 import { InformationCircleIcon } from '@heroicons/react/20/solid'
 import { useQuery } from '@tanstack/react-query'
-import { formatDistanceToNow, parseISO } from 'date-fns'
-import { de as deLocale } from 'date-fns/locale'
+import { formatDistanceToNow } from 'date-fns'
+import { de as deLocale } from 'date-fns/locale/de'
 import {
   discussionIssuesForPathMatch,
   emptyDiscussionRegistryFile,
@@ -12,12 +12,13 @@ import {
 } from '../../data/load'
 import { de } from '../../i18n/de'
 import { cn } from '../../lib/cn'
+import { parseIsoToBerlin } from '../../lib/time/parse'
 import { useDiscussPageLinkParts } from '../../lib/useDiscussPageLinkParts'
 
 function formatLastTouchedRelative(iso: string): string {
-  const d = parseISO(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return formatDistanceToNow(d, { locale: deLocale, addSuffix: true })
+  const berlin = parseIsoToBerlin(iso)
+  if (!berlin) return iso
+  return formatDistanceToNow(berlin, { locale: deLocale, addSuffix: true })
 }
 
 export function DatasetDiscussionAlerts() {

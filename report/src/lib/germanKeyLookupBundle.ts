@@ -1,4 +1,5 @@
 import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
+import { formatSnapshotDateLabelDe } from './formatSourceDownloadedAt'
 import {
   ags8FromArs12Digits,
   digitsOnly,
@@ -432,9 +433,7 @@ export function searchGermanKeyDisplayNames(
 
 /** Summary line for header: Destatis TXT snapshot inside latest quarterly zip. */
 export function germanKeyLatestSnapshotLabelDe(bundle: GermanKeyLookupBundle): string {
-  const raw = bundle.latest.source.snapshotDate
-  if (Number.isNaN(new Date(raw).getTime())) return raw
-  return new Date(raw).toLocaleDateString('de-DE')
+  return formatSnapshotDateLabelDe(bundle.latest.source.snapshotDate)
 }
 
 export type GermanKeyExplorerHeaderSource = {
