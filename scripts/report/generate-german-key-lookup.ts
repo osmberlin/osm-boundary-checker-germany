@@ -10,20 +10,26 @@ import {
   type GermanKeyObsoleteSection,
 } from '../shared/germanKeyLookupPayload.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
+import type { Gv100AdRow } from './gv100AdRow.ts'
+import { parseDdMmYy, parseDdMmYyyy } from './gv100Dates.ts'
+import { formatValidationErrors, validateGvHierarchy } from './gv100HierarchyValidate.ts'
+import { rowsToLookupMaps, type LookupDuplicateWarning } from './gv100LookupMaps.ts'
+import { parseGv100AdTxtRows } from './parseGv100AdTxt.ts'
+import { gvAuszugXlsxBasename, parseGvAuszugXlsx } from './parseGvAuszugXlsx.ts'
 
 const OUTPUT_JSON_RELATIVE_PATH = 'report/public/data/german-key-lookup.json'
 
 const LATEST_SOURCE = {
   id: 'latest' as const,
-  label: 'Letzte Veröffentlichung (GV100AD Quartalsausgaben)',
+  label: 'Letzte Veröffentlichung (GVAuszugQ Quartalsausgaben, Excel)',
   provenanceLines: [] as const,
   sourcePublicUrl:
     'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/_inhalt.html#124272',
   downloadUrls: [
-    'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD1QAktuell.zip?__blob=publicationFile&v=17',
-    'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD2QAktuell.zip?__blob=publicationFile&v=14',
-    'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD3QAktuell.zip?__blob=publicationFile&v=16',
-    'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GV100ADQ/GV100AD4QAktuell.zip?__blob=publicationFile&v=15',
+    'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GVAuszugQ/AuszugGV1QAktuell.xlsx?__blob=publicationFile&v=16',
+    'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GVAuszugQ/AuszugGV2QAktuell.xlsx?__blob=publicationFile&v=13',
+    'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GVAuszugQ/AuszugGV3QAktuell.xlsx?__blob=publicationFile&v=21',
+    'https://www.destatis.de/DE/Themen/Laender-Regionen/Regionales/Gemeindeverzeichnis/Administrativ/Archiv/GVAuszugQ/AuszugGV4QAktuell.xlsx?__blob=publicationFile&v=18',
   ],
 } as const
 
@@ -113,25 +119,11 @@ const MAP_KEYS = [
   'gemeindenByArs',
 ] as const satisfies readonly (keyof GermanKeyLookupMaps)[]
 
-type PublicationSource = {
+type ResolvedSource = {
   downloadUrl: string
   archiveEntry: string
   snapshotDate: string
-}
-
-type MunicipalityWorkbookRow = {
-  satzart: string
-  snapshotDateRaw: string
-  land: string
-  rb: string
-  kreis: string
-  vb: string
-  gem: string
-  name: string
-}
-
-type SourceCandidate = PublicationSource & {
-  textFileBuffer: Buffer
+  rows: Gv100AdRow[]
 }
 
 type LookupMaps = GermanKeyLookupMaps
@@ -174,53 +166,6 @@ function readExistingCheckedAt(jsonAbsPath: string): string | undefined {
   }
 }
 
-function normalizeDigits(value: string, length: number): string {
-  const digits = value.replace(/\D/g, '')
-  if (digits === '') return ''.padStart(length, '0')
-  return digits.padStart(length, '0').slice(-length)
-}
-
-function makeArs12(row: MunicipalityWorkbookRow): string {
-  return [
-    normalizeDigits(row.land, 2),
-    normalizeDigits(row.rb, 1),
-    normalizeDigits(row.kreis, 2),
-    normalizeDigits(row.vb, 4),
-    normalizeDigits(row.gem, 3),
-  ].join('')
-}
-
-function makeAgs8(row: MunicipalityWorkbookRow): string {
-  return [
-    normalizeDigits(row.land, 2),
-    normalizeDigits(row.rb, 1),
-    normalizeDigits(row.kreis, 2),
-    normalizeDigits(row.gem, 3),
-  ].join('')
-}
-
-function setLookupValue(
-  target: Map<string, string>,
-  key: string,
-  value: string,
-  scope: string,
-): void {
-  const trimmed = value.trim()
-  if (key.trim() === '' || trimmed === '') return
-  const prev = target.get(key)
-  if (prev !== undefined && prev !== trimmed) {
-    void scope
-    return
-  }
-  target.set(key, trimmed)
-}
-
-function sortedObject(map: Map<string, string>): Record<string, string> {
-  return Object.fromEntries(
-    [...map.entries()].sort(([a], [b]) => a.localeCompare(b, 'de', { numeric: true })),
-  )
-}
-
 async function downloadBuffer(downloadUrl: string): Promise<Buffer> {
   logLine('downloading official source', { downloadUrl })
   const response = await fetch(downloadUrl)
@@ -232,38 +177,32 @@ async function downloadBuffer(downloadUrl: string): Promise<Buffer> {
   return buf
 }
 
-function parseDdMmYyyy(raw: string): Date | null {
-  if (!/^\d{8}$/.test(raw)) return null
-  const day = Number(raw.slice(0, 2))
-  const month = Number(raw.slice(2, 4))
-  const year = Number(raw.slice(4, 8))
-  const date = new Date(Date.UTC(year, month - 1, day))
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return null
-  }
-  return date
+const DUPLICATE_LOOKUP_LOG_LIMIT = 10
+
+function logLookupDuplicate(warning: LookupDuplicateWarning): void {
+  logLine('duplicate lookup key (keeping first name)', {
+    scope: warning.scope,
+    key: warning.key,
+    lineOrRow: warning.lineOrRow,
+    kept: warning.previous,
+    ignored: warning.incoming,
+  })
 }
 
-/** Older GV100ADJ archives use `GV100AD_DDMMYY.ASC` filenames (two-digit year). */
-function parseDdMmYy(raw: string): Date | null {
-  if (!/^\d{6}$/.test(raw)) return null
-  const day = Number(raw.slice(0, 2))
-  const month = Number(raw.slice(2, 4))
-  const yy = Number(raw.slice(4, 6))
-  const year = yy <= 50 ? 2000 + yy : 1900 + yy
-  const date = new Date(Date.UTC(year, month - 1, day))
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return null
+function rowsToLookupMapsWithLoggedDuplicates(rows: Gv100AdRow[]): GermanKeyLookupMaps {
+  let duplicateCount = 0
+  const maps = rowsToLookupMaps(rows, (warning) => {
+    duplicateCount += 1
+    if (duplicateCount <= DUPLICATE_LOOKUP_LOG_LIMIT) {
+      logLookupDuplicate(warning)
+    }
+  })
+  if (duplicateCount > DUPLICATE_LOOKUP_LOG_LIMIT) {
+    logLine('additional duplicate lookup keys suppressed', {
+      suppressed: duplicateCount - DUPLICATE_LOOKUP_LOG_LIMIT,
+    })
   }
-  return date
+  return maps
 }
 
 function gv100AdEntryBasename(entryName: string): string {
@@ -290,59 +229,77 @@ function snapshotIsoFromGv100AdFilename(base: string): string | null {
   return null
 }
 
-function parseGv100AdTxtRows(buffer: Buffer): MunicipalityWorkbookRow[] {
-  const utf8Text = new TextDecoder('utf-8').decode(buffer)
-  const text = utf8Text.includes('\uFFFD') ? new TextDecoder('latin1').decode(buffer) : utf8Text
-  const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '')
-  return lines.map((line) => ({
-    satzart: line.slice(0, 2),
-    snapshotDateRaw: line.slice(2, 10),
-    land: line.slice(10, 12),
-    rb: line.slice(12, 13),
-    kreis: line.slice(13, 15),
-    gem: line.slice(15, 18),
-    vb: line.slice(18, 22),
-    name: line.slice(22, 72),
-  }))
+async function loadLatestExcelCandidate(downloadUrl: string): Promise<ResolvedSource> {
+  const buffer = await downloadBuffer(downloadUrl)
+  const xlsxBasename = gvAuszugXlsxBasename(downloadUrl)
+  const parsed = await parseGvAuszugXlsx(buffer, xlsxBasename)
+  return {
+    downloadUrl,
+    archiveEntry: parsed.archiveEntry,
+    snapshotDate: parsed.snapshotDate,
+    rows: parsed.rows,
+  }
 }
 
-async function resolveBestPublicationSource(
+async function loadAnnualTxtCandidate(downloadUrl: string): Promise<ResolvedSource> {
+  const zipBuffer = await downloadBuffer(downloadUrl)
+  const archive = await JSZip.loadAsync(zipBuffer)
+  const txtEntry = Object.values(archive.files).find((entry) => {
+    if (entry.dir) return false
+    const base = gv100AdEntryBasename(entry.name)
+    return (
+      /^GV100AD_\d{8}\.txt$/i.test(base) ||
+      /^GV100AD_\d{6}\.txt$/i.test(base) ||
+      /^GV100AD_\d{6}\.(?:ASC|asc)$/i.test(base)
+    )
+  })
+  if (!txtEntry) {
+    throw new Error(`ZIP missing expected GV100AD .txt or .ASC file: ${downloadUrl}`)
+  }
+  const snapshotIso = snapshotIsoFromGv100AdFilename(gv100AdEntryBasename(txtEntry.name))
+  if (!snapshotIso) {
+    throw new Error(`Could not parse snapshot date from entry: ${txtEntry.name}`)
+  }
+  const textFileBuffer = Buffer.from(await txtEntry.async('uint8array'))
+  return {
+    downloadUrl,
+    archiveEntry: txtEntry.name,
+    snapshotDate: snapshotIso,
+    rows: parseGv100AdTxtRows(textFileBuffer),
+  }
+}
+
+async function resolveBestValidSource(
   datasetId: string,
   downloadUrls: readonly string[],
-): Promise<SourceCandidate> {
-  const candidates: SourceCandidate[] = []
+  loadCandidate: (downloadUrl: string) => Promise<ResolvedSource>,
+): Promise<ResolvedSource> {
+  const valid: ResolvedSource[] = []
+
   for (const downloadUrl of downloadUrls) {
-    const zipBuffer = await downloadBuffer(downloadUrl)
-    const archive = await JSZip.loadAsync(zipBuffer)
-    const txtEntry = Object.values(archive.files).find((entry) => {
-      if (entry.dir) return false
-      const base = gv100AdEntryBasename(entry.name)
-      return (
-        /^GV100AD_\d{8}\.txt$/i.test(base) ||
-        /^GV100AD_\d{6}\.txt$/i.test(base) ||
-        /^GV100AD_\d{6}\.(?:ASC|asc)$/i.test(base)
-      )
-    })
-    if (!txtEntry) {
-      throw new Error(`ZIP missing expected GV100AD .txt or .ASC file: ${downloadUrl}`)
+    const candidate = await loadCandidate(downloadUrl)
+    const validation = validateGvHierarchy(candidate.rows)
+    if (!validation.ok) {
+      logLine('rejected source', {
+        datasetId,
+        snapshotDate: candidate.snapshotDate,
+        archiveEntry: candidate.archiveEntry,
+        errors: validation.errors.length,
+        first: formatValidationErrors(validation.errors, 1),
+      })
+      continue
     }
-    const snapshotIso = snapshotIsoFromGv100AdFilename(gv100AdEntryBasename(txtEntry.name))
-    if (!snapshotIso) {
-      throw new Error(`Could not parse snapshot date from entry: ${txtEntry.name}`)
-    }
-    const textFileBuffer = Buffer.from(await txtEntry.async('uint8array'))
-    candidates.push({
-      downloadUrl,
-      archiveEntry: txtEntry.name,
-      snapshotDate: snapshotIso,
-      textFileBuffer,
-    })
+    valid.push(candidate)
   }
-  if (candidates.length === 0) {
-    throw new Error(`No GV100AD sources available for dataset ${datasetId}`)
+
+  if (valid.length === 0) {
+    throw new Error(
+      `No valid GV100 sources for dataset ${datasetId}; all ${downloadUrls.length} candidate(s) failed structural validation`,
+    )
   }
-  candidates.sort((a, b) => a.snapshotDate.localeCompare(b.snapshotDate))
-  const best = candidates.at(-1)!
+
+  valid.sort((a, b) => a.snapshotDate.localeCompare(b.snapshotDate))
+  const best = valid.at(-1)!
   logLine('selected publication source', {
     datasetId,
     snapshotDate: best.snapshotDate,
@@ -350,56 +307,6 @@ async function resolveBestPublicationSource(
     downloadUrl: best.downloadUrl,
   })
   return best
-}
-
-function parseGv100AdTxtToLookupMaps(buffer: Buffer): LookupMaps {
-  const rows = parseGv100AdTxtRows(buffer)
-
-  const bundeslaender = new Map<string, string>()
-  const regierungsbezirke = new Map<string, string>()
-  const kreise = new Map<string, string>()
-  const gemeindeverbaende = new Map<string, string>()
-  const gemeindenByAgs = new Map<string, string>()
-  const gemeindenByArs = new Map<string, string>()
-
-  for (const row of rows) {
-    if (!/^\d+$/.test(row.satzart.trim())) continue
-    const land = normalizeDigits(row.land, 2)
-    const rb = normalizeDigits(row.rb, 1)
-    const kreis = normalizeDigits(row.kreis, 2)
-    const vb = normalizeDigits(row.vb, 4)
-    const name = row.name.trim()
-    switch (row.satzart.trim()) {
-      case '10':
-        setLookupValue(bundeslaender, land, name, 'bundesland')
-        break
-      case '20':
-        setLookupValue(regierungsbezirke, `${land}${rb}`, name, 'regierungsbezirk')
-        break
-      case '40':
-        setLookupValue(kreise, `${land}${rb}${kreis}`, name, 'kreis')
-        break
-      case '50':
-        setLookupValue(gemeindeverbaende, `${land}${rb}${kreis}${vb}`, name, 'gemeindeverband')
-        break
-      case '60': {
-        setLookupValue(gemeindenByArs, makeArs12(row), name, 'gemeindeByArs')
-        setLookupValue(gemeindenByAgs, makeAgs8(row), name, 'gemeindeByAgs')
-        break
-      }
-      default:
-        break
-    }
-  }
-
-  return {
-    bundeslaender: sortedObject(bundeslaender),
-    regierungsbezirke: sortedObject(regierungsbezirke),
-    kreise: sortedObject(kreise),
-    gemeindeverbaende: sortedObject(gemeindeverbaende),
-    gemeindenByAgs: sortedObject(gemeindenByAgs),
-    gemeindenByArs: sortedObject(gemeindenByArs),
-  }
 }
 
 function emptyLookupMaps(): LookupMaps {
@@ -424,6 +331,29 @@ function emptyLastYearMaps(): GermanKeyObsoleteSection['lastContainedInYear'] {
   }
 }
 
+function buildLatestPrefixGuards(latest: LookupMaps): {
+  bundeslandPrefixes: Set<string>
+  kreisPrefixes: Set<string>
+} {
+  const bundeslandPrefixes = new Set<string>()
+  const kreisPrefixes = new Set<string>()
+  for (const ags of Object.keys(latest.gemeindenByAgs)) {
+    if (ags.length >= 2) bundeslandPrefixes.add(ags.slice(0, 2))
+    if (ags.length >= 5) kreisPrefixes.add(ags.slice(0, 5))
+  }
+  return { bundeslandPrefixes, kreisPrefixes }
+}
+
+function shouldSkipObsoleteKey(
+  mapName: (typeof MAP_KEYS)[number],
+  key: string,
+  guards: ReturnType<typeof buildLatestPrefixGuards>,
+): boolean {
+  if (mapName === 'bundeslaender') return guards.bundeslandPrefixes.has(key)
+  if (mapName === 'kreise') return guards.kreisPrefixes.has(key)
+  return false
+}
+
 /**
  * Accumulate obsolete rows: keys that appear in an annual GV100ADJ extract but not in `latest`.
  * Years are applied ascending; `lastContainedInYear` keeps the maximum year per key.
@@ -435,6 +365,8 @@ function mergeAnnualObsoleteInto(
   obsoleteMaps: LookupMaps,
   lastContainedInYear: GermanKeyObsoleteSection['lastContainedInYear'],
 ): void {
+  const guards = buildLatestPrefixGuards(latest)
+
   for (const mk of MAP_KEYS) {
     const L = latest[mk]
     const A = annualMaps[mk]
@@ -442,6 +374,7 @@ function mergeAnnualObsoleteInto(
     const Y = lastContainedInYear[mk]
     for (const [key, name] of Object.entries(A)) {
       if (Object.hasOwn(L, key)) continue
+      if (shouldSkipObsoleteKey(mk, key, guards)) continue
       O[key] = name
       const prev = Y[key]
       Y[key] = prev === undefined ? year : Math.max(prev, year)
@@ -471,8 +404,12 @@ async function main(): Promise<void> {
 
   const now = new Date().toISOString()
 
-  const latestResolved = await resolveBestPublicationSource('latest', LATEST_SOURCE.downloadUrls)
-  const latestMaps = parseGv100AdTxtToLookupMaps(latestResolved.textFileBuffer)
+  const latestResolved = await resolveBestValidSource(
+    'latest',
+    LATEST_SOURCE.downloadUrls,
+    loadLatestExcelCandidate,
+  )
+  const latestMaps = rowsToLookupMapsWithLoggedDuplicates(latestResolved.rows)
 
   const latestDataset: GermanKeyLatestDataset = {
     id: 'latest',
@@ -496,8 +433,12 @@ async function main(): Promise<void> {
   }
 
   for (const def of ANNUAL_GV100ADJ_SOURCES) {
-    const resolved = await resolveBestPublicationSource(`gv100adj-${def.year}`, def.downloadUrls)
-    const annualMaps = parseGv100AdTxtToLookupMaps(resolved.textFileBuffer)
+    const resolved = await resolveBestValidSource(
+      `gv100adj-${def.year}`,
+      def.downloadUrls,
+      loadAnnualTxtCandidate,
+    )
+    const annualMaps = rowsToLookupMapsWithLoggedDuplicates(resolved.rows)
     mergeAnnualObsoleteInto(latestMaps, annualMaps, def.year, obsoleteMaps, lastContainedInYear)
     logLine('annual obsolete merged', {
       year: def.year,

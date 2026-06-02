@@ -12,7 +12,7 @@ Die Seite `/status` auf der öffentlichen Instanz zeigt jetzt auch ältere Pipel
 
 Auf `/status` und in den Datensatz-Berichten werden OSM-Download-Ergebnisse deutlicher angezeigt – inklusive Hinweis, wenn ein Abruf fehlgeschlagen ist oder auf zwischengespeicherte Daten zurückgegriffen wurde.
 
-### `1b3aae8`
+### `1b3aae8`, `451bf32`
 
 Die Schlüsselverzeichnis-Suche (AGS/ARS) nutzt aktualisierte Destatis-GVAuszugQ-Quellen mit verbesserter Hierarchie und Plausibilitätsprüfung.
 
