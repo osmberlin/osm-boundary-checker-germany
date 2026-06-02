@@ -4,17 +4,17 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-06
 
-### `0ec755c`
+### `7363a7d`
 
 Die Seite `/status` auf der öffentlichen Instanz zeigt jetzt auch ältere Pipeline-Läufe in der Zeitleiste – nicht nur den jeweils letzten Nachtlauf. Vergangene Downloads, Extraktionen und Vergleiche bleiben damit nachvollziehbar.
 
-### `a096f7b`
-
-Auf `/status` und in den Datensatz-Berichten werden OSM-Download-Ergebnisse deutlicher angezeigt – inklusive Hinweis, wenn ein Abruf fehlgeschlagen ist oder auf zwischengespeicherte Daten zurückgegriffen wurde.
-
-### `1b3aae8`, `451bf32`
+### `d43d38e`
 
 Die Schlüsselverzeichnis-Suche (AGS/ARS) nutzt aktualisierte Destatis-GVAuszugQ-Quellen mit verbesserter Hierarchie und Plausibilitätsprüfung.
+
+### `0eaa285`
+
+Auf `/status` und in den Datensatz-Berichten werden OSM-Download-Ergebnisse deutlicher angezeigt – inklusive Hinweis, wenn ein Abruf fehlgeschlagen ist oder auf zwischengespeicherte Daten zurückgegriffen wurde.
 
 ### `163cfb9`
 
