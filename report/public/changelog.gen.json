@@ -1,9 +1,30 @@
 {
-  "generatedAt": "2026-06-01T21:39:51.792Z",
+  "generatedAt": "2026-06-02T20:21:28.898Z",
   "months": [
     {
       "month": "2026-06",
       "entries": [
+        {
+          "refs": ["0ec755c"],
+          "descriptionMd": "Die Seite `/status` auf der öffentlichen Instanz zeigt jetzt auch ältere Pipeline-Läufe in der Zeitleiste – nicht nur den jeweils letzten Nachtlauf. Vergangene Downloads, Extraktionen und Vergleiche bleiben damit nachvollziehbar.",
+          "committedAtIso": "2026-06-02T22:20:07+02:00",
+          "committedAtShort": "2026-06-02",
+          "refsDisplay": ["0ec755c"]
+        },
+        {
+          "refs": ["a096f7b"],
+          "descriptionMd": "Auf `/status` und in den Datensatz-Berichten werden OSM-Download-Ergebnisse deutlicher angezeigt – inklusive Hinweis, wenn ein Abruf fehlgeschlagen ist oder auf zwischengespeicherte Daten zurückgegriffen wurde.",
+          "committedAtIso": "2026-06-02T22:10:34+02:00",
+          "committedAtShort": "2026-06-02",
+          "refsDisplay": ["a096f7b"]
+        },
+        {
+          "refs": ["1b3aae8"],
+          "descriptionMd": "Die Schlüsselverzeichnis-Suche (AGS/ARS) nutzt aktualisierte Destatis-GVAuszugQ-Quellen mit verbesserter Hierarchie und Plausibilitätsprüfung.",
+          "committedAtIso": "2026-06-02T22:10:25+02:00",
+          "committedAtShort": "2026-06-02",
+          "refsDisplay": ["1b3aae8"]
+        },
         {
           "refs": ["163cfb9"],
           "descriptionMd": "Die Seite `/status` wurde überarbeitet: eine Zeitleiste über 21 Tage (10 zurück, 10 voraus) zeigt geplante und durchgeführte Pipeline-Läufe (Download, Extraktion, Vergleich) mit Sprungmarken zu Details. KPI-Karten fassen die letzten erfolgreichen Schritte zusammen; Zeitangaben erscheinen absolut und relativ in Europe/Berlin.",
