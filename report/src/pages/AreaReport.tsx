@@ -13,7 +13,6 @@ import {
 } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
-import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import { AreaReportHeader } from '../components/AreaReportHeader'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { KpiRow, KpiSectionRow, KpiToggleCell } from '../components/FeatureStatBlocks'
@@ -53,6 +52,7 @@ import {
   formatDePercentPoints,
 } from '../lib/formatDe'
 import { officialAreaSummaryFreshness } from '../lib/officialAreaSummaryFreshness'
+import { osmAreaSummaryFreshness } from '../lib/osmAreaSummaryFreshness'
 import { kpiFreshnessLinesFromIso } from '../lib/reportFreshnessLines'
 import { areaDisplayNameForId } from '../lib/reportLookups'
 import type { AreaReportRow, ComparisonForReport, SnapshotsJson } from '../types/report'
@@ -226,18 +226,11 @@ export function AreaReport() {
   const st = de.areaReport.stats
   const reportFresh = kpiFreshnessLinesFromIso(data.generatedAt.trim())
   const officialSide = data.sourceMetadata?.official
-  const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
-  const osmRaw = osmResolved.downloadedAt
   const officialFresh = officialAreaSummaryFreshness(officialSide)
-  const osmFresh = kpiFreshnessLinesFromIso(osmRaw)
+  const osmFresh = osmAreaSummaryFreshness(data.sourceMetadata?.osm)
   const reportIsOld = isOlderThanDays(data.generatedAt, 5)
   const officialIsOld = officialFresh.isOld
-  /** KPI copy stays snapshot (`downloadedAt`); rose “check” age uses extract wall-clock when source is header snapshot. */
-  const osmCheckRawForRose =
-    osmResolved.sourceDateSource === 'osm_pbf_header'
-      ? osmResolved.extractedAt?.trim() || osmRaw
-      : osmRaw
-  const osmIsOld = isOlderThanDays(osmCheckRawForRose, 5)
+  const osmIsOld = osmFresh.isOld
   const iouMax = maxFiniteValue(sortedRows.map((row) => row.metrics?.iou))
   const areaDiffAbsMax = maxFiniteValue(
     sortedRows.map((row) => absOrNull(row.metrics?.areaDiffPct)),
@@ -289,6 +282,7 @@ export function AreaReport() {
               heading={de.areaReport.freshnessHeadingOsm}
               relativeLine={osmFresh.relativeLine}
               absoluteLine={osmFresh.absoluteLine}
+              detailLine={osmFresh.detailLine}
               isOld={osmIsOld}
             />
           </KpiRow>

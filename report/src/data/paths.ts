@@ -20,6 +20,10 @@ export function runStatusUrl(): string {
   return withSiteBasePath('/data/run-status.json')
 }
 
+export function osmPipelineStateUrl(): string {
+  return withSiteBasePath('/data/osm-pipeline-state.json')
+}
+
 export function germanKeyLookupUrl(): string {
   return withSiteBasePath('/data/german-key-lookup.json')
 }

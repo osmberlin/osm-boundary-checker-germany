@@ -1,4 +1,4 @@
-import type { OsmSourceMetadataSide } from '../../../scripts/shared/sourceMetadata.ts'
+import type { OsmSourceMetadataPersisted } from '../../../scripts/shared/sourceMetadata.ts'
 import type { SourceMetadataSide } from '../types/report'
 
 function normalized(raw: string | undefined): string | undefined {
@@ -48,10 +48,12 @@ export type OsmDatasetDatePick = {
   snapshotFromPbfHeader: boolean
 }
 
-export function pickOsmDatasetExtractDate(side: OsmSourceMetadataSide): OsmDatasetDatePick {
-  const raw = normalized(side.downloadedAt)
-  const fromHeader = side.sourceDateSource === 'osm_pbf_header'
-  const extracted = normalized(side.extractedAt)
+export function pickOsmDatasetExtractDate(
+  side: OsmSourceMetadataPersisted | null | undefined,
+): OsmDatasetDatePick {
+  const raw = normalized(side?.downloadedAt)
+  const fromHeader = side?.sourceDateSource === 'osm_pbf_header'
+  const extracted = normalized(side?.extractedAt)
   return {
     sourceDateRaw: fromHeader ? raw : undefined,
     checkedAtRaw: fromHeader ? (extracted ?? raw) : raw,

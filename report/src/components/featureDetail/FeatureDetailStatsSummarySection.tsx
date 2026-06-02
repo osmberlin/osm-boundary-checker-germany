@@ -1,8 +1,8 @@
-import { buildResolvedOsmSourceSide } from '../../../../scripts/shared/osmGermanyProvenance.ts'
 import { categoryLabelDe, de, issueLevelLabelDe } from '../../i18n/de'
 import { isOlderThanDays } from '../../lib/dataAge'
 import { EM_DASH } from '../../lib/formatDe'
 import { officialAreaSummaryFreshness } from '../../lib/officialAreaSummaryFreshness'
+import { osmAreaSummaryFreshness } from '../../lib/osmAreaSummaryFreshness'
 import { kpiFreshnessLinesFromIso } from '../../lib/reportFreshnessLines'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { KpiRow } from '../FeatureStatBlocks'
@@ -31,17 +31,11 @@ export function FeatureDetailStatsSummarySection({
   const s = de.feature.stats
   const reportFresh = kpiFreshnessLinesFromIso(data.generatedAt)
   const officialSide = data.sourceMetadata?.official
-  const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
-  const osmRaw = osmResolved.downloadedAt
   const officialFresh = officialAreaSummaryFreshness(officialSide)
-  const osmFresh = kpiFreshnessLinesFromIso(osmRaw)
+  const osmFresh = osmAreaSummaryFreshness(data.sourceMetadata?.osm)
   const reportIsOld = isOlderThanDays(data.generatedAt, 5)
   const officialIsOld = officialFresh.isOld
-  const osmCheckRawForRose =
-    osmResolved.sourceDateSource === 'osm_pbf_header'
-      ? osmResolved.extractedAt?.trim() || osmRaw
-      : osmRaw
-  const osmIsOld = isOlderThanDays(osmCheckRawForRose, 5)
+  const osmIsOld = osmFresh.isOld
 
   return (
     <section className="w-full" aria-label={de.areaReport.stats.summaryStatRowAria}>
@@ -81,6 +75,7 @@ export function FeatureDetailStatsSummarySection({
           heading={de.areaReport.freshnessHeadingOsm}
           relativeLine={osmFresh.relativeLine}
           absoluteLine={osmFresh.absoluteLine}
+          detailLine={osmFresh.detailLine}
           isOld={osmIsOld}
         />
       </KpiRow>

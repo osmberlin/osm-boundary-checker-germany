@@ -26,6 +26,11 @@ import {
   restoreOsmCacheFromFallback,
 } from '../shared/lazyFallback.ts'
 import {
+  resolveOsmDownloadOutcome,
+  upsertOsmDownloadAttempt,
+  type OsmDownloadOutcome,
+} from '../shared/osmPipelineState.ts'
+import {
   finalizeRunStatus,
   initRunStatus,
   type RunBranchStatus,
@@ -200,6 +205,20 @@ function branchStatusFromStepResult(
   return 'failed_no_cache'
 }
 
+function parseDownloadAttempt(): 'fresh' | 'fallback' | null {
+  const raw = process.env.PIPELINE_DOWNLOAD_ATTEMPT?.trim().toLowerCase()
+  if (raw === 'fresh' || raw === 'fallback') return raw
+  return null
+}
+
+function osmDownloadErrorMessage(exitCode: number, reason?: string): string {
+  if (reason === 'fallback_osm_cache_restored')
+    return 'Fresh OSM download failed; restored fallback cache'
+  if (exitCode === 28) return 'OSM PBF download timed out (curl exit 28)'
+  if (exitCode !== 0) return `OSM PBF download failed (exit ${exitCode})`
+  return 'OSM PBF download failed'
+}
+
 function parsePositiveInt(value: string | undefined): number | null {
   if (!value) return null
   const parsed = Number.parseInt(value, 10)
@@ -255,6 +274,7 @@ async function main() {
     process.env.PIPELINE_TIMEZONE?.trim() || process.env.TZ?.trim() || 'Europe/Berlin'
   const runId = `${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}-${randomUUID().slice(0, 8)}`
   const fallbackRuntimeRoot = resolveFallbackRuntimeRoot(workspaceRoot)
+  const downloadAttempt = parseDownloadAttempt()
 
   mkdirSync(processingDir, { recursive: true })
   let lockFd = -1
@@ -459,6 +479,24 @@ async function main() {
           )
         }
 
+        if (phaseStep.step === 'download:osm' && downloadAttempt) {
+          const outcome: OsmDownloadOutcome = resolveOsmDownloadOutcome({
+            stepStatus,
+            usedCache,
+            reason,
+          })
+          upsertOsmDownloadAttempt(processingDir, runId, {
+            attempt: downloadAttempt,
+            outcome,
+            at: nowIso(),
+            exitCode: finalExitCode === 0 ? undefined : finalExitCode,
+            errorMessage:
+              outcome === 'failed' || outcome === 'fallback_artifact'
+                ? osmDownloadErrorMessage(finalExitCode, reason)
+                : undefined,
+          })
+        }
+
         const branchStatus = branchStatusFromStepResult(stepStatus, usedCache, phaseStep.step)
         upsertSharedBranchStatus(processingDir, phaseStep.step, {
           status: branchStatus,
@@ -466,6 +504,10 @@ async function main() {
           retryHint:
             branchStatus === 'failed_no_cache' ? 'automatic retry next nightly run' : undefined,
           errorCode: finalExitCode === 0 ? undefined : String(finalExitCode),
+          errorMessage:
+            phaseStep.step === 'download:osm' && finalExitCode !== 0
+              ? osmDownloadErrorMessage(finalExitCode, reason)
+              : undefined,
         })
         if (finalExitCode !== 0) failed = true
       }

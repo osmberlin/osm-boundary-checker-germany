@@ -268,6 +268,21 @@ export const de = {
     statusFail: 'Fehler',
     statusSkipped: 'Übersprungen',
     loading: 'Lade Status…',
+    osmAlertFailedTitle: 'OSM-Download fehlgeschlagen',
+    osmAlertFailedDetailFallback:
+      'Der Germany-PBF-Download ist fehlgeschlagen und es konnte kein Fallback-Cache wiederhergestellt werden.',
+    osmAlertFallbackTitle: 'OSM-Daten nicht aktualisiert',
+    osmAlertFallbackDetail:
+      'Die Auswertung nutzt ältere OSM-Daten ({origin}). Ein frischer Download ist fehlgeschlagen.',
+    osmAlertFreshAttemptError: 'Fehler beim frischen Download: {error}.',
+    osmAlertFallbackStreak:
+      'Fallback-Cache bereits {count}× hintereinander genutzt (Limit: {max} Läufe).',
+    osmSourceOriginFresh: 'frisch heruntergeladen',
+    osmSourceOriginCacheWindow: 'Cache im aktuellen Refresh-Fenster',
+    osmSourceOriginFallback: 'Fallback-Cache aus vorherigem Lauf',
+    osmSourceOriginUnknown: 'unbekannte Quelle',
+    branchError: 'Fehler',
+    branchSourceOrigin: 'Quelle',
   },
 
   changelog: {
@@ -313,6 +328,7 @@ export const de = {
     freshnessHeadingOfficial: 'Amtliche Daten',
     freshnessHeadingOsm: 'OSM Daten',
     freshnessSecondaryDownloadedPrefix: 'Download',
+    freshnessSecondaryExtractedPrefix: 'Verarbeitet',
     sourceDateUnknown: 'kein Datum hinterlegt',
     loading: 'Laden…',
     errorRunCompare: 'Vergleich im Projekt ausführen, damit',

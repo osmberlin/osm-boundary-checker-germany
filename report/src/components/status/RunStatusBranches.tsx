@@ -11,6 +11,19 @@ function originLabel(origin?: string): string {
   return origin ?? '—'
 }
 
+function sourceOriginLabel(origin?: string): string {
+  switch (origin) {
+    case 'fresh':
+      return de.status.osmSourceOriginFresh
+    case 'cache_window':
+      return de.status.osmSourceOriginCacheWindow
+    case 'fallback_artifact':
+      return de.status.osmSourceOriginFallback
+    default:
+      return origin ?? '—'
+  }
+}
+
 export function RunStatusBranches({ runStatus }: { runStatus: RunStatusFile }) {
   const sharedEntries = Object.entries(runStatus.shared).sort(([a], [b]) => a.localeCompare(b))
   const areaEntries = Object.entries(runStatus.areas).sort(([a], [b]) => a.localeCompare(b))
@@ -32,6 +45,17 @@ export function RunStatusBranches({ runStatus }: { runStatus: RunStatusFile }) {
               <li key={key}>
                 <span className="font-mono text-slate-200">{key}</span> — {branch.status}
                 {branch.usedCache ? ' (Cache)' : ''}
+                {branch.sourceOrigin ? (
+                  <>
+                    {' '}
+                    · {de.status.branchSourceOrigin}: {sourceOriginLabel(branch.sourceOrigin)}
+                  </>
+                ) : null}
+                {branch.errorMessage ? (
+                  <div className="mt-0.5 text-amber-300/90">
+                    {de.status.branchError}: {branch.errorMessage}
+                  </div>
+                ) : null}
               </li>
             ))
           )}

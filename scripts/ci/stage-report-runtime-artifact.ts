@@ -87,7 +87,12 @@ if (comparisonTableCount === 0) {
 }
 
 const copiedDataFiles: string[] = []
-for (const dataFile of ['processing-state.json', 'processing-log.jsonl', 'run-status.json']) {
+for (const dataFile of [
+  'processing-state.json',
+  'processing-log.jsonl',
+  'run-status.json',
+  'osm-pipeline-state.json',
+]) {
   const copied = copyFileIfExists(
     path.join(dataRoot, dataFile),
     path.join(reportArtifactData, dataFile),

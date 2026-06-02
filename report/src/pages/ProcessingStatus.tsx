@@ -1,11 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { OsmDownloadAlertBanner } from '../components/status/OsmDownloadAlertBanner'
 import { RunDetailCard } from '../components/status/RunDetailCard'
 import { RunTimeline } from '../components/status/RunTimeline'
 import { StatusKpiStrip } from '../components/status/StatusKpiStrip'
-import { processingLogJsonlUrl, processingStateUrl, runStatusUrl } from '../data/paths'
+import {
+  osmPipelineStateUrl,
+  processingLogJsonlUrl,
+  processingStateUrl,
+  runStatusUrl,
+} from '../data/paths'
 import { de } from '../i18n/de'
 import { GITHUB_ACTIONS_URL } from '../lib/githubRepo'
+import { buildOsmDownloadAlert } from '../lib/osmDownloadStatus'
 import {
   buildRunsFromEvents,
   computeStatusKpis,
@@ -13,22 +20,30 @@ import {
   partitionRunsByTimeline,
 } from '../lib/processingRuns'
 import type { ProcessingState } from '../lib/processingStatusTypes'
+import { osmPipelineStateSchema, type OsmPipelineState } from '../types/osmPipelineState'
 import type { RunStatusFile } from '../types/runStatus'
 
 async function loadProcessingStatusData(): Promise<{
   state: ProcessingState | null
   events: ReturnType<typeof parseProcessingLogJsonl>
   runStatus: RunStatusFile | null
+  osmPipelineState: OsmPipelineState | null
 }> {
-  const [stateRes, logRes, runStatusRes] = await Promise.all([
+  const [stateRes, logRes, runStatusRes, osmStateRes] = await Promise.all([
     fetch(processingStateUrl(), { cache: 'no-store' }),
     fetch(processingLogJsonlUrl(), { cache: 'no-store' }),
     fetch(runStatusUrl(), { cache: 'no-store' }),
+    fetch(osmPipelineStateUrl(), { cache: 'no-store' }),
   ])
   const state = stateRes.ok ? ((await stateRes.json()) as ProcessingState) : null
   const events = logRes.ok ? parseProcessingLogJsonl(await logRes.text()) : []
   const runStatus = runStatusRes.ok ? ((await runStatusRes.json()) as RunStatusFile) : null
-  return { state, events, runStatus }
+  let osmPipelineState: OsmPipelineState | null = null
+  if (osmStateRes.ok) {
+    const parsed = osmPipelineStateSchema.safeParse(await osmStateRes.json())
+    osmPipelineState = parsed.success ? parsed.data : null
+  }
+  return { state, events, runStatus, osmPipelineState }
 }
 
 export function ProcessingStatus() {
@@ -39,10 +54,15 @@ export function ProcessingStatus() {
   })
   const state = processingQuery.data?.state ?? null
   const runStatus = processingQuery.data?.runStatus ?? null
+  const osmPipelineState = processingQuery.data?.osmPipelineState ?? null
   const error = processingQuery.isError ? String(processingQuery.error) : null
   const runs = buildRunsFromEvents(processingQuery.data?.events ?? [])
   const { inWindow, older, dateKeys } = partitionRunsByTimeline(runs)
   const kpis = computeStatusKpis(runs, state)
+  const osmAlert = buildOsmDownloadAlert({
+    osmBranch: runStatus?.shared['download:osm'],
+    pipelineState: osmPipelineState,
+  })
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-6 text-left sm:px-6 lg:px-8">
@@ -70,6 +90,8 @@ export function ProcessingStatus() {
       {processingQuery.isLoading ? (
         <p className="text-sm text-slate-400">{de.status.loading}</p>
       ) : null}
+
+      {osmAlert ? <OsmDownloadAlertBanner alert={osmAlert} /> : null}
 
       <StatusKpiStrip kpis={kpis} />
 

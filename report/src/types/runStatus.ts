@@ -7,10 +7,13 @@ export const runBranchStatusSchema = z.enum([
   'skipped',
 ])
 
+export const sourceDownloadOriginSchema = z.enum(['fresh', 'cache_window', 'fallback_artifact'])
+
 export const runStatusBranchSchema = z.object({
   status: runBranchStatusSchema,
   updatedAt: z.string(),
   usedCache: z.boolean().optional(),
+  sourceOrigin: sourceDownloadOriginSchema.optional(),
   artifactTimestamp: z.string().optional(),
   errorCode: z.string().optional(),
   errorMessage: z.string().optional(),

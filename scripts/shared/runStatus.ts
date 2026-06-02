@@ -5,10 +5,13 @@ export type RunBranchStatus = 'success' | 'failed_no_cache' | 'compare_failed' |
 
 export type CompareOutputOrigin = 'current_run' | 'cache_last_good' | 'none'
 
+export type SourceDownloadOrigin = 'fresh' | 'cache_window' | 'fallback_artifact'
+
 export type RunStatusBranch = {
   status: RunBranchStatus
   updatedAt: string
   usedCache?: boolean
+  sourceOrigin?: SourceDownloadOrigin
   artifactTimestamp?: string
   errorCode?: string
   errorMessage?: string

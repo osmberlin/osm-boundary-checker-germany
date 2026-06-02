@@ -90,6 +90,10 @@ async function main() {
     join(destDataRoot, 'run-status.json'),
   )
   await copyIfExists(
+    join(runtimeRoot, 'data', 'osm-pipeline-state.json'),
+    join(destDataRoot, 'osm-pipeline-state.json'),
+  )
+  await copyIfExists(
     join(runtimeRoot, 'data', 'relation-resolver-index.json'),
     join(destDataRoot, 'relation-resolver-index.json'),
   )

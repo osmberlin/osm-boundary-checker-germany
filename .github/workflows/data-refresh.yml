@@ -54,6 +54,18 @@ jobs:
           path: .previous-artifact
           if_no_artifact_found: fail
 
+      - name: Download previous OSM pipeline state
+        id: previous-osm-pipeline-state
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v21
+        with:
+          workflow: data-refresh.yml
+          branch: main
+          name: osm-pipeline-state-last-good
+          search_artifacts: true
+          path: .previous-osm-state
+          if_no_artifact_found: fail
+
       - name: Compute rust sidecar fingerprint
         id: rust-fingerprint
         run: bun run scripts/ci/rust-sidecar-fingerprint.ts
@@ -106,6 +118,7 @@ jobs:
           echo "### Download cache decisions" >> "$GITHUB_STEP_SUMMARY"
           bun run scripts/pipeline/nightly.ts -- --phase download
         env:
+          PIPELINE_DOWNLOAD_ATTEMPT: fresh
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
 
       # Phase 2 (conditional): restore minimal fallback inputs needed for a retry.
@@ -147,8 +160,14 @@ jobs:
           echo "- Action: restore scoped cache artifacts and retry download phase." | tee -a "$GITHUB_STEP_SUMMARY"
           bun run scripts/pipeline/nightly.ts -- --phase download
         env:
+          PIPELINE_DOWNLOAD_ATTEMPT: fallback
           FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
+
+      - name: Finalize OSM download policy
+        run: bun run scripts/ci/finalize-osm-download.ts
+        env:
+          PREVIOUS_OSM_PIPELINE_STATE_PATH: ${{ github.workspace }}/.previous-osm-state/osm-pipeline-state.json
 
       - name: Normalize runtime source metadata (single canonical state)
         run: bun run scripts/migrations/normalize-source-metadata.ts
@@ -287,6 +306,14 @@ jobs:
           name: rust-sidecar-metadata-last-good
           path: rust-sidecar-metadata.json
           if-no-files-found: warn
+          retention-days: 4
+
+      - name: Upload OSM pipeline state artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: osm-pipeline-state-last-good
+          path: data/osm-pipeline-state.json
+          if-no-files-found: error
           retention-days: 4
 
       - name: Final run diagnostics
