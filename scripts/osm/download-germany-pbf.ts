@@ -4,6 +4,9 @@ import { spawnSync } from 'node:child_process'
  * Download Geofabrik `germany-latest.osm.pbf` into `.cache/osm/` (gitignored).
  * Uses `curl` on PATH. Override URL with `--url` or `GERMANY_OSM_PBF_URL`.
  *
+ * Re-download is gated by the daily refresh window (`decideDailyRefresh`): at most one
+ * network fetch per calendar day in the configured timezone unless `--force`.
+ *
  * Set **`OSM_SKIP_PBF_DOWNLOAD=1`** (or `true`) to never hit the network here — use when the PBF
  * is already present and you want `scripts/pipeline/nightly.ts` / `download -- --yes --targets pbf` to leave it unchanged
  * (e.g. local runs across calendar-day refresh windows).

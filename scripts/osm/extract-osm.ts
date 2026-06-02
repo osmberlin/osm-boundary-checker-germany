@@ -418,7 +418,7 @@ function runOgr2ogr(
   if (r.status !== 0) process.exit(r.status ?? 1)
 }
 
-function readOsmPbfHeaderTimestamp(inputPbf: string, dryRun: boolean): string | null {
+function readOsmHeaderTimestampForExtract(inputPbf: string, dryRun: boolean): string | null {
   if (dryRun) {
     console.log(cliMuted(`[dry-run] osmium fileinfo ${inputPbf} -g header.option.timestamp`))
     return null
@@ -565,7 +565,7 @@ function runSharedExtract(
 
   const filteredPbf = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_FILTERED_BASENAME)
   const expressions = mergeTagsFilterExpressions(workspaceRoot, ordered)
-  const osmHeaderTimestamp = readOsmPbfHeaderTimestamp(inputPbf, dryRun)
+  const osmHeaderTimestamp = readOsmHeaderTimestampForExtract(inputPbf, dryRun)
 
   let pbfForOgr = inputPbf
 
