@@ -119,7 +119,6 @@ export function evaluateOsmDownloadPolicy(params: {
   attempts: OsmDownloadAttemptsFile | null
   now?: string
 }): OsmDownloadPolicyResult {
-  const now = params.now ?? safeNow()
   const previousRuns = params.previousState?.consecutiveFallbackRuns ?? 0
   const fresh = params.attempts?.fresh
   const fallback = params.attempts?.fallback
