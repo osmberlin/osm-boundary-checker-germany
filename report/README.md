@@ -14,6 +14,10 @@ Runtime root resolution:
 - If `DATA_ROOT` is set, report scripts read runtime files from there.
 - Otherwise scripts default to the repository root.
 
+### Committing generated report files
+
+Use the `chore(data): …` subjects from [`scripts/shared/dataCommitMessages.ts`](../scripts/shared/dataCommitMessages.ts) (for example `chore(data): update areas index`, `chore(data): sync discussions registry`) so `bun run changelog` skips them via `--ignore-commit-term "chore(data):"`.
+
 When report work includes running compare/pipeline steps, run Rust setup first in repo root:
 
 ```bash

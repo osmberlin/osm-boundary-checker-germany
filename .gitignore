@@ -7,7 +7,8 @@ dist/
 .env
 .env.local
 # Large downloaded artifacts at repo root only (not `report/public/data/` for static assets).
-/data/
+/data/*
+!/data/processing-log.jsonl
 !report/src/data/
 !report/src/data/**
 report/src/data/relationResolverIndex.gen.ts

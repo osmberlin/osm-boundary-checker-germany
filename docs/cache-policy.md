@@ -44,3 +44,14 @@ Each refresh run writes:
 Current no-dup setup keeps compare outputs in the deploy artifact only and omits `compare-outputs` publication by default.
 
 This keeps the policy reviewable and makes drift visible during run review.
+
+## Git-persisted runtime history
+
+After each successful refresh on `main`, CI commits durable history with message `chore(data): refresh runtime history`. All machine/data-only commits use the `chore(data):` prefix (see `scripts/shared/dataCommitMessages.ts`); `bun run changelog` ignores them with `--ignore-commit-term "chore(data):"`:
+
+- `datasets/*/snapshots.json` — chart metrics over time (per area).
+- `data/processing-log.jsonl` — `/status` pipeline timeline (JSONL, one event per line).
+
+Ephemeral under `/data/` (not committed): `processing-state.json`, `run-status.json`, `processing.lock`.
+
+The `report-runtime-last-good` deploy artifact still carries the latest `data/*` payloads for Pages; after the persist step, `processing-log.jsonl` in that artifact should match git.
