@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { datasetLicenseIdSchema } from './sourceMetadata.ts'
 
-/** Geofabrik full-country extract used for OSM boundary tooling. */
+/** Local cache filename (stable path regardless of dated upstream basename). */
 export const GERMANY_OSM_PBF_BASENAME = 'germany-latest.osm.pbf'
+/** Public Geofabrik `latest` symlink — may lag; downloads resolve via {@link geofabrikGermanyExtract.ts}. */
 export const GERMANY_OSM_PBF_URL = `https://download.geofabrik.de/europe/${GERMANY_OSM_PBF_BASENAME}`
 
 /** Under workspace root; already covered by repo `.gitignore` (`.cache/`). */

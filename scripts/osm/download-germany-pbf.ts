@@ -1,8 +1,9 @@
 #!/usr/bin/env bun
 import { spawnSync } from 'node:child_process'
 /**
- * Download Geofabrik `germany-latest.osm.pbf` into `.cache/osm/` (gitignored).
- * Uses `curl` on PATH. Override URL with `--url` or `GERMANY_OSM_PBF_URL`.
+ * Download Geofabrik Germany PBF into `.cache/osm/germany-latest.osm.pbf` (gitignored).
+ * Resolves the dated daily file from `germany-updates/state.txt` (public `germany-latest` can lag).
+ * Uses `curl -fL` on PATH. Override with `--url` or a custom `GERMANY_OSM_PBF_URL` (not the default latest URL).
  *
  * Re-download is gated by the daily refresh window (`decideDailyRefresh`): at most one
  * network fetch per calendar day in the configured timezone unless `--force`.
@@ -15,6 +16,7 @@ import { existsSync, mkdirSync, statSync, unlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { emitCacheDecision, mapDailyRefreshReasonToCacheState } from '../shared/cacheDecision.ts'
 import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
+import { resolveGeofabrikGermanyPbfUrl } from '../shared/geofabrikGermanyExtract.ts'
 import {
   GERMANY_OSM_CACHE_DIR,
   GERMANY_OSM_PBF_BASENAME,
@@ -40,7 +42,7 @@ function parseArgs(argv: string[]) {
   return { force, url }
 }
 
-function main() {
+async function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const { force, url: urlArg } = parseArgs(process.argv.slice(2))
@@ -76,8 +78,21 @@ function main() {
     console.log('OSM PBF download skipped (OSM_SKIP_PBF_DOWNLOAD set).')
     return
   }
-  const downloadUrl =
-    urlArg?.trim() || process.env.GERMANY_OSM_PBF_URL?.trim() || GERMANY_OSM_PBF_URL
+  const explicitUrl = urlArg?.trim() || process.env.GERMANY_OSM_PBF_URL?.trim() || ''
+  const useExplicitOnly = explicitUrl.length > 0 && explicitUrl !== GERMANY_OSM_PBF_URL
+  const resolved = await resolveGeofabrikGermanyPbfUrl({
+    explicitUrl: useExplicitOnly ? explicitUrl : null,
+  })
+  const downloadUrl = resolved.url
+  if (resolved.resolvedVia === 'dated_from_state') {
+    console.log(
+      `Geofabrik extract resolved from replication state: ${resolved.basename} (OSM data up to ${resolved.replicationTimestamp})`,
+    )
+  } else if (resolved.resolvedVia === 'latest_fallback') {
+    console.warn(
+      'Could not read Geofabrik germany-updates/state.txt; falling back to germany-latest.osm.pbf (symlink may be stale).',
+    )
+  }
 
   const timezone = resolveRefreshTimezone()
 
@@ -175,4 +190,7 @@ function main() {
   console.log('Done.')
 }
 
-main()
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})
