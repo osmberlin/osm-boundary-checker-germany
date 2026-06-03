@@ -4,6 +4,10 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-06
 
+### `f394bfe`
+
+OSM-Grenzdaten werden wieder mit dem aktuellen täglichen Geofabrik-Deutschland-Extract abgeglichen. Der öffentliche Download-Link `germany-latest` kann mehrere Tage hinterherhinken; die Pipeline lädt deshalb jetzt die jeweils aktuelle Tagesdatei (laut Geofabrik-Replikationsstand). Das angezeigte OSM-Datum in Berichten entspricht damit wieder dem erwarteten Datenstand (~Vortag, typisch Abends).
+
 ### `7363a7d`
 
 Die Seite `/status` auf der öffentlichen Instanz zeigt jetzt auch ältere Pipeline-Läufe in der Zeitleiste – nicht nur den jeweils letzten Nachtlauf. Vergangene Downloads, Extraktionen und Vergleiche bleiben damit nachvollziehbar.

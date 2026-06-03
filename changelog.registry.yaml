@@ -263,3 +263,7 @@ entries:
       - '0eaa285'
     descriptionMd: |
       Auf `/status` und in den Datensatz-Berichten werden OSM-Download-Ergebnisse deutlicher angezeigt – inklusive Hinweis, wenn ein Abruf fehlgeschlagen ist oder auf zwischengespeicherte Daten zurückgegriffen wurde.
+  - refs:
+      - 'f394bfe'
+    descriptionMd: |
+      OSM-Grenzdaten werden wieder mit dem aktuellen täglichen Geofabrik-Deutschland-Extract abgeglichen. Der öffentliche Download-Link `germany-latest` kann mehrere Tage hinterherhinken; die Pipeline lädt deshalb jetzt die jeweils aktuelle Tagesdatei (laut Geofabrik-Replikationsstand). Das angezeigte OSM-Datum in Berichten entspricht damit wieder dem erwarteten Datenstand (~Vortag, typisch Abends).
