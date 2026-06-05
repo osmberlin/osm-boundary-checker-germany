@@ -1,8 +1,44 @@
 import { cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { BKG_CACHE_DIR } from './bkg.ts'
-import { datasetFolderPath } from './datasetPaths.ts'
+import { join, resolve } from 'node:path'
+import { BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA } from './bkg.ts'
+import { discoverBkgAreaFolderNames } from './bkgAreas.ts'
+import { bkgDownloadMetadataSchema } from './bkgDownloadMetadata.ts'
+import {
+  OFFICIAL_SOURCE_RELATIVE_PATH,
+  SOURCE_METADATA_RELATIVE_PATH,
+  datasetFolderPath,
+} from './datasetPaths.ts'
 import { GERMANY_OSM_CACHE_DIR } from './germanyOsmPbf.ts'
+
+export function officialSourceNeedsFallback(runtimeRoot: string, area: string): boolean {
+  const areaRoot = datasetFolderPath(runtimeRoot, area)
+  const officialGeometry = join(areaRoot, OFFICIAL_SOURCE_RELATIVE_PATH)
+  const sourceMetadata = join(areaRoot, SOURCE_METADATA_RELATIVE_PATH)
+  return !existsSync(officialGeometry) || !existsSync(sourceMetadata)
+}
+
+function bkgCacheReady(runtimeRoot: string): boolean {
+  const metaPath = join(runtimeRoot, BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA)
+  if (!existsSync(metaPath)) return false
+  try {
+    const meta = bkgDownloadMetadataSchema.parse(JSON.parse(readFileSync(metaPath, 'utf-8')))
+    return existsSync(resolve(runtimeRoot, meta.gpkgRelativePath))
+  } catch {
+    return false
+  }
+}
+
+export function allBkgOfficialSourcesPresent(workspaceRoot: string, runtimeRoot: string): boolean {
+  const areas = discoverBkgAreaFolderNames(workspaceRoot)
+  if (areas.length === 0) return false
+  return areas.every((area) => !officialSourceNeedsFallback(runtimeRoot, area))
+}
+
+/** Skip BKG extract when fallback already restored compare-ready official sources. */
+export function shouldSkipBkgExtract(workspaceRoot: string, runtimeRoot: string): boolean {
+  if (bkgCacheReady(runtimeRoot)) return false
+  return allBkgOfficialSourcesPresent(workspaceRoot, runtimeRoot)
+}
 
 function copyTreeIfExists(src: string, dest: string): boolean {
   if (!existsSync(src)) return false

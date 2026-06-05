@@ -12,18 +12,16 @@ import {
 } from 'node:fs'
 import { join } from 'node:path'
 import { areaHasCompareConfig } from '../shared/areaConfig.ts'
+import { discoverBkgAreaFolderNames } from '../shared/bkgAreas.ts'
+import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import {
-  DATASETS_DIRECTORY,
-  OFFICIAL_SOURCE_RELATIVE_PATH,
-  SOURCE_METADATA_RELATIVE_PATH,
-  datasetFolderPath,
-} from '../shared/datasetPaths.ts'
-import {
+  officialSourceNeedsFallback,
   readCompareGeneratedAt,
   resolveFallbackRuntimeRoot,
   restoreCompareOutputFromFallback,
   restoreOfficialSourceFromFallback,
   restoreOsmCacheFromFallback,
+  shouldSkipBkgExtract,
 } from '../shared/lazyFallback.ts'
 import {
   resolveOsmDownloadOutcome,
@@ -143,18 +141,6 @@ function discoverAreas(workspaceRoot: string): string[] {
     if (areaHasCompareConfig(workspaceRoot, entry.name)) out.push(entry.name)
   }
   return out.sort()
-}
-
-/**
- * Only restore official fallback when essential source inputs are missing for an area.
- * This prevents stale fallback metadata from overwriting fresh metadata for areas that
- * already downloaded successfully in the current run.
- */
-function officialSourceNeedsFallback(runtimeRoot: string, area: string): boolean {
-  const areaRoot = datasetFolderPath(runtimeRoot, area)
-  const officialGeometry = join(areaRoot, OFFICIAL_SOURCE_RELATIVE_PATH)
-  const sourceMetadata = join(areaRoot, SOURCE_METADATA_RELATIVE_PATH)
-  return !existsSync(officialGeometry) || !existsSync(sourceMetadata)
 }
 
 async function runCommand(
@@ -352,7 +338,8 @@ async function main() {
         let usedCache = false
         let reason: string | undefined
         const shouldSkipFromFallback =
-          (phaseStep.step === 'extract:bkg' && skipExtractBkg) ||
+          (phaseStep.step === 'extract:bkg' &&
+            (skipExtractBkg || shouldSkipBkgExtract(workspaceRoot, runtimeRoot))) ||
           (phaseStep.step === 'extract:osm' && skipExtractOsmAdmin) ||
           (phaseStep.step === 'extract:osm:plz' && skipExtractOsmPlz) ||
           (phaseStep.step === 'extract:osm:admin_candidates' && skipExtractOsmAdminCandidates) ||
@@ -448,7 +435,23 @@ async function main() {
                 }
                 break
               }
-              case 'extract:bkg':
+              case 'extract:bkg': {
+                if (fallbackRuntimeRoot) {
+                  for (const bkgArea of discoverBkgAreaFolderNames(workspaceRoot)) {
+                    if (!officialSourceNeedsFallback(runtimeRoot, bkgArea)) continue
+                    restoreOfficialSourceFromFallback(runtimeRoot, fallbackRuntimeRoot, bkgArea)
+                  }
+                }
+                if (shouldSkipBkgExtract(workspaceRoot, runtimeRoot)) {
+                  stepStatus = 'skipped'
+                  usedCache = true
+                  reason = 'fallback_official_sources_already_present'
+                  finalExitCode = 0
+                } else {
+                  stepStatus = 'fail'
+                }
+                break
+              }
               case 'extract:osm':
               case 'extract:osm:plz':
               case 'extract:osm:admin_candidates':
