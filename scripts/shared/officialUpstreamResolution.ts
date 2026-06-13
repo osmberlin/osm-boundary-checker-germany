@@ -95,32 +95,76 @@ function toCollectionDocUrlFromItems(itemsUrl: string): string {
   return `${u.origin}${basePath}${COLLECTION_MARKER}${collectionId}`
 }
 
-async function fetchText(url: string, fetchImpl: typeof fetch, accept: string): Promise<string> {
-  const response = await fetchImpl(url, {
-    headers: { Accept: accept },
-    redirect: 'follow',
-  })
-  if (!response.ok) {
-    const body = (await response.text()).trim().slice(0, 220)
-    throw new Error(
-      `HTTP ${response.status} ${response.statusText} for ${url}${body ? ` :: ${body}` : ''}`,
-    )
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function isTransientFetchError(error: unknown): boolean {
+  const message = String(error).toLowerCase()
+  return (
+    message.includes('unable to connect') ||
+    message.includes('connectionrefused') ||
+    message.includes('connection reset') ||
+    message.includes('timed out') ||
+    message.includes('econnrefused') ||
+    message.includes('econnreset') ||
+    message.includes('network')
+  )
+}
+
+async function withTransientFetchRetries<T>(
+  label: string,
+  fn: () => Promise<T>,
+  options?: { attempts?: number; delayMs?: number },
+): Promise<T> {
+  const attempts = options?.attempts ?? 3
+  const delayMs = options?.delayMs ?? 2000
+  let lastError: unknown
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error
+      if (!isTransientFetchError(error) || attempt === attempts) throw error
+      console.warn(
+        `[official-upstream] ${label} transient fetch error (attempt ${attempt}/${attempts}): ${String(error)}`,
+      )
+      await sleep(delayMs * attempt)
+    }
   }
-  return await response.text()
+  throw lastError
+}
+
+async function fetchText(url: string, fetchImpl: typeof fetch, accept: string): Promise<string> {
+  return await withTransientFetchRetries(`GET ${url}`, async () => {
+    const response = await fetchImpl(url, {
+      headers: { Accept: accept },
+      redirect: 'follow',
+    })
+    if (!response.ok) {
+      const body = (await response.text()).trim().slice(0, 220)
+      throw new Error(
+        `HTTP ${response.status} ${response.statusText} for ${url}${body ? ` :: ${body}` : ''}`,
+      )
+    }
+    return await response.text()
+  })
 }
 
 async function fetchJson(url: string, fetchImpl: typeof fetch): Promise<unknown> {
-  const response = await fetchImpl(url, {
-    headers: { Accept: 'application/json' },
-    redirect: 'follow',
+  return await withTransientFetchRetries(`GET ${url}`, async () => {
+    const response = await fetchImpl(url, {
+      headers: { Accept: 'application/json' },
+      redirect: 'follow',
+    })
+    if (!response.ok) {
+      const body = (await response.text()).trim().slice(0, 220)
+      throw new Error(
+        `HTTP ${response.status} ${response.statusText} for ${url}${body ? ` :: ${body}` : ''}`,
+      )
+    }
+    return await response.json()
   })
-  if (!response.ok) {
-    const body = (await response.text()).trim().slice(0, 220)
-    throw new Error(
-      `HTTP ${response.status} ${response.statusText} for ${url}${body ? ` :: ${body}` : ''}`,
-    )
-  }
-  return await response.json()
 }
 
 function extractInspireMetadataUrl(capabilitiesXml: string): string | null {

@@ -8,7 +8,13 @@ import {
   SOURCE_METADATA_RELATIVE_PATH,
   datasetFolderPath,
 } from './datasetPaths.ts'
-import { GERMANY_OSM_CACHE_DIR } from './germanyOsmPbf.ts'
+import {
+  GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_CACHE_DIR,
+  GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_SHARED_FGB_BASENAME,
+  GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
+} from './germanyOsmPbf.ts'
 
 export function officialSourceNeedsFallback(runtimeRoot: string, area: string): boolean {
   const areaRoot = datasetFolderPath(runtimeRoot, area)
@@ -78,11 +84,34 @@ export function restoreBkgCacheFromFallback(
   return copyTreeIfExists(source, join(runtimeRoot, BKG_CACHE_DIR))
 }
 
+export function osmSharedExtractOutputReady(
+  runtimeRoot: string,
+  kind: 'admin' | 'plz' | 'admin_candidates' | 'plz_candidates',
+): boolean {
+  const osmCacheDir = join(runtimeRoot, GERMANY_OSM_CACHE_DIR)
+  const basenameByKind = {
+    admin: GERMANY_OSM_SHARED_FGB_BASENAME,
+    plz: GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
+    admin_candidates: GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
+    plz_candidates: GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+  } as const
+  return existsSync(join(osmCacheDir, basenameByKind[kind]))
+}
+
+function osmFallbackCacheHasCompareReadyInputs(runtimeRoot: string): boolean {
+  return (
+    osmSharedExtractOutputReady(runtimeRoot, 'admin') ||
+    osmSharedExtractOutputReady(runtimeRoot, 'plz')
+  )
+}
+
 export function restoreOsmCacheFromFallback(
   runtimeRoot: string,
   fallbackRuntimeRoot: string,
 ): boolean {
   const source = firstExistingPath([
+    // Artifact zip root when source-cache-osm is downloaded to FALLBACK_RUNTIME_ROOT.
+    join(fallbackRuntimeRoot, GERMANY_OSM_CACHE_DIR),
     // Current compare-ready scoped cache layout.
     join(fallbackRuntimeRoot, 'scopes', 'source-cache-osm', GERMANY_OSM_CACHE_DIR),
     join(fallbackRuntimeRoot, 'source-cache-osm', GERMANY_OSM_CACHE_DIR),
@@ -94,11 +123,10 @@ export function restoreOsmCacheFromFallback(
       GERMANY_OSM_CACHE_DIR,
     ),
     join(fallbackRuntimeRoot, '.artifact-runtime', 'source-cache-osm', GERMANY_OSM_CACHE_DIR),
-    // Legacy full runtime fallback.
-    join(fallbackRuntimeRoot, GERMANY_OSM_CACHE_DIR),
   ])
   if (!source) return false
-  return copyTreeIfExists(source, join(runtimeRoot, GERMANY_OSM_CACHE_DIR))
+  if (!copyTreeIfExists(source, join(runtimeRoot, GERMANY_OSM_CACHE_DIR))) return false
+  return osmFallbackCacheHasCompareReadyInputs(runtimeRoot)
 }
 
 export function restoreOfficialSourceFromFallback(
@@ -107,6 +135,8 @@ export function restoreOfficialSourceFromFallback(
   area: string,
 ): boolean {
   const source = firstExistingPath([
+    // Artifact zip root when source-cache-official is downloaded to FALLBACK_RUNTIME_ROOT.
+    join(fallbackRuntimeRoot, 'datasets', area, 'source'),
     // Current compare-ready scoped cache layout.
     join(fallbackRuntimeRoot, 'scopes', 'source-cache-official', 'datasets', area, 'source'),
     join(fallbackRuntimeRoot, 'source-cache-official', 'datasets', area, 'source'),
@@ -131,7 +161,9 @@ export function restoreOfficialSourceFromFallback(
     join(datasetFolderPath(fallbackRuntimeRoot, area), 'source'),
   ])
   if (!source) return false
-  return copyTreeIfExists(source, join(datasetFolderPath(runtimeRoot, area), 'source'))
+  const dest = join(datasetFolderPath(runtimeRoot, area), 'source')
+  if (!copyTreeIfExists(source, dest)) return false
+  return existsSync(join(dest, 'official.fgb'))
 }
 
 export function restoreCompareOutputFromFallback(

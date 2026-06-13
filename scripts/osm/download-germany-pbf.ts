@@ -154,18 +154,38 @@ async function main() {
 
   console.log(`Downloading:\n  ${downloadUrl}\n→ ${dest}`)
 
-  const r = spawnSync(
-    'curl',
-    ['-fL', '--no-progress-meter', '--retry', '3', '--retry-delay', '2', '-o', dest, downloadUrl],
-    { stdio: 'inherit' },
-  )
-
-  if (r.error) {
-    console.error(r.error)
-    process.exit(1)
+  const curlDownload = (url: string): number => {
+    const r = spawnSync(
+      'curl',
+      ['-fL', '--no-progress-meter', '--retry', '3', '--retry-delay', '2', '-o', dest, url],
+      { stdio: 'inherit' },
+    )
+    if (r.error) {
+      console.error(r.error)
+      return 1
+    }
+    return r.status ?? 1
   }
-  if (r.status !== 0) {
-    process.exit(r.status ?? 1)
+
+  let status = curlDownload(downloadUrl)
+  if (
+    status === 22 &&
+    resolved.resolvedVia === 'dated_from_state' &&
+    downloadUrl !== GERMANY_OSM_PBF_URL
+  ) {
+    console.warn(
+      `Dated Geofabrik extract not published yet (${resolved.basename}); retrying ${GERMANY_OSM_PBF_BASENAME}.`,
+    )
+    try {
+      unlinkSync(dest)
+    } catch {
+      // ignore partial download cleanup
+    }
+    status = curlDownload(GERMANY_OSM_PBF_URL)
+  }
+
+  if (status !== 0) {
+    process.exit(status)
   }
 
   const postIntegrity = checkOsmPbfIntegrity(dest)

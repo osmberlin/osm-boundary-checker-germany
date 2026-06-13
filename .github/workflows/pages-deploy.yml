@@ -36,7 +36,7 @@ jobs:
     env:
       DATA_ROOT: ${{ github.workspace }}/.artifact-restore
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -49,7 +49,7 @@ jobs:
 
       - name: Download refresh artifact from triggering run
         if: github.event_name == 'workflow_run'
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v21
         with:
           workflow: data-refresh.yml
           name: ${{ env.REPORT_RUNTIME_ARTIFACT_NAME }}
@@ -60,7 +60,7 @@ jobs:
 
       - name: Download latest refresh artifact
         if: github.event_name != 'workflow_run'
-        uses: dawidd6/action-download-artifact@v11
+        uses: dawidd6/action-download-artifact@v21
         with:
           workflow: data-refresh.yml
           branch: main
