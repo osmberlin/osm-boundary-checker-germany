@@ -2,7 +2,17 @@ import { describe, expect, test } from 'bun:test'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { allBkgOfficialSourcesPresent, shouldSkipBkgExtract } from './lazyFallback.ts'
+import {
+  allBkgOfficialSourcesPresent,
+  osmSharedExtractOutputReady,
+  restoreOfficialSourceFromFallback,
+  restoreOsmCacheFromFallback,
+  shouldSkipBkgExtract,
+} from './lazyFallback.ts'
+import {
+  GERMANY_OSM_CACHE_DIR,
+  GERMANY_OSM_SHARED_FGB_BASENAME,
+} from './germanyOsmPbf.ts'
 import { SOURCE_METADATA_FILE } from './sourceMetadata.ts'
 
 function makeTempRoot(prefix: string): string {
@@ -69,6 +79,46 @@ describe('shouldSkipBkgExtract', () => {
     } finally {
       rmSync(workspaceRoot, { recursive: true, force: true })
       rmSync(runtimeRoot, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('restoreOfficialSourceFromFallback', () => {
+  test('restores from artifact zip root layout and requires official.fgb', () => {
+    const runtimeRoot = makeTempRoot('official-restore-rt')
+    const fallbackRoot = makeTempRoot('official-restore-fb')
+    try {
+      const area = 'hamburg-bezirke'
+      const sourceDir = join(fallbackRoot, 'datasets', area, 'source')
+      mkdirSync(sourceDir, { recursive: true })
+      writeFileSync(join(sourceDir, 'official.fgb'), 'fake')
+      writeFileSync(join(sourceDir, SOURCE_METADATA_FILE), '{}')
+
+      expect(restoreOfficialSourceFromFallback(runtimeRoot, fallbackRoot, area)).toBe(true)
+      expect(
+        restoreOfficialSourceFromFallback(runtimeRoot, fallbackRoot, 'missing-area'),
+      ).toBe(false)
+    } finally {
+      rmSync(runtimeRoot, { recursive: true, force: true })
+      rmSync(fallbackRoot, { recursive: true, force: true })
+    }
+  })
+})
+
+describe('restoreOsmCacheFromFallback', () => {
+  test('restores compare-ready FGB inputs from artifact zip root layout', () => {
+    const runtimeRoot = makeTempRoot('osm-restore-rt')
+    const fallbackRoot = makeTempRoot('osm-restore-fb')
+    try {
+      const sourceDir = join(fallbackRoot, GERMANY_OSM_CACHE_DIR)
+      mkdirSync(sourceDir, { recursive: true })
+      writeFileSync(join(sourceDir, GERMANY_OSM_SHARED_FGB_BASENAME), 'fake')
+
+      expect(restoreOsmCacheFromFallback(runtimeRoot, fallbackRoot)).toBe(true)
+      expect(osmSharedExtractOutputReady(runtimeRoot, 'admin')).toBe(true)
+    } finally {
+      rmSync(runtimeRoot, { recursive: true, force: true })
+      rmSync(fallbackRoot, { recursive: true, force: true })
     }
   })
 })

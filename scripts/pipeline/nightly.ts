@@ -16,6 +16,7 @@ import { discoverBkgAreaFolderNames } from '../shared/bkgAreas.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import {
   officialSourceNeedsFallback,
+  osmSharedExtractOutputReady,
   readCompareGeneratedAt,
   resolveFallbackRuntimeRoot,
   restoreCompareOutputFromFallback,
@@ -248,6 +249,21 @@ function parseArgs(argv: string[]): { phase: PipelinePhase; compareConcurrency: 
   return { phase, compareConcurrency: compareConcurrency ?? DEFAULT_COMPARE_CONCURRENCY }
 }
 
+function osmExtractKindForStep(step: PipelineStepName): Parameters<typeof osmSharedExtractOutputReady>[1] | null {
+  switch (step) {
+    case 'extract:osm':
+      return 'admin'
+    case 'extract:osm:plz':
+      return 'plz'
+    case 'extract:osm:admin_candidates':
+      return 'admin_candidates'
+    case 'extract:osm:plz_candidates':
+      return 'plz_candidates'
+    default:
+      return null
+  }
+}
+
 async function main() {
   const { phase, compareConcurrency } = parseArgs(process.argv.slice(2))
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
@@ -337,18 +353,23 @@ async function main() {
         let stepStatus: StepStatus = 'ok'
         let usedCache = false
         let reason: string | undefined
+        const osmExtractKind = osmExtractKindForStep(phaseStep.step)
         const shouldSkipFromFallback =
           (phaseStep.step === 'extract:bkg' &&
             (skipExtractBkg || shouldSkipBkgExtract(workspaceRoot, runtimeRoot))) ||
           (phaseStep.step === 'extract:osm' && skipExtractOsmAdmin) ||
           (phaseStep.step === 'extract:osm:plz' && skipExtractOsmPlz) ||
           (phaseStep.step === 'extract:osm:admin_candidates' && skipExtractOsmAdminCandidates) ||
-          (phaseStep.step === 'extract:osm:plz_candidates' && skipExtractOsmPlzCandidates)
+          (phaseStep.step === 'extract:osm:plz_candidates' && skipExtractOsmPlzCandidates) ||
+          (osmExtractKind != null && osmSharedExtractOutputReady(runtimeRoot, osmExtractKind))
         let commandExitCode = 0
         if (shouldSkipFromFallback) {
           stepStatus = 'skipped'
           usedCache = true
-          reason = 'fallback_inputs_already_restored'
+          reason =
+            osmExtractKind != null && osmSharedExtractOutputReady(runtimeRoot, osmExtractKind)
+              ? 'compare_ready_osm_fgb_present'
+              : 'fallback_inputs_already_restored'
         } else {
           commandExitCode = await runCommand('bun', phaseStep.args, workspaceRoot, phaseStep.step)
         }
