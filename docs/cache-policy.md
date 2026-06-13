@@ -25,6 +25,8 @@ Artifacts are split by usage so recovery can restore only the failed part:
 - `datasets/*/source/metadata.json`
 - `.cache/osm/germany-admin-boundaries-rs.fgb`
 - `.cache/osm/germany-postal-code-boundaries.fgb`
+- `.cache/osm/germany-admin-candidates.fgb`
+- `.cache/osm/germany-postal-code-candidates.fgb`
 - `datasets/*/output/**` and `datasets/*/snapshots.json` only in `report-runtime-last-good` (and optionally `compare-outputs` if that tier is enabled)
 
 ### Drop
