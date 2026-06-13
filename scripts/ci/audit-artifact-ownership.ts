@@ -1,8 +1,8 @@
 import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import {
-  GERMANY_OSM_SHARED_FGB_BASENAME,
-  GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
+  COMPARE_READY_OSM_FGB_BASENAMES,
+  GERMANY_OSM_CACHE_DIR,
 } from '../shared/germanyOsmPbf.ts'
 import { SOURCE_METADATA_FILE } from '../shared/sourceMetadata.ts'
 
@@ -66,10 +66,9 @@ function assertReportRuntimeContract(paths: string[]): void {
 }
 
 function assertOsmScopeContract(paths: string[]): void {
-  const allowed = new Set([
-    `.cache/osm/${GERMANY_OSM_SHARED_FGB_BASENAME}`,
-    `.cache/osm/${GERMANY_OSM_SHARED_PLZ_FGB_BASENAME}`,
-  ])
+  const allowed = new Set(
+    COMPARE_READY_OSM_FGB_BASENAMES.map((basename) => `${GERMANY_OSM_CACHE_DIR}/${basename}`),
+  )
   const invalid = paths.filter((entry) => !allowed.has(entry))
   if (invalid.length > 0) {
     throw new Error(

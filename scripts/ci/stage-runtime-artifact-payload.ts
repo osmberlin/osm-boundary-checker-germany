@@ -10,8 +10,8 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import {
-  GERMANY_OSM_SHARED_FGB_BASENAME,
-  GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
+  COMPARE_READY_OSM_FGB_BASENAMES,
+  GERMANY_OSM_CACHE_DIR,
 } from '../shared/germanyOsmPbf.ts'
 import { SOURCE_METADATA_FILE } from '../shared/sourceMetadata.ts'
 
@@ -140,15 +140,11 @@ function buildSummaryMarkdown(scopes: Record<string, ScopeInventory>): string {
   return `${lines.join('\n')}\n`
 }
 
-const compareReadyOsmFiles = [
-  GERMANY_OSM_SHARED_FGB_BASENAME,
-  GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
-] as const
-const osmCacheDir = path.resolve('.cache/osm')
-for (const fileName of compareReadyOsmFiles) {
+const osmCacheDir = path.resolve(GERMANY_OSM_CACHE_DIR)
+for (const fileName of COMPARE_READY_OSM_FGB_BASENAMES) {
   copyFileIfExists(
     path.join(osmCacheDir, fileName),
-    path.join(scopeSourceOsm, '.cache', 'osm', fileName),
+    path.join(scopeSourceOsm, GERMANY_OSM_CACHE_DIR, fileName),
   )
 }
 
@@ -212,8 +208,9 @@ writeFileSync(
         keep: [
           'datasets/*/source/official.fgb',
           'datasets/*/source/metadata.json',
-          '.cache/osm/germany-admin-boundaries-rs.fgb',
-          '.cache/osm/germany-postal-code-boundaries.fgb',
+          ...COMPARE_READY_OSM_FGB_BASENAMES.map(
+            (basename) => `${GERMANY_OSM_CACHE_DIR}/${basename}`,
+          ),
         ],
         drop: [
           '.cache/osm/*.pbf',

@@ -10,6 +10,7 @@ import {
   shouldSkipBkgExtract,
 } from './lazyFallback.ts'
 import {
+  COMPARE_READY_OSM_FGB_BASENAMES,
   GERMANY_OSM_CACHE_DIR,
   GERMANY_OSM_SHARED_FGB_BASENAME,
 } from './germanyOsmPbf.ts'
@@ -112,10 +113,14 @@ describe('restoreOsmCacheFromFallback', () => {
     try {
       const sourceDir = join(fallbackRoot, GERMANY_OSM_CACHE_DIR)
       mkdirSync(sourceDir, { recursive: true })
-      writeFileSync(join(sourceDir, GERMANY_OSM_SHARED_FGB_BASENAME), 'fake')
+      for (const fileName of COMPARE_READY_OSM_FGB_BASENAMES) {
+        writeFileSync(join(sourceDir, fileName), `fake:${fileName}`)
+      }
 
       expect(restoreOsmCacheFromFallback(runtimeRoot, fallbackRoot)).toBe(true)
-      expect(osmSharedExtractOutputReady(runtimeRoot, 'admin')).toBe(true)
+      for (const kind of ['admin', 'plz', 'admin_candidates', 'plz_candidates'] as const) {
+        expect(osmSharedExtractOutputReady(runtimeRoot, kind)).toBe(true)
+      }
     } finally {
       rmSync(runtimeRoot, { recursive: true, force: true })
       rmSync(fallbackRoot, { recursive: true, force: true })

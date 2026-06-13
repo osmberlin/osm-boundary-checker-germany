@@ -30,6 +30,14 @@ export const GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME = 'germany-admin-candidat
 /** Candidate POINTS-only FGB for `boundary=postal_code` multipolygons (any `postal_code`). */
 export const GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME = 'germany-postal-code-candidates.fgb'
 
+/** Shared OSM FlatGeobufs staged in `source-cache-osm` fallback artifacts (no PBF). */
+export const COMPARE_READY_OSM_FGB_BASENAMES = [
+  GERMANY_OSM_SHARED_FGB_BASENAME,
+  GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
+  GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+] as const
+
 export const DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS = [
   'r/boundary=administrative',
   'w/boundary=administrative',
