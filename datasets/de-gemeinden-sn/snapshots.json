@@ -309,6 +309,17 @@
         "reviews": 31,
         "issues": 18
       }
+    },
+    {
+      "id": "2026-06-21",
+      "summary": {
+        "totalRows": 418,
+        "meanIou": 0.99508707720312,
+        "matched": 418,
+        "unmatchedOsm": 0,
+        "reviews": 30,
+        "issues": 18
+      }
     }
   ]
 }
