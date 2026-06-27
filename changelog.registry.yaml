@@ -267,3 +267,60 @@ entries:
       - 'f394bfe'
     descriptionMd: |
       OSM-Grenzdaten werden wieder mit dem aktuellen täglichen Geofabrik-Deutschland-Extract abgeglichen. Der öffentliche Download-Link `germany-latest` kann mehrere Tage hinterherhinken; die Pipeline lädt deshalb jetzt die jeweils aktuelle Tagesdatei (laut Geofabrik-Replikationsstand). Das angezeigte OSM-Datum in Berichten entspricht damit wieder dem erwarteten Datenstand (~Vortag, typisch Abends).
+  - refs:
+      - '4000712'
+    descriptionMd: |
+      Update changelog
+      Co-authored-by: Cursor <cursoragent@cursor.com>
+  - refs:
+      - '701b40c'
+    hide: true
+  - refs:
+      - '0392d7e'
+    hide: true
+  - refs:
+      - 'b36e1f5'
+    hide: true
+  - refs:
+      - 'cc2fd9c'
+    hide: true
+  - refs:
+      - '748423a'
+    hide: true
+  - refs:
+      - 'fe26f32'
+    descriptionMd: |
+      fix(ci): harden refresh pipeline against upstream outages
+      - Retry Geofabrik dated extract downloads with germany-latest on HTTP 404
+  - refs:
+      - '202eeed'
+    descriptionMd: |
+      feat(ci): include OSM candidate FGBs in fallback artifact scope
+      Stage germany-admin-candidates.fgb and germany-postal-code-candidates.fgb
+  - refs:
+      - '27d32af'
+    hide: true
+  - refs:
+      - '7c3e2c5'
+    hide: true
+  - refs:
+      - 'f93bdc0'
+    hide: true
+  - refs:
+      - '72d7a8b'
+    hide: true
+  - refs:
+      - '2cafe46'
+    hide: true
+  - refs:
+      - 'b43874e'
+    hide: true
+  - refs:
+      - '6c3a690'
+    hide: true
+  - refs:
+      - 'c0e72e5'
+    hide: true
+  - refs:
+      - 'fe0031b'
+    hide: true
