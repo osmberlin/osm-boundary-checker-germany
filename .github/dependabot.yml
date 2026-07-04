@@ -147,6 +147,9 @@ updates:
     cooldown:
       default-days: 5
     open-pull-requests-limit: 1
+    # dtolnay/rust-toolchain uses Rust version tags (e.g. 1.86.0), not action semver — ignore entirely.
+    ignore:
+      - dependency-name: 'dtolnay/rust-toolchain'
     groups:
       actions-minor-patch:
         update-types:
