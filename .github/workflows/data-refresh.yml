@@ -34,8 +34,11 @@ jobs:
         with:
           bun-version: latest
 
+      # Action ref is @master; Rust version comes from `with.toolchain` (tags are compiler versions, not action semver).
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@1.100.0
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
