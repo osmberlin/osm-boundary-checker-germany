@@ -1,0 +1,3 @@
+{
+  "install": "curl -fsSL https://bun.sh/install | bash && export PATH=\"$HOME/.bun/bin:$PATH\" && sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y osmium-tool gdal-bin tippecanoe unzip && HUSKY=0 bun install --frozen-lockfile"
+}
