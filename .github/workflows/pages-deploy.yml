@@ -80,7 +80,7 @@ jobs:
       - name: Build static report shell
         run: bun run --filter report build
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: report/dist
 
