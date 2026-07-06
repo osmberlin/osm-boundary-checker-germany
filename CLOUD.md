@@ -2,38 +2,61 @@
 
 This repository uses [Cursor Cloud Agents](https://cursor.com/docs/cloud-agent). The machine setup is defined in [`.cursor/environment.json`](.cursor/environment.json).
 
-## What the install script does
+## Install tiers
 
-On each agent boot, Cursor runs the `install` command from `.cursor/environment.json`:
+Setup is split so lightweight tasks (Dependabot PR reviews, lint, typecheck) boot fast without GDAL and other pipeline binaries.
+
+### Always (on agent boot)
+
+Cursor runs the `install` command from `.cursor/environment.json`:
 
 1. Installs [Bun](https://bun.sh) to `~/.bun/bin` (also appended to the shell `PATH` via `~/.bashrc`).
-2. Installs pipeline system tools: `osmium-tool`, `gdal-bin` (`ogr2ogr`), `tippecanoe`, and `unzip`.
-3. Runs `HUSKY=0 bun install --frozen-lockfile` to install JavaScript/TypeScript dependencies without Husky git hooks.
+2. Runs `HUSKY=0 bun install --frozen-lockfile` to install JavaScript/TypeScript dependencies without Husky git hooks.
 
-The default cloud base image already includes a Rust toolchain (`cargo`). Build the geom sidecar when compare or extract work needs it (see below).
+Enough for:
+
+- `bun run check`, `bun run typecheck`, `bun run test`
+- Report app work under `report/`
+- Reviewing Dependabot dependency bumps
+
+### On demand (pipeline / backend processing)
+
+When working on download, extract, compare, or nightly refresh, install system tools and build the Rust sidecar:
+
+```bash
+.cursor/cloud/install-processing-tools.sh
+cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml
+```
+
+`install-processing-tools.sh` installs `osmium-tool`, `gdal-bin` (`ogr2ogr`), `tippecanoe`, and `unzip` — the same packages as CI ([`.github/workflows/data-refresh.yml`](.github/workflows/data-refresh.yml)). The default cloud base image already includes a Rust toolchain (`cargo`).
 
 ## Verify the environment
 
-After setup, confirm the repo is ready:
+**Dependency / app work** (after boot):
 
 ```bash
 export PATH="$HOME/.bun/bin:$PATH"
 bun --version
 bun run typecheck
-cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml
 ```
 
-`bun run typecheck` is a fast check that Bun, dependencies, and TypeScript are wired correctly. The Rust build is required before `bun run compare` or other pipeline steps that call the geom sidecar.
+**Pipeline work** (after processing tools + Rust build):
+
+```bash
+.cursor/cloud/install-processing-tools.sh
+cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml
+bun run test
+```
 
 ## Common agent tasks
 
-| Goal | Command |
-| --- | --- |
-| Unit tests | `bun run test` |
-| Lint + format + typecheck | `bun run check` |
-| Build Rust geom sidecar | `cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml` |
-| Quick pipeline test (skip BKG) | `bun run extract:official -- --yes && bun run extract:osm -- --yes && bun run compare -- --yes --all` |
-| Full data refresh | `bun run scripts/pipeline/nightly.ts -- --phase all` |
+| Goal | Prerequisites | Command |
+| --- | --- | --- |
+| Lint + format + typecheck | Boot only | `bun run check` |
+| Unit tests | Boot only | `bun run test` |
+| Build Rust geom sidecar | Processing tools | `cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml` |
+| Quick pipeline test (skip BKG) | Processing tools + sidecar | `bun run extract:official -- --yes && bun run extract:osm -- --yes && bun run compare -- --yes --all` |
+| Full data refresh | Processing tools + sidecar | `bun run scripts/pipeline/nightly.ts -- --phase all` |
 
 For more runbooks and troubleshooting, see [`.cursor/skills/boundary-test-runs/SKILL.md`](.cursor/skills/boundary-test-runs/SKILL.md).
 
@@ -47,10 +70,11 @@ For more runbooks and troubleshooting, see [`.cursor/skills/boundary-test-runs/S
 
 ## Local vs cloud parity
 
-Cloud setup mirrors [README.md](README.md) prerequisites:
+[README.md](README.md) lists all local prerequisites. In cloud:
 
-- Bun
-- Rust toolchain (on base image)
-- `osmium-tool`, GDAL (`ogr2ogr`), `tippecanoe`, `unzip`
-
-The install script covers everything except the Rust sidecar build, which is compiled on demand because it changes with source edits and is cached by `cargo` between runs.
+| Tool | When |
+| --- | --- |
+| Bun + JS deps | Every boot (`environment.json`) |
+| Rust toolchain | On base image |
+| `osmium-tool`, GDAL, `tippecanoe`, `unzip` | On demand (`.cursor/cloud/install-processing-tools.sh`) |
+| Rust geom sidecar binary | On demand (`cargo build --release`) |

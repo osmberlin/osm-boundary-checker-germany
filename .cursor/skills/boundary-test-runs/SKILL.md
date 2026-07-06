@@ -5,11 +5,12 @@ description: Run and troubleshoot OSM boundary checker test and refresh pipeline
 
 # Boundary Test Runs
 
-## Run This First (Rust setup)
+## Run This First (processing setup)
 
-Compare runs require the Rust sidecar binary.
+Compare runs require pipeline system tools and the Rust sidecar binary. In Cursor Cloud, install tools on demand (not part of the default boot `install` script):
 
 ```bash
+.cursor/cloud/install-processing-tools.sh
 cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml
 ```
 
