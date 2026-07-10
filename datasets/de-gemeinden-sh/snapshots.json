@@ -408,6 +408,17 @@
         "reviews": 187,
         "issues": 642
       }
+    },
+    {
+      "id": "2026-07-10",
+      "summary": {
+        "totalRows": 1106,
+        "meanIou": 0.9683033445656275,
+        "matched": 1103,
+        "unmatchedOsm": 1,
+        "reviews": 187,
+        "issues": 642
+      }
     }
   ]
 }
