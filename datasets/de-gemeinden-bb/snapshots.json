@@ -463,6 +463,17 @@
         "reviews": 41,
         "issues": 24
       }
+    },
+    {
+      "id": "2026-07-18",
+      "summary": {
+        "totalRows": 413,
+        "meanIou": 0.9945706805912045,
+        "matched": 408,
+        "unmatchedOsm": 3,
+        "reviews": 41,
+        "issues": 24
+      }
     }
   ]
 }
