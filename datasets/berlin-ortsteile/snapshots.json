@@ -501,6 +501,17 @@
         "reviews": 6,
         "issues": 0
       }
+    },
+    {
+      "id": "2026-07-19",
+      "summary": {
+        "totalRows": 97,
+        "meanIou": 0.9963853228263668,
+        "matched": 97,
+        "unmatchedOsm": 0,
+        "reviews": 6,
+        "issues": 0
+      }
     }
   ]
 }
