@@ -19,7 +19,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@clack/prompts": "^1.6.0",
+    "@clack/prompts": "^1.7.0",
     "@turf/turf": "^7.3.5",
     "flatgeobuf": "^4.4.0",
     "jsts": "^2.12.1",
