@@ -562,6 +562,17 @@
         "reviews": 0,
         "issues": 1
       }
+    },
+    {
+      "id": "2026-08-02",
+      "summary": {
+        "totalRows": 1,
+        "meanIou": 0.769429514186545,
+        "matched": 1,
+        "unmatchedOsm": 0,
+        "reviews": 0,
+        "issues": 1
+      }
     }
   ]
 }
