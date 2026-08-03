@@ -13,7 +13,7 @@ import {
 import { join } from 'node:path'
 import { areaHasCompareConfig } from '../shared/areaConfig.ts'
 import { discoverBkgAreaFolderNames } from '../shared/bkgAreas.ts'
-import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
+import { DATASETS_DIRECTORY } from '../shared/datasetPaths.ts'
 import {
   officialSourceNeedsFallback,
   osmSharedExtractOutputReady,
@@ -249,7 +249,9 @@ function parseArgs(argv: string[]): { phase: PipelinePhase; compareConcurrency: 
   return { phase, compareConcurrency: compareConcurrency ?? DEFAULT_COMPARE_CONCURRENCY }
 }
 
-function osmExtractKindForStep(step: PipelineStepName): Parameters<typeof osmSharedExtractOutputReady>[1] | null {
+function osmExtractKindForStep(
+  step: PipelineStepName,
+): Parameters<typeof osmSharedExtractOutputReady>[1] | null {
   switch (step) {
     case 'extract:osm':
       return 'admin'

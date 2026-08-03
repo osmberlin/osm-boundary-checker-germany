@@ -110,7 +110,7 @@ Embedded **`comparison_table.json`** carries the official/OSM metadata snapshot 
 - Values are normalized with a **preset** (`berlin-bezirk-rs5`, `amtlicher-8`, `regional-12`, `plz-5`) in `[scripts/compare/lib/normalizeGermanKey.ts](../scripts/compare/lib/normalizeGermanKey.ts)` so key formats align where intended.
 
 2b. **Explicit spatial scope (per dataset)**  
- Compare reads explicit enum decisions from `compare`:
+Compare reads explicit enum decisions from `compare`:
 
 - `compare.bboxFilter`: `none` or `official_bbox_overlap`
 - `compare.osmScopeFilter`: `none` or `intersects_official_coverage`
