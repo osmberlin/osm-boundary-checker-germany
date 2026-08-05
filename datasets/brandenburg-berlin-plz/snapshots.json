@@ -600,6 +600,17 @@
         "reviews": 55,
         "issues": 142
       }
+    },
+    {
+      "id": "2026-08-05",
+      "summary": {
+        "totalRows": 407,
+        "meanIou": 0.9778636890718337,
+        "matched": 405,
+        "unmatchedOsm": 0,
+        "reviews": 55,
+        "issues": 142
+      }
     }
   ]
 }
