@@ -1,14 +1,16 @@
 # FMC Dependabot defaults — https://github.com/FixMyBerlin/fixmyskills (skills/tech-stack)
 # Bun workspace monorepo (scripts/, report/); single lockfile at repo root.
+# Schedule: first Friday of each month at 07:00 Europe/Berlin (cron FRI#1).
+# Intentional deviation from tech-stack weekly Monday — fewer review windows.
+# Keep groups, cooldown, and open-pull-requests-limit: 1 from the template.
 version: 2
 updates:
   - package-ecosystem: bun
     directories:
       - /
     schedule:
-      interval: weekly
-      day: monday
-      time: '07:00'
+      interval: cron
+      cronjob: '0 7 * * FRI#1'
       timezone: Europe/Berlin
     cooldown:
       default-days: 5
@@ -140,9 +142,8 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: monday
-      time: '07:00'
+      interval: cron
+      cronjob: '0 7 * * FRI#1'
       timezone: Europe/Berlin
     cooldown:
       default-days: 5
