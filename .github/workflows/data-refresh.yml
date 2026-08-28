@@ -48,7 +48,7 @@ jobs:
       - name: Download previous rust sidecar metadata
         id: previous-rust-metadata
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v24
         with:
           workflow: data-refresh.yml
           branch: main
@@ -60,7 +60,7 @@ jobs:
       - name: Download previous OSM pipeline state
         id: previous-osm-pipeline-state
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v24
         with:
           workflow: data-refresh.yml
           branch: main
@@ -130,7 +130,7 @@ jobs:
         if: steps.download-phase.outcome == 'failure'
         id: previous-osm-cache
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v24
         with:
           workflow: data-refresh.yml
           branch: main
@@ -143,7 +143,7 @@ jobs:
         if: steps.download-phase.outcome == 'failure'
         id: previous-official-cache
         continue-on-error: true
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v24
         with:
           workflow: data-refresh.yml
           branch: main
