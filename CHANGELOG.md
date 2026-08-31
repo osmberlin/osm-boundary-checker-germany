@@ -4,6 +4,10 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-08
 
+### `5537e3e`
+
+Das Schlüsselverzeichnis (AGS/ARS) im Explorer und in den Berichten nutzt wieder aktuelle Destatis-Daten: GVAuszugQ mit Stand 30.09.2026, plus die Jahresarchive der aufgelösten Gemeinden.
+
 ### `e30bb89`
 
 Im Gemeinde-Abgleich der Bundesländer (BKG, z. B. Bayern) erscheinen Nachbar-Gemeinden nicht mehr als „Nur OSM“, wenn ihr Regionalschlüssel zu einem anderen Land gehört. Beispiel: Riesbürg (Baden-Württemberg) wurde fälschlich in Bayern gelistet, obwohl die Zuordnung in BW stimmt.
