@@ -110,7 +110,7 @@ Embedded **`comparison_table.json`** carries the official/OSM metadata snapshot 
 - Values are normalized with a **preset** (`berlin-bezirk-rs5`, `amtlicher-8`, `regional-12`, `plz-5`) in `[scripts/compare/lib/normalizeGermanKey.ts](../scripts/compare/lib/normalizeGermanKey.ts)` so key formats align where intended.
 
 2b. **Explicit spatial scope (per dataset)**  
- Compare reads explicit enum decisions from `compare`:
+Compare reads explicit enum decisions from `compare`:
 
 - `compare.bboxFilter`: `none` or `official_bbox_overlap`
 - `compare.osmScopeFilter`: `none` or `intersects_official_coverage`
@@ -119,6 +119,8 @@ Embedded **`comparison_table.json`** carries the official/OSM metadata snapshot 
 With `bboxFilter=official_bbox_overlap`, compare derives a union bbox from official geometries (using optional GDAL `_bbox_*` fields on features when present), expands it by `compare.bboxBufferDegrees`, and drops OSM features whose bbox does not overlap. With `osmScopeFilter=intersects_official_coverage`, compare hands the _individual_ polygonal official features to the Rust sidecar's `scope-filter-coverage` command. Rust builds an R*-tree over the official polygon envelopes, and for each OSM polygon it bbox-prunes to the few candidates that actually overlap, then keeps the OSM polygon if its centroid is inside any candidate, or — failing that — if its intersection with any candidate meets **fixed** minimum area and overlap-ratio thresholds (see `MERGED*SCOPE_FALLBACK\*\*`in`[scripts/compare/lib/scopeFilterThresholds.ts](../scripts/compare/lib/scopeFilterThresholds.ts)`), so narrow border strips and corner kisses are excluded. Per-dataset tuning is not required. If the official polygon set is empty, compare falls back to the legacy pairwise intersection behaviour for that run.
 
 For administrative datasets, `osm.adminLevels` is report-strict but match-permissive: key matching runs before applying the allowlist, so German units that legitimately live at another OSM tier still match by their official key (for example Kreisfreie Städte as `admin_level=6` in Gemeinden datasets, or Stadtstaaten as `admin_level=4`). The allowlist is applied afterwards only to `unmatchedOsm`, which keeps unrelated higher-tier boundaries out of the OSM-only report.
+
+When `official.extractFilter` is set on an `admin_rs` dataset (BKG Gemeinden per Land: `ARS LIKE '09%'` and similar), unmatched OSM is also dropped unless the canonical RS **starts with** that `valuePrefix`. Neighbour municipalities that only graze the official coverage (same pattern as Werbach / Riesbürg on the BY/BW border) stay out of “Nur OSM”. HTTP areas without `extractFilter` (for example `brandenburg-gemeinden`) are unchanged. Short or malformed keys are kept.
 
 1. **Geometry merge**
    Multiple official or OSM features sharing the same normalized key are **unioned** before metrics (`[scripts/compare/lib/geoMerge.ts](../scripts/compare/lib/geoMerge.ts)`).
@@ -167,7 +169,7 @@ For administrative datasets, `osm.adminLevels` is report-strict but match-permis
 
 - **Matched + metrics** — Same normalized ID on both sides; IoU, area delta, symmetric difference, and Hausdorff describe **geometric** agreement. Low IoU or high Hausdorff → inspect map and tagging.
 - `**official_only`\*\* — Official unit has no OSM polygon with that key in the selected OSM extract (missing/wrong OSM key, missing identity target, mergers, etc.).
-- `**unmatchedOsm`\*\* — OSM has a boundary with a regional key that does not appear in this area’s official layer (extra mapping, wrong area file, or key normalization edge cases).
+- `**unmatchedOsm`\*\* — OSM has a boundary with a regional key that does not appear in this area’s official layer (extra mapping, wrong area file, or key normalization edge cases). For `admin_rs` datasets with `official.extractFilter`, keys that do not start with that prefix are omitted (neighbour-state ribbon leaks).
 
 Operational notes and example counts: [comparison-status.md](./comparison-status.md).
 

@@ -34,6 +34,10 @@ import {
   MERGED_SCOPE_FALLBACK_MIN_INTERSECTION_M2,
   MERGED_SCOPE_FALLBACK_MIN_OVERLAP_RATIO,
 } from './scopeFilterThresholds.ts'
+import {
+  keepUnmatchedOsmForOfficialPrefix,
+  resolveArsExtractPrefix,
+} from './unmatchedOsmPrefixScope.ts'
 
 export type CompareRow = {
   canonicalMatchKey: string
@@ -600,8 +604,10 @@ export async function runCompare(
     config.osm.adminLevels && config.osm.adminLevels.length > 0
       ? new Set(config.osm.adminLevels)
       : null
+  const unmatchedOfficialPrefix = resolveArsExtractPrefix(config.official.extractFilter, isRsMode)
   const unmatchedOsm: UnmatchedOsmRow[] = []
   let droppedUnmatchedByAdminLevel = 0
+  let droppedUnmatchedByOfficialPrefix = 0
   const tFilterUnmatchedAdminLevel = Date.now()
   for (const key of Array.from(osmMap.keys()).sort()) {
     if (officialKeySet.has(key)) continue
@@ -613,6 +619,10 @@ export async function runCompare(
     // at admin_level=6/4, but keep the OSM-only report scoped to the configured level.
     if (adminLevelAllowList && (adminLevel == null || !adminLevelAllowList.has(adminLevel))) {
       droppedUnmatchedByAdminLevel++
+      continue
+    }
+    if (!keepUnmatchedOsmForOfficialPrefix(key, unmatchedOfficialPrefix)) {
+      droppedUnmatchedByOfficialPrefix++
       continue
     }
     const nameLabel =
@@ -627,15 +637,17 @@ export async function runCompare(
       osmGeometryWgs84: s.geometry ?? null,
     })
   }
-  if (adminLevelAllowList) {
+  if (adminLevelAllowList || unmatchedOfficialPrefix != null) {
     phaseLogger?.('filter_unmatched_admin_level', Date.now() - tFilterUnmatchedAdminLevel, {
       dropped: droppedUnmatchedByAdminLevel,
       remaining: unmatchedOsm.length,
-      configuredAdminLevels: adminLevelAllowList.size,
+      configuredAdminLevels: adminLevelAllowList?.size ?? 0,
+      droppedByOfficialPrefix: droppedUnmatchedByOfficialPrefix,
+      officialPrefix: unmatchedOfficialPrefix,
     })
-    if (droppedUnmatchedByAdminLevel > 0) {
+    if (droppedUnmatchedByAdminLevel > 0 || droppedUnmatchedByOfficialPrefix > 0) {
       console.log(
-        `[compare:${areaFolder}] unmatched_osm admin_level filter dropped=${droppedUnmatchedByAdminLevel} remaining=${unmatchedOsm.length}`,
+        `[compare:${areaFolder}] unmatched_osm filter droppedAdminLevel=${droppedUnmatchedByAdminLevel} droppedOfficialPrefix=${droppedUnmatchedByOfficialPrefix} remaining=${unmatchedOsm.length}`,
       )
     }
   }

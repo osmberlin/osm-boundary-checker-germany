@@ -8,6 +8,7 @@ import {
   type OfficialKeyTransposition,
   parseOfficialKeyTransposition,
 } from './officialKeyTransposition.ts'
+import type { OfficialExtractFilter } from './unmatchedOsmPrefixScope.ts'
 
 export type IdNormalizationPreset =
   | 'berlin-bezirk-rs5'
@@ -80,6 +81,8 @@ export type BoundaryConfig = {
     /** Optional fixed key for all official rows in this dataset (normalized with preset). */
     constantMatchKey?: string
     keyTransposition?: OfficialKeyTransposition
+    /** Direct-mode official extract prefix (`ARS LIKE '09%'`). Used to scope unmatched OSM. */
+    extractFilter?: OfficialExtractFilter
   }
   osm: OsmConfig
   compare: CompareConfig
@@ -161,6 +164,14 @@ export function loadBoundaryConfig(config: DatasetConfig, areaLabel = 'area'): B
         ? { constantMatchKey: directOfficial.constantMatchKey }
         : {}),
       ...(keyTransposition ? { keyTransposition } : {}),
+      ...(directOfficial?.extractFilter
+        ? {
+            extractFilter: {
+              property: directOfficial.extractFilter.property.trim(),
+              valuePrefix: directOfficial.extractFilter.valuePrefix.trim(),
+            },
+          }
+        : {}),
     },
     osm,
     compare,
