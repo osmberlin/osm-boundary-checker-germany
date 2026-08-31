@@ -12,18 +12,11 @@ Im Gemeinde-Abgleich der Bundesländer (BKG, z. B. Bayern) erscheinen Nachbar-Ge
 
 ### `fe26f32`
 
-fix(ci): harden refresh pipeline against upstream outages
-- Retry Geofabrik dated extract downloads with germany-latest on HTTP 404
+Die nächtliche Datenaktualisierung kommt besser mit Ausfällen bei den Quellen zurecht. Fehlt die tagesgenaue Geofabrik-Datei, wird der übliche `germany-latest`-Download verwendet; vorhandene OSM-Extrakte werden nicht unnötig neu gebaut.
 
 ### `202eeed`
 
-feat(ci): include OSM candidate FGBs in fallback artifact scope
-Stage germany-admin-candidates.fgb and germany-postal-code-candidates.fgb
-
-### `4000712`
-
-Update changelog
-Co-authored-by: Cursor <cursoragent@cursor.com>
+Wenn die Pipeline OSM-Daten aus dem Backup wiederherstellt (ohne neues PBF), sind jetzt auch die Dateien für OSM-Kandidaten dabei. Der Abgleich kann dann trotzdem Vorschläge bei „nur amtlich“-Flächen machen.
 
 ### `f394bfe`
 
