@@ -20,6 +20,7 @@ export function Dialog({
   size = 'lg',
   className,
   children,
+  onClose,
   ...props
 }: {
   size?: keyof typeof sizes
@@ -27,7 +28,7 @@ export function Dialog({
   children: ReactNode
 } & Omit<React.ComponentProps<typeof HeadlessDialog>, 'as' | 'className'>) {
   return (
-    <HeadlessDialog {...props}>
+    <HeadlessDialog {...props} onClose={onClose}>
       <DialogBackdrop
         transition
         className="fixed inset-0 z-40 flex w-screen justify-center overflow-y-auto bg-slate-950/50 px-2 py-2 transition duration-100 focus:outline-none data-closed:opacity-0 data-enter:ease-out data-leave:ease-in sm:px-6 sm:py-8"

@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import {
   lazy,
   type CSSProperties,
+  type MouseEvent,
   type ReactNode,
   Suspense,
   useEffect,
@@ -627,7 +628,7 @@ export function AreaReport() {
                           className="inline-flex items-center text-slate-500 transition-colors group-hover:text-sky-300 focus-visible:text-sky-300"
                           to="/$areaId/feature/$featureKey"
                           params={detailParams}
-                          onClick={(event) => event.stopPropagation()}
+                          onClick={(event: MouseEvent<HTMLAnchorElement>) => event.stopPropagation()}
                           aria-label={`${de.areaReport.table.view}: ${row.nameLabel}`}
                         >
                           <span className="sr-only">{de.areaReport.table.view}</span>

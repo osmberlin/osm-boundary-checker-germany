@@ -2,7 +2,28 @@
 
 Automatisch aus `changelog.registry.yaml` erzeugt.
 
+## 2026-08
+
+### `e30bb89`
+
+Im Gemeinde-Abgleich der Bundesländer (BKG, z. B. Bayern) erscheinen Nachbar-Gemeinden nicht mehr als „Nur OSM“, wenn ihr Regionalschlüssel zu einem anderen Land gehört. Beispiel: Riesbürg (Baden-Württemberg) wurde fälschlich in Bayern gelistet, obwohl die Zuordnung in BW stimmt.
+
 ## 2026-06
+
+### `fe26f32`
+
+fix(ci): harden refresh pipeline against upstream outages
+- Retry Geofabrik dated extract downloads with germany-latest on HTTP 404
+
+### `202eeed`
+
+feat(ci): include OSM candidate FGBs in fallback artifact scope
+Stage germany-admin-candidates.fgb and germany-postal-code-candidates.fgb
+
+### `4000712`
+
+Update changelog
+Co-authored-by: Cursor <cursoragent@cursor.com>
 
 ### `f394bfe`
 
