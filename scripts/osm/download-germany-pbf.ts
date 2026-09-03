@@ -11,9 +11,12 @@ import { spawnSync } from 'node:child_process'
  * Set **`OSM_SKIP_PBF_DOWNLOAD=1`** (or `true`) to never hit the network here — use when the PBF
  * is already present and you want `scripts/pipeline/nightly.ts` / `download -- --yes --targets pbf` to leave it unchanged
  * (e.g. local runs across calendar-day refresh windows).
+ *
+ * If the cache path is a symlink (shared PBF with another checkout), downloads write the
+ * symlink target so a refresh does not create a second copy under `.cache/osm/`.
  */
-import { existsSync, mkdirSync, statSync, unlinkSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, lstatSync, mkdirSync, readlinkSync, statSync, unlinkSync } from 'node:fs'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { emitCacheDecision, mapDailyRefreshReasonToCacheState } from '../shared/cacheDecision.ts'
 import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
 import { resolveGeofabrikGermanyPbfUrl } from '../shared/geofabrikGermanyExtract.ts'
@@ -25,6 +28,23 @@ import {
 import { checkOsmPbfIntegrity } from '../shared/osmPbfIntegrity.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
+
+/** Follow a cache-path symlink so curl/unlink touch the shared file, not a new `.cache` copy. */
+function resolveGermanyPbfDownloadPaths(dest: string): {
+  writePath: string
+  viaSymlink: boolean
+} {
+  try {
+    if (lstatSync(dest).isSymbolicLink()) {
+      const raw = readlinkSync(dest)
+      const writePath = isAbsolute(raw) ? raw : resolve(dirname(dest), raw)
+      return { writePath, viaSymlink: true }
+    }
+  } catch {
+    // dest missing
+  }
+  return { writePath: dest, viaSymlink: false }
+}
 
 function parseArgs(argv: string[]) {
   let force = false
@@ -49,22 +69,26 @@ async function main() {
   const dir = join(runtimeRoot, GERMANY_OSM_CACHE_DIR)
   const dest = join(dir, GERMANY_OSM_PBF_BASENAME)
   mkdirSync(dir, { recursive: true })
+  const { writePath, viaSymlink } = resolveGermanyPbfDownloadPaths(dest)
+  if (viaSymlink) {
+    console.log(`Germany PBF cache path is a symlink; bytes live at:\n  ${writePath}`)
+  }
 
   const skipEnv = process.env.OSM_SKIP_PBF_DOWNLOAD?.trim().toLowerCase()
   if (skipEnv === '1' || skipEnv === 'true' || skipEnv === 'yes') {
-    if (!existsSync(dest)) {
+    if (!existsSync(writePath)) {
       console.error(
-        `OSM_SKIP_PBF_DOWNLOAD is set but no PBF exists at:\n  ${dest}\n\nDownload once without the skip flag, or set OSM_GERMANY_PBF.`,
+        `OSM_SKIP_PBF_DOWNLOAD is set but no PBF exists at:\n  ${writePath}\n\nDownload once without the skip flag, or set OSM_GERMANY_PBF.`,
       )
       process.exit(1)
     }
-    const skipIntegrity = checkOsmPbfIntegrity(dest)
+    const skipIntegrity = checkOsmPbfIntegrity(writePath)
     if (!skipIntegrity.ok) {
       const hint = skipIntegrity.canDeleteCorruptCache
         ? `Remove the file or unset OSM_SKIP_PBF_DOWNLOAD, then run: bun run download -- --yes --targets pbf --force`
         : `Install osmium on PATH so the PBF can be verified, or unset OSM_SKIP_PBF_DOWNLOAD.`
       console.error(
-        `OSM_SKIP_PBF_DOWNLOAD is set but the cached PBF could not be validated:\n  ${dest}\n${skipIntegrity.detail}\n\n${hint}`,
+        `OSM_SKIP_PBF_DOWNLOAD is set but the cached PBF could not be validated:\n  ${writePath}\n${skipIntegrity.detail}\n\n${hint}`,
       )
       process.exit(1)
     }
@@ -96,24 +120,24 @@ async function main() {
 
   const timezone = resolveRefreshTimezone()
 
-  if (existsSync(dest)) {
-    const integ = checkOsmPbfIntegrity(dest)
+  if (existsSync(writePath)) {
+    const integ = checkOsmPbfIntegrity(writePath)
     if (!integ.ok) {
       if (!integ.canDeleteCorruptCache) {
         console.error(
-          `Cannot verify cached Germany PBF (osmium unavailable or failed to run):\n  ${dest}\n${integ.detail}`,
+          `Cannot verify cached Germany PBF (osmium unavailable or failed to run):\n  ${writePath}\n${integ.detail}`,
         )
         process.exit(1)
       }
       console.warn(
-        `Cached Germany PBF failed integrity check (truncated or corrupt). Removing and re-downloading:\n  ${dest}\n${integ.detail}`,
+        `Cached Germany PBF failed integrity check (truncated or corrupt). Removing and re-downloading:\n  ${writePath}\n${integ.detail}`,
       )
-      unlinkSync(dest)
+      unlinkSync(writePath)
     }
   }
 
-  const cacheExists = existsSync(dest)
-  const cachedAt = cacheExists ? statSync(dest).mtime.toISOString() : undefined
+  const cacheExists = existsSync(writePath)
+  const cachedAt = cacheExists ? statSync(writePath).mtime.toISOString() : undefined
   const decision = decideDailyRefresh({
     force,
     cacheExists,
@@ -132,7 +156,7 @@ async function main() {
       cachedWindow: decision.cachedWindowKey,
     })
     console.log(
-      `Download skipped (cache used because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey ?? 'unknown'}; use --force to re-download):\n  ${dest}`,
+      `Download skipped (cache used because ${decision.because}; timezone=${decision.timezone}; currentWindow=${decision.currentWindowKey}; cachedWindow=${decision.cachedWindowKey ?? 'unknown'}; use --force to re-download):\n  ${writePath}`,
     )
     return
   }
@@ -152,12 +176,13 @@ async function main() {
     )
   }
 
-  console.log(`Downloading:\n  ${downloadUrl}\n→ ${dest}`)
+  mkdirSync(dirname(writePath), { recursive: true })
+  console.log(`Downloading:\n  ${downloadUrl}\n→ ${writePath}`)
 
   const curlDownload = (url: string): number => {
     const r = spawnSync(
       'curl',
-      ['-fL', '--no-progress-meter', '--retry', '3', '--retry-delay', '2', '-o', dest, url],
+      ['-fL', '--no-progress-meter', '--retry', '3', '--retry-delay', '2', '-o', writePath, url],
       { stdio: 'inherit' },
     )
     if (r.error) {
@@ -177,7 +202,7 @@ async function main() {
       `Dated Geofabrik extract not published yet (${resolved.basename}); retrying ${GERMANY_OSM_PBF_BASENAME}.`,
     )
     try {
-      unlinkSync(dest)
+      unlinkSync(writePath)
     } catch {
       // ignore partial download cleanup
     }
@@ -188,20 +213,20 @@ async function main() {
     process.exit(status)
   }
 
-  const postIntegrity = checkOsmPbfIntegrity(dest)
+  const postIntegrity = checkOsmPbfIntegrity(writePath)
   if (!postIntegrity.ok) {
     if (postIntegrity.canDeleteCorruptCache) {
       console.error(
-        `Downloaded PBF failed integrity check. Removing partial file:\n  ${dest}\n${postIntegrity.detail}`,
+        `Downloaded PBF failed integrity check. Removing partial file:\n  ${writePath}\n${postIntegrity.detail}`,
       )
       try {
-        unlinkSync(dest)
+        unlinkSync(writePath)
       } catch {
         // ignore
       }
     } else {
       console.error(
-        `Downloaded PBF could not be verified (osmium unavailable or failed to run):\n  ${dest}\n${postIntegrity.detail}`,
+        `Downloaded PBF could not be verified (osmium unavailable or failed to run):\n  ${writePath}\n${postIntegrity.detail}`,
       )
     }
     process.exit(1)
