@@ -6,35 +6,35 @@
       "ref": "main",
       "sourceType": "github",
       "skillPath": "skills/finish-work/SKILL.md",
-      "computedHash": "a58aaf4d46abeb1498b6d6abe3262f5881288f87f13c3e235b0701c8c2dc26f7"
+      "computedHash": "cc9f95a6b8cc32b8edea80412a77ccb5dacd36623aef1c0110b0733c252861c1"
     },
     "react-dev": {
       "source": "FixMyBerlin/fixmyskills",
       "ref": "main",
       "sourceType": "github",
       "skillPath": "skills/react-dev/SKILL.md",
-      "computedHash": "e87957bc8783afe17e6ed19df5c3a22bb50de8c6fed681b4907cd4b21b98f109"
+      "computedHash": "afb90ed3950621b269777d479ce96b427600b8d17cabc6eedd5fedf277659eb1"
     },
     "review-dependabot": {
       "source": "FixMyBerlin/fixmyskills",
       "ref": "main",
       "sourceType": "github",
       "skillPath": "skills/review-dependabot/SKILL.md",
-      "computedHash": "24075b958c648c11c62bfa70b3632a92bb196c316eb4a3ca57c104f6be67a285"
+      "computedHash": "54dc6601d6cfc270e36ea892bf56df8ad09f2f3365514241100ec9842313fb48"
     },
     "tech-stack": {
       "source": "FixMyBerlin/fixmyskills",
       "ref": "main",
       "sourceType": "github",
       "skillPath": "skills/tech-stack/SKILL.md",
-      "computedHash": "26de8c9f08b797937b88af26b59adfc219b5812611c01663609b937c6122b835"
+      "computedHash": "8c792afd8af4cc3fe8f31ff18d5253533ba2103d82d49a142723e127f09cb4dd"
     },
     "zustand-state-management": {
       "source": "FixMyBerlin/fixmyskills",
       "ref": "main",
       "sourceType": "github",
       "skillPath": "skills/zustand-state-management/SKILL.md",
-      "computedHash": "7d6d64aee41189884cad34afb26214245b55d2e2118af833538c714631c467bd"
+      "computedHash": "f5df879cceb5f56e52e77dd1fdd5636bb5652e2fb2bf1ccecd3e70dfe4a579e0"
     }
   }
 }
