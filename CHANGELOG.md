@@ -4,10 +4,6 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-09
 
-### `0407050`
-
-Live-Abfragen (Overpass/WFS) auf der Vergleichskarte folgen dem aktuellen Kartenausschnitt, auch nach Verschieben und Zoomen.
-
 ### `4cb0939`
 
 Wenn der amtliche VG25-Stand noch den Regionalschlüssel vom Jahresende enthält, Destatis und OSM aber schon den neuen, zeigt der Abgleich das als Geometrie-Match mit Hinweis — nicht als zwei Lücken. Beispiele: Bönebüttel, Schmölln, Hanau. Auf der Detailseite stehen alter und aktueller Schlüssel mit Datenständen und Links zum Schlüssel-Explorer. Der Text fordert nicht mehr, den alten Schlüssel nach OSM zu schreiben.
@@ -18,7 +14,9 @@ Im [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) erscheint bei 
 
 ### `9acac6a`, `8188c98`, `9c74f21`, `7aab853`
 
-Unter `/regional` gibt es einen Einwohner- und Wikidata-Abgleich für amtliche Regionalschlüssel. Destatis-Einwohnerzahl, OSM-Tags (`population`, `wikidata`) und Wikidata (P1082, P402) stehen nebeneinander; Abweichungen sind farblich markiert. In der Übersicht kann man nach Bundesland blättern und auf „Handlungsbedarf“ filtern. Die Detailseite lädt aktuelle OSM-Tags per Overpass nach und verlinkt iD, JOSM und Wikidata — ohne vorausgefüllte Schreibaktionen. Von Feature-Seiten und dem [Schlüssel-Explorer](/tools/german-key) gibt es Links dorthin.
+Unter `/regional` („Einwohner und Wikidata“) kann man Destatis-, OSM- und Wikidata-Einwohnerzahlen für Gemeinden und Kreise vergleichen. Abweichungen sind in der Tabelle farbig markiert; leere Zellen unterscheiden „n. a.“, „fehlt“ und optionale Werte. Live-OSM-Tags aus Overpass überlagern den nächtlichen Extract.
+
+Zum Bearbeiten gibt es Links zu iD, JOSM und Wikidata; die Seite schreibt nichts selbst. OSM-Wikidata-IDs sind Links, ein fehlendes P1388 wird als solches gekennzeichnet. In der Übersicht kann man nach Bundesland blättern und sieht, wie viele Einheiten Handlungsbedarf haben. Von Feature-Seiten und dem [Schlüssel-Explorer](/tools/german-key) gibt es Links dorthin.
 
 ## 2026-08
 
@@ -134,9 +132,9 @@ Alle Gemeinde-Datensätze werden jetzt sowohl mit dem `de:amtlicher_gemeindeschl
 
 Interface verbessert: Datums-Anzeige; Filter-Anzeige über den Karten; Anzeige-Toggle unter der Karte; uvm. Man kann unter anderem in der Detailansicht Nachbar-Grenzen anzeigen und dort hin navigieren.
 
-### `e750eae`, `00b407d`, `78ef63e`, `fa54283`, `c670af4`, `e7b896f`, `4f80fb9`
+### `e750eae`, `00b407d`, `78ef63e`, `fa54283`, `c670af4`, `e7b896f`, `4f80fb9`, `0407050`
 
-Die Sektion "Live-Daten anzeigen" kann jetzt gefiltert werden, was auch die Kartenansicht beeinflusst. Außerdem werden die OSM-Daten dort mit den Referenzdaten verglichen und betont, wenn sie sich unterscheiden. Und sie bleiben beim Navigieren in der App erhalten. Die Live-Abfragen verwenden die BBOX der Karte am Kopf der Detailseite.
+Die Sektion "Live-Daten anzeigen" kann jetzt gefiltert werden, was auch die Kartenansicht beeinflusst. Außerdem werden die OSM-Daten dort mit den Referenzdaten verglichen und betont, wenn sie sich unterscheiden. Und sie bleiben beim Navigieren in der App erhalten. Die Live-Abfragen (Overpass/WFS) folgen dem Kartenausschnitt der Detailkarte, auch nach Verschieben und Zoomen.
 
 ### `7873f42`
 

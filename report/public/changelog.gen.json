@@ -1,16 +1,9 @@
 {
-  "generatedAt": "2026-09-04T14:50:23.786Z",
+  "generatedAt": "2026-09-04T15:33:26.579Z",
   "months": [
     {
       "month": "2026-09",
       "entries": [
-        {
-          "refs": ["0407050"],
-          "descriptionMd": "Live-Abfragen (Overpass/WFS) auf der Vergleichskarte folgen dem aktuellen Kartenausschnitt, auch nach Verschieben und Zoomen.",
-          "committedAtIso": "2026-09-04T16:43:32+02:00",
-          "committedAtShort": "2026-09-04",
-          "refsDisplay": ["0407050"]
-        },
         {
           "refs": ["4cb0939"],
           "descriptionMd": "Wenn der amtliche VG25-Stand noch den Regionalschlüssel vom Jahresende enthält, Destatis und OSM aber schon den neuen, zeigt der Abgleich das als Geometrie-Match mit Hinweis — nicht als zwei Lücken. Beispiele: Bönebüttel, Schmölln, Hanau. Auf der Detailseite stehen alter und aktueller Schlüssel mit Datenständen und Links zum Schlüssel-Explorer. Der Text fordert nicht mehr, den alten Schlüssel nach OSM zu schreiben.\n\nAuf der Startseite und der Datensatz-Übersicht bedeutet „nur amtlich“ wieder echte Lücken. Veraltete amtliche Schlüssel haben eine eigene Zahl („Schlüssel veraltet“) und zählen bei „Zugeordnet“. OSM-Objekte, die nur das Gegenstück zu so einem Schlüsselwechsel sind, erscheinen nicht mehr als eigene Seite. In der Tabelle kann man diese Zeilen einblenden, ausblenden oder allein anzeigen.\n\nIm [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) erscheint bei bekannten Gebietsänderungen ein kurzer Hinweis, welcher Schlüssel welchen ersetzt hat und seit wann. Der Hinweis kommt nur, wenn der nachgeschlagene Schlüssel Teil dieser Änderung ist (z. B. Hanau kreisfrei).",
@@ -20,7 +13,7 @@
         },
         {
           "refs": ["9acac6a", "8188c98", "9c74f21", "7aab853"],
-          "descriptionMd": "Unter `/regional` gibt es einen Einwohner- und Wikidata-Abgleich für amtliche Regionalschlüssel. Destatis-Einwohnerzahl, OSM-Tags (`population`, `wikidata`) und Wikidata (P1082, P402) stehen nebeneinander; Abweichungen sind farblich markiert. In der Übersicht kann man nach Bundesland blättern und auf „Handlungsbedarf“ filtern. Die Detailseite lädt aktuelle OSM-Tags per Overpass nach und verlinkt iD, JOSM und Wikidata — ohne vorausgefüllte Schreibaktionen. Von Feature-Seiten und dem [Schlüssel-Explorer](/tools/german-key) gibt es Links dorthin.",
+          "descriptionMd": "Unter `/regional` („Einwohner und Wikidata“) kann man Destatis-, OSM- und Wikidata-Einwohnerzahlen für Gemeinden und Kreise vergleichen. Abweichungen sind in der Tabelle farbig markiert; leere Zellen unterscheiden „n. a.“, „fehlt“ und optionale Werte. Live-OSM-Tags aus Overpass überlagern den nächtlichen Extract.\n\nZum Bearbeiten gibt es Links zu iD, JOSM und Wikidata; die Seite schreibt nichts selbst. OSM-Wikidata-IDs sind Links, ein fehlendes P1388 wird als solches gekennzeichnet. In der Übersicht kann man nach Bundesland blättern und sieht, wie viele Einheiten Handlungsbedarf haben. Von Feature-Seiten und dem [Schlüssel-Explorer](/tools/german-key) gibt es Links dorthin.",
           "committedAtIso": "2026-09-04T16:43:31+02:00",
           "committedAtShort": "2026-09-04",
           "refsDisplay": ["9acac6a", "8188c98", "9c74f21", "7aab853"]
@@ -254,8 +247,17 @@
           ]
         },
         {
-          "refs": ["e750eae", "00b407d", "78ef63e", "fa54283", "c670af4", "e7b896f", "4f80fb9"],
-          "descriptionMd": "Die Sektion \"Live-Daten anzeigen\" kann jetzt gefiltert werden, was auch die Kartenansicht beeinflusst. Außerdem werden die OSM-Daten dort mit den Referenzdaten verglichen und betont, wenn sie sich unterscheiden. Und sie bleiben beim Navigieren in der App erhalten. Die Live-Abfragen verwenden die BBOX der Karte am Kopf der Detailseite.",
+          "refs": [
+            "e750eae",
+            "00b407d",
+            "78ef63e",
+            "fa54283",
+            "c670af4",
+            "e7b896f",
+            "4f80fb9",
+            "0407050"
+          ],
+          "descriptionMd": "Die Sektion \"Live-Daten anzeigen\" kann jetzt gefiltert werden, was auch die Kartenansicht beeinflusst. Außerdem werden die OSM-Daten dort mit den Referenzdaten verglichen und betont, wenn sie sich unterscheiden. Und sie bleiben beim Navigieren in der App erhalten. Die Live-Abfragen (Overpass/WFS) folgen dem Kartenausschnitt der Detailkarte, auch nach Verschieben und Zoomen.",
           "committedAtIso": "2026-05-09T10:00:37+02:00",
           "committedAtShort": "2026-05-09",
           "refsDisplay": [
@@ -265,7 +267,8 @@
             "fa54283",
             "c670af4",
             "e7b896f",
-            "4f80fb9"
+            "4f80fb9",
+            "0407050"
           ]
         },
         {
