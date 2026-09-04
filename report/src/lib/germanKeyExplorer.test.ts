@@ -43,6 +43,8 @@ const minimalLookupBundle = germanKeyLookupBundleSchema.parse({
     gemeindeverbaende: { '010010000': 'Flensburg, Stadt' },
     gemeindenByAgs: { '01001000': 'Flensburg, Stadt' },
     gemeindenByArs: { '010010000000': 'Flensburg, Stadt' },
+    gemeindeAttributesByArs: {},
+    destatisMerkmale: {},
   },
   annualSourcePublicUrlsByYear: {
     '2020': 'https://example.invalid/2020',

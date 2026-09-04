@@ -6,8 +6,6 @@ import type { ReportRow } from '../types/report'
  * OSM admin RS datasets: shared paragraph under provenance „Vergleichsregeln“ when both German admin tags are listed.
  */
 export const osmAdminGermanDualKeyLead = {
-  agsFirst:
-    'Zuordnung über `de:amtlicher_gemeindeschluessel` (Legacy-Hinweis; aktuelle Gemeinde-Datensätze nutzen nur `de:regionalschluessel` für den Abgleich).',
   rsFirst:
     'Zuordnung erfolgt über `de:regionalschluessel` auf der OSM-Relation und das amtliche Schlüsselfeld (z. B. ARS bzw. LGB `ars`), jeweils mit dem eingestellten Normalisierungs-Preset. `de:amtlicher_gemeindeschluessel` ist nicht Teil des Abgleichs, wird aber für die Datenpflege empfohlen.',
 } as const
@@ -128,7 +126,6 @@ export const de = {
       'Keine expliziten Mapping-Regeln im Report eingebettet (Schlüsselfelder/Preset fehlen).',
     /** Second paragraph under Vergleichsregeln when `osmMatchProperties` lists both German admin keys. */
     compareMappingDualGermanKeysLeadRsFirst: osmAdminGermanDualKeyLead.rsFirst,
-    compareMappingDualGermanKeysLeadAgsFirst: osmAdminGermanDualKeyLead.agsFirst,
     /** Single list item replacing two generic `compareOsmMatchTag` bullets for the German dual-key case. */
     compareOsmMatchGermanDualCode: (orderedTags: string) => `osmMatchTag[]=${orderedTags}`,
     compareOsmMatchGermanDualDescription:
@@ -507,8 +504,6 @@ export const de = {
     },
     datasetOsmOpenHistory: 'Auf osm.org anzeigen',
     datasetPropertiesEmpty: '—',
-    datasetPropertiesLegacySnapshot:
-      'Für diesen Snapshot sind keine gespeicherten Attribute verfügbar — Vergleich erneut ausführen.',
 
     /** Live-Abruf row inside "Attribute zum Zeitpunkt des Vergleichs". */
     datasetOsmLiveCardTitle: 'OSM-Daten (Live-Abruf)',

@@ -46,11 +46,11 @@ export function sumGemeindeAttributesForPrefix(
 /** Direct Gemeinde attributes, or Land/Kreis/Verband totals from member Gemeinden. */
 export function destatisAttributesForArs(
   bundle: {
-    latest: { gemeindeAttributesByArs?: Record<string, GermanKeyGemeindeAttribute> }
+    latest: { gemeindeAttributesByArs: Record<string, GermanKeyGemeindeAttribute> }
   },
   ars12: string,
 ) {
-  const attrs = bundle.latest.gemeindeAttributesByArs ?? {}
+  const attrs = bundle.latest.gemeindeAttributesByArs
   const direct = attrs[ars12]
   if (direct && (direct.populationTotal !== undefined || direct.areaKm2 !== undefined)) {
     return direct

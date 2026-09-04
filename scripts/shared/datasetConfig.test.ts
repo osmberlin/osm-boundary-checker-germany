@@ -60,22 +60,4 @@ describe('parseDatasetConfig', () => {
       }),
     ).toThrow()
   })
-
-  test('maps legacy osmScopeFilter centroid alias to intersects_official_coverage', () => {
-    const parsed = parseDatasetConfig('area-legacy', {
-      displayName: 'Legacy scope',
-      titlePrefix: 'Area',
-      officialProfile: 'bkg_vg25_gem',
-      osmProfile: 'admin_rs',
-      idNormalization: { preset: 'regional-12' },
-      metricsCrs: 'EPSG:25832',
-      compare: {
-        officialMatchProperty: 'ARS',
-        bboxFilter: 'none',
-        osmScopeFilter: 'centroid_in_official_coverage',
-        minZoom: 0,
-      },
-    })
-    expect(parsed.compare.osmScopeFilter).toBe('intersects_official_coverage')
-  })
 })

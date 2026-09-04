@@ -4,11 +4,9 @@ export type RelationResolverSearch = {
   dataset?: string
 }
 
-const relationResolverSearchSchema = z
-  .object({
-    dataset: z.union([z.string(), z.number()]).optional(),
-  })
-  .passthrough()
+const relationResolverSearchSchema = z.object({
+  dataset: z.union([z.string(), z.number()]).optional(),
+})
 
 /** TanStack Router `validateSearch`: tolerant parsing for optional `dataset`. */
 export function validateRelationResolverSearch(

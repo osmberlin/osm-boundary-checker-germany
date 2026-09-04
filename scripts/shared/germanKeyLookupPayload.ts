@@ -36,18 +36,15 @@ export const germanKeyLatestDatasetSchema = germanKeyLookupMapsSchema.extend({
   provenanceLines: z.array(z.string()),
   sourcePublicUrl: z.string(),
   source: germanKeyPublicationSourceSchema,
-  /** Optional so committed lookup JSON from before EWZ parsing still validates. */
-  gemeindeAttributesByArs: z.record(z.string(), germanKeyGemeindeAttributeSchema).optional(),
+  gemeindeAttributesByArs: z.record(z.string(), germanKeyGemeindeAttributeSchema),
   /** Bevölkerungsfortschreibung Stichtag (ISO date), not Gebietsstand. */
   populationDate: z.string().optional(),
-  destatisMerkmale: z
-    .object({
-      areaColumnHeader: z.string().optional(),
-      populationColumnHeader: z.string().optional(),
-      maleColumnHeader: z.string().optional(),
-      gemeindenWithPopulation: z.number().int().optional(),
-    })
-    .optional(),
+  destatisMerkmale: z.object({
+    areaColumnHeader: z.string().optional(),
+    populationColumnHeader: z.string().optional(),
+    maleColumnHeader: z.string().optional(),
+    gemeindenWithPopulation: z.number().int().optional(),
+  }),
 })
 
 export type GermanKeyLatestDataset = z.infer<typeof germanKeyLatestDatasetSchema>
