@@ -54,7 +54,7 @@ export async function repoDataFileResponse(req: Request, filePath: string): Prom
   if (range?.trim().toLowerCase().startsWith('bytes=')) {
     const raw = range.slice('bytes='.length).trim()
     const [startPart, endPart] = raw.split('-', 2)
-    let start = startPart === '' ? NaN : Number.parseInt(startPart, 10)
+    let start = startPart === undefined || startPart === '' ? NaN : Number.parseInt(startPart, 10)
     let end = endPart === '' || endPart === undefined ? NaN : Number.parseInt(endPart, 10)
     if (Number.isNaN(start)) start = 0
     if (Number.isNaN(end)) end = size - 1

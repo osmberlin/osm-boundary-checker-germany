@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 cd "$(dirname -- "$0")/.." || exit 1
-. "$(dirname -- "$0")/common.sh"
+. "$(dirname -- "$0")/ensure-bun.sh"
 
 echo "[pre-push] checking Destatis german-key lookup freshness"
 bun run german-key-lookup:weekly
 echo "[pre-push] rebuilding changelog"
 bun run changelog:husky
 echo "[pre-push] running repo checks"
-bun run check
+bun run check-pre-push

@@ -33,6 +33,7 @@ function passthroughArgs(argv: string[]): string[] {
   const out: string[] = []
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
+    if (a === undefined) continue
     if (a === '--help' || a === '-h' || a === '--yes' || a === '--non-interactive') continue
     if (a === '--kind') {
       if (argv[i + 1] !== undefined) i++

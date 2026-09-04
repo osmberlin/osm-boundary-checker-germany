@@ -4,7 +4,7 @@ This repository uses [Cursor Cloud Agents](https://cursor.com/docs/cloud-agent).
 
 ## Install tiers
 
-Setup is split so lightweight tasks (Dependabot PR reviews, lint, typecheck) boot fast without GDAL and other pipeline binaries.
+Setup is split so lightweight tasks (Dependabot PR reviews, lint, type-check) boot fast without GDAL and other pipeline binaries.
 
 ### Always (on agent boot)
 
@@ -15,7 +15,7 @@ Cursor runs the `install` command from `.cursor/environment.json`:
 
 Enough for:
 
-- `bun run check`, `bun run typecheck`, `bun run test`
+- `bun run check`, `bun run type-check`, `bun run test`
 - Report app work under `report/`
 - Reviewing Dependabot dependency bumps
 
@@ -37,7 +37,7 @@ cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml
 ```bash
 export PATH="$HOME/.bun/bin:$PATH"
 bun --version
-bun run typecheck
+bun run type-check
 ```
 
 **Pipeline work** (after processing tools + Rust build):
@@ -52,7 +52,7 @@ bun run test
 
 | Goal                           | Prerequisites              | Command                                                                                               |
 | ------------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Lint + format + typecheck      | Boot only                  | `bun run check`                                                                                       |
+| Lint + format + type-check     | Boot only                  | `bun run check`                                                                                       |
 | Unit tests                     | Boot only                  | `bun run test`                                                                                        |
 | Build Rust geom sidecar        | Processing tools           | `cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml`                                  |
 | Quick pipeline test (skip BKG) | Processing tools + sidecar | `bun run extract:official -- --yes && bun run extract:osm -- --yes && bun run compare -- --yes --all` |

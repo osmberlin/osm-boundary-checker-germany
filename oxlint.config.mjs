@@ -1,13 +1,20 @@
 import { defineConfig } from 'oxlint'
 
+// FMC default — shared tilda-geo / trassenscout base (no app-specific jsPlugins).
+// ignorePatterns: keep in sync with oxfmt.config.mjs.
 export default defineConfig({
   plugins: ['eslint', 'typescript', 'unicorn', 'oxc', 'react'],
   options: { typeAware: true },
   ignorePatterns: [
+    '.agents/**',
+    '.cursor/**',
+    '.output/**',
+    'playwright-report/**',
+    'test-results/**',
     '**/.cache/**',
     '**/dist/**',
-    '**/node_modules/**',
     'datasets/**/output/**',
+    'report/public/datasets/**/output/**',
     '**/*.pmtiles',
   ],
   categories: {
@@ -51,6 +58,13 @@ export default defineConfig({
       rules: {
         'typescript/no-non-null-assertion': 'off',
         'react/rules-of-hooks': 'off',
+      },
+    },
+    {
+      files: ['report/src/**'],
+      jsPlugins: [{ name: 'compat', specifier: 'eslint-plugin-compat' }],
+      rules: {
+        'compat/compat': 'error',
       },
     },
   ],

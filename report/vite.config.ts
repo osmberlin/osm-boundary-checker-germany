@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import viteReact from '@vitejs/plugin-react'
+import browserslistToEsbuild from 'browserslist-to-esbuild'
 import { defineConfig, searchForWorkspaceRoot, type Plugin } from 'vite'
 
 /**
@@ -91,6 +92,7 @@ export default defineConfig(({ command }) => ({
     host: '127.0.0.1',
   },
   build: {
+    target: browserslistToEsbuild(),
     sourcemap: true,
   },
   resolve: {

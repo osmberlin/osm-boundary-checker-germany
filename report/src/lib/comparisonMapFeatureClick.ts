@@ -46,10 +46,12 @@ export function handleComparisonMapFeatureClick(args: {
   onOverlapPick: (keys: string[]) => void
 }): void {
   const { featureKeys, areaKey, data, navigate, onOverlapPick } = args
+  const featureKey = featureKeys[0]
+  if (featureKey === undefined) return
   if (featureKeys.length === 1) {
     void navigate({
       to: '/$areaId/feature/$featureKey',
-      params: { areaId: areaKey, featureKey: featureKeys[0] },
+      params: { areaId: areaKey, featureKey },
     })
     return
   }
@@ -59,6 +61,6 @@ export function handleComparisonMapFeatureClick(args: {
   }
   void navigate({
     to: '/$areaId/feature/$featureKey',
-    params: { areaId: areaKey, featureKey: featureKeys[0] },
+    params: { areaId: areaKey, featureKey },
   })
 }

@@ -25,3 +25,8 @@ rust/**/target/
 # Generated local runtime artifacts for CI validation
 .artifact-runtime/
 .artifact-runtime-report/
+
+# TypeScript incremental build info (tsconfig templates)
+.tsbuildinfo-cli
+**/.tsbuildinfo-app
+**/.tsbuildinfo-scripts

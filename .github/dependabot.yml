@@ -71,6 +71,9 @@ updates:
           - '@types/*'
           - 'typescript'
           - '@typescript/typescript-*'
+          - 'browserslist'
+          - 'browserslist-to-esbuild'
+          - 'eslint-plugin-compat'
         update-types:
           - minor
           - patch

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { addrPostcodeColorMatchExpression } from './addrPostcodeMapExpressions'
 import {
   addrPostcodeColorIndex,

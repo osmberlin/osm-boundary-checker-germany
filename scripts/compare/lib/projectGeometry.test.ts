@@ -19,8 +19,10 @@ describe('projectGeometry', () => {
     const q = projectGeometry(p, 'EPSG:32633')
     expect(q.type).toBe('Polygon')
     const ring = (q as Polygon).coordinates[0]
-    expect(Number.isFinite(ring[0]![0])).toBe(true)
-    expect(Number.isFinite(ring[0]![1])).toBe(true)
+    const first = ring?.[0]
+    expect(first).toBeDefined()
+    expect(Number.isFinite(first![0])).toBe(true)
+    expect(Number.isFinite(first![1])).toBe(true)
   })
 
   test('EPSG:25832 preserves finite coordinates', () => {
@@ -39,7 +41,9 @@ describe('projectGeometry', () => {
     const q = projectGeometry(p, 'EPSG:25832')
     expect(q.type).toBe('Polygon')
     const ring = (q as Polygon).coordinates[0]
-    expect(Number.isFinite(ring[0]![0])).toBe(true)
-    expect(Number.isFinite(ring[0]![1])).toBe(true)
+    const first = ring?.[0]
+    expect(first).toBeDefined()
+    expect(Number.isFinite(first![0])).toBe(true)
+    expect(Number.isFinite(first![1])).toBe(true)
   })
 })

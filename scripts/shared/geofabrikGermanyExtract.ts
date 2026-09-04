@@ -20,8 +20,9 @@ export function parseGermanyUpdatesState(text: string): string | null {
   for (const line of text.split('\n')) {
     const trimmed = line.trim()
     const match = /^timestamp=(.+)$/.exec(trimmed)
-    if (!match) continue
-    return match[1].replaceAll('\\:', ':')
+    const timestamp = match?.[1]
+    if (timestamp === undefined) continue
+    return timestamp.replaceAll('\\:', ':')
   }
   return null
 }

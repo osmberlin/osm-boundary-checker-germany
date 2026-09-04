@@ -1,4 +1,7 @@
 {
   "extends": "./scripts/tsconfig.json",
-  "include": ["cli/**/*.ts"]
+  "include": ["cli/**/*.ts"],
+  "compilerOptions": {
+    "tsBuildInfoFile": ".tsbuildinfo-cli"
+  }
 }

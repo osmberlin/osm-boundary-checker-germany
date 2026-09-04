@@ -14,7 +14,7 @@
     "dev:with-rust": "bun run --cwd .. rust:build && bun run dev",
     "format": "bun run --cwd .. format",
     "lint": "bun run --cwd .. lint",
-    "typecheck": "bun run --cwd .. typecheck",
+    "type-check": "bun run --cwd .. type-check",
     "changelog": "bun run --cwd .. changelog",
     "check": "bun run --cwd .. check",
     "build": "rm -rf dist && FORCE_COLOR=1 bun --bun vite build && bun run bundle-static-assets",
@@ -50,6 +50,8 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.1.0",
+    "browserslist": "^4.28.8",
+    "browserslist-to-esbuild": "^2.1.1",
     "bun-plugin-react-compiler": "^0.3.9",
     "bun-plugin-tailwind": "^0.1.2",
     "oxc-transform-react": "^0.145.0",
@@ -57,5 +59,12 @@
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"
-  }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not op_mini all",
+    "not kaios > 0"
+  ]
 }

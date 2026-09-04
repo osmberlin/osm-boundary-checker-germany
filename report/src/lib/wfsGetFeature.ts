@@ -173,8 +173,9 @@ function parseMultiSurfaceElement(
   const polygons = polygonEls
     .map((polygonEl) => parsePolygonElement(polygonEl))
     .filter((polygon): polygon is GeoJSON.Polygon => polygon != null)
-  if (polygons.length === 0) return null
-  if (polygons.length === 1) return polygons[0]
+  const firstPolygon = polygons[0]
+  if (firstPolygon === undefined) return null
+  if (polygons.length === 1) return firstPolygon
   return {
     type: 'MultiPolygon',
     coordinates: polygons.map((polygon) => polygon.coordinates),
