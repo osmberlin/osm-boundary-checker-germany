@@ -56,4 +56,36 @@ describe('regionalOsmTags', () => {
       population: '74113',
     })
   })
+
+  test('keeps the relation id and fills wikidata from another same-ARS feature', () => {
+    const collection: FeatureCollection = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [0, 0] },
+          properties: {
+            'de:regionalschluessel': '110000000000',
+            osm_id: '-62422',
+          },
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [0, 0] },
+          properties: {
+            'de:regionalschluessel': '110000000000',
+            osm_way_id: '99',
+            wikidata: 'Q64',
+            population: '3769962',
+          },
+        },
+      ],
+    }
+    const tags = collectRegionalOsmTags(collection, '2026-01-01T00:00:00.000Z')
+    expect(tags.byArs['110000000000']).toEqual({
+      osmId: 'relation/62422',
+      wikidata: 'Q64',
+      population: '3769962',
+    })
+  })
 })

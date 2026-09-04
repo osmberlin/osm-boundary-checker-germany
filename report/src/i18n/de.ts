@@ -673,6 +673,22 @@ export const de = {
     rowOsmRelation: 'OSM-Relation',
     latestChip: 'aktuellste Zahl',
     missingValue: '—',
+    cellNa: 'n. a.',
+    cellNaTitle: 'Nicht Teil dieser Quelle.',
+    cellNaDestatisQid: 'Destatis führt keine Wikidata-IDs.',
+    cellNaDestatisOsm: 'Destatis führt keine OSM-Relationen.',
+    cellNaOsmArea: 'OSM-Fläche ist nicht Teil dieses Vergleichs.',
+    cellNaWdArea: 'Wikidata-Fläche wird hier nicht ausgewertet.',
+    cellMissing: 'fehlt',
+    cellMissingTitle: 'Wert erwartet, liegt aber nicht vor.',
+    cellOptionalTitle: 'Nicht immer vorhanden.',
+    tableLegend:
+      'n. a. = nicht Teil dieser Quelle · fehlt = erwartet, aber leer · — = nicht immer gesetzt',
+    tableToneLegend:
+      'Grün = stimmt mit Destatis überein · Bernstein = weicht ab oder fehlt (wie der Hinweis oben)',
+    cellToneOkTitle: 'Passt zum Abgleich',
+    cellToneBadTitle: 'Weicht ab oder fehlt',
+    cellToneRefTitle: 'Amtliche Referenz',
     noOfficialPopulation: 'Keine amtliche Einwohnerzahl in der aktuellen Quartalsdatei.',
     obsoleteLead: (year: number) =>
       `Dieser Schlüssel steht nicht in der aktuellen Quartalsdatei (zuletzt GV100ADJ ${year}).`,

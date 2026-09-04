@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from '@tanstack/react-router'
-import { useState } from 'react'
 import { lookupSuccessorForExplorerKey } from '../../../scripts/shared/arsSuccessorTable.ts'
 import { destatisAttributesForArs } from '../../../scripts/shared/germanKeyGemeindeSum.ts'
 import { geometryAreaIdForArs } from '../../../scripts/shared/regionalArs.ts'
 import {
+  NEUTRAL_HUB_CELL_TONES,
   numericOsmRelationId,
+  regionalHubCellTones,
   regionalHubIssues,
+  type HubCellTone,
 } from '../../../scripts/shared/regionalHubCompare.ts'
 import type { RegionalHubMismatchFlag } from '../../../scripts/shared/regionalHubPayload.ts'
 import { AlertNotice } from '../components/AlertNotice'
@@ -20,7 +22,8 @@ import {
   regionalHubWikidataQueryOptions,
 } from '../data/load'
 import { de } from '../i18n/de'
-import { EM_DASH, formatDeInteger } from '../lib/formatDe'
+import { cn } from '../lib/cn'
+import { formatDeInteger } from '../lib/formatDe'
 import { formatSnapshotDateLabelDe } from '../lib/formatSourceDownloadedAt'
 import { ags8FromArs12Digits, statistikportalGemeindeUrl } from '../lib/germanKeyExplorer'
 import { resolveGemeindeNameByArs } from '../lib/germanKeyLookupBundle'
@@ -30,6 +33,7 @@ import {
   displayNameForArs,
   hubCompareInputForArs,
   newestPopulationSource,
+  overlayLiveOsmTags,
 } from '../lib/regionalHubDisplay'
 import { wikidataItemUrl } from '../lib/regionalHubQuickStatements'
 
@@ -37,9 +41,41 @@ const t = de.regionalHub
 const linkClass =
   'text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 
-function formatDate(raw: string | undefined): string {
-  if (!raw) return EM_DASH
+function formatDate(raw: string | undefined): string | null {
+  if (!raw) return null
   return formatSnapshotDateLabelDe(raw.slice(0, 10)) || raw
+}
+
+function hubTdClass(tone: HubCellTone): string {
+  return cn('px-3 py-2', tone === 'ok' && 'bg-emerald-500/10', tone === 'bad' && 'bg-amber-500/10')
+}
+
+function hubTdTitle(tone: HubCellTone, title?: string): string | undefined {
+  return (
+    title ?? (tone === 'ok' ? t.cellToneOkTitle : tone === 'bad' ? t.cellToneBadTitle : undefined)
+  )
+}
+
+function HubEmpty({ kind, title }: { kind: 'na' | 'missing' | 'optional'; title?: string }) {
+  if (kind === 'na') {
+    return (
+      <abbr className="cursor-help text-slate-600 no-underline" title={title ?? t.cellNaTitle}>
+        {t.cellNa}
+      </abbr>
+    )
+  }
+  if (kind === 'optional') {
+    return (
+      <span className="text-slate-500" title={title ?? t.cellOptionalTitle}>
+        {t.missingValue}
+      </span>
+    )
+  }
+  return (
+    <span className="text-amber-200/90" title={title ?? t.cellMissingTitle}>
+      {t.cellMissing}
+    </span>
+  )
 }
 
 function verdictCopy(flag: RegionalHubMismatchFlag, mismatch: boolean): string {
@@ -62,14 +98,26 @@ export function RegionalHubDetail() {
   const wdQuery = useQuery(regionalHubWikidataQueryOptions())
   const manifestQuery = useQuery(regionalHubManifestQueryOptions())
   const successorsQuery = useQuery(arsSuccessorsQueryOptions())
-  const [liveEnabled, setLiveEnabled] = useState(false)
 
   const bundle = lookupQuery.data
-  const osm = osmQuery.data?.byArs[ars]
+  const osmExtract = osmQuery.data?.byArs[ars]
   const wd = wdQuery.data?.byArs[ars]
   const destatis = bundle ? destatisAttributesForArs(bundle, ars) : null
+  const relationId = numericOsmRelationId(osmExtract?.osmId)
+  const liveQuery = useQuery({
+    ...overpassOsmTagsQueryOptions({
+      id: Number(relationId ?? 0),
+      interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
+    }),
+    enabled: relationId != null,
+  })
+  const osm = overlayLiveOsmTags(
+    osmExtract,
+    liveQuery.isSuccess ? (liveQuery.data?.tags ?? {}) : undefined,
+  )
   const compare = bundle ? hubCompareInputForArs({ bundle, ars12: ars, osm, wikidata: wd }) : null
   const issues = compare ? regionalHubIssues(compare) : []
+  const tones = compare ? regionalHubCellTones(compare) : NEUTRAL_HUB_CELL_TONES
   const primary = issues[0] ?? null
   const name = bundle ? displayNameForArs(bundle, ars) : null
   const latestInLatest = bundle ? Object.hasOwn(bundle.latest.gemeindenByArs, ars) : false
@@ -85,14 +133,6 @@ export function RegionalHubDetail() {
     destatisDate: bundle?.latest.populationDate,
     osmDate: osm?.populationDate,
     wdDate: wd?.date,
-  })
-  const relationId = numericOsmRelationId(osm?.osmId)
-  const liveQuery = useQuery({
-    ...overpassOsmTagsQueryOptions({
-      id: Number(relationId ?? 0),
-      interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
-    }),
-    enabled: liveEnabled && relationId != null,
   })
 
   const known =
@@ -203,40 +243,86 @@ export function RegionalHubDetail() {
           <tbody className="divide-y divide-slate-800 text-slate-200">
             <tr>
               <th className="px-3 py-2 text-left font-medium text-slate-400">{t.rowPopulation}</th>
-              <td className="px-3 py-2">
-                {formatPop(destatis?.populationTotal)}
-                {newest === 'destatis' ? <LatestChip /> : null}
+              <td
+                className={hubTdClass(tones.destatisPop)}
+                title={hubTdTitle(
+                  tones.destatisPop,
+                  tones.destatisPop === 'ok' ? t.cellToneRefTitle : undefined,
+                )}
+              >
+                {destatis?.populationTotal == null ? (
+                  <HubEmpty kind="missing" />
+                ) : (
+                  <>
+                    {formatDeInteger(destatis.populationTotal)}
+                    {newest === 'destatis' ? <LatestChip /> : null}
+                  </>
+                )}
               </td>
-              <td className="px-3 py-2">
-                {formatPop(compare?.osmPop)}
-                {newest === 'osm' ? <LatestChip /> : null}
+              <td className={hubTdClass(tones.osmPop)} title={hubTdTitle(tones.osmPop)}>
+                {compare?.osmPop == null ? (
+                  <HubEmpty kind="missing" />
+                ) : (
+                  <>
+                    {formatDeInteger(compare.osmPop)}
+                    {newest === 'osm' ? <LatestChip /> : null}
+                  </>
+                )}
               </td>
-              <td className="px-3 py-2">
-                {formatPop(wd?.pop)}
-                {newest === 'wikidata' ? <LatestChip /> : null}
+              <td className={hubTdClass(tones.wdPop)} title={hubTdTitle(tones.wdPop)}>
+                {wd?.pop == null ? (
+                  <HubEmpty kind="missing" />
+                ) : (
+                  <>
+                    {formatDeInteger(wd.pop)}
+                    {newest === 'wikidata' ? <LatestChip /> : null}
+                  </>
+                )}
               </td>
             </tr>
             <tr>
               <th className="px-3 py-2 text-left font-medium text-slate-400">{t.rowDate}</th>
-              <td className="px-3 py-2">{formatDate(bundle?.latest.populationDate)}</td>
-              <td className="px-3 py-2">{formatDate(osm?.populationDate)}</td>
-              <td className="px-3 py-2">{formatDate(wd?.date)}</td>
+              <td
+                className={hubTdClass(tones.destatisDate)}
+                title={hubTdTitle(
+                  tones.destatisDate,
+                  tones.destatisDate === 'ok' ? t.cellToneRefTitle : undefined,
+                )}
+              >
+                {formatDate(bundle?.latest.populationDate) ?? <HubEmpty kind="missing" />}
+              </td>
+              <td className={hubTdClass(tones.osmDate)} title={hubTdTitle(tones.osmDate)}>
+                {formatDate(osm?.populationDate) ?? <HubEmpty kind="optional" />}
+              </td>
+              <td className={hubTdClass(tones.wdDate)} title={hubTdTitle(tones.wdDate)}>
+                {formatDate(wd?.date) ?? <HubEmpty kind="missing" />}
+              </td>
             </tr>
             <tr>
               <th className="px-3 py-2 text-left font-medium text-slate-400">{t.rowArea}</th>
               <td className="px-3 py-2">
-                {destatis?.areaKm2 != null
-                  ? `${destatis.areaKm2.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} km²`
-                  : EM_DASH}
+                {destatis?.areaKm2 != null ? (
+                  `${destatis.areaKm2.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} km²`
+                ) : (
+                  <HubEmpty kind="missing" />
+                )}
               </td>
-              <td className="px-3 py-2">{EM_DASH}</td>
-              <td className="px-3 py-2">{EM_DASH}</td>
+              <td className="px-3 py-2">
+                <HubEmpty kind="na" title={t.cellNaOsmArea} />
+              </td>
+              <td className="px-3 py-2">
+                <HubEmpty kind="na" title={t.cellNaWdArea} />
+              </td>
             </tr>
             <tr>
               <th className="px-3 py-2 text-left font-medium text-slate-400">{t.rowWikidataId}</th>
-              <td className="px-3 py-2">{EM_DASH}</td>
-              <td className="px-3 py-2">{osm?.wikidata ?? EM_DASH}</td>
               <td className="px-3 py-2">
+                <HubEmpty kind="na" title={t.cellNaDestatisQid} />
+              </td>
+              <td className={hubTdClass(tones.osmWikidata)} title={hubTdTitle(tones.osmWikidata)}>
+                {osm?.wikidata ?? <HubEmpty kind="missing" />}
+              </td>
+              <td className={hubTdClass(tones.wdQid)} title={hubTdTitle(tones.wdQid)}>
                 {wd?.qid ? (
                   <a
                     href={wikidataItemUrl(wd.qid)}
@@ -247,18 +333,28 @@ export function RegionalHubDetail() {
                     {wd.qid}
                   </a>
                 ) : (
-                  EM_DASH
+                  <HubEmpty kind="missing" />
                 )}
               </td>
             </tr>
             <tr>
               <th className="px-3 py-2 text-left font-medium text-slate-400">{t.rowOsmRelation}</th>
-              <td className="px-3 py-2">{EM_DASH}</td>
-              <td className="px-3 py-2">{osm?.osmId ?? EM_DASH}</td>
-              <td className="px-3 py-2">{wd?.osmRelationId ?? EM_DASH}</td>
+              <td className="px-3 py-2">
+                <HubEmpty kind="na" title={t.cellNaDestatisOsm} />
+              </td>
+              <td className={hubTdClass(tones.osmRelation)} title={hubTdTitle(tones.osmRelation)}>
+                {osm?.osmId ?? <HubEmpty kind="missing" />}
+              </td>
+              <td className={hubTdClass(tones.wdP402)} title={hubTdTitle(tones.wdP402)}>
+                {wd?.osmRelationId ?? <HubEmpty kind="optional" />}
+              </td>
             </tr>
           </tbody>
         </table>
+        <div className="space-y-1 border-t border-slate-800 px-3 py-2 text-xs text-slate-500">
+          <p>{t.tableLegend}</p>
+          <p>{t.tableToneLegend}</p>
+        </div>
       </div>
 
       <section className="mt-10 space-y-3">
@@ -283,7 +379,9 @@ export function RegionalHubDetail() {
             <button
               type="button"
               className={`${sharedButtonClass} mt-3`}
-              onClick={() => setLiveEnabled(true)}
+              onClick={() => {
+                void liveQuery.refetch()
+              }}
             >
               {t.liveTagsButton}
             </button>
@@ -300,9 +398,9 @@ export function RegionalHubDetail() {
 
       <p className="mt-10 text-xs text-slate-500">
         {t.provenanceLine(
-          formatDate(bundle?.latest.populationDate),
-          formatDate(osmQuery.data?.generatedAt),
-          formatDate(wdQuery.data?.generatedAt),
+          formatDate(bundle?.latest.populationDate) ?? t.provenanceUnknown,
+          formatDate(osmQuery.data?.generatedAt) ?? t.provenanceUnknown,
+          formatDate(wdQuery.data?.generatedAt) ?? t.provenanceUnknown,
         )}{' '}
         <Link to="/tools/regional/sources" className={linkClass}>
           {t.sourcesDebugLink}
@@ -318,8 +416,4 @@ function LatestChip() {
       {t.latestChip}
     </span>
   )
-}
-
-function formatPop(n: number | undefined): string {
-  return n == null ? EM_DASH : formatDeInteger(n)
 }

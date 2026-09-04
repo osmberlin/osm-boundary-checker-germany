@@ -1,49 +1,26 @@
 import { describe, expect, test } from 'bun:test'
-import type { RegionalHubWikidataFile } from '../shared/regionalHubPayload.ts'
-import { shouldSkipWikidataFetch } from './fetchWikidataRegional.ts'
+import { mergeBindings } from './fetchWikidataRegional.ts'
 
-const HASH = 'abc123def4567890'
-const NOW_MS = Date.parse('2026-09-04T12:00:00.000Z')
-
-function dump(overrides: Partial<RegionalHubWikidataFile> = {}): RegionalHubWikidataFile {
+function binding(ars: string, qid: string, pop?: string, date?: string) {
   return {
-    generatedAt: '2026-09-01T12:00:00.000Z',
-    queryHash: HASH,
-    durationMs: 100,
-    rowCount: 1,
-    duplicateArsCount: 0,
-    byArs: { '120510000000': { qid: 'Q3931' } },
-    ...overrides,
+    ars: { value: ars },
+    qid: { value: qid },
+    ...(pop ? { pop: { value: pop } } : {}),
+    ...(date ? { date: { value: date } } : {}),
   }
 }
 
-describe('shouldSkipWikidataFetch', () => {
-  test('fresh successful dump → true', () => {
-    expect(shouldSkipWikidataFetch(dump(), HASH, NOW_MS)).toBe(true)
-  })
-
-  test('force → false', () => {
-    expect(shouldSkipWikidataFetch(dump(), HASH, NOW_MS, true)).toBe(false)
-  })
-
-  test('queryHash mismatch → false', () => {
-    expect(shouldSkipWikidataFetch(dump(), 'other-hash', NOW_MS)).toBe(false)
-  })
-
-  test('skipReason last_good_fallback → false', () => {
-    expect(
-      shouldSkipWikidataFetch(dump({ skipReason: 'wikidata_last_good_fallback' }), HASH, NOW_MS),
-    ).toBe(false)
-  })
-
-  test('skipReason wikidata_fetch_failed → false', () => {
-    expect(
-      shouldSkipWikidataFetch(dump({ skipReason: 'wikidata_fetch_failed' }), HASH, NOW_MS),
-    ).toBe(false)
-  })
-
-  test('missing generatedAt → false', () => {
-    const { generatedAt: _generatedAt, ...rest } = dump()
-    expect(shouldSkipWikidataFetch(rest as RegionalHubWikidataFile, HASH, NOW_MS)).toBe(false)
+describe('mergeBindings', () => {
+  test('keeps the BestRank population with the latest P585 when an ARS repeats', () => {
+    const merged = mergeBindings([
+      binding('010010000000', 'Q3798', '99307', '2024-12-31T00:00:00Z'),
+      binding('010010000000', 'Q3798', '95568', '2025-12-31T00:00:00Z'),
+    ])
+    expect(merged.duplicateArsCount).toBe(1)
+    expect(merged.byArs['010010000000']).toEqual({
+      qid: 'Q3798',
+      pop: 95568,
+      date: '2025-12-31',
+    })
   })
 })

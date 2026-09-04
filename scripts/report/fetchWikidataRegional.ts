@@ -50,6 +50,16 @@ function compactRow(row: SparqlBinding): { ars12: string; item: RegionalHubWikid
   return { ars12, item }
 }
 
+function wikidataRowIsPreferable(
+  next: RegionalHubWikidataRow,
+  prev: RegionalHubWikidataRow,
+): boolean {
+  const nextDate = next.date ?? ''
+  const prevDate = prev.date ?? ''
+  if (nextDate !== prevDate) return nextDate > prevDate
+  return next.pop != null && prev.pop == null
+}
+
 function mergeBindings(bindings: SparqlBinding[]): {
   byArs: RegionalHubWikidataFile['byArs']
   duplicateArsCount: number
@@ -59,8 +69,10 @@ function mergeBindings(bindings: SparqlBinding[]): {
   for (const binding of bindings) {
     const parsed = compactRow(binding)
     if (!parsed) continue
-    if (byArs[parsed.ars12]) {
+    const prev = byArs[parsed.ars12]
+    if (prev) {
       duplicateArsCount += 1
+      if (wikidataRowIsPreferable(parsed.item, prev)) byArs[parsed.ars12] = parsed.item
       continue
     }
     byArs[parsed.ars12] = parsed.item

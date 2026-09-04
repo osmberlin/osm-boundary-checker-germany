@@ -1,10 +1,11 @@
 import { copyFileSync, existsSync, statSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, searchForWorkspaceRoot, type Plugin } from 'vite'
 
 /**
  * GitHub Pages has no server-side fallback to index.html. Unknown paths return
@@ -76,6 +77,15 @@ export default defineConfig(({ command }) => ({
     port: 5174,
     strictPort: true,
     host: '127.0.0.1',
+    fs: {
+      // Bun globalStore realpaths packages into ~/.bun/install/cache/links (Fontsource woff2).
+      // Extend defaults — do not replace the workspace root.
+      // @see https://github.com/vitejs/vite/issues/22662
+      allow: [
+        searchForWorkspaceRoot(process.cwd()),
+        resolve(homedir(), '.bun/install/cache/links'),
+      ],
+    },
   },
   preview: {
     port: 4173,

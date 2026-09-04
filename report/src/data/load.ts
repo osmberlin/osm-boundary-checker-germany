@@ -285,7 +285,7 @@ export function regionalHubManifestQueryOptions() {
   return queryOptions({
     queryKey: ['regional-hub-manifest'],
     queryFn: loadRegionalHubManifest,
-    staleTime: Infinity,
+    refetchOnMount: 'always',
   })
 }
 
@@ -293,7 +293,7 @@ export function regionalHubOsmTagsQueryOptions() {
   return queryOptions({
     queryKey: ['regional-hub-osm-tags'],
     queryFn: loadRegionalHubOsmTags,
-    staleTime: Infinity,
+    refetchOnMount: 'always',
   })
 }
 
@@ -301,7 +301,7 @@ export function regionalHubWikidataQueryOptions() {
   return queryOptions({
     queryKey: ['regional-hub-wikidata'],
     queryFn: loadRegionalHubWikidata,
-    staleTime: Infinity,
+    refetchOnMount: 'always',
   })
 }
 
@@ -309,7 +309,7 @@ export function regionalHubMismatchFlagsQueryOptions() {
   return queryOptions({
     queryKey: ['regional-hub-mismatch-flags'],
     queryFn: loadRegionalHubMismatchFlags,
-    staleTime: Infinity,
+    refetchOnMount: 'always',
   })
 }
 

@@ -3,6 +3,7 @@ import {
   numericOsmRelationId,
   parsePopulationNumber,
   primaryRegionalHubIssue,
+  regionalHubCellTones,
 } from '../shared/regionalHubCompare.ts'
 
 describe('primaryRegionalHubIssue', () => {
@@ -128,5 +129,72 @@ describe('primaryRegionalHubIssue', () => {
     expect(numericOsmRelationId('relation/62470')).toBe('62470')
     expect(numericOsmRelationId('62470')).toBe('62470')
     expect(numericOsmRelationId('way/62470')).toBeUndefined()
+  })
+})
+
+describe('regionalHubCellTones', () => {
+  test('marks Destatis as the matching reference and OSM/WD population as off', () => {
+    expect(
+      regionalHubCellTones({
+        destatisPop: 3700577,
+        destatisDate: '2025-12-31',
+        osmPop: 3769962,
+        osmWikidata: 'Q64',
+        osmId: 'relation/62422',
+        wdQid: 'Q64',
+        wdPop: 3782202,
+        wdDate: '2023-12-31',
+        wdOsmRelationId: '62422',
+      }),
+    ).toEqual({
+      destatisPop: 'ok',
+      destatisDate: 'ok',
+      osmPop: 'bad',
+      osmDate: 'neutral',
+      wdPop: 'bad',
+      wdDate: 'bad',
+      osmWikidata: 'ok',
+      wdQid: 'ok',
+      osmRelation: 'ok',
+      wdP402: 'ok',
+    })
+  })
+
+  test('keeps a matching OSM population green when only the date is stale', () => {
+    expect(
+      regionalHubCellTones({
+        destatisPop: 74113,
+        destatisDate: '2024-12-31',
+        osmPop: 74113,
+        osmDate: '2023-12-31',
+        osmWikidata: 'Q3931',
+        osmId: 'relation/62470',
+        wdQid: 'Q3931',
+        wdPop: 74113,
+        wdDate: '2024-12-31',
+        wdOsmRelationId: '62470',
+      }),
+    ).toMatchObject({
+      osmPop: 'ok',
+      osmDate: 'bad',
+      wdPop: 'ok',
+      wdDate: 'ok',
+    })
+  })
+
+  test('treats a missing Wikidata P402 as bad once OSM and Wikidata are linked', () => {
+    expect(
+      regionalHubCellTones({
+        destatisPop: 74113,
+        destatisDate: '2024-12-31',
+        osmPop: 74113,
+        osmDate: '2024-12-31',
+        osmWikidata: 'Q3931',
+        osmId: 'relation/62470',
+        wdQid: 'Q3931',
+        wdPop: 74113,
+        wdDate: '2024-12-31',
+      }).wdP402,
+    ).toBe('bad')
   })
 })

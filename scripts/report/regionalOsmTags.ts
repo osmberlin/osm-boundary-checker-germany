@@ -56,6 +56,28 @@ function osmIdRank(osmId: string): number {
   return osmId.startsWith('relation/') ? 0 : 1
 }
 
+function osmTagScore(tag: RegionalHubOsmTag): number {
+  return (tag.wikidata ? 1 : 0) + (tag.population ? 1 : 0)
+}
+
+function mergeOsmTags(primary: RegionalHubOsmTag, secondary: RegionalHubOsmTag): RegionalHubOsmTag {
+  return {
+    osmId: primary.osmId,
+    population: primary.population ?? secondary.population,
+    populationDate: primary.populationDate ?? secondary.populationDate,
+    wikidata: primary.wikidata ?? secondary.wikidata,
+  }
+}
+
+function pickOsmTag(prev: RegionalHubOsmTag, next: RegionalHubOsmTag): RegionalHubOsmTag {
+  const prevRank = osmIdRank(prev.osmId)
+  const nextRank = osmIdRank(next.osmId)
+  if (nextRank < prevRank) return mergeOsmTags(next, prev)
+  if (nextRank > prevRank) return mergeOsmTags(prev, next)
+  if (osmTagScore(next) > osmTagScore(prev)) return mergeOsmTags(next, prev)
+  return mergeOsmTags(prev, next)
+}
+
 export function collectRegionalOsmTags(
   collection: FeatureCollection,
   generatedAt = new Date().toISOString(),
@@ -65,8 +87,7 @@ export function collectRegionalOsmTags(
     const parsed = regionalOsmTagFromFeature(feature)
     if (!parsed) continue
     const prev = byArs[parsed.ars12]
-    if (prev && osmIdRank(prev.osmId) <= osmIdRank(parsed.tag.osmId)) continue
-    byArs[parsed.ars12] = parsed.tag
+    byArs[parsed.ars12] = prev ? pickOsmTag(prev, parsed.tag) : parsed.tag
   }
   return {
     generatedAt,

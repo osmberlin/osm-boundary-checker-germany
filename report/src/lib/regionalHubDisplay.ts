@@ -19,6 +19,24 @@ export function displayNameForArs(bundle: GermanKeyLookupBundle, ars12: string):
   return verband ?? kreis ?? land ?? null
 }
 
+/** Live Overpass tags win when the query succeeded; extract is the fallback. */
+export function overlayLiveOsmTags(
+  extract: RegionalHubOsmTag | undefined,
+  liveTags: Record<string, string> | null | undefined,
+): RegionalHubOsmTag | undefined {
+  if (!extract) return undefined
+  if (liveTags == null) return extract
+  const population = liveTags.population?.trim()
+  const populationDate = liveTags['population:date']?.trim()
+  const wikidata = liveTags.wikidata?.trim()
+  return {
+    osmId: extract.osmId,
+    ...(population ? { population } : {}),
+    ...(populationDate ? { populationDate } : {}),
+    ...(wikidata ? { wikidata } : {}),
+  }
+}
+
 export function hubCompareInputForArs(input: {
   bundle: GermanKeyLookupBundle
   ars12: string

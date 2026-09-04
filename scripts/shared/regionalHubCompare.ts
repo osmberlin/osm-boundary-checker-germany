@@ -116,6 +116,89 @@ export function primaryRegionalHubIssue(
   return regionalHubIssues(input)[0] ?? null
 }
 
+export type HubCellTone = 'ok' | 'bad' | 'neutral'
+
+export type RegionalHubCellTones = {
+  destatisPop: HubCellTone
+  destatisDate: HubCellTone
+  osmPop: HubCellTone
+  osmDate: HubCellTone
+  wdPop: HubCellTone
+  wdDate: HubCellTone
+  osmWikidata: HubCellTone
+  wdQid: HubCellTone
+  osmRelation: HubCellTone
+  wdP402: HubCellTone
+}
+
+export const NEUTRAL_HUB_CELL_TONES: RegionalHubCellTones = {
+  destatisPop: 'neutral',
+  destatisDate: 'neutral',
+  osmPop: 'neutral',
+  osmDate: 'neutral',
+  wdPop: 'neutral',
+  wdDate: 'neutral',
+  osmWikidata: 'neutral',
+  wdQid: 'neutral',
+  osmRelation: 'neutral',
+  wdP402: 'neutral',
+}
+
+function presentTone(value: string | number | undefined): HubCellTone {
+  return value !== undefined && value !== '' ? 'ok' : 'bad'
+}
+
+function comparedPopTone(value: number | undefined, destatisPop: number | undefined): HubCellTone {
+  if (destatisPop === undefined) return value === undefined ? 'bad' : 'neutral'
+  if (value === undefined || numbersDiffer(value, destatisPop)) return 'bad'
+  return 'ok'
+}
+
+/** OSM `population:date` is optional; Wikidata P585 is expected once an item exists. */
+function comparedDateTone(input: {
+  value: string | undefined
+  destatisDate: string | undefined
+  missing: 'optional' | 'expected'
+}): HubCellTone {
+  if (dateIsOlder(input.value, input.destatisDate)) return 'bad'
+  if (normalizeIsoDate(input.value)) return 'ok'
+  return input.missing === 'optional' ? 'neutral' : 'bad'
+}
+
+export function regionalHubCellTones(input: RegionalHubCompareInput): RegionalHubCellTones {
+  const osmWd = input.osmWikidata?.trim()
+  const wdQid = input.wdQid?.trim()
+  const osmRelation = numericOsmRelationId(input.osmId)
+  const wdP402 = numericOsmRelationId(input.wdOsmRelationId)
+  const qidsMatch = Boolean(osmWd && wdQid && normalizeQid(osmWd) === normalizeQid(wdQid))
+
+  return {
+    destatisPop: presentTone(input.destatisPop),
+    destatisDate: presentTone(normalizeIsoDate(input.destatisDate)),
+    osmPop: comparedPopTone(input.osmPop, input.destatisPop),
+    osmDate: comparedDateTone({
+      value: input.osmDate,
+      destatisDate: input.destatisDate,
+      missing: 'optional',
+    }),
+    wdPop: comparedPopTone(input.wdPop, input.destatisPop),
+    wdDate: comparedDateTone({
+      value: input.wdDate,
+      destatisDate: input.destatisDate,
+      missing: 'expected',
+    }),
+    osmWikidata: qidsMatch || (Boolean(osmWd) && !wdQid) ? 'ok' : 'bad',
+    wdQid: presentTone(wdQid),
+    osmRelation: presentTone(osmRelation),
+    wdP402:
+      wdQid && osmRelation && (!wdP402 || !p402Agrees(input.osmId, input.wdOsmRelationId))
+        ? 'bad'
+        : wdP402
+          ? 'ok'
+          : 'neutral',
+  }
+}
+
 export function normalizeQid(raw: string): string {
   const trimmed = raw.trim()
   if (/^Q\d+$/i.test(trimmed)) return trimmed.toUpperCase()
