@@ -1,43 +1,23 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import {
+  runStatusFileSchema,
+  type RunStatusBranch,
+  type RunStatusCompareBranch,
+  type RunStatusFile,
+} from '../../report/src/types/runStatus.ts'
 
-export type RunBranchStatus = 'success' | 'failed_no_cache' | 'compare_failed' | 'skipped'
+export type {
+  RunBranchStatus,
+  RunStatusArea,
+  RunStatusBranch,
+  RunStatusCompareBranch,
+  RunStatusFile,
+} from '../../report/src/types/runStatus.ts'
 
 export type CompareOutputOrigin = 'current_run' | 'cache_last_good' | 'none'
 
 export type SourceDownloadOrigin = 'fresh' | 'cache_window' | 'fallback_artifact'
-
-export type RunStatusBranch = {
-  status: RunBranchStatus
-  updatedAt: string
-  usedCache?: boolean
-  sourceOrigin?: SourceDownloadOrigin
-  artifactTimestamp?: string
-  errorCode?: string
-  errorMessage?: string
-  retryHint?: string
-}
-
-export type RunStatusCompareBranch = RunStatusBranch & {
-  compareOutputOrigin?: CompareOutputOrigin
-  compareOutputGeneratedAt?: string
-}
-
-export type RunStatusArea = {
-  compare?: RunStatusCompareBranch
-  officialDownload?: RunStatusBranch
-}
-
-export type RunStatusFile = {
-  version: 1
-  runId: string
-  startedAt: string
-  updatedAt: string
-  inProgress: boolean
-  status?: 'ok' | 'fail'
-  shared: Record<string, RunStatusBranch>
-  areas: Record<string, RunStatusArea>
-}
 
 export const RUN_STATUS_FILE = 'run-status.json'
 
@@ -48,8 +28,8 @@ function safeNow(): string {
 function readRunStatusOrNull(path: string): RunStatusFile | null {
   if (!existsSync(path)) return null
   try {
-    const parsed = JSON.parse(readFileSync(path, 'utf-8')) as RunStatusFile
-    if (parsed && parsed.version === 1 && typeof parsed.runId === 'string') return parsed
+    const parsed = runStatusFileSchema.safeParse(JSON.parse(readFileSync(path, 'utf-8')))
+    if (parsed.success) return parsed.data
   } catch {
     // ignore malformed file and rebuild
   }

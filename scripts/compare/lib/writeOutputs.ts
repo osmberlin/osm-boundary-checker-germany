@@ -13,12 +13,14 @@ import { geojson } from 'flatgeobuf'
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
 import type { CompareRulesSummary } from '../../shared/compareRulesSummary.ts'
 import { comparisonDiffPlaceholderFeatureCollection } from '../../shared/comparisonDiffPlaceholder.ts'
-import type {
-  ComparisonFilterConfigSummary,
-  ComparisonForReport,
-  FeatureDetailShard,
-  ReportRow as StaticReportRow,
-  UnmatchedOsmReportRow as StaticUnmatchedOsmRow,
+import {
+  snapshotsSchema,
+  type ComparisonFilterConfigSummary,
+  type ComparisonForReport,
+  type FeatureDetailShard,
+  type ReportRow as StaticReportRow,
+  type SnapshotsJson,
+  type UnmatchedOsmReportRow as StaticUnmatchedOsmRow,
 } from '../../shared/comparisonPayload.ts'
 import {
   assignOfficialForEditStems,
@@ -454,30 +456,15 @@ function updateSnapshotsFile(
   staleOfficialKeyCount: number,
 ) {
   const snapshotsPath = join(areaPath, 'snapshots.json')
-  let snapshots: {
-    area: string
-    metricsCrs: string
-    runs: Array<{
-      id: string
-      summary: {
-        totalRows: number
-        meanIou: number
-        matched: number
-        unmatchedOsm: number
-        reviews?: number
-        issues?: number
-        staleOfficialKey?: number
-      }
-    }>
-  } = {
+  let snapshots: SnapshotsJson = {
     area: areaPath.split('/').pop() ?? '',
     metricsCrs,
     runs: [],
   }
   if (existsSync(snapshotsPath)) {
     try {
-      const parsed = JSON.parse(readFileSync(snapshotsPath, 'utf-8')) as typeof snapshots
-      if (parsed && Array.isArray(parsed.runs)) snapshots = parsed
+      const parsed = snapshotsSchema.safeParse(JSON.parse(readFileSync(snapshotsPath, 'utf-8')))
+      if (parsed.success) snapshots = parsed.data
     } catch {
       // Rebuild snapshots file when parsing fails.
     }

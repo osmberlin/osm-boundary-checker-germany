@@ -74,9 +74,7 @@ function resolveGpkgPath(runtimeRoot: string, cliGpkg: string | null): string {
   if (!existsSync(metaPath)) {
     throw new Error(`Missing ${metaPath}. Run bun run download -- --yes --targets bkg first.`)
   }
-  const meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as {
-    gpkgRelativePath: string
-  }
+  const meta = bkgDownloadMetadataSchema.parse(JSON.parse(readFileSync(metaPath, 'utf-8')))
   return resolve(runtimeRoot, meta.gpkgRelativePath)
 }
 

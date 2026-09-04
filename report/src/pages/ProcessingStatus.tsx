@@ -19,9 +19,9 @@ import {
   parseProcessingLogJsonl,
   partitionRunsByTimeline,
 } from '../lib/processingRuns'
-import type { ProcessingState } from '../lib/processingStatusTypes'
+import { processingStateSchema, type ProcessingState } from '../lib/processingStatusTypes'
 import { osmPipelineStateSchema, type OsmPipelineState } from '../types/osmPipelineState'
-import type { RunStatusFile } from '../types/runStatus'
+import { runStatusFileSchema, type RunStatusFile } from '../types/runStatus'
 
 async function loadProcessingStatusData(): Promise<{
   state: ProcessingState | null
@@ -35,9 +35,17 @@ async function loadProcessingStatusData(): Promise<{
     fetch(runStatusUrl(), { cache: 'no-store' }),
     fetch(osmPipelineStateUrl(), { cache: 'no-store' }),
   ])
-  const state = stateRes.ok ? ((await stateRes.json()) as ProcessingState) : null
+  let state: ProcessingState | null = null
+  if (stateRes.ok) {
+    const parsed = processingStateSchema.safeParse(await stateRes.json())
+    state = parsed.success ? parsed.data : null
+  }
   const events = logRes.ok ? parseProcessingLogJsonl(await logRes.text()) : []
-  const runStatus = runStatusRes.ok ? ((await runStatusRes.json()) as RunStatusFile) : null
+  let runStatus: RunStatusFile | null = null
+  if (runStatusRes.ok) {
+    const parsed = runStatusFileSchema.safeParse(await runStatusRes.json())
+    runStatus = parsed.success ? parsed.data : null
+  }
   let osmPipelineState: OsmPipelineState | null = null
   if (osmStateRes.ok) {
     const parsed = osmPipelineStateSchema.safeParse(await osmStateRes.json())

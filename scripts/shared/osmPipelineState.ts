@@ -1,5 +1,11 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import {
+  osmPipelineStateSchema,
+  type OsmPipelineState,
+} from '../../report/src/types/osmPipelineState.ts'
+
+export type { OsmPipelineState } from '../../report/src/types/osmPipelineState.ts'
 
 export const OSM_PIPELINE_STATE_FILE = 'osm-pipeline-state.json'
 export const OSM_DOWNLOAD_ATTEMPTS_FILE = 'osm-download-attempts.json'
@@ -23,16 +29,6 @@ export type OsmDownloadAttemptsFile = {
   fallback?: OsmDownloadAttempt
 }
 
-export type OsmPipelineState = {
-  version: 1
-  consecutiveFallbackRuns: number
-  lastFreshDownloadAt?: string
-  lastFallbackAt?: string
-  lastFallbackRunId?: string
-  lastErrorMessage?: string
-  updatedAt: string
-}
-
 export type OsmDownloadPolicyResult = {
   ok: boolean
   finalOutcome: OsmDownloadOutcome
@@ -44,10 +40,10 @@ function safeNow(): string {
   return new Date().toISOString()
 }
 
-function readJsonOrNull<T>(path: string): T | null {
+function readJsonOrNull(path: string): unknown {
   if (!existsSync(path)) return null
   try {
-    return JSON.parse(readFileSync(path, 'utf-8')) as T
+    return JSON.parse(readFileSync(path, 'utf-8'))
   } catch {
     return null
   }
@@ -69,15 +65,18 @@ export function osmDownloadAttemptsPath(processingDir: string): string {
 }
 
 export function readOsmPipelineState(path: string): OsmPipelineState | null {
-  const parsed = readJsonOrNull<OsmPipelineState>(path)
-  if (!parsed || parsed.version !== 1) return null
-  return parsed
+  const parsed = osmPipelineStateSchema.safeParse(readJsonOrNull(path))
+  return parsed.success ? parsed.data : null
 }
 
 export function readOsmDownloadAttempts(path: string): OsmDownloadAttemptsFile | null {
-  const parsed = readJsonOrNull<OsmDownloadAttemptsFile>(path)
-  if (!parsed || parsed.version !== 1) return null
-  return parsed
+  const parsed = readJsonOrNull(path)
+  if (!parsed || typeof parsed !== 'object' || parsed === null || !('version' in parsed)) {
+    return null
+  }
+  const rec = parsed as OsmDownloadAttemptsFile
+  if (rec.version !== 1) return null
+  return rec
 }
 
 export function upsertOsmDownloadAttempt(
