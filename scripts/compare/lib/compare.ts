@@ -11,7 +11,7 @@ import {
   type StaleOfficialKey,
   type StaleOfficialPredecessor,
 } from './classifyStaleOfficialKey.ts'
-import type { BoundaryConfig, IdNormalizationPreset } from './config.ts'
+import type { BoundaryConfig } from './config.ts'
 import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
 import { featureBBox } from './featureBBox.ts'
 import { unionFeaturesByKey } from './geoMerge.ts'
@@ -30,8 +30,16 @@ import {
   withRobustBoundaryMetrics,
 } from './metrics/issueIndicator.ts'
 import { isPoly } from './metrics/sharedGeom.ts'
-import { normalizeOfficialValue, normalizeOsmValue } from './normalizeGermanKey.ts'
+import { normalizeOfficialValue } from './normalizeGermanKey.ts'
 import { officialPropertyToMatchKey } from './officialKeyTransposition.ts'
+import {
+  OSM_RS_TAG,
+  canonicalOsmMatchKey,
+  keepOsmFeaturesForSpatialScope,
+  osmFeatureHasOfficialMatchKey,
+  resolveRelationId,
+  type OsmMatchKeyContext,
+} from './osmMatchKey.ts'
 import { projectGeometry } from './projectGeometry.ts'
 import {
   calculateMetricsBatchWithRust,
@@ -207,9 +215,11 @@ function filterOsmByOfficialBbox(
   osmFeatures: Feature[],
   officialUnion: BBox,
   bufferDeg: number,
+  keepFeature?: (feature: Feature) => boolean,
 ): Feature[] {
   const pad = expandBbox(officialUnion, bufferDeg)
   return osmFeatures.filter((f) => {
+    if (keepFeature?.(f)) return true
     if (!f.geometry) return false
     const bb = featureBBox(f)
     if (!bb) return false
@@ -289,61 +299,6 @@ function filterOsmByIgnoredRelationIds(
   })
 }
 
-function parseRelationId(rawId: unknown): string | null {
-  const id = typeof rawId === 'string' ? rawId.trim() : ''
-  if (id.length === 0) return null
-  if (/^way\/\d+$/i.test(id)) return null
-  if (/^\d+$/.test(id)) return id
-  const rel = /^relation\/(\d+)$/i.exec(id)
-  if (rel?.[1]) return rel[1]
-  return null
-}
-
-function parseRelationIdFromOsmId(raw: unknown): string | null {
-  if (typeof raw === 'number' && Number.isFinite(raw)) {
-    const n = Math.trunc(raw)
-    if (n < 0) return String(-n)
-    if (n > 0) return null
-    return null
-  }
-  if (typeof raw !== 'string') return null
-  const text = raw.trim()
-  if (text.length === 0) return null
-  const asNumber = Number(text)
-  if (!Number.isFinite(asNumber)) return null
-  if (asNumber < 0) return String(-Math.trunc(asNumber))
-  if (asNumber > 0) return null
-  return null
-}
-
-function resolveRelationId(props: Record<string, unknown> | null | undefined): string | null {
-  if (!props) return null
-  return parseRelationId(props['@id']) ?? parseRelationIdFromOsmId(props.osm_id)
-}
-
-const OSM_RS_TAG = 'de:regionalschluessel'
-
-function readTrimmedTag(props: Record<string, unknown> | null | undefined, tag: string): string {
-  if (!props) return ''
-  const v = props[tag]
-  if (v == null) return ''
-  return String(v).trim()
-}
-
-/**
- * RS-only OSM keying for `osmProfile=admin_rs`: canonical key from `de:regionalschluessel` only.
- */
-function deriveOsmKeyForRsMode(
-  props: Record<string, unknown> | null | undefined,
-  preset: IdNormalizationPreset,
-): string | null {
-  const p = props ?? {}
-  const rsRaw = readTrimmedTag(p, OSM_RS_TAG)
-  if (!rsRaw) return null
-  const canonical = normalizeOsmValue(OSM_RS_TAG, rsRaw, preset).canonicalMatchKey
-  return canonical.length > 0 ? canonical : null
-}
-
 export async function runCompare(
   runtimeRoot: string,
   areaFolder: string,
@@ -403,6 +358,38 @@ export async function runCompare(
   )
   instrumentation?.checkpoint?.('after_load_osm', { featureCount: osmFc.features.length })
 
+  const osmMatchKeyCtx: OsmMatchKeyContext = {
+    relationIdCriteria,
+    isRsMode,
+    osmMatchProperty,
+    preset,
+  }
+
+  console.log(
+    `[compare:${areaFolder}] starting union_official featureCount=${officialFc.features.length}`,
+  )
+  const tUnionOfficial = Date.now()
+  instrumentation?.setInFlightPhase?.('union_official')
+  instrumentation?.checkpoint?.('before_union_official')
+  const officialMap = unionFeaturesByKey(officialFc, (props) => {
+    if (config.official.constantMatchKey) {
+      return normalizeOfficialValue(config.official.constantMatchKey, preset)
+    }
+    return officialPropertyToMatchKey(
+      props as Record<string, unknown> | null,
+      config.official.matchProperty,
+      config.official.keyTransposition,
+      preset,
+    )
+  })
+  const unionOfficialMs = Date.now() - tUnionOfficial
+  phaseLogger?.('union_official', unionOfficialMs, { keys: officialMap.size })
+  console.log(
+    `[compare:${areaFolder}] union_official done keys=${officialMap.size} elapsedMs=${unionOfficialMs}`,
+  )
+  instrumentation?.checkpoint?.('after_union_official', { keys: officialMap.size })
+  const officialKeySet = new Set(officialMap.keys())
+
   const initialOsmFeatureCount = osmFc.features.length
   let droppedByBbox = 0
   let droppedByScope = 0
@@ -417,7 +404,9 @@ export async function runCompare(
       )
     }
     const buf = config.compare.bboxBufferDegrees ?? 0
-    const filtered = filterOsmByOfficialBbox(osmFc.features, ob, buf)
+    const filtered = filterOsmByOfficialBbox(osmFc.features, ob, buf, (feature) =>
+      osmFeatureHasOfficialMatchKey(feature, officialKeySet, osmMatchKeyCtx),
+    )
     droppedByBbox = osmFc.features.length - filtered.length
     osmFc = { type: 'FeatureCollection', features: filtered }
     phaseLogger?.('filter_bbox', Date.now() - tFilterBbox, {
@@ -439,10 +428,10 @@ export async function runCompare(
       officialCoverage.push({ bbox: bb, geometry: g })
     }
 
-    let filtered: Feature[]
+    let spatiallyKeptIndexes: Set<number>
     let scopeEngine: 'coverage_rtree_rust' | 'legacy_pairwise'
     if (officialCoverage.length > 0) {
-      const keepIndexes = filterByOfficialCoverageWithRust({
+      spatiallyKeptIndexes = filterByOfficialCoverageWithRust({
         official: officialCoverage,
         minIntersectionAreaM2: MERGED_SCOPE_FALLBACK_MIN_INTERSECTION_M2,
         minOverlapRatio: MERGED_SCOPE_FALLBACK_MIN_OVERLAP_RATIO,
@@ -452,12 +441,27 @@ export async function runCompare(
           bbox: featureBBox(feature),
         })),
       })
-      filtered = osmFc.features.filter((_feature, index) => keepIndexes.has(index))
       scopeEngine = 'coverage_rtree_rust'
     } else {
-      filtered = filterOsmByIntersectingOfficialCoverage(osmFc.features, officialFc.features)
+      const legacyKept = filterOsmByIntersectingOfficialCoverage(
+        osmFc.features,
+        officialFc.features,
+      )
+      const kept = new Set<number>()
+      const legacyIds = new Set(legacyKept)
+      for (let i = 0; i < osmFc.features.length; i++) {
+        const feature = osmFc.features[i]
+        if (feature && legacyIds.has(feature)) kept.add(i)
+      }
+      spatiallyKeptIndexes = kept
       scopeEngine = 'legacy_pairwise'
     }
+    const filtered = keepOsmFeaturesForSpatialScope(
+      osmFc.features,
+      spatiallyKeptIndexes,
+      officialKeySet,
+      osmMatchKeyCtx,
+    )
     droppedByScope = osmFc.features.length - filtered.length
     osmFc = { type: 'FeatureCollection', features: filtered }
     phaseLogger?.('filter_scope', Date.now() - tScopeFilter, {
@@ -484,50 +488,13 @@ export async function runCompare(
     )
   }
 
-  console.log(
-    `[compare:${areaFolder}] starting union_official featureCount=${officialFc.features.length}`,
-  )
-  const tUnionOfficial = Date.now()
-  instrumentation?.setInFlightPhase?.('union_official')
-  instrumentation?.checkpoint?.('before_union_official')
-  const officialMap = unionFeaturesByKey(officialFc, (props) => {
-    if (config.official.constantMatchKey) {
-      return normalizeOfficialValue(config.official.constantMatchKey, preset)
-    }
-    return officialPropertyToMatchKey(
-      props as Record<string, unknown> | null,
-      config.official.matchProperty,
-      config.official.keyTransposition,
-      preset,
-    )
-  })
-  const unionOfficialMs = Date.now() - tUnionOfficial
-  phaseLogger?.('union_official', unionOfficialMs, { keys: officialMap.size })
-  console.log(
-    `[compare:${areaFolder}] union_official done keys=${officialMap.size} elapsedMs=${unionOfficialMs}`,
-  )
-  instrumentation?.checkpoint?.('after_union_official', { keys: officialMap.size })
-
   console.log(`[compare:${areaFolder}] starting union_osm featureCount=${osmFc.features.length}`)
   const tUnionOsm = Date.now()
   instrumentation?.setInFlightPhase?.('union_osm')
   instrumentation?.checkpoint?.('before_union_osm')
-  const osmMap = unionFeaturesByKey(osmFc, (props) => {
-    const p = props as Record<string, unknown>
-    if (relationIdCriteria) {
-      const relId = resolveRelationId(p)
-      if (!relId || !relationIdCriteria.has(relId)) return null
-      return normalizeOsmValue('osm_relation_id', relId, preset).canonicalMatchKey
-    }
-    if (isRsMode) {
-      const canonicalKey = deriveOsmKeyForRsMode(p, preset)
-      if (canonicalKey == null || canonicalKey.length === 0) return null
-      return canonicalKey
-    }
-    const v = p?.[osmMatchProperty]
-    if (v == null) return null
-    return normalizeOsmValue(osmMatchProperty, String(v), preset).canonicalMatchKey
-  })
+  const osmMap = unionFeaturesByKey(osmFc, (props) =>
+    canonicalOsmMatchKey(props as Record<string, unknown>, osmMatchKeyCtx),
+  )
   const unionOsmMs = Date.now() - tUnionOsm
   phaseLogger?.('union_osm', unionOsmMs, { keys: osmMap.size })
   console.log(`[compare:${areaFolder}] union_osm done keys=${osmMap.size} elapsedMs=${unionOsmMs}`)
@@ -535,19 +502,10 @@ export async function runCompare(
 
   const osmNameByKey = new Map<string, string>()
   for (const f of osmFc.features) {
-    const props = f.properties as Record<string, unknown>
-    let canonicalKey: string | null = null
-    if (relationIdCriteria) {
-      const relId = resolveRelationId(props)
-      if (!relId || !relationIdCriteria.has(relId)) continue
-      canonicalKey = normalizeOsmValue('osm_relation_id', relId, preset).canonicalMatchKey
-    } else if (isRsMode) {
-      canonicalKey = deriveOsmKeyForRsMode(props, preset)
-    } else {
-      const v = props?.[osmMatchProperty]
-      if (v == null) continue
-      canonicalKey = normalizeOsmValue(osmMatchProperty, String(v), preset).canonicalMatchKey
-    }
+    const canonicalKey = canonicalOsmMatchKey(
+      f.properties as Record<string, unknown>,
+      osmMatchKeyCtx,
+    )
     if (canonicalKey == null || canonicalKey.length === 0) continue
     const nm = (f.properties as Record<string, unknown>)?.name
     if (typeof nm === 'string' && nm && !osmNameByKey.has(canonicalKey)) {
@@ -635,7 +593,6 @@ export async function runCompare(
   }
   instrumentation?.setInFlightPhase?.(null)
 
-  const officialKeySet = new Set(officialMap.keys())
   const adminLevelAllowList =
     config.osm.adminLevels && config.osm.adminLevels.length > 0
       ? new Set(config.osm.adminLevels)
