@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { GermanKeyExplorerContent } from '../components/germanKeyExplorer/GermanKeyExplorerContent'
-import { germanKeyLookupQueryOptions } from '../data/load'
+import { germanKeyLookupQueryOptions, arsSuccessorsQueryOptions } from '../data/load'
 import { de } from '../i18n/de'
 import {
   germanKeyExplorerHeaderSources,
@@ -14,6 +14,7 @@ export function GermanKeyExplorer() {
   const navigate = useNavigate()
 
   const lookupQuery = useQuery(germanKeyLookupQueryOptions())
+  const successorsQuery = useQuery(arsSuccessorsQueryOptions())
 
   function navigateGermanKey(next: GermanKeySearch) {
     navigate({
@@ -76,6 +77,7 @@ export function GermanKeyExplorer() {
       {lookupQuery.data ? (
         <GermanKeyExplorerContent
           bundle={lookupQuery.data}
+          successors={successorsQuery.data}
           search={search}
           onApplySearch={(next) => {
             navigateGermanKey(next)

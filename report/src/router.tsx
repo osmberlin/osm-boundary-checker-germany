@@ -54,7 +54,12 @@ function AreaPendingPane() {
   const areaKey = areaId ?? ''
   const summary = areasIndex.summaries.find((entry) => entry.area === areaKey)
   const displayName = summary?.displayName ?? areaDisplayNameForId(areaKey)
-  const totalRows = summary ? summary.matched + summary.officialOnly + summary.unmatchedOsm : null
+  const totalRows = summary
+    ? summary.matched +
+      summary.officialOnly +
+      summary.unmatchedOsm +
+      (summary.staleOfficialKey ?? 0)
+    : null
   return (
     <RouteLoadingPane
       title={de.routeLoading.area(displayName, totalRows)}

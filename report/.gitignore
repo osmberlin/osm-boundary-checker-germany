@@ -12,9 +12,10 @@ dist
 dist-ssr
 *.local
 public/datasets
-# Local pipeline outputs; ship `german-key-lookup.json` for static hosting (GitHub Pages).
+# Local pipeline outputs; ship lookup JSON for static hosting (GitHub Pages).
 public/data/*
 !public/data/german-key-lookup.json
+!public/data/ars-successors.json
 
 # Sync timestamp for discussions registry (generated per successful sync; deploy/runtime only).
 public/discussions.registry.sync-meta.json

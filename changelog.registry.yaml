@@ -1,3 +1,23 @@
+# Pending user-facing copy for the stale-official-key work (uncommitted).
+# Bind `refs` after the feature commit, then `bun run changelog` (prefill rewrites
+# this file and drops comments). One SHA may appear in only one entry: if this
+# lands as a single commit, use the combined `descriptionMd` below; if you split
+# commits, use the three separate entries instead.
+#
+# Combined (one commit):
+#   descriptionMd: |
+#     Wenn der amtliche VG25-Stand noch den Regionalschlüssel vom Jahresende enthält, Destatis und OSM aber schon den neuen, zeigt der Abgleich das als Geometrie-Match mit Hinweis — nicht als zwei Lücken. Beispiele: Bönebüttel, Schmölln, Hanau. Auf der Detailseite stehen alter und aktueller Schlüssel mit Datenständen und Links zum Schlüssel-Explorer. Der Text fordert nicht mehr, den alten Schlüssel nach OSM zu schreiben.
+#
+#     Auf der Startseite und der Datensatz-Übersicht bedeutet „nur amtlich“ wieder echte Lücken. Veraltete amtliche Schlüssel haben eine eigene Zahl („Schlüssel veraltet“) und zählen bei „Zugeordnet“. OSM-Objekte, die nur das Gegenstück zu so einem Schlüsselwechsel sind, erscheinen nicht mehr als eigene Seite. In der Tabelle kann man diese Zeilen einblenden, ausblenden oder allein anzeigen.
+#
+#     Im [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) erscheint bei bekannten Gebietsänderungen ein kurzer Hinweis, welcher Schlüssel welchen ersetzt hat und seit wann. Der Hinweis kommt nur, wenn der nachgeschlagene Schlüssel Teil dieser Änderung ist (z. B. Hanau kreisfrei).
+#
+# Split (three commits / three /changelog items):
+# 1. Detailseite: VG25-Schlüssel veraltet, Geometrie-Match mit Hinweis, beide Schlüssel.
+# 2. Startseite/Übersicht: eigene Zahl „Schlüssel veraltet“, zählt bei Zugeordnet.
+# 3. Schlüssel-Explorer: Hinweis nur bei bekannter Gebietsänderung (Hanau).
+# Tests, Docs zum Kandidaten-Matching und Pipeline-Interna: hide: true, kein descriptionMd.
+#
 entries:
   - refs:
       - '5537e3e'

@@ -31,6 +31,11 @@ export function formatReportDateOnlyDe(at: TZDate): string {
   return format(at, 'd. MMMM yyyy', { locale: deLocale })
 }
 
+/** Compact calendar date matching KPI `d. MMM yyyy` (no clock time). */
+export function formatReportCompactDateDe(at: TZDate): string {
+  return format(at, 'd. MMM yyyy', { locale: deLocale })
+}
+
 /** Absolute line for report freshness, e.g. "29. März 2026 13:13". */
 export function formatReportAbsoluteDe(at: TZDate): string {
   return format(at, 'd. MMM yyyy HH:mm', { locale: deLocale })
@@ -59,6 +64,15 @@ export function formatIsoTimestampToDateOnlyDe(raw: string): string {
   const trimmed = raw.trim()
   if (!trimmed) return ''
   return formatReportDateOnlyDe(parseReportTimestampOrThrow(trimmed))
+}
+
+/** ISO or `YYYY-MM-DD` → compact German date for parenthetical stands, or empty. */
+export function formatIsoTimestampToCompactDateDe(raw: string): string {
+  const trimmed = raw.trim()
+  if (!trimmed) return ''
+  const berlin = parseReportTimestampToBerlin(trimmed)
+  if (!berlin) return ''
+  return formatReportCompactDateDe(berlin)
 }
 
 /** ISO timestamp → German date + time in Europe/Berlin. */

@@ -192,7 +192,11 @@ export function OfficialOnlyCandidatesSection({
         <p className="mt-2 max-w-4xl text-sm text-slate-400">
           {de.feature.candidatesSectionLeadCore(osmTagsJoined, officialProp)} {leadChecks}
         </p>
-        {showMatchHint ? (
+        {row.staleOfficialKey ? (
+          <p className="mt-2 max-w-4xl text-sm text-slate-400">
+            {de.feature.candidatesSectionStaleHint}
+          </p>
+        ) : showMatchHint ? (
           <p className="mt-2 max-w-4xl text-sm text-slate-400">
             {matchHintBefore}{' '}
             <code className="rounded bg-slate-950/80 px-1.5 py-0.5 font-mono text-xs break-all text-slate-200 ring-1 ring-slate-700/80">

@@ -9,6 +9,7 @@ import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDeta
 import { FeatureDetailStatsDiffMetricsSection } from '../components/featureDetail/FeatureDetailStatsDiffMetricsSection'
 import { FeatureDetailStatsSummarySection } from '../components/featureDetail/FeatureDetailStatsSummarySection'
 import { OfficialOnlyCandidatesSection } from '../components/featureDetail/OfficialOnlyCandidatesSection'
+import { StaleOfficialKeySection } from '../components/featureDetail/StaleOfficialKeySection'
 import { LiveSourceProperties } from '../components/LiveSourceProperties'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
@@ -73,6 +74,7 @@ function FeatureDetailWithMapContext({
     <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
       <div className="flex flex-col gap-10">
         <FeatureDetailHeader titlePrefix={data.titlePrefix} row={row} />
+        <StaleOfficialKeySection areaKey={areaKey} row={row} data={data} />
         <DatasetDiscussionAlerts />
         {showCompareFailedNotice ? (
           <div className="rounded border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">

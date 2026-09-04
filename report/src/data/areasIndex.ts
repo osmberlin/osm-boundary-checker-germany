@@ -8,6 +8,7 @@ export type AreaSummary = {
   unmatchedOsm: number
   reviews: number
   issues: number
+  staleOfficialKey?: number
   /** Ordered OSM match keys (from area config at `generate-areas` time). */
   osmMatchProperties?: string[]
   /** OSM admin_level filter from area config (same source as compare). */
@@ -65,6 +66,7 @@ function parseAreaSummary(raw: unknown): AreaSummary | null {
     unmatchedOsm: typeof rec.unmatchedOsm === 'number' ? rec.unmatchedOsm : 0,
     reviews: typeof rec.reviews === 'number' ? rec.reviews : 0,
     issues: typeof rec.issues === 'number' ? rec.issues : 0,
+    ...(typeof rec.staleOfficialKey === 'number' ? { staleOfficialKey: rec.staleOfficialKey } : {}),
     ...(osmMatchProperties ? { osmMatchProperties } : {}),
     ...(osmAdminLevels ? { osmAdminLevels } : {}),
   }

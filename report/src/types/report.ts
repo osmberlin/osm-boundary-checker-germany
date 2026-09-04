@@ -116,6 +116,16 @@ export type ReportRow = {
   officialProperties: Record<string, unknown> | null
   /** GeoJSON properties from the compare merge (OSM). */
   osmProperties: Record<string, unknown> | null
+  /** Official ARS is outdated; successor is already current in Destatis/OSM. */
+  staleOfficialKey?: {
+    toArs: string
+    source: 'successor_table' | 'ags_candidate' | 'osm_map'
+    pairedUnmatchedKey?: string
+  }
+  /** Same-area unmatched OSM row that is the successor of a stale official key. */
+  staleOfficialPredecessor?: {
+    fromArs: string
+  }
 }
 
 /** OSM polygon whose normalized `de:regionalschluessel` has no row in this area’s official export. */
@@ -125,6 +135,9 @@ export type UnmatchedOsmReportRow = {
   osmRelationId: string
   adminLevel: string | null
   mapBbox: [number, number, number, number] | null
+  staleOfficialPredecessor?: {
+    fromArs: string
+  }
 }
 
 /** Unified table/view model on `/$areaId` (main + unmatched rows). */
@@ -179,6 +192,7 @@ export type SnapshotsJson = {
       unmatchedOsm: number
       issues?: number
       reviews?: number
+      staleOfficialKey?: number
     }
   }[]
 }

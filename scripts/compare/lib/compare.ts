@@ -4,6 +4,13 @@ import * as turf from '@turf/turf'
 import type { BBox, Feature, Geometry, MultiPolygon, Polygon } from 'geojson'
 import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
+import {
+  applyStaleOfficialKeyClassification,
+  loadDestatisArsPresence,
+  promoteStaleOfficialRows,
+  type StaleOfficialKey,
+  type StaleOfficialPredecessor,
+} from './classifyStaleOfficialKey.ts'
 import type { BoundaryConfig, IdNormalizationPreset } from './config.ts'
 import { loadBoundaryConfig, osmFgbPathFromConfig } from './config.ts'
 import { featureBBox } from './featureBBox.ts'
@@ -58,6 +65,7 @@ export type CompareRow = {
    * means the phase was skipped (e.g. candidate FGB missing).
    */
   candidates?: CandidateMatch[]
+  staleOfficialKey?: StaleOfficialKey
 }
 
 export type UnmatchedOsmRow = {
@@ -66,6 +74,7 @@ export type UnmatchedOsmRow = {
   osmRelationId: string
   adminLevel: string | null
   osmGeometryWgs84: Geometry | null
+  staleOfficialPredecessor?: StaleOfficialPredecessor
 }
 
 export type ComparePhaseLogger = (
@@ -87,6 +96,72 @@ export type CompareInstrumentation = {
   checkpoint?: CompareCheckpointLogger
   progress?: CompareProgressLogger
   setInFlightPhase?: (phase: string | null) => void
+}
+
+function assignRustMetricsToRows(
+  rows: CompareRow[],
+  pendingMetrics: Array<{
+    rowIndex: number
+    officialProjected: Geometry
+    osmProjected: Geometry
+  }>,
+  previousMetricsByKey: Map<string, MetricResult> | undefined,
+  areaFolder: string,
+  phaseLogger: ComparePhaseLogger | undefined,
+  instrumentation: CompareInstrumentation | undefined,
+  phaseName: string,
+): void {
+  if (pendingMetrics.length === 0) return
+  console.log(
+    `[compare:${areaFolder}] starting ${phaseName} pendingMetrics=${pendingMetrics.length}`,
+  )
+  const tMetrics = Date.now()
+  instrumentation?.setInFlightPhase?.(phaseName)
+  instrumentation?.checkpoint?.(`before_${phaseName}`, { pendingMetrics: pendingMetrics.length })
+  const rustMetrics = calculateMetricsBatchWithRust(
+    pendingMetrics.map((entry) => ({
+      officialProjected: entry.officialProjected,
+      osmProjected: entry.osmProjected,
+    })),
+  )
+  const baselineRows: Array<{ key: string; current: MetricResult; previous: MetricResult }> = []
+  for (let i = 0; i < pendingMetrics.length; i++) {
+    const pending = pendingMetrics[i]
+    if (!pending) continue
+    const row = rows[pending.rowIndex]
+    const metric = rustMetrics[i] ?? null
+    if (!row) continue
+    if (!metric) {
+      row.metrics = null
+      continue
+    }
+    const withRobust =
+      isPoly(pending.officialProjected) && isPoly(pending.osmProjected)
+        ? withRobustBoundaryMetrics(metric, pending.officialProjected, pending.osmProjected)
+        : metric
+    row.metrics = withRobust
+    const previous = previousMetricsByKey?.get(row.canonicalMatchKey)
+    if (previous) baselineRows.push({ key: row.canonicalMatchKey, current: withRobust, previous })
+  }
+  const baselineByKey = computeBaselineAnomalies(baselineRows)
+  for (const pending of pendingMetrics) {
+    const row = rows[pending.rowIndex]
+    if (!row?.metrics) continue
+    const baselineReasons = baselineByKey.get(row.canonicalMatchKey) ?? []
+    row.metrics.issueIndicator = classifyIssueIndicator(row.metrics, baselineReasons)
+  }
+  const metricsMs = Date.now() - tMetrics
+  phaseLogger?.(phaseName, metricsMs, {
+    calculated: pendingMetrics.length,
+  })
+  console.log(
+    `[compare:${areaFolder}] ${phaseName} done calculated=${pendingMetrics.length} elapsedMs=${metricsMs}`,
+  )
+  instrumentation?.checkpoint?.(`after_${phaseName}`, {
+    calculated: pendingMetrics.length,
+    elapsedMs: metricsMs,
+  })
+  instrumentation?.setInFlightPhase?.(null)
 }
 
 function pickOsmRelationId(featureIds: string[], props?: Record<string, unknown> | null): string {
@@ -548,54 +623,15 @@ export async function runCompare(
   })
 
   if (pendingMetrics.length > 0) {
-    console.log(
-      `[compare:${areaFolder}] starting metrics_rust pendingMetrics=${pendingMetrics.length}`,
+    assignRustMetricsToRows(
+      rows,
+      pendingMetrics,
+      options?.previousMetricsByKey,
+      areaFolder,
+      phaseLogger,
+      instrumentation,
+      'metrics',
     )
-    const tMetrics = Date.now()
-    instrumentation?.setInFlightPhase?.('metrics')
-    instrumentation?.checkpoint?.('before_metrics_rust', { pendingMetrics: pendingMetrics.length })
-    const rustMetrics = calculateMetricsBatchWithRust(
-      pendingMetrics.map((entry) => ({
-        officialProjected: entry.officialProjected,
-        osmProjected: entry.osmProjected,
-      })),
-    )
-    const baselineRows: Array<{ key: string; current: MetricResult; previous: MetricResult }> = []
-    for (let i = 0; i < pendingMetrics.length; i++) {
-      const pending = pendingMetrics[i]
-      if (!pending) continue
-      const row = rows[pending.rowIndex]
-      const metric = rustMetrics[i] ?? null
-      if (!row) continue
-      if (!metric) {
-        row.metrics = null
-        continue
-      }
-      const withRobust =
-        isPoly(pending.officialProjected) && isPoly(pending.osmProjected)
-          ? withRobustBoundaryMetrics(metric, pending.officialProjected, pending.osmProjected)
-          : metric
-      row.metrics = withRobust
-      const previous = options?.previousMetricsByKey?.get(row.canonicalMatchKey)
-      if (previous) baselineRows.push({ key: row.canonicalMatchKey, current: withRobust, previous })
-    }
-    const baselineByKey = computeBaselineAnomalies(baselineRows)
-    for (const row of rows) {
-      if (!row.metrics) continue
-      const baselineReasons = baselineByKey.get(row.canonicalMatchKey) ?? []
-      row.metrics.issueIndicator = classifyIssueIndicator(row.metrics, baselineReasons)
-    }
-    const metricsMs = Date.now() - tMetrics
-    phaseLogger?.('metrics', metricsMs, {
-      calculated: pendingMetrics.length,
-    })
-    console.log(
-      `[compare:${areaFolder}] metrics_rust done calculated=${pendingMetrics.length} elapsedMs=${metricsMs}`,
-    )
-    instrumentation?.checkpoint?.('after_metrics_rust', {
-      calculated: pendingMetrics.length,
-      elapsedMs: metricsMs,
-    })
   }
   instrumentation?.setInFlightPhase?.(null)
 
@@ -744,6 +780,47 @@ export async function runCompare(
       })
     }
     instrumentation?.setInFlightPhase?.(null)
+  }
+
+  applyStaleOfficialKeyClassification({
+    preset,
+    rows,
+    unmatchedOsm,
+    destatis: loadDestatisArsPresence(),
+    osmMapArs: Array.from(osmMap.keys()),
+  })
+
+  const promotedIndexes = promoteStaleOfficialRows({
+    rows,
+    unmatchedOsm,
+    osmByArs: osmMap,
+    osmNameByKey,
+    pickRelationId: pickOsmRelationId,
+  })
+  if (promotedIndexes.length > 0) {
+    const pendingPromoteMetrics: Array<{
+      rowIndex: number
+      officialProjected: Geometry
+      osmProjected: Geometry
+    }> = []
+    for (const rowIndex of promotedIndexes) {
+      const row = rows[rowIndex]
+      if (!row?.officialGeometryWgs84 || !row.osmGeometryWgs84) continue
+      pendingPromoteMetrics.push({
+        rowIndex,
+        officialProjected: projectGeometry(row.officialGeometryWgs84, metricsCrs),
+        osmProjected: projectGeometry(row.osmGeometryWgs84, metricsCrs),
+      })
+    }
+    assignRustMetricsToRows(
+      rows,
+      pendingPromoteMetrics,
+      options?.previousMetricsByKey,
+      areaFolder,
+      phaseLogger,
+      instrumentation,
+      'metrics_stale_promote',
+    )
   }
 
   return { config, rows, unmatchedOsm, metricsCrs }

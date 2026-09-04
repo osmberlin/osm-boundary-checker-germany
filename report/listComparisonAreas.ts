@@ -32,6 +32,7 @@ const areaHomeSummarySchema = z.object({
   unmatchedOsm: z.number(),
   reviews: z.number(),
   issues: z.number(),
+  staleOfficialKey: z.number().optional(),
   /** Ordered OSM match keys from area config/osmProfile (primary first). */
   osmMatchProperties: z.array(z.string().min(1)).min(1).optional(),
   osmAdminLevels: z.array(z.string().min(1)).optional(),
@@ -241,17 +242,21 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
       const rows = parsed.rows ?? []
       let matched = 0
       let officialOnly = 0
+      let staleOfficialKey = 0
       let reviews = 0
       let issues = 0
       for (const row of rows) {
         const c = row.category
+        if (row.staleOfficialKey) staleOfficialKey++
         if (c === 'matched') matched++
-        else if (c === 'official_only') officialOnly++
+        else if (c === 'official_only' && !row.staleOfficialKey) officialOnly++
         const level = row.metrics?.issueIndicator?.level
         if (level === 'review') reviews++
         else if (level === 'issue') issues++
       }
-      const unmatched = parsed.unmatchedOsm?.length ?? 0
+      const unmatched = (parsed.unmatchedOsm ?? []).filter(
+        (row) => row.staleOfficialPredecessor == null,
+      ).length
       const fromConfig = osmMatchRulesFromAreaConfig(runtimeRoot, area)
       const summary: AreaHomeSummary = {
         area,
@@ -259,6 +264,7 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
         matched,
         officialOnly,
         unmatchedOsm: unmatched,
+        ...(staleOfficialKey > 0 ? { staleOfficialKey } : {}),
         reviews,
         issues,
         ...(fromConfig.osmMatchProperties

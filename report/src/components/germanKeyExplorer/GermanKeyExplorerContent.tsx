@@ -1,4 +1,6 @@
 import { useId, useState } from 'react'
+import type { ArsSuccessorTable } from '../../../../scripts/shared/arsSuccessorTable.ts'
+import { lookupSuccessorForExplorerKey } from '../../../../scripts/shared/arsSuccessorTable.ts'
 import type { GermanKeyLookupBundle } from '../../../../scripts/shared/germanKeyLookupPayload.ts'
 import { de } from '../../i18n/de'
 import {
@@ -222,10 +224,12 @@ function presetLabel(p: GermanSchluesselExplorerPreset): string {
 
 export function GermanKeyExplorerContent({
   bundle,
+  successors,
   search,
   onApplySearch,
 }: {
   bundle: GermanKeyLookupBundle
+  successors: ArsSuccessorTable | null | undefined
   search: GermanKeySearch
   onApplySearch: (next: GermanKeySearch) => void
 }) {
@@ -240,6 +244,7 @@ export function GermanKeyExplorerContent({
   /** URL is source of truth for tables and deep links; input commits via submit only. */
   const raw = (search.key ?? '').trim()
   const d = digitsOnly(raw)
+  const successorHit = successors ? lookupSuccessorForExplorerKey(successors, d) : null
   const padded12 =
     d.length > 0
       ? (normalizationsForSchluesselPresets(raw).find((r) => r.preset === 'regional-12')?.result
@@ -429,6 +434,34 @@ export function GermanKeyExplorerContent({
                   </li>
                 ))}
               </ul>
+            </AlertNotice>
+          ) : null}
+
+          {successorHit ? (
+            <AlertNotice>
+              <p>
+                {successorHit.side === 'from'
+                  ? t.successorCalloutFrom(successorHit.row.validFrom)
+                  : t.successorCalloutTo(successorHit.row.validFrom)}
+              </p>
+              <p className="mt-2">{successorHit.row.note}</p>
+              <p className="mt-2">
+                <button
+                  type="button"
+                  className="font-medium text-amber-100 underline decoration-amber-600/60 underline-offset-2 hover:decoration-amber-300"
+                  onClick={() =>
+                    onApplySearch({
+                      key:
+                        successorHit.side === 'from'
+                          ? successorHit.row.toArs
+                          : successorHit.row.fromArs,
+                    })
+                  }
+                >
+                  {t.successorCalloutOtherKey}:{' '}
+                  {successorHit.side === 'from' ? successorHit.row.toArs : successorHit.row.fromArs}
+                </button>
+              </p>
             </AlertNotice>
           ) : null}
 

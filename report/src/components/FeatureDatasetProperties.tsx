@@ -236,9 +236,11 @@ function DatasetPropertyCard({ properties }: { properties: Record<string, unknow
 function DatasetLiveComparedPropertyCard({
   properties,
   officialProperties,
+  acceptedRegionalSchluessel,
 }: {
   properties: Record<string, string>
   officialProperties: Record<string, unknown>
+  acceptedRegionalSchluessel?: string | null
 }) {
   const officialByOsmKeyPrimary = transposeOfficialToOsm(officialProperties)
   const officialByAnyOsmKey = new Map<string, TransposedOfficialEntry>()
@@ -266,7 +268,12 @@ function DatasetLiveComparedPropertyCard({
           const mappedOfficial = officialByAnyOsmKey.get(k)
           const officialHasKey = mappedOfficial != null
           const expectedValues = mappedOfficial?.expectedOsmValues ?? []
-          const sameAsOfficial = officialHasKey && expectedValues.includes(liveValue)
+          const acceptedExtra =
+            k === 'de:regionalschluessel' && acceptedRegionalSchluessel
+              ? [acceptedRegionalSchluessel]
+              : []
+          const sameAsOfficial =
+            officialHasKey && [...expectedValues, ...acceptedExtra].includes(liveValue)
           const valueClass = officialHasKey
             ? sameAsOfficial
               ? 'bg-emerald-900/45 text-emerald-100 ring-1 ring-emerald-700/60'
@@ -445,9 +452,11 @@ function DatasetExtractDataDateCaption({
 function OsmLiveRelationTagsRow({
   osmRef,
   officialProperties,
+  acceptedRegionalSchluessel,
 }: {
   osmRef: ParsedReportRowOsmRef
   officialProperties: Record<string, unknown>
+  acceptedRegionalSchluessel?: string | null
 }) {
   const live = useOverpassRelationTags(String(osmRef.numericId))
   const captionText =
@@ -515,6 +524,7 @@ function OsmLiveRelationTagsRow({
             <DatasetLiveComparedPropertyCard
               properties={live.tags}
               officialProperties={officialProperties}
+              acceptedRegionalSchluessel={acceptedRegionalSchluessel}
             />
           ) : (
             <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveEmpty}</p>
@@ -614,7 +624,11 @@ export function FeatureDatasetProperties({
             <DatasetPropertyCard properties={osm} />
           </ProvenanceGridRow>
           {osmRef != null && (
-            <OsmLiveRelationTagsRow osmRef={osmRef} officialProperties={official} />
+            <OsmLiveRelationTagsRow
+              osmRef={osmRef}
+              officialProperties={official}
+              acceptedRegionalSchluessel={row.staleOfficialKey?.toArs}
+            />
           )}
         </dl>
       </div>

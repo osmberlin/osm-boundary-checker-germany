@@ -1,0 +1,12 @@
+{
+  "successors": [
+    {
+      "fromArs": "064350014014",
+      "toArs": "064150000000",
+      "validFrom": "2026-01-01",
+      "kind": "kreisfrei",
+      "note": "Hanau wurde kreisfreie Stadt und verließ den Main-Kinzig-Kreis.",
+      "issueUrl": "https://github.com/osmberlin/osm-boundary-checker-germany/issues/17"
+    }
+  ]
+}

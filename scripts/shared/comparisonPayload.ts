@@ -33,6 +33,20 @@ export const reportMetricsSchema = z.object({
 
 export const bboxSchema = z.tuple([z.number(), z.number(), z.number(), z.number()])
 
+export const staleOfficialKeySchema = z
+  .object({
+    toArs: z.string(),
+    source: z.enum(['successor_table', 'ags_candidate', 'osm_map']),
+    pairedUnmatchedKey: z.string().optional(),
+  })
+  .strict()
+
+export const staleOfficialPredecessorSchema = z
+  .object({
+    fromArs: z.string(),
+  })
+  .strict()
+
 export const reportRowSchema = z.object({
   canonicalMatchKey: z.string(),
   nameLabel: z.string(),
@@ -43,6 +57,7 @@ export const reportRowSchema = z.object({
   officialForEditPath: z.string().nullable(),
   officialProperties: z.record(z.string(), z.unknown()).nullable(),
   osmProperties: z.record(z.string(), z.unknown()).nullable(),
+  staleOfficialKey: staleOfficialKeySchema.optional(),
 })
 
 export const unmatchedOsmRowSchema = z.object({
@@ -51,6 +66,7 @@ export const unmatchedOsmRowSchema = z.object({
   osmRelationId: z.string(),
   adminLevel: z.string().nullable(),
   mapBbox: bboxSchema.nullable(),
+  staleOfficialPredecessor: staleOfficialPredecessorSchema.optional(),
 })
 
 export const comparisonSourceMetadataEmbeddedSchema = z.object({
@@ -173,6 +189,7 @@ export const snapshotsSchema = z.object({
         unmatchedOsm: z.number(),
         issues: z.number().optional(),
         reviews: z.number().optional(),
+        staleOfficialKey: z.number().optional(),
       }),
     }),
   ),

@@ -28,6 +28,10 @@ export function germanKeyLookupUrl(): string {
   return withSiteBasePath('/data/german-key-lookup.json')
 }
 
+export function arsSuccessorsUrl(): string {
+  return withSiteBasePath('/data/ars-successors.json')
+}
+
 export function relationResolverIndexUrl(): string {
   return withSiteBasePath('/data/relation-resolver-index.json')
 }

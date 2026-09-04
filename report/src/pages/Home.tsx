@@ -107,6 +107,8 @@ export function Home() {
               const matched = entry ? formatDeInteger(entry.matched) : EM_DASH
               const officialOnly = entry ? formatDeInteger(entry.officialOnly) : EM_DASH
               const unmatched = entry ? formatDeInteger(entry.unmatchedOsm) : EM_DASH
+              const staleOfficialKeyCount = entry?.staleOfficialKey ?? 0
+              const staleOfficialKey = entry ? formatDeInteger(staleOfficialKeyCount) : EM_DASH
               const reviewsCountRaw = entry?.reviews ?? 0
               const issuesCountRaw = entry?.issues ?? 0
               const reviews = entry ? formatDeInteger(reviewsCountRaw) : EM_DASH
@@ -154,6 +156,18 @@ export function Home() {
                       <KpiCell
                         label={<UnmatchedOsmStatPill>{de.home.unmatchedStat}</UnmatchedOsmStatPill>}
                         value={unmatched}
+                      />
+                      <KpiCell
+                        label={
+                          <span
+                            className={
+                              staleOfficialKeyCount > 0 ? 'text-amber-200' : homeAmpelKpiZeroClass
+                            }
+                          >
+                            {de.home.staleOfficialKeyStat}
+                          </span>
+                        }
+                        value={staleOfficialKey}
                       />
                       <HomeReviewIssueKpiPair
                         review={

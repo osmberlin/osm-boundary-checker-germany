@@ -37,12 +37,14 @@ import { SummaryStatColumn } from '../components/SummaryStatColumn'
 import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
+import { useAreaReportStaleKeysFilter } from '../hooks/useAreaReportStaleKeysFilter'
 import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { categoryLabelDe, de } from '../i18n/de'
 import { handleComparisonMapFeatureClick } from '../lib/comparisonMapFeatureClick'
 import { isOlderThanDays } from '../lib/dataAge'
+import { normalizeUnmatchedRows } from '../lib/findFeatureDetailRow'
 import {
   EM_DASH,
   formatDeFixed,
@@ -83,18 +85,8 @@ function unionMapBboxes(rows: AreaReportRow[]): [number, number, number, number]
   return [w, s, e, n]
 }
 
-function normalizeUnmatchedRows(data: ComparisonForReport): AreaReportRow[] {
-  return data.unmatchedOsm.map((row) => ({
-    canonicalMatchKey: row.canonicalMatchKey,
-    nameLabel: row.nameLabel,
-    category: 'unmatched_osm',
-    osmRelationId: row.osmRelationId,
-    metrics: null,
-    mapBbox: row.mapBbox,
-    officialForEditPath: null,
-    officialProperties: null,
-    osmProperties: null,
-  }))
+function isStaleKeyRow(row: AreaReportRow): boolean {
+  return row.staleOfficialKey != null || row.staleOfficialPredecessor != null
 }
 
 export function AreaReport() {
@@ -105,6 +97,7 @@ export function AreaReport() {
   const [overlapPickKeys, setOverlapPickKeys] = useState<string[] | null>(null)
   const { enabledSet, enabledCategories, setCategoryEnabled, isCategoryEnabled } =
     useAreaReportCategoryFilter()
+  const { staleKeys, setStaleKeys } = useAreaReportStaleKeysFilter()
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
   const { ref: chartRef, size: chartSize } = useMeasuredElementSize<HTMLDivElement>()
@@ -135,16 +128,28 @@ export function AreaReport() {
   const mainRows =
     data?.rows.filter((r) => r.category === 'matched' || r.category === 'official_only') ?? []
   const unmatchedRows = data ? normalizeUnmatchedRows(data) : []
-  const visibleMainRows = mainRows.filter((r) => enabledCategories.includes(r.category))
-  const visibleUnmatchedRows = unmatchedRows.filter((r) => enabledCategories.includes(r.category))
+  const matchesStaleKeysFilter = (row: AreaReportRow): boolean => {
+    const stale = isStaleKeyRow(row)
+    if (staleKeys === 'hide') return !stale
+    if (staleKeys === 'only') return stale
+    return true
+  }
+  const visibleMainRows = mainRows.filter(
+    (r) => enabledCategories.includes(r.category) && matchesStaleKeysFilter(r),
+  )
+  const visibleUnmatchedRows = unmatchedRows.filter(
+    (r) => enabledCategories.includes(r.category) && matchesStaleKeysFilter(r),
+  )
   const visibleRows = [...visibleMainRows, ...visibleUnmatchedRows]
 
   const { sortedRows, sortBy, sortDir, setColumn } = useAreaReportTableSort(visibleRows)
 
   const catCounts = {
     matched: mainRows.filter((r) => r.category === 'matched').length,
-    official_only: mainRows.filter((r) => r.category === 'official_only').length,
-    unmatched_osm: unmatchedRows.length,
+    official_only: mainRows.filter((r) => r.category === 'official_only' && !r.staleOfficialKey)
+      .length,
+    unmatched_osm: unmatchedRows.filter((r) => r.staleOfficialPredecessor == null).length,
+    staleOfficialKey: mainRows.filter((r) => r.staleOfficialKey != null).length,
   }
 
   const allMainOn = enabledSet.has('matched') && enabledSet.has('official_only')
@@ -322,6 +327,24 @@ export function AreaReport() {
               value={formatDeInteger(catCounts.unmatched_osm)}
               swatch={<ReportCategorySquareSwatch category="unmatched_osm" />}
             />
+            <div className="flex min-w-0 flex-col gap-y-1">
+              <dd className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums sm:text-3xl">
+                {formatDeInteger(catCounts.staleOfficialKey)}
+              </dd>
+              <dt className="text-sm font-medium text-slate-800">{st.staleOfficialKeyLabel}</dt>
+              <label className="text-xs text-slate-600">
+                {st.staleKeysFilterLabel}
+                <select
+                  className="mt-1 block w-full rounded border border-slate-400 bg-white px-1.5 py-1 text-sm text-slate-900"
+                  value={staleKeys}
+                  onChange={(event) => setStaleKeys(event.target.value as typeof staleKeys)}
+                >
+                  <option value="all">{st.staleKeysAll}</option>
+                  <option value="only">{st.staleKeysOnly}</option>
+                  <option value="hide">{st.staleKeysHide}</option>
+                </select>
+              </label>
+            </div>
           </KpiSectionRow>
 
           <div>
@@ -582,6 +605,11 @@ export function AreaReport() {
                         <ReportCategoryPill category={row.category}>
                           {categoryLabelDe(row.category)}
                         </ReportCategoryPill>
+                        {isStaleKeyRow(row) ? (
+                          <span className="mt-1 block text-xs font-medium text-amber-300">
+                            {st.staleKeyBadge}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
                         <MetricCellBar
@@ -628,7 +656,9 @@ export function AreaReport() {
                           className="inline-flex items-center text-slate-500 transition-colors group-hover:text-sky-300 focus-visible:text-sky-300"
                           to="/$areaId/feature/$featureKey"
                           params={detailParams}
-                          onClick={(event: MouseEvent<HTMLAnchorElement>) => event.stopPropagation()}
+                          onClick={(event: MouseEvent<HTMLAnchorElement>) =>
+                            event.stopPropagation()
+                          }
                           aria-label={`${de.areaReport.table.view}: ${row.nameLabel}`}
                         >
                           <span className="sr-only">{de.areaReport.table.view}</span>

@@ -66,16 +66,24 @@ For each `official_only` row in an area:
    stays stricter than the strong key match: `osm.adminLevels` is only a post-match filter for
    `unmatchedOsm`, but candidate suggestions keep using it to avoid noisy higher-tier hints.
 3. Derive each candidate's canonical match key under the area's id normalization preset
-   (with the same AGS-first / AGS-from-RS fallback used in `compare.ts → deriveOsmKeyForAgsMode`)
+   from `de:regionalschluessel` only (same RS-only rule as `compare.ts → deriveOsmKeyForRsMode`)
    and **drop** the candidate if its canonical key is already present in `officialMap`. This
    covers two scopes:
    - shape-only OSM features (no `de:*` / `postal_code` set), and
    - `unmatched_osm` features whose key value did not align with any official key in this
      area (typo, wrong digit, lifecycle prefix, …).
+     There is no AGS-first join (`deriveOsmKeyForAgsMode` was removed). Matching on AGS would
+     hide 12-digit key drift after association-digit reforms.
+
 4. Spatially confirm: shrink the official polygon to `compare.candidateShrinkFactor`
    (default `0.7` linear ≈ 30 % linear shrink, ≈49 % area shrink) around its centroid via
    `turf.transformScale`, bbox-query an `rbush` over candidate points, then run
    `turf.booleanPointInPolygon` for confirmation.
+
+After candidates are attached, compare may mark an `official_only` row as
+`staleOfficialKey` when Destatis lists the official ARS as obsolete and a candidate
+(or the hand-edited successor table) names a current ARS. That flag does **not** change
+the 12-digit join; it only explains the row.
 
 ## Output payload
 

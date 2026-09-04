@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
+import { arsSuccessorsJsonPath } from '../scripts/shared/arsSuccessorTableFs.ts'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
 import { assertDatasetsRootExists, resolveRuntimeRoot } from './runtimeDataRoot.ts'
 
@@ -102,6 +103,9 @@ async function main() {
     await mkdir(destDataRoot, { recursive: true })
     await writeFile(germanKeyLookupPath, germanKeyLookupBackup)
   }
+
+  await mkdir(destDataRoot, { recursive: true })
+  await copyIfExists(arsSuccessorsJsonPath(), join(destDataRoot, 'ars-successors.json'))
 
   console.log(
     `[prepare-static-snapshot] Wrote public datasets from ${runtimeRoot} (${comparisonTableCount} areas with comparison_table.json)`,

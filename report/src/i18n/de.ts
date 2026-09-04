@@ -204,8 +204,9 @@ export const de = {
       'Keine Gebiete mit output/comparison_table.json unter datasets/ gefunden. Vergleich ausführen (bun run compare).',
     /** Home list: per-area row of category/review counts. */
     categoryStatsAria:
-      'Zugeordnet, nur amtlich, OSM ohne Treffer in offiziellen Daten, Prüfung, Problem — Anzahl',
+      'Zugeordnet, nur amtlich, OSM ohne Treffer in offiziellen Daten, amtlicher Schlüssel veraltet, Prüfung, Problem — Anzahl',
     unmatchedStat: 'Nur OSM',
+    staleOfficialKeyStat: 'Schlüssel veraltet',
     reviewsStat: 'Prüfung',
     issuesStat: 'Problem',
     unmatchedLink: 'Liste: OSM ohne Treffer im amtlichen Export',
@@ -351,7 +352,16 @@ export const de = {
       /** Row 1: Auswertung, amtliche und OSM-Quelle — jeweils Alter und Zeitpunkt. */
       summaryStatRowAria: 'Statistik: Alter und Zeitpunkt der Auswertung sowie der Quelldaten',
       /** Row 2: Legende mit Kategoriezahlen und Filter für Tabelle und Karte. */
-      summaryLegendRowAria: 'Legende: Zugeordnet, nur amtlich, nur OSM — Anzahl und Sichtbarkeit',
+      summaryLegendRowAria:
+        'Legende: Zugeordnet, nur amtlich, nur OSM, amtlicher Schlüssel veraltet — Anzahl und Sichtbarkeit',
+      staleOfficialKeyLabel: 'Schlüssel veraltet',
+      staleKeysFilterLabel: 'Veraltete Schlüssel in der Tabelle',
+      staleKeysAll: 'Alle',
+      staleKeysOnly: 'Nur veraltet',
+      staleKeysHide: 'Ohne veraltet',
+      staleKeyBadge: 'amtlicher Schlüssel veraltet',
+      pairLinkToSuccessor: 'Zum aktuellen OSM-Schlüssel',
+      pairLinkToPredecessor: 'Zum amtlichen Vorläufer-Schlüssel',
       categoryToggleRowAria: 'Kategorien für Tabelle und Karte',
       mapNoVisibleCategories: 'Keine Kategorie ausgewählt — mindestens eine aktivieren.',
       mapLoading: 'Karte wird geladen …',
@@ -535,6 +545,26 @@ export const de = {
     expectedOsmTagsSectionTitle: 'Erwartete OSM-Tags',
     expectedOsmTagsSectionLead:
       'Diese Grenze ist in OpenStreetMap bisher nicht zugeordnet. Damit der Abgleich greift, sollte die passende Grenz-Relation folgende Tags enthalten (laut aktueller Datensatz-Konfiguration):',
+    staleOfficialKeySectionAria: 'Amtlicher Schlüssel ist veraltet',
+    staleOfficialKeyTitle: 'Amtlicher Schlüssel veraltet',
+    staleOfficialKeyLead:
+      'Der amtliche VG25-Stand enthält noch den alten Regionalschlüssel. Destatis und OpenStreetMap nutzen bereits den neuen Schlüssel. Für den Schlüssel ist keine OSM-Änderung nötig.',
+    staleOfficialKeyOfficialLabel: (stand: string | null) =>
+      stand ? `Amtlich (VG25, ${stand})` : 'Amtlich (VG25)',
+    staleOfficialKeyCurrentLabel: (opts: {
+      destatisStand: string | null
+      osmStand: string | null
+      keySince: string | null
+    }) => {
+      const destatis = opts.destatisStand ? `Destatis, ${opts.destatisStand}` : 'Destatis'
+      const osm = opts.osmStand ? `OSM, ${opts.osmStand}` : 'OSM'
+      const core = `${destatis} / ${osm}`
+      if (opts.keySince) return `Heute (${core} — seit ${opts.keySince})`
+      return `Heute (${core})`
+    },
+    staleOfficialKeyNoEditHint: 'Bitte nicht den alten amtlichen Schlüssel nach OSM schreiben.',
+    expectedOsmTagsStaleLead:
+      'Der Abgleich nutzt den exakten 12-stelligen Regionalschlüssel. Hier weicht der amtliche Stand nur deshalb ab, weil VG25 älter ist als Destatis und OSM — nicht weil ein OSM-Tag fehlt.',
     decodeKeyExplorerLink: 'Schlüssel-Felder dekodieren',
 
     candidatesSectionAria: 'OSM-Matching-Kandidaten für diese amtliche Grenze',
@@ -553,6 +583,8 @@ export const de = {
     candidatesSectionMatchHintBeforeAdmin: () =>
       'Zur Zuordnung dieser amtlichen Daten prüfen Sie die passende administrative Grenze in OSM (boundary=administrative) und erwägen Sie, sie mit dem Tag',
     candidatesSectionMatchHintAfter: () => 'zu versehen.',
+    candidatesSectionStaleHint:
+      'Der räumliche Kandidat trägt bereits den aktuellen Regionalschlüssel. Den alten amtlichen Schlüssel nicht nach OSM übernehmen.',
     candidatesEmpty: 'Keine Kandidaten gefunden.',
     candidatesColumnObject: 'OSM-Objekt',
     candidatesColumnName: 'Name',
@@ -617,6 +649,11 @@ export const de = {
     obsoleteNoticeYearBadge: (year: number) => `31.12.${year}:`,
     obsoleteNoticePublicationLink: 'Destatis-Publikationsseite',
     obsoleteYearSuffix: (year: number) => `nur GV100ADJ bis ${year}`,
+    successorCalloutFrom: (validFrom: string) =>
+      `Dieser Schlüssel wurde zum ${validFrom} durch einen neuen Regionalschlüssel ersetzt.`,
+    successorCalloutTo: (validFrom: string) =>
+      `Dieser Schlüssel gilt seit ${validFrom} und ersetzt einen älteren Regionalschlüssel.`,
+    successorCalloutOtherKey: 'Anderer Schlüssel',
     nameSearchNoResults:
       'Kein Gemeinde-/Gebietseintrag gefunden. Für Namenssuche mindestens zwei Zeichen eingeben; für Schlüssel die Ziffern nutzen.',
     nameSearchPickTitle: 'Mehrere Treffer',

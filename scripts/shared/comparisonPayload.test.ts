@@ -3,6 +3,8 @@ import {
   candidateMatchSchema,
   comparisonForReportSchema,
   featureDetailShardSchema,
+  reportRowSchema,
+  unmatchedOsmRowSchema,
 } from './comparisonPayload.ts'
 
 const validRow = {
@@ -107,6 +109,45 @@ describe('candidateMatchSchema', () => {
         unexpectedExtra: 'no',
       }),
     ).toThrow()
+  })
+})
+
+describe('staleOfficialKey fields', () => {
+  test('old artifacts without stale fields still parse', () => {
+    const parsed = reportRowSchema.parse(validRow)
+    expect(parsed.staleOfficialKey).toBeUndefined()
+    const unmatched = unmatchedOsmRowSchema.parse({
+      canonicalMatchKey: 'k2',
+      nameLabel: 'OSM',
+      osmRelationId: '1',
+      adminLevel: '8',
+      mapBbox: null,
+    })
+    expect(unmatched.staleOfficialPredecessor).toBeUndefined()
+  })
+
+  test('accepts staleOfficialKey on official-only rows', () => {
+    const parsed = reportRowSchema.parse({
+      ...validRow,
+      staleOfficialKey: {
+        toArs: '010575785008',
+        source: 'ags_candidate',
+        pairedUnmatchedKey: '010575785008',
+      },
+    })
+    expect(parsed.staleOfficialKey?.toArs).toBe('010575785008')
+  })
+
+  test('accepts osm_map staleOfficialKey source on matched rows', () => {
+    const parsed = reportRowSchema.parse({
+      ...validRow,
+      category: 'matched',
+      staleOfficialKey: {
+        toArs: '160770043043',
+        source: 'osm_map',
+      },
+    })
+    expect(parsed.staleOfficialKey?.source).toBe('osm_map')
   })
 })
 

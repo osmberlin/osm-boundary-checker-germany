@@ -414,6 +414,7 @@ function comparisonRowToPayload(
     officialForEditPath,
     officialProperties: row.officialProperties,
     osmProperties: row.osmProperties,
+    ...(row.staleOfficialKey ? { staleOfficialKey: row.staleOfficialKey } : {}),
   }
 }
 
@@ -424,6 +425,9 @@ function unmatchedRowToPayload(row: UnmatchedOsmRow): StaticUnmatchedOsmRow {
     osmRelationId: row.osmRelationId,
     adminLevel: row.adminLevel,
     mapBbox: mapBboxForGeometry(row.osmGeometryWgs84),
+    ...(row.staleOfficialPredecessor
+      ? { staleOfficialPredecessor: row.staleOfficialPredecessor }
+      : {}),
   }
 }
 
@@ -447,6 +451,7 @@ function updateSnapshotsFile(
   unmatchedOsmCount: number,
   reviewCount: number,
   issueCount: number,
+  staleOfficialKeyCount: number,
 ) {
   const snapshotsPath = join(areaPath, 'snapshots.json')
   let snapshots: {
@@ -461,6 +466,7 @@ function updateSnapshotsFile(
         unmatchedOsm: number
         reviews?: number
         issues?: number
+        staleOfficialKey?: number
       }
     }>
   } = {
@@ -486,6 +492,7 @@ function updateSnapshotsFile(
       unmatchedOsm: unmatchedOsmCount,
       reviews: reviewCount,
       issues: issueCount,
+      staleOfficialKey: staleOfficialKeyCount,
     },
   }
   const nextRuns = (snapshots.runs ?? []).filter((r) => r.id !== snapshotId)
@@ -761,6 +768,10 @@ export function writeOutputs(
     rmSync(featureTmp, { recursive: true, force: true })
   }
 
+  const staleOfficialKeyCount = rows.filter((row) => row.staleOfficialKey != null).length
+  const unmatchedHeadlineCount = unmatchedOsm.filter(
+    (row) => row.staleOfficialPredecessor == null,
+  ).length
   updateSnapshotsFile(
     areaPath,
     snapshotId,
@@ -768,9 +779,10 @@ export function writeOutputs(
     meanIou,
     matched.length,
     officialOnly.length,
-    unmatchedOsm.length,
+    unmatchedHeadlineCount,
     reviewCount,
     issueCount,
+    staleOfficialKeyCount,
   )
   phaseLogger?.('write_payloads', Date.now() - tWritePayloads, {
     rows: payloadRows.length,

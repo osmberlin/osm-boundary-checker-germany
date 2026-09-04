@@ -76,6 +76,7 @@ export function ExpectedOsmTagsSection({
   row: ReportRow
 }) {
   if (row.category !== 'official_only') return null
+  const isStale = row.staleOfficialKey != null
 
   const summary = areasIndex.summaries.find((s) => s.area === areaKey)
   const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
@@ -93,7 +94,7 @@ export function ExpectedOsmTagsSection({
     >
       <ProvenanceGridSectionHeader title={de.feature.expectedOsmTagsSectionTitle}>
         <p className="mt-2 max-w-4xl text-sm text-slate-400">
-          {de.feature.expectedOsmTagsSectionLead}
+          {isStale ? de.feature.expectedOsmTagsStaleLead : de.feature.expectedOsmTagsSectionLead}
         </p>
         {showKeyExplorer ? (
           <p className="mt-3">
@@ -107,23 +108,25 @@ export function ExpectedOsmTagsSection({
           </p>
         ) : null}
       </ProvenanceGridSectionHeader>
-      <div className="border-t border-slate-700">
-        <dl>
-          <ProvenanceGridRow
-            asDl
-            surfaceClassName="bg-red-950/18"
-            rightColumnClassName="mt-2"
-            title={<span className="text-sm/6 font-medium text-slate-200">OSM</span>}
-          >
-            <TagRows
-              boundaryValue={boundaryValue}
-              adminLevels={adminLevels}
-              matchProperties={matchProperties}
-              matchValue={row.canonicalMatchKey}
-            />
-          </ProvenanceGridRow>
-        </dl>
-      </div>
+      {isStale ? null : (
+        <div className="border-t border-slate-700">
+          <dl>
+            <ProvenanceGridRow
+              asDl
+              surfaceClassName="bg-red-950/18"
+              rightColumnClassName="mt-2"
+              title={<span className="text-sm/6 font-medium text-slate-200">OSM</span>}
+            >
+              <TagRows
+                boundaryValue={boundaryValue}
+                adminLevels={adminLevels}
+                matchProperties={matchProperties}
+                matchValue={row.canonicalMatchKey}
+              />
+            </ProvenanceGridRow>
+          </dl>
+        </div>
+      )}
     </section>
   )
 }

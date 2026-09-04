@@ -1,6 +1,10 @@
 import { queryOptions } from '@tanstack/react-query'
 import { changelogFileSchema, type ChangelogFile } from '@tordans/changelog-kit/schemas'
 import {
+  arsSuccessorTableSchema,
+  type ArsSuccessorTable,
+} from '../../../scripts/shared/arsSuccessorTable.ts'
+import {
   comparisonForReportSchema,
   featureDetailShardSchema,
   snapshotsSchema,
@@ -52,6 +56,7 @@ import {
   discussionsRegistryUrl,
   discussionsRegistrySyncMetaUrl,
   featureApiUrl,
+  arsSuccessorsUrl,
   germanKeyLookupUrl,
   runStatusUrl,
   snapshotsUrl,
@@ -107,6 +112,14 @@ export async function loadGermanKeyLookup(): Promise<GermanKeyLookupBundle> {
   const r = await fetch(url)
   if (!r.ok) throw new Error(`Failed to load ${url}: ${r.status}`)
   return germanKeyLookupBundleSchema.parse(await readJsonStrict(url, r))
+}
+
+export async function loadArsSuccessorTable(): Promise<ArsSuccessorTable | null> {
+  const url = arsSuccessorsUrl()
+  const r = await fetch(url)
+  if (!r.ok) return null
+  const parsed = arsSuccessorTableSchema.safeParse(await readJsonStrict(url, r))
+  return parsed.success ? parsed.data : null
 }
 
 export async function loadRunStatus(): Promise<RunStatusFile | null> {
@@ -219,6 +232,13 @@ export function germanKeyLookupQueryOptions() {
   return queryOptions({
     queryKey: ['german-key-lookup'],
     queryFn: () => loadGermanKeyLookup(),
+  })
+}
+
+export function arsSuccessorsQueryOptions() {
+  return queryOptions({
+    queryKey: ['ars-successors'],
+    queryFn: () => loadArsSuccessorTable(),
   })
 }
 

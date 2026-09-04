@@ -15,8 +15,13 @@ function normalizeUnmatchedRows(data: ComparisonForReport): ReportRow[] {
       relation_id: row.osmRelationId,
       ...(row.adminLevel ? { admin_level: row.adminLevel } : {}),
     },
+    ...(row.staleOfficialPredecessor
+      ? { staleOfficialPredecessor: row.staleOfficialPredecessor }
+      : {}),
   }))
 }
+
+export { normalizeUnmatchedRows }
 
 export function findFeatureDetailRow(
   data: ComparisonForReport,
