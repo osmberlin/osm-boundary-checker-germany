@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { BBox, Geometry } from 'geojson'
+import { z } from 'zod'
 import type { MetricResult } from './metrics/types.ts'
 
 type RustUnionBucket = {
@@ -35,6 +36,50 @@ type RustOfficialCoverageInput = {
   bbox: BBox
   geometry: Geometry
 }
+
+const rustGeometrySchema = z.custom<Geometry>(
+  (value) => typeof value === 'object' && value !== null && 'type' in value,
+)
+
+const rustUnionByKeyOutputSchema = z.object({
+  results: z.array(
+    z.object({
+      key: z.string(),
+      geometry: rustGeometrySchema.nullable(),
+      feature_ids: z.array(z.string()),
+      properties: z.record(z.string(), z.unknown()).nullable(),
+    }),
+  ),
+})
+
+const rustMetricsBatchOutputSchema = z.object({
+  rows: z.array(
+    z
+      .object({
+        iou: z.number(),
+        area_diff_pct: z.number(),
+        symmetric_diff_pct: z.number(),
+        hausdorff_m: z.number(),
+        official_area_m2: z.number(),
+        osm_area_m2: z.number(),
+      })
+      .nullable(),
+  ),
+})
+
+const rustDiffBatchOutputSchema = z.object({
+  rows: z.array(
+    z.object({
+      canonical_match_key: z.string(),
+      external_diff: rustGeometrySchema.nullable(),
+      osm_diff: rustGeometrySchema.nullable(),
+    }),
+  ),
+})
+
+const rustScopeFilterCoverageOutputSchema = z.object({
+  keep_row_indexes: z.array(z.number().int().nonnegative()),
+})
 
 function defaultRustBinaryPath(): string {
   const here = dirname(fileURLToPath(import.meta.url))
@@ -73,7 +118,11 @@ function rustBootstrapHint(bin: string): string {
   )
 }
 
-function runRustCommand<TInput, TOutput>(command: string, payload: TInput): TOutput {
+function runRustCommand<TOutput>(
+  command: string,
+  payload: unknown,
+  schema: z.ZodType<TOutput>,
+): TOutput {
   const bin = process.env.RUST_GEOM_BIN?.trim() || defaultRustBinaryPath()
   if (!existsSync(bin)) {
     throw new Error(rustBootstrapHint(bin))
@@ -92,7 +141,7 @@ function runRustCommand<TInput, TOutput>(command: string, payload: TInput): TOut
     )
   }
   try {
-    return JSON.parse(result.stdout) as TOutput
+    return schema.parse(JSON.parse(result.stdout))
   } catch (error) {
     throw new Error(
       `[rust-geom] ${command} produced invalid JSON: ${String(error)}\n\n${rustBootstrapHint(bin)}`,
@@ -107,17 +156,7 @@ export function unionByKeyWithRust(buckets: RustUnionBucket[]): RustUnionResult[
   const out: RustUnionResult[] = []
   for (let i = 0; i < totalChunks; i++) {
     const slice = buckets.slice(i * RUST_BATCH_CHUNK_SIZE, (i + 1) * RUST_BATCH_CHUNK_SIZE)
-    const output = runRustCommand<
-      { buckets: RustUnionBucket[] },
-      {
-        results: Array<{
-          key: string
-          geometry: Geometry | null
-          feature_ids: string[]
-          properties: Record<string, unknown> | null
-        }>
-      }
-    >('union-by-key', { buckets: slice })
+    const output = runRustCommand('union-by-key', { buckets: slice }, rustUnionByKeyOutputSchema)
     for (const row of output.results) {
       out.push({
         key: row.key,
@@ -147,24 +186,16 @@ export function calculateMetricsBatchWithRust(
   const out: Array<MetricResult | null> = []
   for (let i = 0; i < totalChunks; i++) {
     const slice = rows.slice(i * RUST_BATCH_CHUNK_SIZE, (i + 1) * RUST_BATCH_CHUNK_SIZE)
-    const output = runRustCommand<
-      { rows: Array<{ official_projected: Geometry | null; osm_projected: Geometry | null }> },
+    const output = runRustCommand(
+      'metrics-batch',
       {
-        rows: Array<{
-          iou: number
-          area_diff_pct: number
-          symmetric_diff_pct: number
-          hausdorff_m: number
-          official_area_m2: number
-          osm_area_m2: number
-        } | null>
-      }
-    >('metrics-batch', {
-      rows: slice.map((row) => ({
-        official_projected: row.officialProjected,
-        osm_projected: row.osmProjected,
-      })),
-    })
+        rows: slice.map((row) => ({
+          official_projected: row.officialProjected,
+          osm_projected: row.osmProjected,
+        })),
+      },
+      rustMetricsBatchOutputSchema,
+    )
     for (const row of output.rows) {
       out.push(
         row
@@ -205,30 +236,18 @@ export function calculateDiffBatchWithRust(
   const out: RustDiffBatchResult[] = []
   for (let i = 0; i < totalChunks; i++) {
     const slice = rows.slice(i * RUST_BATCH_CHUNK_SIZE, (i + 1) * RUST_BATCH_CHUNK_SIZE)
-    const output = runRustCommand<
+    const output = runRustCommand(
+      'diff-batch',
       {
-        rows: Array<{
-          category: string
-          canonical_match_key: string
-          official_geometry_wgs84: Geometry | null
-          osm_geometry_wgs84: Geometry | null
-        }>
+        rows: slice.map((row) => ({
+          category: row.category,
+          canonical_match_key: row.canonicalMatchKey,
+          official_geometry_wgs84: row.officialGeometryWgs84,
+          osm_geometry_wgs84: row.osmGeometryWgs84,
+        })),
       },
-      {
-        rows: Array<{
-          canonical_match_key: string
-          external_diff: Geometry | null
-          osm_diff: Geometry | null
-        }>
-      }
-    >('diff-batch', {
-      rows: slice.map((row) => ({
-        category: row.category,
-        canonical_match_key: row.canonicalMatchKey,
-        official_geometry_wgs84: row.officialGeometryWgs84,
-        osm_geometry_wgs84: row.osmGeometryWgs84,
-      })),
-    })
+      rustDiffBatchOutputSchema,
+    )
     for (const row of output.rows) {
       out.push({
         canonicalMatchKey: row.canonical_match_key,
@@ -261,35 +280,22 @@ export function filterByOfficialCoverageWithRust(input: {
   rows: RustMergedScopeRow[]
 }): Set<number> {
   if (input.rows.length === 0 || input.official.length === 0) return new Set<number>()
-  const output = runRustCommand<
+  const output = runRustCommand(
+    'scope-filter-coverage',
     {
-      official: Array<{
-        bbox: [number, number, number, number]
-        geometry: Geometry
-      }>
-      min_intersection_area_m2: number
-      min_overlap_ratio: number
-      rows: Array<{
-        row_index: number
-        geometry: Geometry | null
-        bbox: [number, number, number, number] | null
-      }>
+      official: input.official.map((entry) => ({
+        bbox: [entry.bbox[0], entry.bbox[1], entry.bbox[2], entry.bbox[3]],
+        geometry: entry.geometry,
+      })),
+      min_intersection_area_m2: input.minIntersectionAreaM2,
+      min_overlap_ratio: input.minOverlapRatio,
+      rows: input.rows.map((row) => ({
+        row_index: row.rowIndex,
+        geometry: row.geometry,
+        bbox: row.bbox ? [row.bbox[0], row.bbox[1], row.bbox[2], row.bbox[3]] : null,
+      })),
     },
-    {
-      keep_row_indexes: number[]
-    }
-  >('scope-filter-coverage', {
-    official: input.official.map((entry) => ({
-      bbox: [entry.bbox[0], entry.bbox[1], entry.bbox[2], entry.bbox[3]],
-      geometry: entry.geometry,
-    })),
-    min_intersection_area_m2: input.minIntersectionAreaM2,
-    min_overlap_ratio: input.minOverlapRatio,
-    rows: input.rows.map((row) => ({
-      row_index: row.rowIndex,
-      geometry: row.geometry,
-      bbox: row.bbox ? [row.bbox[0], row.bbox[1], row.bbox[2], row.bbox[3]] : null,
-    })),
-  })
+    rustScopeFilterCoverageOutputSchema,
+  )
   return new Set(output.keep_row_indexes)
 }

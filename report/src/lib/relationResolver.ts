@@ -1,9 +1,17 @@
-export type RelationResolverCandidate = {
-  dataset: string
-  areaId: string
-  featureKey: string
-  featureName: string
-}
+import { z } from 'zod'
+
+export const relationResolverCandidateSchema = z.object({
+  dataset: z.string(),
+  areaId: z.string(),
+  featureKey: z.string(),
+  featureName: z.string(),
+})
+export type RelationResolverCandidate = z.infer<typeof relationResolverCandidateSchema>
+
+export const relationResolverIndexSchema = z.object({
+  byRelationId: z.record(z.string(), z.array(relationResolverCandidateSchema)),
+})
+export type RelationResolverIndex = z.infer<typeof relationResolverIndexSchema>
 
 export type RelationResolverDecision =
   | {

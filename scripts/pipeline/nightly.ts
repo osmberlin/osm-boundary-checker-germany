@@ -11,6 +11,8 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { join } from 'node:path'
+import { z } from 'zod'
+import { processingLogEventSchema, type LogEvent } from '../../report/src/types/processingLog.ts'
 import { areaHasCompareConfig } from '../shared/areaConfig.ts'
 import { discoverBkgAreaFolderNames } from '../shared/bkgAreas.ts'
 import { DATASETS_DIRECTORY } from '../shared/datasetPaths.ts'
@@ -41,52 +43,6 @@ import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 type StepStatus = 'ok' | 'fail' | 'skipped'
-
-type LogEvent =
-  | {
-      kind: 'run_start'
-      runId: string
-      at: string
-      timezone: string
-    }
-  | {
-      kind: 'run_end'
-      runId: string
-      at: string
-      status: Exclude<StepStatus, 'skipped'>
-      durationMs: number
-    }
-  | {
-      kind: 'step_start'
-      runId: string
-      at: string
-      step: string
-    }
-  | {
-      kind: 'step_end'
-      runId: string
-      at: string
-      step: string
-      status: StepStatus
-      durationMs?: number
-      exitCode?: number
-      reason?: string
-    }
-  | {
-      kind: 'dataset_start'
-      runId: string
-      at: string
-      dataset: string
-    }
-  | {
-      kind: 'dataset_end'
-      runId: string
-      at: string
-      dataset: string
-      status: Exclude<StepStatus, 'skipped'>
-      durationMs: number
-      exitCode: number
-    }
 
 type ProcessingState = {
   runId: string
@@ -125,7 +81,7 @@ function formatDuration(durationMs: number): string {
 }
 
 function appendJsonl(path: string, event: LogEvent): void {
-  appendFileSync(path, `${JSON.stringify(event)}\n`, 'utf-8')
+  appendFileSync(path, `${JSON.stringify(processingLogEventSchema.parse(event))}\n`, 'utf-8')
 }
 
 function writeState(path: string, state: ProcessingState): void {
@@ -193,9 +149,10 @@ function branchStatusFromStepResult(
 }
 
 function parseDownloadAttempt(): 'fresh' | 'fallback' | null {
-  const raw = process.env.PIPELINE_DOWNLOAD_ATTEMPT?.trim().toLowerCase()
-  if (raw === 'fresh' || raw === 'fallback') return raw
-  return null
+  const parsed = z
+    .enum(['fresh', 'fallback'])
+    .safeParse(process.env.PIPELINE_DOWNLOAD_ATTEMPT?.trim().toLowerCase())
+  return parsed.success ? parsed.data : null
 }
 
 function osmDownloadErrorMessage(exitCode: number, reason?: string): string {
@@ -208,9 +165,8 @@ function osmDownloadErrorMessage(exitCode: number, reason?: string): string {
 
 function parsePositiveInt(value: string | undefined): number | null {
   if (!value) return null
-  const parsed = Number.parseInt(value, 10)
-  if (!Number.isFinite(parsed) || parsed <= 0) return null
-  return parsed
+  const parsed = z.coerce.number().int().positive().safeParse(value)
+  return parsed.success ? parsed.data : null
 }
 
 function parseArgs(argv: string[]): { phase: PipelinePhase; compareConcurrency: number } {

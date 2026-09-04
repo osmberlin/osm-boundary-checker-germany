@@ -9,7 +9,9 @@ import {
   writeFileSync,
 } from 'node:fs'
 import path from 'node:path'
+import { z } from 'zod'
 import { COMPARE_READY_OSM_FGB_BASENAMES, GERMANY_OSM_CACHE_DIR } from '../shared/germanyOsmPbf.ts'
+import { rustSidecarMetadataFileSchema } from '../shared/rustSidecarMetadata.ts'
 import { SOURCE_METADATA_FILE } from '../shared/sourceMetadata.ts'
 
 /**
@@ -226,6 +228,7 @@ writeFileSync(
 const summaryPath = path.join(artifactRoot, 'cache-scopes-summary.md')
 writeFileSync(summaryPath, buildSummaryMarkdown(scopeInventories), { encoding: 'utf-8' })
 
+const cacheHitEnv = z.enum(['true', 'false']).safeParse(process.env.RUST_SIDECAR_CACHE_HIT)
 const rustSidecarMetadata = {
   fingerprint: process.env.RUST_SIDECAR_FINGERPRINT ?? null,
   inputHash: process.env.RUST_SIDECAR_INPUT_HASH ?? null,
@@ -233,22 +236,17 @@ const rustSidecarMetadata = {
   rustcVersion: process.env.RUSTC_VERSION ?? null,
   changeStatus: process.env.RUST_SIDECAR_CHANGE_STATUS ?? 'unknown',
   previousFingerprint: process.env.RUST_SIDECAR_PREVIOUS_FINGERPRINT || null,
-  cacheHit:
-    process.env.RUST_SIDECAR_CACHE_HIT === 'true'
-      ? true
-      : process.env.RUST_SIDECAR_CACHE_HIT === 'false'
-        ? false
-        : null,
+  cacheHit: cacheHitEnv.success ? cacheHitEnv.data === 'true' : null,
 }
 
 const metadataPath = path.join(artifactRoot, 'rust-sidecar-metadata.json')
 writeFileSync(
   metadataPath,
   `${JSON.stringify(
-    {
+    rustSidecarMetadataFileSchema.parse({
       generatedAt: new Date().toISOString(),
       rustSidecar: rustSidecarMetadata,
-    },
+    }),
     null,
     2,
   )}\n`,

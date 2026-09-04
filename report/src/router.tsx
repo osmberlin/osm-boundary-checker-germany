@@ -31,7 +31,7 @@ import {
   FEATURE_DETAIL_ROUTE_FROM,
   parseFeatureDetailRouteParams,
 } from './lib/parseFeatureDetailRouteParams'
-import { decideRelationResolution, type RelationResolverCandidate } from './lib/relationResolver'
+import { decideRelationResolution, relationResolverIndexSchema } from './lib/relationResolver'
 import { validateRelationResolverSearch } from './lib/relationResolverSearch'
 import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
 import { stringifySearchPretty } from './lib/routerSearchStringify'
@@ -273,10 +273,8 @@ const relationResolverRoute = createRoute({
     if (!response.ok) {
       throw new Error(`Failed to load relation resolver index: ${response.status}`)
     }
-    const resolverIndex = (await response.json()) as {
-      byRelationId?: Record<string, readonly RelationResolverCandidate[]>
-    }
-    const candidates = [...(resolverIndex.byRelationId?.[relationId] ?? [])]
+    const resolverIndex = relationResolverIndexSchema.parse(await response.json())
+    const candidates = [...(resolverIndex.byRelationId[relationId] ?? [])]
     const decision = decideRelationResolution({
       candidates,
       dataset: deps.dataset,

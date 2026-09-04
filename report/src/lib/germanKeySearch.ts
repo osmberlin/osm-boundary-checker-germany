@@ -1,18 +1,19 @@
+import { z } from 'zod'
+
 export type GermanKeySearch = {
   key?: string
 }
 
-function coerceSearchString(value: unknown): string | undefined {
-  if (value === undefined || value === null) return undefined
-  if (typeof value === 'string') return value === '' ? undefined : value
-  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
-  return undefined
-}
+const germanKeySearchSchema = z.object({
+  key: z.union([z.string(), z.number()]).optional(),
+})
 
 /** TanStack Router `validateSearch`: tolerant parsing for the `key` param only. */
 export function validateGermanKeySearch(raw: Record<string, unknown>): GermanKeySearch {
-  const key = coerceSearchString(raw.key)
-  const out: GermanKeySearch = {}
-  if (key !== undefined) out.key = key
-  return out
+  const parsed = germanKeySearchSchema.safeParse(raw)
+  if (!parsed.success) return {}
+  if (parsed.data.key === undefined) return {}
+  const key = String(parsed.data.key)
+  if (key === '') return {}
+  return { key }
 }

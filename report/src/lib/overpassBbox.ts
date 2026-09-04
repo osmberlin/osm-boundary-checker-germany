@@ -29,30 +29,22 @@ export function buildOverpassBoundaryQuery(
 out geom;`
 }
 
-type OverpassLatLon = {
-  lat: number
-  lon: number
-}
-
-type OverpassMember = {
-  type?: string
-  role?: string
-  geometry?: OverpassLatLon[]
-}
-
-type OverpassElement = {
-  type: string
-  id: number
-  tags?: Record<string, string>
-  geometry?: OverpassLatLon[]
-  members?: OverpassMember[]
-}
-
-type OverpassDoc = {
-  elements?: OverpassElement[]
-  type?: unknown
-  features?: unknown
-}
+export const overpassDocEnvelopeSchema = z.looseObject({
+  elements: z
+    .array(
+      z.looseObject({
+        type: z.string(),
+        id: z.number(),
+        tags: z.record(z.string(), z.string()).optional(),
+      }),
+    )
+    .optional(),
+  osm3s: z
+    .looseObject({
+      timestamp_osm_base: z.string().optional(),
+    })
+    .optional(),
+})
 
 export type OverpassBoundaryHit = {
   type: 'relation' | 'way' | string
@@ -210,7 +202,9 @@ function normalizeFeatureCollection(raw: unknown): OverpassGeoJsonFeatureCollect
   }
 }
 
-function hitsFromElements(elements: OverpassElement[]): OverpassBoundaryHit[] {
+function hitsFromElements(
+  elements: Array<{ type: string; id: number; tags?: Record<string, string> }>,
+): OverpassBoundaryHit[] {
   const hits: OverpassBoundaryHit[] = []
   for (const el of elements) {
     if (el.type !== 'relation' && el.type !== 'way') continue
@@ -256,12 +250,11 @@ function filterHitsToRenderedFeatures(
 }
 
 export function parseOverpassBoundaryData(jsonText: string): ParsedOverpassBoundaryData {
-  const parsed = JSON.parse(jsonText) as unknown
-  if (!isRecord(parsed)) throw new Error('INVALID_OVERPASS_JSON')
-  const overpassDoc = parsed as OverpassDoc
-  const hits = Array.isArray(overpassDoc.elements) ? hitsFromElements(overpassDoc.elements) : []
+  const overpassDoc = overpassDocEnvelopeSchema.safeParse(JSON.parse(jsonText))
+  if (!overpassDoc.success) throw new Error('INVALID_OVERPASS_JSON')
+  const hits = hitsFromElements(overpassDoc.data.elements ?? [])
   // This parser expects Overpass JSON and normalizes through osm2geojson-ultra.
-  const convertedGeojson = normalizeFeatureCollection(osm2geojson(parsed))
+  const convertedGeojson = normalizeFeatureCollection(osm2geojson(overpassDoc.data))
   if (!convertedGeojson) throw new Error('INVALID_OVERPASS_JSON')
   const renderedHits = filterHitsToRenderedFeatures(hits, convertedGeojson)
   return {

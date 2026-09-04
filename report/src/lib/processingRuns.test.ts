@@ -38,7 +38,7 @@ describe('classifyRunPhase', () => {
 describe('buildRunsFromEvents', () => {
   it('aggregates run_start and run_end', () => {
     const events: LogEvent[] = [
-      { kind: 'run_start', runId: 'r1', at: '2026-06-01T04:00:00.000Z' },
+      { kind: 'run_start', runId: 'r1', at: '2026-06-01T04:00:00.000Z', timezone: 'Europe/Berlin' },
       {
         kind: 'run_end',
         runId: 'r1',
@@ -52,6 +52,8 @@ describe('buildRunsFromEvents', () => {
         at: '2026-06-01T04:05:00.000Z',
         step: 'download:osm',
         status: 'ok',
+        durationMs: 0,
+        exitCode: 0,
       },
     ]
     const runs = buildRunsFromEvents(events)
@@ -64,7 +66,12 @@ describe('buildRunsFromEvents', () => {
 describe('computeStatusKpis', () => {
   it('picks latest successful compare end', () => {
     const runs = buildRunsFromEvents([
-      { kind: 'run_start', runId: 'c1', at: '2026-06-01T06:00:00.000Z' },
+      {
+        kind: 'run_start',
+        runId: 'c1',
+        at: '2026-06-01T06:00:00.000Z',
+        timezone: 'Europe/Berlin',
+      },
       { kind: 'run_end', runId: 'c1', at: '2026-06-01T07:00:00.000Z', status: 'ok', durationMs: 1 },
       {
         kind: 'dataset_end',

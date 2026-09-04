@@ -17,6 +17,7 @@ import { spawnSync } from 'node:child_process'
  */
 import { existsSync, lstatSync, mkdirSync, readlinkSync, statSync, unlinkSync } from 'node:fs'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { z } from 'zod'
 import { emitCacheDecision, mapDailyRefreshReasonToCacheState } from '../shared/cacheDecision.ts'
 import { decideDailyRefresh, resolveRefreshTimezone } from '../shared/dailyRefreshWindow.ts'
 import { resolveGeofabrikGermanyPbfUrl } from '../shared/geofabrikGermanyExtract.ts'
@@ -74,8 +75,10 @@ async function main() {
     console.log(`Germany PBF cache path is a symlink; bytes live at:\n  ${writePath}`)
   }
 
-  const skipEnv = process.env.OSM_SKIP_PBF_DOWNLOAD?.trim().toLowerCase()
-  if (skipEnv === '1' || skipEnv === 'true' || skipEnv === 'yes') {
+  const skipEnv = z
+    .enum(['1', 'true', 'yes'])
+    .safeParse(process.env.OSM_SKIP_PBF_DOWNLOAD?.trim().toLowerCase())
+  if (skipEnv.success) {
     if (!existsSync(writePath)) {
       console.error(
         `OSM_SKIP_PBF_DOWNLOAD is set but no PBF exists at:\n  ${writePath}\n\nDownload once without the skip flag, or set OSM_GERMANY_PBF.`,

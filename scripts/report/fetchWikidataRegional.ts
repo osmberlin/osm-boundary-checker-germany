@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import { padRegional12 } from '../shared/regionalArs.ts'
 import type {
   RegionalHubWikidataFile,
@@ -22,9 +23,19 @@ const SPARQL_TIMEOUT_MS = 55_000
 
 type SparqlBinding = Record<string, { type?: string; value?: string } | undefined>
 
-type SparqlJson = {
-  results?: { bindings?: SparqlBinding[] }
-}
+const wikidataSparqlResultsSchema = z.object({
+  results: z.object({
+    bindings: z.array(
+      z.record(
+        z.string(),
+        z.object({
+          type: z.string().optional(),
+          value: z.string().optional(),
+        }),
+      ),
+    ),
+  }),
+})
 
 function bindingValue(row: SparqlBinding, key: string): string | undefined {
   const value = row[key]?.value?.trim()
@@ -98,8 +109,8 @@ async function postSparql(query: string): Promise<SparqlBinding[]> {
     if (!response.ok) {
       throw new Error(`WDQS HTTP ${response.status}`)
     }
-    const json = (await response.json()) as SparqlJson
-    return json.results?.bindings ?? []
+    const json = wikidataSparqlResultsSchema.parse(await response.json())
+    return json.results.bindings
   } finally {
     clearTimeout(timer)
   }

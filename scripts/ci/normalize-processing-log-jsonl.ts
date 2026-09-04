@@ -1,24 +1,11 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { parseProcessingLogJsonl, type LogEvent } from '../../report/src/types/processingLog.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
-export type ProcessingLogLine = Record<string, unknown> & { kind: string }
+export { parseProcessingLogJsonl }
 
-export function parseProcessingLogJsonl(text: string): ProcessingLogLine[] {
-  const events: ProcessingLogLine[] = []
-  for (const line of text.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
-    const parsed = JSON.parse(trimmed) as unknown
-    if (parsed && typeof parsed === 'object' && 'kind' in parsed) {
-      events.push(parsed as ProcessingLogLine)
-    }
-  }
-  return events
-}
-
-/** One compact JSON object per line — stable serialization for reviewable git diffs. */
-export function formatProcessingLogJsonl(events: ProcessingLogLine[]): string {
+export function formatProcessingLogJsonl(events: LogEvent[]): string {
   if (events.length === 0) return ''
   return `${events.map((event) => JSON.stringify(event)).join('\n')}\n`
 }

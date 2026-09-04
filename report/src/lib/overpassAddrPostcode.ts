@@ -3,7 +3,7 @@ import osm2geojson from 'osm2geojson-ultra'
 import { z } from 'zod'
 import type { ComparisonForReport } from '../types/report'
 import { addrPostcodeLiveRowKey, LIVE_ROW_KEY_PROPERTY } from './liveRowKey'
-import { fetchOverpassQuery } from './overpassBbox'
+import { fetchOverpassQuery, overpassDocEnvelopeSchema } from './overpassBbox'
 
 /**
  * Digits-only PLZ; last digit → stable bucket 0–9 for map paint.
@@ -202,17 +202,9 @@ function normalizeAddrPostcodeCollection(
   return { type: 'FeatureCollection', features }
 }
 
-type OverpassElement = {
-  type: string
-  id: number
-  tags?: Record<string, string>
-}
-
-type OverpassDoc = {
-  elements?: OverpassElement[]
-}
-
-function hitsFromElements(elements: OverpassElement[]): AddrPostcodeHit[] {
+function hitsFromElements(
+  elements: Array<{ type: string; id: number; tags?: Record<string, string> }>,
+): AddrPostcodeHit[] {
   const hits: AddrPostcodeHit[] = []
   for (const el of elements) {
     if (el.type !== 'node' && el.type !== 'way') continue
@@ -256,11 +248,10 @@ function hitsFromGeojson(geojson: AddrPostcodeGeoJsonFeatureCollection): AddrPos
 }
 
 export function parseOverpassAddrPostcodeData(jsonText: string): ParsedOverpassAddrPostcodeData {
-  const parsed = JSON.parse(jsonText) as unknown
-  if (!isRecord(parsed)) throw new Error('INVALID_OVERPASS_JSON')
-  const overpassDoc = parsed as OverpassDoc
-  const hits = Array.isArray(overpassDoc.elements) ? hitsFromElements(overpassDoc.elements) : []
-  const convertedGeojson = normalizeAddrPostcodeCollection(osm2geojson(parsed))
+  const overpassDoc = overpassDocEnvelopeSchema.safeParse(JSON.parse(jsonText))
+  if (!overpassDoc.success) throw new Error('INVALID_OVERPASS_JSON')
+  const hits = hitsFromElements(overpassDoc.data.elements ?? [])
+  const convertedGeojson = normalizeAddrPostcodeCollection(osm2geojson(overpassDoc.data))
   if (!convertedGeojson) throw new Error('INVALID_OVERPASS_JSON')
   const renderedHits = filterHitsToRenderedFeatures(hits, convertedGeojson)
   return {

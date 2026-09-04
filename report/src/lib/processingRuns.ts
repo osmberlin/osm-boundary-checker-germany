@@ -1,29 +1,9 @@
+import { type LogEvent, parseProcessingLogJsonl } from '../types/processingLog'
 import type { ProcessingState } from './processingStatusTypes'
 import { berlinCalendarDateKey, berlinTodayDateKey, timelineDateKeys } from './time/calendar'
 
-export type LogEvent =
-  | { kind: 'run_start'; runId: string; at: string }
-  | { kind: 'run_end'; runId: string; at: string; status: 'ok' | 'fail'; durationMs: number }
-  | { kind: 'step_start'; runId: string; at: string; step: string }
-  | {
-      kind: 'step_end'
-      runId: string
-      at: string
-      step: string
-      status: 'ok' | 'fail' | 'skipped'
-      durationMs?: number
-      reason?: string
-    }
-  | { kind: 'dataset_start'; runId: string; at: string; dataset: string }
-  | {
-      kind: 'dataset_end'
-      runId: string
-      at: string
-      dataset: string
-      status: 'ok' | 'fail'
-      durationMs: number
-      exitCode: number
-    }
+export type { LogEvent }
+export { parseProcessingLogJsonl }
 
 export type RunPhase = 'download' | 'extract' | 'compare' | 'all' | 'unknown'
 
@@ -47,21 +27,6 @@ export type RunView = {
     durationMs: number
     at: string
   }>
-}
-
-export function parseProcessingLogJsonl(text: string): LogEvent[] {
-  const out: LogEvent[] = []
-  for (const line of text.split('\n')) {
-    const t = line.trim()
-    if (!t) continue
-    try {
-      const parsed = JSON.parse(t) as LogEvent
-      if (parsed && typeof parsed === 'object' && 'kind' in parsed) out.push(parsed)
-    } catch {
-      // Ignore malformed lines.
-    }
-  }
-  return out
 }
 
 function isDownloadStep(step: string): boolean {

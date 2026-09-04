@@ -1,33 +1,25 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import {
+  osmDownloadAttemptsFileSchema,
   osmPipelineStateSchema,
+  type OsmDownloadAttempt,
+  type OsmDownloadAttemptsFile,
+  type OsmDownloadOutcome,
   type OsmPipelineState,
 } from '../../report/src/types/osmPipelineState.ts'
 
-export type { OsmPipelineState } from '../../report/src/types/osmPipelineState.ts'
+export type {
+  OsmDownloadAttempt,
+  OsmDownloadAttemptsFile,
+  OsmDownloadOutcome,
+  OsmPipelineState,
+} from '../../report/src/types/osmPipelineState.ts'
 
 export const OSM_PIPELINE_STATE_FILE = 'osm-pipeline-state.json'
 export const OSM_DOWNLOAD_ATTEMPTS_FILE = 'osm-download-attempts.json'
 
 export const MAX_CONSECUTIVE_OSM_FALLBACK_RUNS = 2
-
-export type OsmDownloadOutcome = 'fresh' | 'cache_window' | 'fallback_artifact' | 'failed'
-
-export type OsmDownloadAttempt = {
-  attempt: 'fresh' | 'fallback'
-  outcome: OsmDownloadOutcome
-  at: string
-  exitCode?: number
-  errorMessage?: string
-}
-
-export type OsmDownloadAttemptsFile = {
-  version: 1
-  runId: string
-  fresh?: OsmDownloadAttempt
-  fallback?: OsmDownloadAttempt
-}
 
 export type OsmDownloadPolicyResult = {
   ok: boolean
@@ -70,13 +62,8 @@ export function readOsmPipelineState(path: string): OsmPipelineState | null {
 }
 
 export function readOsmDownloadAttempts(path: string): OsmDownloadAttemptsFile | null {
-  const parsed = readJsonOrNull(path)
-  if (!parsed || typeof parsed !== 'object' || parsed === null || !('version' in parsed)) {
-    return null
-  }
-  const rec = parsed as OsmDownloadAttemptsFile
-  if (rec.version !== 1) return null
-  return rec
+  const parsed = osmDownloadAttemptsFileSchema.safeParse(readJsonOrNull(path))
+  return parsed.success ? parsed.data : null
 }
 
 export function upsertOsmDownloadAttempt(

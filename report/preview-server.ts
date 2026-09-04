@@ -1,5 +1,6 @@
 /** Serves `dist/` + `/datasets/*` + `/data/*` from DATA_ROOT. */
 import { join, resolve } from 'node:path'
+import { z } from 'zod'
 import { resolveRuntimeRoot } from './runtimeDataRoot.ts'
 import { repoDataFileResponse } from './serveRepoDataResponse.ts'
 
@@ -9,7 +10,7 @@ const datasetsRoot = resolve(join(dataRoot, 'datasets'))
 const processingRoot = resolve(join(dataRoot, 'data'))
 
 const preview = Bun.serve({
-  port: Number(process.env.PORT) || 4173,
+  port: process.env.PORT ? z.coerce.number().int().positive().parse(process.env.PORT) : 4173,
   async fetch(req) {
     const url = new URL(req.url)
     if (url.pathname.startsWith('/datasets/')) {

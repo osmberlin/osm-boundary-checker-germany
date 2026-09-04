@@ -4,6 +4,7 @@
  * @see https://bun.sh/docs/bundler/fullstack
  */
 import { join, resolve } from 'node:path'
+import { z } from 'zod'
 import homepage from './index.html'
 import { resolveRuntimeRoot } from './runtimeDataRoot.ts'
 import { repoDataFileResponse } from './serveRepoDataResponse.ts'
@@ -33,7 +34,7 @@ async function serveProcessingData(req: Request): Promise<Response> {
 }
 
 const server = Bun.serve({
-  port: Number(process.env.PORT) || 3000,
+  port: process.env.PORT ? z.coerce.number().int().positive().parse(process.env.PORT) : 3000,
   routes: {
     '/': homepage,
     '/datasets/*': serveDatasets,

@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { OgcWfsInspectSource } from '../types/report'
 
 /** Pad WGS84 bbox [west, south, east, north] for WFS queries. */
@@ -75,17 +76,17 @@ export type WfsFeature = {
   geometry?: GeoJSON.Geometry | null
 }
 
-type GeoJsonFeature = {
-  type: 'Feature'
-  id?: string | number
-  properties: WfsFeatureProperties
-  geometry?: GeoJSON.Geometry | null
-}
-
-type GeoJsonFeatureCollection = {
-  type?: string
-  features?: GeoJsonFeature[]
-}
+const wfsGeoJsonFeatureCollectionSchema = z.object({
+  type: z.literal('FeatureCollection'),
+  features: z.array(
+    z.object({
+      type: z.literal('Feature'),
+      id: z.union([z.string(), z.number()]).optional(),
+      properties: z.record(z.string(), z.unknown()).nullable(),
+      geometry: z.unknown().nullable(),
+    }),
+  ),
+})
 
 function getLocalName(name: string): string {
   const i = name.indexOf(':')
@@ -195,15 +196,13 @@ function parseGeometryFromContainer(containerEl: Element): GeoJSON.Geometry | nu
 
 function parseGeoJsonFeatureCollection(text: string): WfsFeature[] | null {
   try {
-    const data = JSON.parse(text) as GeoJsonFeatureCollection
-    if (!data || !Array.isArray(data.features)) return null
-    return data.features
-      .filter((f) => f?.type === 'Feature')
-      .map((feature) => ({
-        id: feature.id,
-        properties: feature.properties ?? null,
-        geometry: feature.geometry ?? null,
-      }))
+    const parsed = wfsGeoJsonFeatureCollectionSchema.safeParse(JSON.parse(text))
+    if (!parsed.success) return null
+    return parsed.data.features.map((feature) => ({
+      id: feature.id,
+      properties: feature.properties ?? null,
+      geometry: (feature.geometry ?? null) as GeoJSON.Geometry | null,
+    }))
   } catch {
     return null
   }

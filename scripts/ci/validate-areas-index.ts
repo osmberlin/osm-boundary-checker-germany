@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { areasIndexPayloadSchema } from '../../report/src/data/areasIndexSchema.ts'
 
 /**
  * WHAT: Validates generated `report/src/data/areasIndex.gen.ts` contains at least one area entry,
@@ -7,9 +8,6 @@ import { resolve } from 'node:path'
  * WHY: Even though refresh validates before upload, deploy is a separate workflow and keeps this cheap guard to fail fast before publishing.
  * WHY (ALSO): This protects manual/independent deploy triggers and any future drift between artifact production and deploy consumption.
  */
-type AreaIndex = {
-  areas?: unknown
-}
 
 const areaIndexPath = new URL('../../report/src/data/areasIndex.gen.ts', import.meta.url)
 if (!existsSync(areaIndexPath)) {
@@ -18,10 +16,10 @@ if (!existsSync(areaIndexPath)) {
   )
 }
 
-const mod = (await import(areaIndexPath.href)) as { default?: AreaIndex }
-const parsed = mod.default ?? {}
+const mod = (await import(areaIndexPath.href)) as { default?: unknown }
+const parsed = areasIndexPayloadSchema.parse(mod.default)
 
-if (!Array.isArray(parsed.areas) || parsed.areas.length === 0) {
+if (parsed.areas.length === 0) {
   throw new Error('areasIndex.gen.ts has no areas; refusing to deploy empty site.')
 }
 

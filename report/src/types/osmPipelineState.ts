@@ -11,3 +11,29 @@ export const osmPipelineStateSchema = z.object({
 })
 
 export type OsmPipelineState = z.infer<typeof osmPipelineStateSchema>
+
+export const osmDownloadOutcomeSchema = z.enum([
+  'fresh',
+  'cache_window',
+  'fallback_artifact',
+  'failed',
+])
+
+export const osmDownloadAttemptSchema = z.object({
+  attempt: z.enum(['fresh', 'fallback']),
+  outcome: osmDownloadOutcomeSchema,
+  at: z.string(),
+  exitCode: z.number().optional(),
+  errorMessage: z.string().optional(),
+})
+
+export const osmDownloadAttemptsFileSchema = z.object({
+  version: z.literal(1),
+  runId: z.string(),
+  fresh: osmDownloadAttemptSchema.optional(),
+  fallback: osmDownloadAttemptSchema.optional(),
+})
+
+export type OsmDownloadOutcome = z.infer<typeof osmDownloadOutcomeSchema>
+export type OsmDownloadAttempt = z.infer<typeof osmDownloadAttemptSchema>
+export type OsmDownloadAttemptsFile = z.infer<typeof osmDownloadAttemptsFileSchema>

@@ -7,9 +7,19 @@ import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
 import { resolveOsmProfile } from '../scripts/shared/osmProfiles.ts'
 import { sourceMetadataSideSchema } from '../scripts/shared/sourceMetadata.ts'
 import {
+  areaHomeSummarySchema,
+  areaLicenseSummarySchema,
+  geoDataSourceSchema,
+  type AreaHomeSummary,
+  type AreaLicenseSummary,
+  type GeoDataSource,
+} from './src/data/areasIndexSchema.ts'
+import {
   fallbackOfficialSourceGroupKey,
   officialSourceGroupKey,
 } from './src/lib/officialSourceGroupKey.ts'
+
+export type { AreaHomeSummary, AreaLicenseSummary, GeoDataSource }
 
 /** Dataset slugs under `datasets/` that contain `output/comparison_table.json`. */
 export function listComparisonAreas(runtimeRoot: string): string[] {
@@ -17,27 +27,6 @@ export function listComparisonAreas(runtimeRoot: string): string[] {
     .map((s) => s.area)
     .sort((a, b) => a.localeCompare(b))
 }
-
-const geoDataSourceSchema = z.object({
-  name: z.string().min(1),
-  href: z.string().optional(),
-})
-export type GeoDataSource = z.infer<typeof geoDataSourceSchema>
-
-const areaHomeSummarySchema = z.object({
-  area: z.string().min(1),
-  displayName: z.string().min(1),
-  matched: z.number(),
-  officialOnly: z.number(),
-  unmatchedOsm: z.number(),
-  reviews: z.number(),
-  issues: z.number(),
-  staleOfficialKey: z.number().optional(),
-  /** Ordered OSM match keys from area config/osmProfile (primary first). */
-  osmMatchProperties: z.array(z.string().min(1)).min(1).optional(),
-  osmAdminLevels: z.array(z.string().min(1)).optional(),
-})
-export type AreaHomeSummary = z.infer<typeof areaHomeSummarySchema>
 
 function osmMatchRulesFromAreaConfig(
   workspaceRoot: string,
@@ -60,19 +49,6 @@ function osmMatchRulesFromAreaConfig(
     return {}
   }
 }
-
-const areaLicenseSummarySchema = z.object({
-  area: z.string().min(1),
-  displayName: z.string().min(1),
-  /** Internal merge key for homepage licence table (preset or download URL); not for display. */
-  officialSourceGroupKey: z.string().min(1),
-  officialLicenseLabel: z.string().min(1),
-  officialLicenseSourceUrl: z.string().optional(),
-  officialOsmCompatibility: z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver']),
-  officialOsmCompatibilitySourceUrl: z.string().optional(),
-  officialOsmCompatibilityComment: z.string().optional(),
-})
-export type AreaLicenseSummary = z.infer<typeof areaLicenseSummarySchema>
 
 function sourceDisplayName(part: z.infer<typeof sourceMetadataSideSchema>): string | null {
   const provider = part.provider ?? ''

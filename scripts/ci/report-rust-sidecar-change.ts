@@ -1,11 +1,6 @@
 import { appendFileSync, existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-
-type RustSidecarMetadata = {
-  rustSidecar?: {
-    fingerprint?: string
-  }
-}
+import { rustSidecarMetadataFileSchema } from '../shared/rustSidecarMetadata.ts'
 
 type ChangeStatus = 'changed' | 'unchanged' | 'unknown'
 
@@ -20,8 +15,11 @@ function resolvePreviousFingerprint(metadataPath: string): string | null {
   if (!existsSync(metadataPath)) {
     return null
   }
-  const parsed = JSON.parse(readFileSync(metadataPath, 'utf-8')) as RustSidecarMetadata
-  return parsed.rustSidecar?.fingerprint?.trim() || null
+  const parsed = rustSidecarMetadataFileSchema.safeParse(
+    JSON.parse(readFileSync(metadataPath, 'utf-8')),
+  )
+  if (!parsed.success) return null
+  return parsed.data.rustSidecar.fingerprint?.trim() || null
 }
 
 function toSummaryLine(

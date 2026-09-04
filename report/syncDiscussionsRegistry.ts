@@ -11,6 +11,7 @@
 import { writeFileSync, readFileSync, existsSync, unlinkSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { z } from 'zod'
 import {
   discussionRegistryFileSchema,
   emptyDiscussionRegistryFile,
@@ -30,14 +31,16 @@ const OWNER = 'osmberlin'
 const REPO = 'osm-boundary-checker-germany'
 const LABEL = 'discussion'
 
-type GitHubIssueListItem = {
-  number: number
-  title: string
-  html_url: string
-  state: string
-  updated_at: string
-  pull_request?: unknown
-}
+const githubIssueListItemSchema = z.object({
+  number: z.number(),
+  title: z.string(),
+  html_url: z.string(),
+  state: z.string(),
+  updated_at: z.string(),
+  pull_request: z.unknown().optional(),
+})
+const githubIssueListSchema = z.array(githubIssueListItemSchema)
+type GitHubIssueListItem = z.infer<typeof githubIssueListItemSchema>
 
 function authHeaders(): HeadersInit {
   const token = process.env.GITHUB_TOKEN?.trim()
@@ -63,8 +66,8 @@ async function fetchAllLabeledIssues(): Promise<GitHubIssueListItem[]> {
       const text = await res.text()
       throw new Error(`GitHub issues API ${res.status}: ${text.slice(0, 500)}`)
     }
-    const batch = (await res.json()) as GitHubIssueListItem[]
-    if (!Array.isArray(batch) || batch.length === 0) break
+    const batch = githubIssueListSchema.parse(await res.json())
+    if (batch.length === 0) break
     out.push(...batch)
     if (batch.length < 100) break
   }

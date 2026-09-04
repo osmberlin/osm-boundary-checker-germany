@@ -1,21 +1,15 @@
 #!/usr/bin/env bun
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
+import {
+  relationResolverIndexSchema,
+  type RelationResolverCandidate,
+  type RelationResolverIndex,
+} from '../../report/src/lib/relationResolver.ts'
 import { comparisonForReportSchema } from '../shared/comparisonPayload.ts'
 import { DATASETS_DIRECTORY } from '../shared/datasetPaths.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
-
-type RelationResolverCandidate = {
-  dataset: string
-  areaId: string
-  featureKey: string
-  featureName: string
-}
-
-type RelationResolverIndex = {
-  byRelationId: Record<string, RelationResolverCandidate[]>
-}
 
 function buildRelationResolverIndex(runtimeRoot: string): RelationResolverIndex {
   const datasetsRoot = join(runtimeRoot, DATASETS_DIRECTORY)
@@ -89,7 +83,7 @@ function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
   const outPath = join(runtimeRoot, 'data', 'relation-resolver-index.json')
-  const index = buildRelationResolverIndex(runtimeRoot)
+  const index = relationResolverIndexSchema.parse(buildRelationResolverIndex(runtimeRoot))
   mkdirSync(dirname(outPath), { recursive: true })
   writeFileSync(outPath, `${JSON.stringify(index, null, 2)}\n`, 'utf-8')
   console.log(

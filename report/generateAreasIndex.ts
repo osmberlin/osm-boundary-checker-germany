@@ -7,6 +7,7 @@ import {
   listGeoDataSources,
 } from './listComparisonAreas.ts'
 import { resolveRuntimeRoot } from './runtimeDataRoot.ts'
+import { areasIndexPayloadSchema } from './src/data/areasIndexSchema.ts'
 
 function writeGeneratedModule(outPath: string, constName: string, payload: unknown): void {
   const body = JSON.stringify(payload, null, 2)
@@ -26,12 +27,16 @@ const geoDataSources = listGeoDataSources(runtimeRoot)
 const licenseSummaries = listAreaLicenseSummaries(runtimeRoot)
 const areasIndexOutPath = join(import.meta.dir, 'src', 'data', 'areasIndex.gen.ts')
 
-writeGeneratedModule(areasIndexOutPath, 'areasIndex', {
-  areas,
-  summaries,
-  geoDataSources,
-  licenseSummaries,
-})
+writeGeneratedModule(
+  areasIndexOutPath,
+  'areasIndex',
+  areasIndexPayloadSchema.parse({
+    areas,
+    summaries,
+    geoDataSources,
+    licenseSummaries,
+  }),
+)
 const formatResult = spawnSync('bun', ['x', 'oxfmt', '--write', areasIndexOutPath], {
   stdio: 'inherit',
 })

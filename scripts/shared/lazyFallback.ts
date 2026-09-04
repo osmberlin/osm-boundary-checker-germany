@@ -1,5 +1,6 @@
 import { cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { z } from 'zod'
 import { BKG_CACHE_DIR, BKG_DOWNLOAD_METADATA } from './bkg.ts'
 import { discoverBkgAreaFolderNames } from './bkgAreas.ts'
 import { bkgDownloadMetadataSchema } from './bkgDownloadMetadata.ts'
@@ -228,8 +229,10 @@ export function readCompareGeneratedAt(runtimeRoot: string, area: string): strin
   const tablePath = join(datasetFolderPath(runtimeRoot, area), 'output', 'comparison_table.json')
   if (!existsSync(tablePath)) return null
   try {
-    const parsed = JSON.parse(readFileSync(tablePath, 'utf-8')) as { generatedAt?: unknown }
-    return typeof parsed.generatedAt === 'string' ? parsed.generatedAt : null
+    const parsed = z
+      .object({ generatedAt: z.string() })
+      .safeParse(JSON.parse(readFileSync(tablePath, 'utf-8')))
+    return parsed.success ? parsed.data.generatedAt : null
   } catch {
     return null
   }
