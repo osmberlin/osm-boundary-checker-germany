@@ -6,7 +6,7 @@ import { osmAreaSummaryFreshness } from '../../lib/osmAreaSummaryFreshness'
 import { kpiFreshnessLinesFromIso } from '../../lib/reportFreshnessLines'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { KpiRow } from '../FeatureStatBlocks'
-import { IssueIndicatorInfoButton } from '../HausdorffInfoModal'
+import { IssueIndicatorInfoButton } from '../MetricInfoModal'
 import { OfficialDatasetAgeInfoButton } from '../OfficialDatasetAgeInfoModal'
 import { SummaryStatColumn } from '../SummaryStatColumn'
 

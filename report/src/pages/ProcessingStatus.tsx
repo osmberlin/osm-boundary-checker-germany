@@ -16,11 +16,11 @@ import { buildOsmDownloadAlert } from '../lib/osmDownloadStatus'
 import {
   buildRunsFromEvents,
   computeStatusKpis,
-  parseProcessingLogJsonl,
   partitionRunsByTimeline,
 } from '../lib/processingRuns'
 import { processingStateSchema, type ProcessingState } from '../lib/processingStatusTypes'
 import { osmPipelineStateSchema, type OsmPipelineState } from '../types/osmPipelineState'
+import { parseProcessingLogJsonl } from '../types/processingLog'
 import { runStatusFileSchema, type RunStatusFile } from '../types/runStatus'
 
 async function loadProcessingStatusData(): Promise<{

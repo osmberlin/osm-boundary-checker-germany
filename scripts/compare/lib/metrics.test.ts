@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { Polygon } from 'geojson'
-import { calculateMetrics } from './metrics.ts'
+import { calculateMetrics } from './metrics/index.ts'
 import { projectGeometry } from './projectGeometry.ts'
 
 const crs = 'EPSG:32633'

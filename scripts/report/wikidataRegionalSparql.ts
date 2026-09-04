@@ -1,7 +1,5 @@
 import { WIKIDATA_REGIONAL_SPARQL } from '../shared/wikidataRegionalSparqlQuery.ts'
 
-export { WIKIDATA_REGIONAL_SPARQL }
-
 export const WIKIDATA_SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
 
 export const WIKIDATA_SPARQL_USER_AGENT =

@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
+import { parseProcessingLogJsonl } from '../../report/src/types/processingLog.ts'
 import {
   formatProcessingLogJsonl,
   normalizeProcessingLogJsonlText,
-  parseProcessingLogJsonl,
 } from './normalize-processing-log-jsonl.ts'
 
 describe('normalize-processing-log-jsonl', () => {

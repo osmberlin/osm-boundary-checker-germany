@@ -34,7 +34,7 @@ import type {
   CompareRow,
   UnmatchedOsmRow,
 } from './compare.ts'
-import { computeMeanIou } from './metrics.ts'
+import { computeMeanIou } from './metrics/index.ts'
 import {
   runTippecanoe,
   TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM,

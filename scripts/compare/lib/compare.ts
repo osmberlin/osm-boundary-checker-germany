@@ -23,7 +23,7 @@ import {
   type OfficialOnlyInput,
   selectEligibleCandidates,
 } from './matchCandidates.ts'
-import { type MetricResult } from './metrics.ts'
+import { type MetricResult } from './metrics/index.ts'
 import {
   classifyIssueIndicator,
   computeBaselineAnomalies,

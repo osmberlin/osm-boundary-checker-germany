@@ -26,10 +26,10 @@ import {
 import {
   type AddrPostcodeGeoJsonFeatureCollection,
   type AddrPostcodeHit,
-  fetchOverpassQuery,
   parseOverpassAddrPostcodeData,
 } from '../lib/overpassAddrPostcode'
 import {
+  fetchOverpassQuery,
   fetchOverpassQuery as fetchOverpassQueryBoundary,
   type OverpassBoundaryHit,
   type OverpassGeoJsonFeatureCollection,

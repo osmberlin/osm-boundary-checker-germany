@@ -3,8 +3,6 @@ import { join } from 'node:path'
 import { parseProcessingLogJsonl, type LogEvent } from '../../report/src/types/processingLog.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
-export { parseProcessingLogJsonl }
-
 export function formatProcessingLogJsonl(events: LogEvent[]) {
   if (events.length === 0) return ''
   return `${events.map((event) => JSON.stringify(event)).join('\n')}\n`

@@ -17,17 +17,17 @@ import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { AreaReportHeader } from '../components/AreaReportHeader'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { KpiRow, KpiSectionRow, KpiToggleCell } from '../components/FeatureStatBlocks'
+import { IssueBadge } from '../components/IssueBadge'
+import { COMPARISON_MAP_ID } from '../components/map/comparisonMapConstants'
+import { ComparisonMapZoomHintOverlay } from '../components/map/ComparisonMapZoomHintOverlay'
+import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
 import {
   AreaDeltaInfoButton,
   HausdorffInfoButton,
   IouInfoButton,
   IssueIndicatorInfoButton,
   MeanIouInfoButton,
-} from '../components/HausdorffInfoModal'
-import { IssueBadge } from '../components/IssueBadge'
-import { COMPARISON_MAP_ID } from '../components/map/comparisonMapConstants'
-import { ComparisonMapZoomHintOverlay } from '../components/map/ComparisonMapZoomHintOverlay'
-import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
+} from '../components/MetricInfoModal'
 import { OfficialDatasetAgeInfoButton } from '../components/OfficialDatasetAgeInfoModal'
 import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'

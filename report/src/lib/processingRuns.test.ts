@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  buildRunsFromEvents,
-  classifyRunPhase,
-  computeStatusKpis,
-  type LogEvent,
-} from './processingRuns'
+import type { LogEvent } from '../types/processingLog'
+import { buildRunsFromEvents, classifyRunPhase, computeStatusKpis } from './processingRuns'
 
 describe('classifyRunPhase', () => {
   it('classifies download-only', () => {

@@ -18,7 +18,7 @@ import {
   HausdorffInfoButton,
   IouInfoButton,
   SymDiffInfoButton,
-} from '../HausdorffInfoModal'
+} from '../MetricInfoModal'
 
 const diffMetricsKpiRowClassName =
   'mt-0 grid min-w-0 grid-cols-2 gap-x-0 gap-y-4 ' +

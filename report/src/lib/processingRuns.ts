@@ -1,9 +1,6 @@
-import { type LogEvent, parseProcessingLogJsonl } from '../types/processingLog'
+import type { LogEvent } from '../types/processingLog'
 import type { ProcessingState } from './processingStatusTypes'
 import { berlinCalendarDateKey, berlinTodayDateKey, timelineDateKeys } from './time/calendar'
-
-export type { LogEvent }
-export { parseProcessingLogJsonl }
 
 export type RunPhase = 'download' | 'extract' | 'compare' | 'all' | 'unknown'
 

@@ -3,7 +3,7 @@ import osm2geojson from 'osm2geojson-ultra'
 import { z } from 'zod'
 import type { ComparisonForReport } from '../types/report'
 import { addrPostcodeLiveRowKey, LIVE_ROW_KEY_PROPERTY } from './liveRowKey'
-import { fetchOverpassQuery, overpassDocEnvelopeSchema } from './overpassBbox'
+import { overpassDocEnvelopeSchema } from './overpassBbox'
 
 /**
  * Digits-only PLZ; last digit → stable bucket 0–9 for map paint.
@@ -267,5 +267,3 @@ export function parseOverpassAddrPostcodeData(jsonText: string): ParsedOverpassA
     geojson: convertedGeojson,
   }
 }
-
-export { fetchOverpassQuery }
