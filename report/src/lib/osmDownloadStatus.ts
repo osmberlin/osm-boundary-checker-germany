@@ -18,7 +18,7 @@ function sourceOriginLabel(origin: RunStatusBranch['sourceOrigin']): string {
       return de.status.osmSourceOriginCacheWindow
     case 'fallback_artifact':
       return de.status.osmSourceOriginFallback
-    default:
+    case undefined:
       return de.status.osmSourceOriginUnknown
   }
 }

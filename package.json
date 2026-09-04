@@ -10,9 +10,9 @@
     "prepare": "husky",
     "rust:build": "cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml",
     "format": "oxfmt --write .",
-    "typecheck": "tsgo -p tsconfig.json && tsgo -p scripts/tsconfig.json && tsgo -p report/tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p report/tsconfig.json",
     "lint": "oxlint --fix --fix-suggestions --fix-dangerously .",
-    "check": "bun run format && bun run lint && bun run typecheck && bun run --filter report lint:react-compiler",
+    "check": "bun run format && bun run lint && bun run typecheck",
     "compare": "bun run cli/compare.ts",
     "download": "bun run cli/download.ts",
     "extract": "bun run cli/extract.ts",
@@ -36,11 +36,15 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@typescript/native-preview": "^7.0.0-dev.20260511.1",
     "husky": "^9.1.7",
     "oxfmt": "^0.64.0",
     "oxlint": "^1.79.0",
-    "typescript": "npm:@typescript/typescript6@^6.0.1"
+    "oxlint-tsgolint": "7.0.2001",
+    "typescript": "^7.0.2"
+  },
+  "optionalDependencies": {
+    "@typescript/typescript-darwin-arm64": "7.0.2",
+    "@typescript/typescript-linux-x64": "7.0.2"
   },
   "patchedDependencies": {
     "osm2geojson-ultra@4.0.1": "patches/osm2geojson-ultra@4.0.1.patch"

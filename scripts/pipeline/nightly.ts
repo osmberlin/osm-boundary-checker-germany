@@ -217,7 +217,10 @@ function osmExtractKindForStep(
       return 'admin_candidates'
     case 'extract:osm:plz_candidates':
       return 'plz_candidates'
-    default:
+    case 'download:bkg':
+    case 'download:official':
+    case 'download:osm':
+    case 'extract:bkg':
       return null
   }
 }

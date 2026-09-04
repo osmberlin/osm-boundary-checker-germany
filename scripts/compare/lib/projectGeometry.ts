@@ -58,7 +58,8 @@ export function projectGeometry(geom: Geometry, toCrs: string): Geometry {
         type: 'MultiPolygon',
         coordinates: geom.coordinates.map((poly) => poly.map(projectRing)),
       }
-    default:
+    case 'GeometryCollection':
+    case 'MultiPoint':
       return geom
   }
 }

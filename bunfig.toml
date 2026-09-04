@@ -1,4 +1,16 @@
 # Reject registry tarballs newer than this age (supply-chain baseline).
 # 5 days = 432000 seconds. @see https://chrispennington.dev/blog/stop-installing-packages-the-second-theyre-published
+# Do not COPY into Docker before bun install — globalStore links break non-root USER.
 [install]
 minimumReleaseAge = 432000
+minimumReleaseAgeExcludes = [
+  "typescript",
+  "@typescript/typescript-darwin-arm64",
+  "@typescript/typescript-linux-x64",
+]
+
+# Global virtual store — install once, link everywhere (requires isolated linker).
+# Reinstall after changing linker/store: rm -rf node_modules && bun install
+# Vite: server.fs.allow includes ~/.bun/install/cache/links
+linker = "isolated"
+globalStore = true

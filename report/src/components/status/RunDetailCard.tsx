@@ -22,7 +22,7 @@ function phaseLabel(phase: RunPhase): string {
       return de.status.phaseCompare
     case 'all':
       return de.status.phaseAll
-    default:
+    case 'unknown':
       return de.status.phaseUnknown
   }
 }
@@ -35,7 +35,8 @@ function phaseBadgeClass(phase: RunPhase): string {
       return 'bg-amber-900/60 text-amber-100'
     case 'compare':
       return 'bg-violet-900/60 text-violet-100'
-    default:
+    case 'all':
+    case 'unknown':
       return 'bg-slate-700 text-slate-200'
   }
 }

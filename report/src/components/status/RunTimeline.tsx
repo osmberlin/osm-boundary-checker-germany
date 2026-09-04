@@ -24,7 +24,7 @@ function phaseLabel(phase: RunPhase): string {
       return de.status.phaseCompare
     case 'all':
       return de.status.phaseAll
-    default:
+    case 'unknown':
       return de.status.phaseUnknown
   }
 }
@@ -39,7 +39,7 @@ function phaseLetter(phase: RunPhase): string {
       return 'C'
     case 'all':
       return 'A'
-    default:
+    case 'unknown':
       return '?'
   }
 }

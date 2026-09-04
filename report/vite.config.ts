@@ -2,9 +2,8 @@ import { copyFileSync, existsSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
-import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import viteReact from '@vitejs/plugin-react'
 import { defineConfig, searchForWorkspaceRoot, type Plugin } from 'vite'
 
 /**
@@ -68,8 +67,7 @@ export default defineConfig(({ command }) => ({
   base: command === 'build' ? '/' : '/',
   plugins: [
     tailwindcss(),
-    react(),
-    babel({ presets: [reactCompilerPreset()] }),
+    viteReact({ compiler: true }),
     spaGithubPages404(),
     staticRuntimeNoSpaFallback(),
   ],

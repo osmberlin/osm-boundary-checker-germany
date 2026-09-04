@@ -19,8 +19,10 @@ function sourceOriginLabel(origin?: string): string {
       return de.status.osmSourceOriginCacheWindow
     case 'fallback_artifact':
       return de.status.osmSourceOriginFallback
+    case undefined:
+      return '—'
     default:
-      return origin ?? '—'
+      return origin
   }
 }
 
