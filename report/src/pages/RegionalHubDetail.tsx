@@ -6,18 +6,17 @@ import { geometryAreaIdForArs } from '../../../scripts/shared/regionalArs.ts'
 import {
   NEUTRAL_HUB_CELL_TONES,
   numericOsmRelationId,
+  normalizeQid,
   regionalHubCellTones,
   regionalHubIssues,
   type HubCellTone,
 } from '../../../scripts/shared/regionalHubCompare.ts'
 import type { RegionalHubMismatchFlag } from '../../../scripts/shared/regionalHubPayload.ts'
 import { AlertNotice } from '../components/AlertNotice'
-import { sharedButtonClass } from '../components/sharedButtonStyles'
 import {
   arsSuccessorsQueryOptions,
   germanKeyLookupQueryOptions,
   overpassOsmTagsQueryOptions,
-  regionalHubManifestQueryOptions,
   regionalHubOsmTagsQueryOptions,
   regionalHubWikidataQueryOptions,
 } from '../data/load'
@@ -28,7 +27,7 @@ import { formatSnapshotDateLabelDe } from '../lib/formatSourceDownloadedAt'
 import { ags8FromArs12Digits, statistikportalGemeindeUrl } from '../lib/germanKeyExplorer'
 import { resolveGemeindeNameByArs } from '../lib/germanKeyLookupBundle'
 import { DEFAULT_OVERPASS_INTERPRETER_URL } from '../lib/overpassServers'
-import { primaryCta, secondaryActions } from '../lib/regionalHubActions'
+import { RegionalHubEditActions } from '../lib/regionalHubActions'
 import {
   displayNameForArs,
   hubCompareInputForArs,
@@ -39,7 +38,7 @@ import { wikidataItemUrl } from '../lib/regionalHubQuickStatements'
 
 const t = de.regionalHub
 const linkClass =
-  'text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
+  'text-sm text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 
 function formatDate(raw: string | undefined): string | null {
   if (!raw) return null
@@ -47,7 +46,7 @@ function formatDate(raw: string | undefined): string | null {
 }
 
 function hubTdClass(tone: HubCellTone): string {
-  return cn('px-3 py-2', tone === 'ok' && 'bg-emerald-500/10', tone === 'bad' && 'bg-amber-500/10')
+  return cn('px-3 py-2', tone === 'ok' && 'bg-emerald-500/15', tone === 'bad' && 'bg-amber-500/10')
 }
 
 function hubTdTitle(tone: HubCellTone, title?: string): string | undefined {
@@ -56,25 +55,43 @@ function hubTdTitle(tone: HubCellTone, title?: string): string | undefined {
   )
 }
 
-function HubEmpty({ kind, title }: { kind: 'na' | 'missing' | 'optional'; title?: string }) {
+function HubEmpty({
+  kind,
+  title,
+  label,
+}: {
+  kind: 'na' | 'missing' | 'optional'
+  title?: string
+  label?: string
+}) {
   if (kind === 'na') {
     return (
       <abbr className="cursor-help text-slate-600 no-underline" title={title ?? t.cellNaTitle}>
-        {t.cellNa}
+        {label ?? t.cellNa}
       </abbr>
     )
   }
   if (kind === 'optional') {
     return (
       <span className="text-slate-500" title={title ?? t.cellOptionalTitle}>
-        {t.missingValue}
+        {label ?? t.missingValue}
       </span>
     )
   }
   return (
     <span className="text-amber-200/90" title={title ?? t.cellMissingTitle}>
-      {t.cellMissing}
+      {label ?? t.cellMissing}
     </span>
+  )
+}
+
+function WikidataQidLink({ raw }: { raw: string }) {
+  const qid = normalizeQid(raw)
+  if (!/^Q\d+$/i.test(qid)) return raw
+  return (
+    <a href={wikidataItemUrl(qid)} className={linkClass} target="_blank" rel="noreferrer noopener">
+      {qid}
+    </a>
   )
 }
 
@@ -96,7 +113,6 @@ export function RegionalHubDetail() {
   const lookupQuery = useQuery(germanKeyLookupQueryOptions())
   const osmQuery = useQuery(regionalHubOsmTagsQueryOptions())
   const wdQuery = useQuery(regionalHubWikidataQueryOptions())
-  const manifestQuery = useQuery(regionalHubManifestQueryOptions())
   const successorsQuery = useQuery(arsSuccessorsQueryOptions())
 
   const bundle = lookupQuery.data
@@ -118,7 +134,6 @@ export function RegionalHubDetail() {
   const compare = bundle ? hubCompareInputForArs({ bundle, ars12: ars, osm, wikidata: wd }) : null
   const issues = compare ? regionalHubIssues(compare) : []
   const tones = compare ? regionalHubCellTones(compare) : NEUTRAL_HUB_CELL_TONES
-  const primary = issues[0] ?? null
   const name = bundle ? displayNameForArs(bundle, ars) : null
   const latestInLatest = bundle ? Object.hasOwn(bundle.latest.gemeindenByArs, ars) : false
   const landName = bundle?.latest.bundeslaender[ars.slice(0, 2)]
@@ -202,7 +217,7 @@ export function RegionalHubDetail() {
               {t.noOfficialPopulation}
             </div>
           ) : null}
-          {issues.length > 0 && primary != null ? (
+          {issues.length > 0 ? (
             <AlertNotice>
               <ul className="list-inside list-disc space-y-1">
                 {issues.map((flag) => (
@@ -211,16 +226,6 @@ export function RegionalHubDetail() {
                   </li>
                 ))}
               </ul>
-              {primaryCta({
-                primary,
-                osmWikidataMismatch: Boolean(osm?.wikidata),
-                relationId,
-                destatisPop: destatis?.populationTotal,
-                destatisDate: bundle?.latest.populationDate,
-                wdQid: wd?.qid,
-                sourceUrl: bundle?.latest.sourcePublicUrl ?? '',
-                retrievedIso: manifestQuery.data?.generatedAt ?? new Date().toISOString(),
-              })}
             </AlertNotice>
           ) : destatis?.populationTotal !== undefined ? (
             <div className="rounded-md border border-slate-600 bg-slate-800/40 p-4 text-sm text-slate-300">
@@ -320,18 +325,21 @@ export function RegionalHubDetail() {
                 <HubEmpty kind="na" title={t.cellNaDestatisQid} />
               </td>
               <td className={hubTdClass(tones.osmWikidata)} title={hubTdTitle(tones.osmWikidata)}>
-                {osm?.wikidata ?? <HubEmpty kind="missing" />}
+                {osm?.wikidata ? (
+                  <WikidataQidLink raw={osm.wikidata} />
+                ) : (
+                  <HubEmpty kind="missing" />
+                )}
               </td>
               <td className={hubTdClass(tones.wdQid)} title={hubTdTitle(tones.wdQid)}>
                 {wd?.qid ? (
-                  <a
-                    href={wikidataItemUrl(wd.qid)}
-                    className={linkClass}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {wd.qid}
-                  </a>
+                  <WikidataQidLink raw={wd.qid} />
+                ) : osm?.wikidata ? (
+                  <HubEmpty
+                    kind="missing"
+                    label={t.cellWdNoP1388}
+                    title={t.cellWdNoP1388Title(normalizeQid(osm.wikidata))}
+                  />
                 ) : (
                   <HubEmpty kind="missing" />
                 )}
@@ -361,24 +369,24 @@ export function RegionalHubDetail() {
         <h2 className="text-base font-semibold text-slate-100">{t.actionsTitle}</h2>
         <p className="text-sm text-slate-400">{t.actionsLead}</p>
         <div className="flex flex-col gap-3">
-          {secondaryActions({
-            issues,
-            primary,
-            relationId,
-            destatisPop: destatis?.populationTotal,
-            destatisDate: bundle?.latest.populationDate,
-            wdQid: wd?.qid,
-            sourceUrl: bundle?.latest.sourcePublicUrl ?? '',
-            retrievedIso: manifestQuery.data?.generatedAt ?? new Date().toISOString(),
-            osmWikidata: osm?.wikidata,
-          })}
+          <RegionalHubEditActions
+            issues={issues}
+            relationId={relationId}
+            destatisPop={destatis?.populationTotal}
+            destatisDate={bundle?.latest.populationDate}
+            wdQid={wd?.qid}
+            osmWikidata={osm?.wikidata}
+            ars12={ars}
+          />
         </div>
         {relationId ? (
-          <details className="mt-4 rounded-lg border border-slate-800 p-3 text-sm text-slate-400">
-            <summary className="cursor-pointer text-slate-200">{t.liveTagsTitle}</summary>
+          <details className="text-sm text-slate-400">
+            <summary className={`cursor-pointer font-normal ${linkClass}`}>
+              {t.liveTagsTitle}
+            </summary>
             <button
               type="button"
-              className={`${sharedButtonClass} mt-3`}
+              className={`mt-2 ${linkClass}`}
               onClick={() => {
                 void liveQuery.refetch()
               }}

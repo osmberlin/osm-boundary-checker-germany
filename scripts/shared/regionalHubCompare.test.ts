@@ -197,4 +197,18 @@ describe('regionalHubCellTones', () => {
       }).wdP402,
     ).toBe('bad')
   })
+
+  test('keeps an OSM wikidata tag as ok when Wikidata has no P1388 for the ARS', () => {
+    expect(
+      regionalHubCellTones({
+        destatisPop: 167209,
+        destatisDate: '2025-12-31',
+        osmWikidata: 'Q2937',
+        osmId: 'relation/27019',
+      }),
+    ).toMatchObject({
+      osmWikidata: 'ok',
+      wdQid: 'bad',
+    })
+  })
 })

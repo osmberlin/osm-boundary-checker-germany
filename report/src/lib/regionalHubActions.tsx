@@ -1,162 +1,138 @@
+import { normalizeQid } from '../../../scripts/shared/regionalHubCompare.ts'
 import type { RegionalHubMismatchFlag } from '../../../scripts/shared/regionalHubPayload.ts'
-import { sharedButtonClass } from '../components/sharedButtonStyles'
 import { de } from '../i18n/de'
+import { formatDeInteger } from './formatDe'
+import { formatSnapshotDateLabelDe } from './formatSourceDownloadedAt'
 import { buildJosmLoadRelationUrl, buildOpenStreetMapIdRelationEditUrl } from './osmEditorLinks'
-import {
-  destatisPopulationQuickStatementsUrl,
-  osmRelationP402QuickStatementsUrl,
-  wikidataItemUrl,
-} from './regionalHubQuickStatements'
+import { wikidataItemUrl } from './regionalHubQuickStatements'
 
 const t = de.regionalHub
 const linkClass =
-  'text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
+  'text-sm text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 
-type RegionalHubIssueHrefInput = {
+export function regionalHubEditorHrefs(input: {
   relationId: string | undefined
-  destatisPop: number | undefined
-  destatisDate: string | undefined
   wdQid: string | undefined
-  sourceUrl: string
-  retrievedIso: string
+  osmWikidata?: string
+}): { id: string | null; josm: string | null; wikidata: string | null } {
+  const rel = input.relationId ? Number(input.relationId) : Number.NaN
+  const hasRelation = Number.isFinite(rel)
+  const qid = input.wdQid?.trim() || (input.osmWikidata ? normalizeQid(input.osmWikidata) : '')
+  const wikidataHref = /^Q\d+$/i.test(qid) ? wikidataItemUrl(qid) : null
+  return {
+    id: hasRelation ? buildOpenStreetMapIdRelationEditUrl({ relationId: rel }) : null,
+    josm: hasRelation ? buildJosmLoadRelationUrl({ relationId: rel }) : null,
+    wikidata: wikidataHref,
+  }
 }
 
-export function hrefForIssue(
-  flag: RegionalHubMismatchFlag,
-  input: RegionalHubIssueHrefInput,
-): string | null {
-  const rel = input.relationId ? Number(input.relationId) : null
-  if (flag === 'osm_wikidata' || flag === 'osm_population') {
-    if (rel == null) return null
-    const addTags: Record<string, string> = {}
-    if (flag === 'osm_wikidata' && input.wdQid) addTags.wikidata = input.wdQid
-    if (flag === 'osm_population' && input.destatisPop != null && input.destatisDate) {
-      addTags.population = String(input.destatisPop)
-      addTags['population:date'] = input.destatisDate.slice(0, 10)
-    }
-    return buildOpenStreetMapIdRelationEditUrl({ relationId: rel, addTags })
-  }
-  if (
-    flag === 'wikidata_population' &&
-    input.wdQid &&
-    input.destatisPop != null &&
-    input.destatisDate
-  ) {
-    return destatisPopulationQuickStatementsUrl({
-      qid: input.wdQid,
-      population: input.destatisPop,
-      pointInTimeIso: input.destatisDate,
-      sourceUrl: input.sourceUrl,
-      retrievedIso: input.retrievedIso,
-    })
-  }
-  if (flag === 'wikidata_p402' && input.wdQid && input.relationId) {
-    return osmRelationP402QuickStatementsUrl(input.wdQid, input.relationId)
-  }
-  return input.wdQid
-    ? wikidataItemUrl(input.wdQid, flag === 'wikidata_p402' ? 'P402' : 'P1082')
-    : null
+function OsmTagHint({ tag }: { tag: string }) {
+  return <code className="rounded bg-slate-800 px-1 py-0.5 font-mono text-slate-200">{tag}</code>
 }
 
-export function primaryCta(input: {
-  primary: RegionalHubMismatchFlag
-  osmWikidataMismatch: boolean
-  relationId: string | undefined
-  destatisPop: number | undefined
-  destatisDate: string | undefined
-  wdQid: string | undefined
-  sourceUrl: string
-  retrievedIso: string
-}) {
-  const label =
-    input.primary === 'osm_wikidata' && input.osmWikidataMismatch
-      ? t.ctaOsmWikidataCheck
-      : input.primary === 'osm_wikidata'
-        ? t.ctaOsmWikidata
-        : input.primary === 'osm_population'
-          ? t.ctaOsmPopulation
-          : input.primary === 'wikidata_population'
-            ? t.ctaWikidataPopulation
-            : t.ctaWikidataP402
-  const href = hrefForIssue(input.primary, input)
-  if (!href) return null
-  return (
-    <p className="mt-3">
-      <a href={href} className={sharedButtonClass} target="_blank" rel="noreferrer noopener">
-        {label}
-      </a>
-    </p>
-  )
-}
-
-export function secondaryActions(input: {
+export function RegionalHubEditActions(input: {
   issues: RegionalHubMismatchFlag[]
-  primary: RegionalHubMismatchFlag | null
   relationId: string | undefined
   destatisPop: number | undefined
   destatisDate: string | undefined
   wdQid: string | undefined
-  sourceUrl: string
-  retrievedIso: string
-  osmWikidata: string | undefined
+  osmWikidata?: string
+  ars12?: string
 }) {
-  const secondary = input.issues.filter((flag) => flag !== input.primary)
-  const rel = input.relationId ? Number(input.relationId) : null
+  const hrefs = regionalHubEditorHrefs(input)
+  const osmWikidataHint =
+    input.issues.includes('osm_wikidata') && input.wdQid ? `wikidata=${input.wdQid}` : null
+  const osmPopHint =
+    input.issues.includes('osm_population') && input.destatisPop != null && input.destatisDate
+      ? {
+          pop: `population=${input.destatisPop}`,
+          date: `population:date=${input.destatisDate.slice(0, 10)}`,
+        }
+      : null
+  const wdPopHint =
+    input.issues.includes('wikidata_population') && input.destatisPop != null && input.destatisDate
+      ? t.actionsWdPopHint(
+          formatDeInteger(input.destatisPop),
+          formatSnapshotDateLabelDe(input.destatisDate.slice(0, 10)) || input.destatisDate,
+        )
+      : null
+  const wdP402Hint =
+    input.issues.includes('wikidata_p402') && input.relationId
+      ? t.actionsWdP402Hint(input.relationId)
+      : null
+  const osmQid = input.osmWikidata ? normalizeQid(input.osmWikidata) : ''
+  const wdP1388Hint =
+    !input.wdQid && /^Q\d+$/i.test(osmQid) && input.ars12
+      ? t.actionsWdP1388Hint(osmQid, input.ars12)
+      : null
+  const hasOsmHints = Boolean(osmWikidataHint || osmPopHint)
+  const hasWdHints = Boolean(wdPopHint || wdP402Hint || wdP1388Hint)
+  const hasEditors = Boolean(hrefs.id || hrefs.josm || hrefs.wikidata)
+  if (!hasOsmHints && !hasWdHints && !hasEditors) return null
+
   return (
     <>
-      {rel != null ? (
-        <p className="text-xs text-slate-500">
-          {input.wdQid ? t.helperOsmWikidata(input.wdQid) : null}
-          {input.destatisPop != null && input.destatisDate
-            ? ` ${t.helperOsmPopulation(String(input.destatisPop), input.destatisDate.slice(0, 10))}`
-            : null}
-        </p>
+      {hasEditors ? (
+        <ul className="flex flex-col gap-2 text-sm">
+          {hrefs.id ? (
+            <li>
+              <a href={hrefs.id} className={linkClass} target="_blank" rel="noreferrer noopener">
+                {t.idEdit}
+              </a>
+            </li>
+          ) : null}
+          {hrefs.josm ? (
+            <li>
+              <a href={hrefs.josm} className={linkClass} target="_blank" rel="noreferrer noopener">
+                {t.josmEdit}
+              </a>
+            </li>
+          ) : null}
+          {hrefs.wikidata ? (
+            <li>
+              <a
+                href={hrefs.wikidata}
+                className={linkClass}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                {t.wdEdit}
+              </a>
+            </li>
+          ) : null}
+        </ul>
       ) : null}
-      {secondary.map((flag) => {
-        const href = hrefForIssue(flag, input)
-        if (!href) return null
-        const label =
-          flag === 'osm_wikidata'
-            ? input.osmWikidata
-              ? t.ctaOsmWikidataCheck
-              : t.ctaOsmWikidata
-            : flag === 'osm_population'
-              ? t.ctaOsmPopulation
-              : flag === 'wikidata_population'
-                ? t.ctaWikidataPopulation
-                : t.ctaWikidataP402
-        return (
-          <a
-            key={flag}
-            href={href}
-            className="text-sm text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            {label}
-          </a>
-        )
-      })}
-      {input.primary === 'wikidata_population' || input.issues.includes('wikidata_population') ? (
-        <p className="text-xs text-slate-500">{t.qsReviewHint}</p>
+      {hasOsmHints ? (
+        <div className="text-sm text-slate-400">
+          <p>{t.actionsOsmHintsLead}</p>
+          <ul className="mt-1 list-inside list-disc space-y-1">
+            {osmWikidataHint ? (
+              <li>
+                <OsmTagHint tag={osmWikidataHint} />
+              </li>
+            ) : null}
+            {osmPopHint ? (
+              <>
+                <li>
+                  <OsmTagHint tag={osmPopHint.pop} />
+                </li>
+                <li>
+                  <OsmTagHint tag={osmPopHint.date} />
+                </li>
+              </>
+            ) : null}
+          </ul>
+        </div>
       ) : null}
-      {rel != null ? (
-        <a
-          href={buildJosmLoadRelationUrl({ relationId: rel })}
-          className="text-sm text-slate-400 underline decoration-slate-700 underline-offset-2"
-        >
-          {t.josmEdit}
-        </a>
-      ) : null}
-      {input.wdQid ? (
-        <a
-          href={wikidataItemUrl(input.wdQid)}
-          className={linkClass}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t.qsOpenItem}
-        </a>
+      {hasWdHints ? (
+        <div className="text-sm text-slate-400">
+          <p>{t.actionsWdHintsLead}</p>
+          <ul className="mt-1 list-inside list-disc space-y-1">
+            {wdPopHint ? <li>{wdPopHint}</li> : null}
+            {wdP402Hint ? <li>{wdP402Hint}</li> : null}
+            {wdP1388Hint ? <li>{wdP1388Hint}</li> : null}
+          </ul>
+        </div>
       ) : null}
     </>
   )

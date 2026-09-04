@@ -22,6 +22,7 @@ import {
   regionalHubMismatchFlagsQueryOptions,
 } from '../data/load'
 import { de } from '../i18n/de'
+import { formatDeInteger } from '../lib/formatDe'
 import { formatSnapshotDateLabelDe } from '../lib/formatSourceDownloadedAt'
 import {
   isGermanKeyDigitHeavyInput,
@@ -64,7 +65,6 @@ export function RegionalHubIndex() {
   const flagsQuery = useQuery(regionalHubMismatchFlagsQueryOptions())
   const [feedback, setFeedback] = useState<string | null>(null)
   const [pickHits, setPickHits] = useState<GermanKeyNameSearchHit[] | null>(null)
-  const [filter, setFilter] = useState<'all' | 'action'>('all')
 
   function goToArs(raw: string) {
     const ars = padRegional12(raw)
@@ -126,22 +126,22 @@ export function RegionalHubIndex() {
             provenanceLabel(manifestQuery.data?.wikidata.generatedAt),
           )}
         </p>
-        <p className="mt-3 text-sm">
-          <Link
-            to="/tools/german-key"
-            className="text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-          >
-            {t.decodeLink}
-          </Link>
-        </p>
       </header>
 
       <form className="space-y-4" onSubmit={submit}>
         <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="min-w-[min(100%,20rem)] flex-1">
-            <label className="block text-sm font-medium text-slate-200" htmlFor={`${formId}-key`}>
-              {t.searchLabel}
-            </label>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <label className="text-sm font-medium text-slate-200" htmlFor={`${formId}-key`}>
+                {t.searchLabel}
+              </label>
+              <Link
+                to="/tools/german-key"
+                className="text-sm text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+              >
+                {t.decodeLink}
+              </Link>
+            </div>
             <input
               id={`${formId}-key`}
               name="hubKey"
@@ -161,32 +161,6 @@ export function RegionalHubIndex() {
       </form>
       {feedback ? <p className="mt-3 text-sm text-slate-400">{feedback}</p> : null}
 
-      {flagsQuery.data ? (
-        <fieldset className="mt-8">
-          <legend className="text-sm font-medium text-slate-200">{t.filterLabel}</legend>
-          <div className="mt-2 flex gap-3 text-sm">
-            <label className="flex items-center gap-2 text-slate-300">
-              <input
-                type="radio"
-                name="hub-filter"
-                checked={filter === 'all'}
-                onChange={() => setFilter('all')}
-              />
-              {t.filterAll}
-            </label>
-            <label className="flex items-center gap-2 text-slate-300">
-              <input
-                type="radio"
-                name="hub-filter"
-                checked={filter === 'action'}
-                onChange={() => setFilter('action')}
-              />
-              {t.filterAction}
-            </label>
-          </div>
-        </fieldset>
-      ) : null}
-
       <p className="mt-8 text-sm text-slate-500">{t.landAccordionHint}</p>
       {lookupQuery.isPending ? (
         <p className="mt-4 text-sm text-slate-500">{de.germanKeyExplorer.loadingLookup}</p>
@@ -203,7 +177,7 @@ export function RegionalHubIndex() {
               name={name}
               rows={rowsByLandCode[code] ?? []}
               flags={flags}
-              filter={filter}
+              flagsReady={flagsQuery.data != null}
             />
           ))}
         </ul>
@@ -283,27 +257,52 @@ function hubRowsByLandCode(bundle: GermanKeyLookupBundle): Record<string, HubBro
   return uniqueByCode
 }
 
+function landActionCount(
+  rows: HubBrowseRow[],
+  flags: Record<string, RegionalHubMismatchFlag>,
+): number {
+  let n = 0
+  for (const row of rows) {
+    if (flags[row.ars] !== undefined) n += 1
+  }
+  return n
+}
+
 function LandAccordionItem({
   code,
   name,
   rows,
   flags,
-  filter,
+  flagsReady,
 }: {
   code: string
   name: string
   rows: HubBrowseRow[]
   flags: Record<string, RegionalHubMismatchFlag>
-  filter: 'all' | 'action'
+  flagsReady: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const actionCount = flagsReady ? landActionCount(rows, flags) : null
   return (
     <li className="rounded-lg border border-slate-700 bg-slate-900/40">
       <details className="group" onToggle={(ev) => setOpen(ev.currentTarget.open)}>
-        <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-100">
-          <span className="font-mono text-xs text-slate-400">{code}</span> {name}
+        <summary className="flex cursor-pointer items-baseline justify-between gap-3 px-4 py-3 text-sm font-medium text-slate-100">
+          <span>
+            <span className="font-mono text-xs text-slate-400">{code}</span> {name}
+          </span>
+          <span className="shrink-0 font-normal text-slate-400 tabular-nums">
+            {t.landCountTotal(formatDeInteger(rows.length))}
+            {actionCount != null ? (
+              <>
+                {' · '}
+                <span className={actionCount > 0 ? 'text-amber-200' : undefined}>
+                  {t.landCountAction(formatDeInteger(actionCount))}
+                </span>
+              </>
+            ) : null}
+          </span>
         </summary>
-        {open ? <LandChildren rows={rows} flags={flags} filter={filter} /> : null}
+        {open ? <LandChildren rows={rows} flags={flags} /> : null}
       </details>
     </li>
   )
@@ -312,19 +311,16 @@ function LandAccordionItem({
 function LandChildren({
   rows,
   flags,
-  filter,
 }: {
   rows: HubBrowseRow[]
   flags: Record<string, RegionalHubMismatchFlag>
-  filter: 'all' | 'action'
 }) {
-  const visible = filter === 'action' ? rows.filter((row) => flags[row.ars] !== undefined) : rows
-  if (visible.length === 0) {
+  if (rows.length === 0) {
     return <p className="px-4 pb-4 text-sm text-slate-500">{t.emptyBrowse}</p>
   }
   return (
     <ul className="max-h-[32rem] overflow-auto border-t border-slate-800 px-2 py-2 text-sm">
-      {visible.map((row) => {
+      {rows.map((row) => {
         const chip = statusLabel(flags[row.ars])
         return (
           <li key={row.ars}>
