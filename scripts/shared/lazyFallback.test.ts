@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { COMPARE_READY_OSM_FGB_BASENAMES, GERMANY_OSM_CACHE_DIR } from './germanyOsmPbf.ts'
 import {
   allBkgOfficialSourcesPresent,
   osmSharedExtractOutputReady,
@@ -9,11 +10,6 @@ import {
   restoreOsmCacheFromFallback,
   shouldSkipBkgExtract,
 } from './lazyFallback.ts'
-import {
-  COMPARE_READY_OSM_FGB_BASENAMES,
-  GERMANY_OSM_CACHE_DIR,
-  GERMANY_OSM_SHARED_FGB_BASENAME,
-} from './germanyOsmPbf.ts'
 import { SOURCE_METADATA_FILE } from './sourceMetadata.ts'
 
 function makeTempRoot(prefix: string): string {
@@ -96,9 +92,9 @@ describe('restoreOfficialSourceFromFallback', () => {
       writeFileSync(join(sourceDir, SOURCE_METADATA_FILE), '{}')
 
       expect(restoreOfficialSourceFromFallback(runtimeRoot, fallbackRoot, area)).toBe(true)
-      expect(
-        restoreOfficialSourceFromFallback(runtimeRoot, fallbackRoot, 'missing-area'),
-      ).toBe(false)
+      expect(restoreOfficialSourceFromFallback(runtimeRoot, fallbackRoot, 'missing-area')).toBe(
+        false,
+      )
     } finally {
       rmSync(runtimeRoot, { recursive: true, force: true })
       rmSync(fallbackRoot, { recursive: true, force: true })

@@ -9,10 +9,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import path from 'node:path'
-import {
-  COMPARE_READY_OSM_FGB_BASENAMES,
-  GERMANY_OSM_CACHE_DIR,
-} from '../shared/germanyOsmPbf.ts'
+import { COMPARE_READY_OSM_FGB_BASENAMES, GERMANY_OSM_CACHE_DIR } from '../shared/germanyOsmPbf.ts'
 import { SOURCE_METADATA_FILE } from '../shared/sourceMetadata.ts'
 
 /**

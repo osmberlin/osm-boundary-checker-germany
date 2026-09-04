@@ -50,13 +50,13 @@ bun run test
 
 ## Common agent tasks
 
-| Goal | Prerequisites | Command |
-| --- | --- | --- |
-| Lint + format + typecheck | Boot only | `bun run check` |
-| Unit tests | Boot only | `bun run test` |
-| Build Rust geom sidecar | Processing tools | `cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml` |
+| Goal                           | Prerequisites              | Command                                                                                               |
+| ------------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Lint + format + typecheck      | Boot only                  | `bun run check`                                                                                       |
+| Unit tests                     | Boot only                  | `bun run test`                                                                                        |
+| Build Rust geom sidecar        | Processing tools           | `cargo build --release --manifest-path rust/geom-sidecar/Cargo.toml`                                  |
 | Quick pipeline test (skip BKG) | Processing tools + sidecar | `bun run extract:official -- --yes && bun run extract:osm -- --yes && bun run compare -- --yes --all` |
-| Full data refresh | Processing tools + sidecar | `bun run scripts/pipeline/nightly.ts -- --phase all` |
+| Full data refresh              | Processing tools + sidecar | `bun run scripts/pipeline/nightly.ts -- --phase all`                                                  |
 
 For more runbooks and troubleshooting, see [`.cursor/skills/boundary-test-runs/SKILL.md`](.cursor/skills/boundary-test-runs/SKILL.md).
 
@@ -72,9 +72,9 @@ For more runbooks and troubleshooting, see [`.cursor/skills/boundary-test-runs/S
 
 [README.md](README.md) lists all local prerequisites. In cloud:
 
-| Tool | When |
-| --- | --- |
-| Bun + JS deps | Every boot (`environment.json`) |
-| Rust toolchain | On base image |
+| Tool                                       | When                                                    |
+| ------------------------------------------ | ------------------------------------------------------- |
+| Bun + JS deps                              | Every boot (`environment.json`)                         |
+| Rust toolchain                             | On base image                                           |
 | `osmium-tool`, GDAL, `tippecanoe`, `unzip` | On demand (`.cursor/cloud/install-processing-tools.sh`) |
-| Rust geom sidecar binary | On demand (`cargo build --release`) |
+| Rust geom sidecar binary                   | On demand (`cargo build --release`)                     |
