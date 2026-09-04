@@ -50,8 +50,8 @@
     "eslint-plugin-compat": "^7.0.2",
     "husky": "^9.1.7",
     "knip": "^6.33.0",
-    "oxfmt": "^0.64.0",
-    "oxlint": "^1.79.0",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.80.0",
     "oxlint-tsgolint": "7.0.2001",
     "typescript": "^7.0.2"
   },
