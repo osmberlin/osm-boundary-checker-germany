@@ -1,5 +1,5 @@
 import { useQueries, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { type WfsLiveQueryInput, wfsLiveQueryOptions } from '../data/load'
 import { LIVE_ROW_KEY_PROPERTY, wfsFeatureIdPart, wfsLiveRowKey } from '../lib/liveRowKey'
 import { buildWfsGetFeatureUrl, type WfsFeature } from '../lib/wfsGetFeature'
@@ -40,106 +40,99 @@ export function useFeatureDetailWfs({
     })),
   })
 
-  const slotBySourceId = useMemo(() => {
-    const out: Record<string, WfsStatus> = {}
-    const queryBySourceId = new Map<string, (typeof queryResults)[number]>()
-    for (let i = 0; i < loadedInputs.length; i += 1) {
-      const input = loadedInputs[i]
-      const query = queryResults[i]
-      if (input && query) queryBySourceId.set(input.sourceId, query)
+  const slotBySourceId: Record<string, WfsStatus> = {}
+  const queryBySourceId = new Map<string, (typeof queryResults)[number]>()
+  for (let i = 0; i < loadedInputs.length; i += 1) {
+    const input = loadedInputs[i]
+    const query = queryResults[i]
+    if (input && query) queryBySourceId.set(input.sourceId, query)
+  }
+  for (const source of sources) {
+    const query = queryBySourceId.get(source.id)
+    if (!query) {
+      slotBySourceId[source.id] =
+        wfsLoadingSourceId === source.id ? { status: 'loading' } : { status: 'idle' }
+      continue
     }
-    for (const source of sources) {
-      const query = queryBySourceId.get(source.id)
-      if (!query) {
-        out[source.id] =
-          wfsLoadingSourceId === source.id ? { status: 'loading' } : { status: 'idle' }
-        continue
-      }
-      if (query.data) {
-        out[source.id] = { status: 'done', features: query.data.features }
-        continue
-      }
-      if (query.isFetching || wfsLoadingSourceId === source.id) {
-        out[source.id] = { status: 'loading' }
-        continue
-      }
-      if (query.isError) {
-        out[source.id] = {
-          status: 'error',
-          message: query.error instanceof Error ? query.error.message : String(query.error),
-        }
-        continue
-      }
-      out[source.id] = { status: 'idle' }
+    if (query.data) {
+      slotBySourceId[source.id] = { status: 'done', features: query.data.features }
+      continue
     }
-    return out
-  }, [sources, loadedInputs, queryResults, wfsLoadingSourceId])
+    if (query.isFetching || wfsLoadingSourceId === source.id) {
+      slotBySourceId[source.id] = { status: 'loading' }
+      continue
+    }
+    if (query.isError) {
+      slotBySourceId[source.id] = {
+        status: 'error',
+        message: query.error instanceof Error ? query.error.message : String(query.error),
+      }
+      continue
+    }
+    slotBySourceId[source.id] = { status: 'idle' }
+  }
 
-  const loadSource = useCallback(
-    async (source: OgcWfsInspectSource, bbox: [number, number, number, number]) => {
-      const input: WfsLiveQueryInput = {
-        featureKey,
-        sourceId: source.id,
-        requestUrl: buildWfsGetFeatureUrl(source, bbox),
-      }
-      setLoadedInputs((prev) => {
-        const i = prev.findIndex((p) => p.sourceId === source.id)
-        if (i === -1) return [...prev, input]
-        const next = [...prev]
-        next[i] = input
-        return next
+  async function loadSource(source: OgcWfsInspectSource, bbox: [number, number, number, number]) {
+    const input: WfsLiveQueryInput = {
+      featureKey,
+      sourceId: source.id,
+      requestUrl: buildWfsGetFeatureUrl(source, bbox),
+    }
+    setLoadedInputs((prev) => {
+      const i = prev.findIndex((p) => p.sourceId === source.id)
+      if (i === -1) return [...prev, input]
+      const next = [...prev]
+      next[i] = input
+      return next
+    })
+    setWfsLoadingSourceId(source.id)
+    await queryClient
+      .fetchQuery({
+        ...wfsLiveQueryOptions(input),
+        staleTime: LIVE_STALE_TIME_MS,
+        retry: false,
       })
-      setWfsLoadingSourceId(source.id)
-      try {
-        await queryClient.fetchQuery({
-          ...wfsLiveQueryOptions(input),
-          staleTime: LIVE_STALE_TIME_MS,
-          retry: false,
-        })
-      } finally {
+      .finally(() => {
         setWfsLoadingSourceId((id) => (id === source.id ? null : id))
-      }
-    },
-    [featureKey, queryClient],
-  )
-
-  const getStatus = useCallback(
-    (sourceId: string): WfsStatus => slotBySourceId[sourceId] ?? { status: 'idle' },
-    [slotBySourceId],
-  )
-
-  const geojson = useMemo((): GeoJSON.FeatureCollection | null => {
-    const features: GeoJSON.Feature[] = []
-    for (const input of loadedInputs) {
-      const slot = slotBySourceId[input.sourceId]
-      if (!slot || slot.status !== 'done') continue
-      slot.features.forEach((feature, indexInSource) => {
-        if (!feature.geometry) return
-        const label =
-          feature.id != null && feature.id !== ''
-            ? String(feature.id)
-            : feature.properties?.id != null
-              ? String(feature.properties.id)
-              : ''
-        const idPart = wfsFeatureIdPart(feature, indexInSource)
-        features.push({
-          type: 'Feature',
-          id: feature.id,
-          geometry: feature.geometry,
-          properties: {
-            ...feature.properties,
-            __wfsLabel: label,
-            [LIVE_ROW_KEY_PROPERTY]: wfsLiveRowKey(input.sourceId, idPart),
-          },
-        })
       })
-    }
-    if (features.length === 0) return null
-    return {
-      type: 'FeatureCollection',
-      features,
-    }
-  }, [loadedInputs, slotBySourceId])
+  }
+
+  function getStatus(sourceId: string): WfsStatus {
+    return slotBySourceId[sourceId] ?? { status: 'idle' }
+  }
+
+  const features: GeoJSON.Feature[] = []
+  for (const input of loadedInputs) {
+    const slot = slotBySourceId[input.sourceId]
+    if (!slot || slot.status !== 'done') continue
+    slot.features.forEach((feature, indexInSource) => {
+      if (!feature.geometry) return
+      const label =
+        feature.id != null && feature.id !== ''
+          ? String(feature.id)
+          : feature.properties?.id != null
+            ? String(feature.properties.id)
+            : ''
+      const idPart = wfsFeatureIdPart(feature, indexInSource)
+      features.push({
+        type: 'Feature',
+        id: feature.id,
+        geometry: feature.geometry,
+        properties: {
+          ...feature.properties,
+          __wfsLabel: label,
+          [LIVE_ROW_KEY_PROPERTY]: wfsLiveRowKey(input.sourceId, idPart),
+        },
+      })
+    })
+  }
+  const geojson: GeoJSON.FeatureCollection | null =
+    features.length === 0
+      ? null
+      : {
+          type: 'FeatureCollection',
+          features,
+        }
 
   return {
     loadSource,

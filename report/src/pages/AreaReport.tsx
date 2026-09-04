@@ -808,7 +808,7 @@ function useMeasuredElementSize<T extends HTMLElement>() {
   const ref = useRef<T | null>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
 
-  useEffect(() => {
+  useEffect(function observeElementSize() {
     const element = ref.current
     if (!element) return
 
@@ -835,14 +835,14 @@ function useMeasuredElementSize<T extends HTMLElement>() {
     if (typeof ResizeObserver !== 'undefined') {
       const observer = new ResizeObserver(() => scheduleMeasure())
       observer.observe(element)
-      return () => {
+      return function stopObservingElementSize() {
         observer.disconnect()
         if (rafId != null) window.cancelAnimationFrame(rafId)
       }
     }
 
     window.addEventListener('resize', scheduleMeasure)
-    return () => {
+    return function stopObservingElementSize() {
       window.removeEventListener('resize', scheduleMeasure)
       if (rafId != null) window.cancelAnimationFrame(rafId)
     }

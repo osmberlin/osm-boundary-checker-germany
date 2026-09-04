@@ -25,20 +25,23 @@ export function useLiveQueryBboxFromMap() {
   const mapRef = useMap()[COMPARISON_MAP_ID]
   const [viewportEpoch, setViewportEpoch] = useState(0)
 
-  useEffect(() => {
-    const maplibre = mapRef?.getMap()
-    if (!maplibre) return
+  useEffect(
+    function subscribeToMapViewport() {
+      const maplibre = mapRef?.getMap()
+      if (!maplibre) return
 
-    const bump = () => setViewportEpoch((n) => n + 1)
-    maplibre.on('load', bump)
-    maplibre.on('moveend', bump)
-    if (maplibre.loaded()) bump()
+      const bump = () => setViewportEpoch((n) => n + 1)
+      maplibre.on('load', bump)
+      maplibre.on('moveend', bump)
+      if (maplibre.loaded()) bump()
 
-    return () => {
-      maplibre.off('load', bump)
-      maplibre.off('moveend', bump)
-    }
-  }, [mapRef])
+      return function unsubscribeFromMapViewport() {
+        maplibre.off('load', bump)
+        maplibre.off('moveend', bump)
+      }
+    },
+    [mapRef],
+  )
 
   const getLiveQueryBbox = useCallback((): [number, number, number, number] | null => {
     void viewportEpoch

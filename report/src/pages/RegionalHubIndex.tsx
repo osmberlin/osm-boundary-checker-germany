@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useId, useMemo, useState } from 'react'
+import { useId, useState } from 'react'
 import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import { padRegional12 } from '../../../scripts/shared/regionalArs.ts'
 import type { RegionalHubMismatchFlag } from '../../../scripts/shared/regionalHubPayload.ts'
@@ -72,6 +72,16 @@ export function RegionalHubIndex() {
     void navigate({ to: '/regional/$ars', params: { ars } })
   }
 
+  function applyHit(hit: GermanKeyNameSearchHit) {
+    const bundle = lookupQuery.data
+    if (hit.kind === 'ars') {
+      goToArs(hit.id)
+      return
+    }
+    const resolved = bundle ? resolveArsFromAgs(bundle, hit.id) : null
+    goToArs(resolved?.ars12 ?? hit.id)
+  }
+
   function submit(ev: React.FormEvent<HTMLFormElement>) {
     ev.preventDefault()
     setFeedback(null)
@@ -95,22 +105,12 @@ export function RegionalHubIndex() {
     setPickHits(hits)
   }
 
-  function applyHit(hit: GermanKeyNameSearchHit) {
-    const bundle = lookupQuery.data
-    if (hit.kind === 'ars') {
-      goToArs(hit.id)
-      return
-    }
-    const resolved = bundle ? resolveArsFromAgs(bundle, hit.id) : null
-    goToArs(resolved?.ars12 ?? hit.id)
-  }
-
   const flags = flagsQuery.data?.byArs ?? {}
   const bundle = lookupQuery.data
   const lands = bundle
     ? Object.entries(bundle.latest.bundeslaender).sort(([a], [b]) => a.localeCompare(b))
     : []
-  const rowsByLandCode = useMemo(() => (bundle ? hubRowsByLandCode(bundle) : {}), [bundle])
+  const rowsByLandCode = bundle ? hubRowsByLandCode(bundle) : {}
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-8 text-left sm:px-6 lg:px-8">
