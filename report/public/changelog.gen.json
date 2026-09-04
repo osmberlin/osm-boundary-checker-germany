@@ -1,6 +1,32 @@
 {
-  "generatedAt": "2026-08-31T05:13:30.339Z",
+  "generatedAt": "2026-09-04T14:50:23.786Z",
   "months": [
+    {
+      "month": "2026-09",
+      "entries": [
+        {
+          "refs": ["0407050"],
+          "descriptionMd": "Live-Abfragen (Overpass/WFS) auf der Vergleichskarte folgen dem aktuellen Kartenausschnitt, auch nach Verschieben und Zoomen.",
+          "committedAtIso": "2026-09-04T16:43:32+02:00",
+          "committedAtShort": "2026-09-04",
+          "refsDisplay": ["0407050"]
+        },
+        {
+          "refs": ["4cb0939"],
+          "descriptionMd": "Wenn der amtliche VG25-Stand noch den Regionalschlüssel vom Jahresende enthält, Destatis und OSM aber schon den neuen, zeigt der Abgleich das als Geometrie-Match mit Hinweis — nicht als zwei Lücken. Beispiele: Bönebüttel, Schmölln, Hanau. Auf der Detailseite stehen alter und aktueller Schlüssel mit Datenständen und Links zum Schlüssel-Explorer. Der Text fordert nicht mehr, den alten Schlüssel nach OSM zu schreiben.\n\nAuf der Startseite und der Datensatz-Übersicht bedeutet „nur amtlich“ wieder echte Lücken. Veraltete amtliche Schlüssel haben eine eigene Zahl („Schlüssel veraltet“) und zählen bei „Zugeordnet“. OSM-Objekte, die nur das Gegenstück zu so einem Schlüsselwechsel sind, erscheinen nicht mehr als eigene Seite. In der Tabelle kann man diese Zeilen einblenden, ausblenden oder allein anzeigen.\n\nIm [Regional- und Gemeindeschlüssel-Explorer](/tools/german-key) erscheint bei bekannten Gebietsänderungen ein kurzer Hinweis, welcher Schlüssel welchen ersetzt hat und seit wann. Der Hinweis kommt nur, wenn der nachgeschlagene Schlüssel Teil dieser Änderung ist (z. B. Hanau kreisfrei).",
+          "committedAtIso": "2026-09-04T16:43:31+02:00",
+          "committedAtShort": "2026-09-04",
+          "refsDisplay": ["4cb0939"]
+        },
+        {
+          "refs": ["9acac6a", "8188c98", "9c74f21", "7aab853"],
+          "descriptionMd": "Unter `/regional` gibt es einen Einwohner- und Wikidata-Abgleich für amtliche Regionalschlüssel. Destatis-Einwohnerzahl, OSM-Tags (`population`, `wikidata`) und Wikidata (P1082, P402) stehen nebeneinander; Abweichungen sind farblich markiert. In der Übersicht kann man nach Bundesland blättern und auf „Handlungsbedarf“ filtern. Die Detailseite lädt aktuelle OSM-Tags per Overpass nach und verlinkt iD, JOSM und Wikidata — ohne vorausgefüllte Schreibaktionen. Von Feature-Seiten und dem [Schlüssel-Explorer](/tools/german-key) gibt es Links dorthin.",
+          "committedAtIso": "2026-09-04T16:43:31+02:00",
+          "committedAtShort": "2026-09-04",
+          "refsDisplay": ["9acac6a", "8188c98", "9c74f21", "7aab853"]
+        }
+      ]
+    },
     {
       "month": "2026-08",
       "entries": [
