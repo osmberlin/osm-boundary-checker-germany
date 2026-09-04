@@ -40,6 +40,7 @@ export const de = {
   footer: {
     /** Same topic as `germanKeyExplorer.title` (amtlicher ARS / amtlicher AGS). */
     germanKeyExplorerLink: 'Regional- und Gemeindeschlüssel-Explorer',
+    regionalHubLink: 'Einwohner und Wikidata',
     geoDataLine: 'Geodaten: ',
     osmLinkHref: 'https://www.openstreetmap.org/copyright',
     osmLinkLabel: 'OpenStreetMap',
@@ -387,6 +388,7 @@ export const de = {
     osmRelation: 'OSM-Relation',
     /** Deep link to Schlüssel-Explorer from property rows and provenance. */
     germanKeyVerifyLink: 'Schlüssel-Explorer',
+    regionalHubLink: 'Einwohner und Wikidata',
     stats: {
       /** Matches JSON field name; shown next to key value on the feature header row. */
       canonicalMatchKeyField: 'canonicalMatchKey',
@@ -632,6 +634,86 @@ export const de = {
     },
   },
 
+  regionalHub: {
+    metaTitle: 'Regionalschlüssel — Einwohner und Wikidata',
+    title: 'Regionalschlüssel — Einwohner und Wikidata',
+    lead: 'Destatis-Einwohnerzahl, OSM-Tags und Wikidata für eine Verwaltungseinheit vergleichen. Destatis ist die amtliche Referenz; OSM und Wikidata nachziehen, wenn sie hinterherhinken.',
+    provenanceLine: (destatis: string, osm: string, wikidata: string) =>
+      `Destatis ${destatis} · OSM-Extract ${osm} · Wikidata ${wikidata}`,
+    provenanceUnknown: 'unbekannt',
+    decodeLink: 'Schlüssel dekodieren',
+    geometryLink: 'Grenzen im Datensatz',
+    statistikportalLink: 'Statistikportal',
+    sourcesDebugLink: 'Quellen (Debug)',
+    searchLabel: 'Schlüssel oder Gemeinde-Name',
+    searchPlaceholder: 'z. B. 120510000000, Flensburg',
+    searchSubmit: 'Anzeigen',
+    searchNoResults:
+      'Kein Treffer. Für Namenssuche mindestens zwei Zeichen eingeben; für Schlüssel die Ziffern nutzen.',
+    searchPickTitle: 'Mehrere Treffer',
+    searchPickLead: 'Bitte einen Eintrag auswählen.',
+    searchPickApply: 'Übernehmen',
+    searchPickClose: 'Schließen',
+    emptyBrowse: 'Kein Treffer in dieser Auswahl.',
+    filterLabel: 'Anzeige',
+    filterAll: 'Alle',
+    filterAction: 'Handlungsbedarf',
+    landAccordionHint: 'Ein Bundesland öffnen, um Kreise und Gemeinden zu listen.',
+    statusOsmWikidata: 'Wikidata-Tag',
+    statusOsmPopulation: 'OSM-Einwohner',
+    statusWikidataPopulation: 'Wikidata-Einwohner',
+    statusWikidataP402: 'Wikidata P402',
+    colDestatis: 'Destatis',
+    colOsm: 'OSM',
+    colWikidata: 'Wikidata',
+    rowPopulation: 'Einwohner',
+    rowDate: 'Stichtag',
+    rowArea: 'Fläche',
+    rowWikidataId: 'Wikidata-ID',
+    rowOsmRelation: 'OSM-Relation',
+    latestChip: 'aktuellste Zahl',
+    missingValue: '—',
+    noOfficialPopulation: 'Keine amtliche Einwohnerzahl in der aktuellen Quartalsdatei.',
+    obsoleteLead: (year: number) =>
+      `Dieser Schlüssel steht nicht in der aktuellen Quartalsdatei (zuletzt GV100ADJ ${year}).`,
+    unknownLead: 'Dieser Regionalschlüssel ist im aktuellen Gemeindeverzeichnis nicht enthalten.',
+    verdictOk: 'Einwohnerzahl stimmt mit Destatis überein.',
+    verdictOsmWikidataMissing:
+      'OSM hat noch kein wikidata-Tag, Wikidata kennt diesen Schlüssel eindeutig.',
+    verdictOsmWikidataMismatch:
+      'OSM-wikidata-Tag und Wikidata-Objekt zum Regionalschlüssel stimmen nicht überein.',
+    verdictOsmPopulation: 'OSM-Einwohnerzahl oder Stichtag weicht von Destatis ab oder fehlt.',
+    verdictWikidataPopulation:
+      'Wikidata-Bevölkerung (P1082) weicht von Destatis ab oder ist älter.',
+    verdictWikidataP402: 'Wikidata hat noch keine (passende) OSM-Relation (P402).',
+    ctaOsmWikidata: 'wikidata-Tag in OSM setzen',
+    ctaOsmPopulation: 'In OSM aktualisieren',
+    ctaOsmWikidataCheck: 'OSM-Tag prüfen',
+    ctaWikidataPopulation: 'Wikidata-Bevölkerung aktualisieren',
+    ctaWikidataP402: 'OSM-Relation in Wikidata ergänzen',
+    actionsTitle: 'Daten ändern',
+    actionsLead:
+      'Zuerst prüfen, dann speichern. QuickStatements führt nichts aus, bevor Sie auf Run klicken.',
+    qsReviewHint: 'Prüfen und erst dann Run.',
+    qsOpenItem: 'Wikidata-Objekt öffnen',
+    idEdit: 'In iD öffnen',
+    josmEdit: 'In JOSM laden',
+    helperOsmWikidata: (qid: string) => `Vorschlag: wikidata=${qid}`,
+    helperOsmPopulation: (pop: string, date: string) =>
+      `Vorschlag: population=${pop}, population:date=${date}`,
+    liveTagsTitle: 'Live-Tags laden',
+    liveTagsButton: 'Aktuelle OSM-Tags von Overpass laden',
+    liveTagsLoading: 'Overpass lädt …',
+    liveTagsError: 'Overpass-Anfrage fehlgeschlagen.',
+    successorCta: 'Nachfolger öffnen',
+    sourcesTitle: 'Regionalhub — Quellen',
+    sourcesLead:
+      'Pipeline-Status für Destatis-Lookup, OSM-Tag-Sidecar und Wikidata-SPARQL. Keine Mapper-Aktionen.',
+    sourcesSparql: 'SPARQL (BestRank + MAX P585)',
+    sampleParse: 'Beispiel satzart 60 (Brandenburg an der Havel)',
+    detailNotFoundTitle: 'Schlüssel unbekannt',
+  },
+
   germanKeyExplorer: {
     metaTitle: 'Regional- und Gemeindeschlüssel-Explorer',
     title: 'Regional- und Gemeindeschlüssel-Explorer',
@@ -748,6 +830,7 @@ export const de = {
     keyOverviewArsName: 'Regionalschlüssel',
     keyOverviewAgsName: 'Amtlicher Gemeindeschlüssel',
     linksTitle: 'Links',
+    linksRegionalHub: 'Attribute vergleichen',
     linksDetailPage: 'Detailseite Statistikportal',
     linksWikiKeyPrefix: 'OSM Wiki',
     presets: {
@@ -800,6 +883,8 @@ export const de = {
     changelog: 'Lade Changelog…',
     status: 'Lade Verarbeitungsstatus…',
     germanKey: 'Lade Schlüssel-Explorer…',
+    regionalHub: 'Lade Regionalhub…',
+    regionalHubDetail: (ars: string) => `Lade Einwohnervergleich für ${ars}…`,
   },
 } as const
 

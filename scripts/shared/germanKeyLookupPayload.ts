@@ -12,6 +12,15 @@ export const germanKeyLookupMapsSchema = z.object({
 
 export type GermanKeyLookupMaps = z.infer<typeof germanKeyLookupMapsSchema>
 
+/** Fläche / Bevölkerung for satzart-60 Gemeinden in the current quarterly extract. */
+export const germanKeyGemeindeAttributeSchema = z.object({
+  areaKm2: z.number().optional(),
+  populationTotal: z.number().int().optional(),
+  populationMale: z.number().int().optional(),
+})
+
+export type GermanKeyGemeindeAttribute = z.infer<typeof germanKeyGemeindeAttributeSchema>
+
 export const germanKeyPublicationSourceSchema = z.object({
   downloadUrl: z.string(),
   archiveEntry: z.string(),
@@ -27,6 +36,18 @@ export const germanKeyLatestDatasetSchema = germanKeyLookupMapsSchema.extend({
   provenanceLines: z.array(z.string()),
   sourcePublicUrl: z.string(),
   source: germanKeyPublicationSourceSchema,
+  /** Optional so committed lookup JSON from before EWZ parsing still validates. */
+  gemeindeAttributesByArs: z.record(z.string(), germanKeyGemeindeAttributeSchema).optional(),
+  /** Bevölkerungsfortschreibung Stichtag (ISO date), not Gebietsstand. */
+  populationDate: z.string().optional(),
+  destatisMerkmale: z
+    .object({
+      areaColumnHeader: z.string().optional(),
+      populationColumnHeader: z.string().optional(),
+      maleColumnHeader: z.string().optional(),
+      gemeindenWithPopulation: z.number().int().optional(),
+    })
+    .optional(),
 })
 
 export type GermanKeyLatestDataset = z.infer<typeof germanKeyLatestDatasetSchema>

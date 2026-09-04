@@ -87,7 +87,14 @@ function addAll(target: Set<string>, values: string[]): void {
 export function loadSharedAdminOsmExtractConfig(
   workspaceRoot: string,
 ): SharedAdminOsmExtractConfig {
-  const propertySet = new Set<string>(['name', 'admin_level', 'de:regionalschluessel'])
+  const propertySet = new Set<string>([
+    'name',
+    'admin_level',
+    'de:regionalschluessel',
+    'population',
+    'population:date',
+    'wikidata',
+  ])
   const relationIdSet = new Set<string>()
   const whereClauseSet = new Set<string>()
   const tagsFilterSet = new Set<string>(DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS)

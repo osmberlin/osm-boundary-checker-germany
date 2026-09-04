@@ -12,6 +12,12 @@ export type Gv100AdRow = {
   name: string
   /** 1-based row index for error reporting (Excel/TXT line number). */
   lineOrRow: number
+  /** Fläche in km² (satzart 60). Excel is already km²; GV100AD TXT stores km²×100. */
+  areaKm2?: number
+  /** Bevölkerung insgesamt (satzart 60). */
+  populationTotal?: number
+  /** Bevölkerung männlich (satzart 60). */
+  populationMale?: number
 }
 
 /** Satzart 30 (mittlere Verwaltungsebene) is validated but not mapped to lookup tables. */

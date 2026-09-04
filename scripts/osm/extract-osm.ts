@@ -24,6 +24,7 @@ import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:f
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as p from '@clack/prompts'
+import { emitRegionalOsmTagsSidecar } from '../report/emitRegionalOsmTags.ts'
 import { areaHasCompareConfig } from '../shared/areaConfig.ts'
 import { cliErr, cliHeadline, cliMuted, cliOk, cliWarn } from '../shared/cliStyle.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
@@ -519,7 +520,7 @@ function resolveExtractTarget(workspaceRoot: string, kind: ExtractKind): Extract
   }
 }
 
-function runSharedExtract(
+async function runSharedExtract(
   workspaceRoot: string,
   runtimeRoot: string,
   kinds: ExtractKind[],
@@ -529,7 +530,7 @@ function runSharedExtract(
     forceTagsFilter: boolean
     dryRun: boolean
   },
-): void {
+): Promise<void> {
   const { pbf: pbfArg, skipTagsFilter, forceTagsFilter, dryRun } = parsed
   const ordered = sortKinds(kinds)
 
@@ -607,6 +608,16 @@ function runSharedExtract(
     // candidate extracts are derived from the same PBF but do not need to update metadata.
     if (kind === 'admin') {
       writeOsmSourceMetadataForAreas(workspaceRoot, runtimeRoot, osmHeaderTimestamp, dryRun)
+      if (!dryRun) {
+        const sidecar = await emitRegionalOsmTagsSidecar(runtimeRoot, outFgb)
+        if (sidecar) {
+          console.log(
+            cliMuted(
+              `Regional OSM tag sidecar: ${sidecar.arsCount} ARS from ${sidecar.featureCount} features → ${sidecar.path}`,
+            ),
+          )
+        }
+      }
     }
   }
 
@@ -627,7 +638,7 @@ async function main() {
     ? [parsed.kind]
     : await resolveKindsWhenImplicit(nonInteractive)
 
-  runSharedExtract(workspaceRoot, runtimeRoot, kinds, parsed)
+  await runSharedExtract(workspaceRoot, runtimeRoot, kinds, parsed)
 }
 
 void main().catch((err: unknown) => {

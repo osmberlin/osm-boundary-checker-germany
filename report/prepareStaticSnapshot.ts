@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
-import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { arsSuccessorsJsonPath } from '../scripts/shared/arsSuccessorTableFs.ts'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
@@ -34,6 +35,12 @@ async function main() {
   let germanKeyLookupBackup: Buffer | null = null
   if (existsSync(germanKeyLookupPath)) {
     germanKeyLookupBackup = await readFile(germanKeyLookupPath)
+  }
+  const regionalHubPath = join(destDataRoot, 'regional-hub')
+  let regionalHubBackup: string | null = null
+  if (existsSync(regionalHubPath)) {
+    regionalHubBackup = await mkdtemp(join(tmpdir(), 'regional-hub-snapshot-'))
+    await cp(regionalHubPath, regionalHubBackup, { recursive: true, force: true })
   }
 
   await rm(destDatasetsRoot, { recursive: true, force: true })
@@ -105,6 +112,17 @@ async function main() {
   }
 
   await mkdir(destDataRoot, { recursive: true })
+  const copiedRuntimeHub = await copyIfExists(
+    join(runtimeRoot, 'data', 'regional-hub'),
+    join(destDataRoot, 'regional-hub'),
+  )
+  if (!copiedRuntimeHub && regionalHubBackup !== null) {
+    await copyIfExists(regionalHubBackup, join(destDataRoot, 'regional-hub'))
+  }
+  if (regionalHubBackup !== null) {
+    await rm(regionalHubBackup, { recursive: true, force: true })
+  }
+
   await copyIfExists(arsSuccessorsJsonPath(), join(destDataRoot, 'ars-successors.json'))
 
   console.log(

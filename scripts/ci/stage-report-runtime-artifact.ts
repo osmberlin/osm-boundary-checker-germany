@@ -109,6 +109,15 @@ if (!copyFileIfExists(relationResolverSrc, relationResolverDest)) {
 }
 copiedDataFiles.push('relation-resolver-index.json')
 
+if (
+  copyDirectoryIfExists(
+    path.join(dataRoot, 'regional-hub'),
+    path.join(reportArtifactData, 'regional-hub'),
+  )
+) {
+  copiedDataFiles.push('regional-hub')
+}
+
 const summary: ReportArtifactSummary = {
   generatedAt: new Date().toISOString(),
   areasIncluded: copiedAreas.sort(),

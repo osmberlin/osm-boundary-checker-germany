@@ -2,6 +2,11 @@ import JSZip from 'jszip'
 import { readSheet } from 'read-excel-file/node'
 import type { Gv100AdRow } from './gv100AdRow.ts'
 import { snapshotIsoFromGvAuszugSheetName } from './gv100Dates.ts'
+import {
+  applyExcelMerkmaleToRow,
+  parseGvAuszugMerkmaleFromHeaderRows,
+  type GvAuszugMerkmale,
+} from './gv100Merkmale.ts'
 
 /** Destatis GVAuszugQ data sheet: `Onlineprodukt_Gemeinden` + `DDMMYYYY`. */
 export const DATA_SHEET_PATTERN = /^Onlineprodukt_Gemeinden(\d{8})$/
@@ -10,9 +15,9 @@ export const DATA_SHEET_PATTERN = /^Onlineprodukt_Gemeinden(\d{8})$/
 export const DATA_START_ROW = 7
 
 /**
- * GVAuszugQ column layout (0-based `read-excel-file` indices):
- * A Satzart | B Datum | C Land | D RB | E Kreis | F VB | G Gem | H Name
- * Column B is not mapped; snapshot date comes from the sheet name.
+ * GVAuszugQ identity columns (0-based `read-excel-file` indices):
+ * A Satzart | B unused (Textkennzeichen in current Destatis files) | C Land | D RB | E Kreis | F VB | G Gem | H Name
+ * Snapshot date comes from the sheet name. Fläche/Bevölkerung are bound by header text, not letter.
  */
 const MIN_DATA_COLUMNS = 8
 
@@ -20,6 +25,7 @@ export type GvAuszugParsed = {
   archiveEntry: string
   snapshotDate: string
   rows: Gv100AdRow[]
+  merkmale: GvAuszugMerkmale
 }
 
 function cellString(value: unknown): string {
@@ -81,16 +87,20 @@ export async function parseGvAuszugXlsx(
   const snapshotDdMmYyyy = `${day}${month}${year}`
 
   const sheetData = await readSheet(buffer, sheetName)
+  const headerRows = sheetData.slice(0, DATA_START_ROW - 1)
+  const merkmale = parseGvAuszugMerkmaleFromHeaderRows(headerRows, snapshotDate)
   const rows: Gv100AdRow[] = []
   for (let i = DATA_START_ROW - 1; i < sheetData.length; i++) {
-    const parsed = rowFromExcelCells(sheetData[i] ?? [], i + 1, snapshotDdMmYyyy)
-    if (parsed) rows.push(parsed)
+    const cells = sheetData[i] ?? []
+    const parsed = rowFromExcelCells(cells, i + 1, snapshotDdMmYyyy)
+    if (parsed) rows.push(applyExcelMerkmaleToRow(parsed, cells, merkmale.columns))
   }
 
   return {
     archiveEntry: `${xlsxBasename}#${sheetName}`,
     snapshotDate,
     rows,
+    merkmale,
   }
 }
 

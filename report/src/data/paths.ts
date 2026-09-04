@@ -28,6 +28,22 @@ export function germanKeyLookupUrl(): string {
   return withSiteBasePath('/data/german-key-lookup.json')
 }
 
+export function regionalHubManifestUrl(): string {
+  return withSiteBasePath('/data/regional-hub/manifest.json')
+}
+
+export function regionalHubOsmTagsUrl(): string {
+  return withSiteBasePath('/data/regional-hub/osm-tags.json')
+}
+
+export function regionalHubWikidataUrl(): string {
+  return withSiteBasePath('/data/regional-hub/wikidata.json')
+}
+
+export function regionalHubMismatchFlagsUrl(): string {
+  return withSiteBasePath('/data/regional-hub/mismatch-flags.json')
+}
+
 export function arsSuccessorsUrl(): string {
   return withSiteBasePath('/data/ars-successors.json')
 }

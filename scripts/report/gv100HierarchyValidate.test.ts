@@ -6,6 +6,7 @@ import type { Gv100AdRow } from './gv100AdRow.ts'
 import { VALID_LAND_CODES } from './gv100AdRow.ts'
 import { validateGvHierarchy } from './gv100HierarchyValidate.ts'
 import { rowsToLookupMaps, type LookupDuplicateWarning } from './gv100LookupMaps.ts'
+import { rowsToGemeindeAttributes } from './gv100Merkmale.ts'
 import { parseGv100AdTxtRows } from './parseGv100AdTxt.ts'
 import { parseGvAuszugXlsx, rowFromExcelCells } from './parseGvAuszugXlsx.ts'
 
@@ -65,6 +66,9 @@ function minimalValidHierarchy(): Gv100AdRow[] {
       gem: '000',
       name: 'Brandenburg an der Havel, Stadt',
       lineOrRow: 101,
+      areaKm2: 229.73,
+      populationTotal: 74113,
+      populationMale: 36154,
     },
     {
       satzart: '40',
@@ -209,6 +213,15 @@ describe('parseGvAuszugXlsx', () => {
     expect(Object.keys(maps.bundeslaender)).toHaveLength(16)
     expect(maps.bundeslaender['12']).toBe('Brandenburg')
     expect(maps.kreise['04012']).toBe('Bremerhaven, Stadt')
+    const attrs = rowsToGemeindeAttributes(parsed.rows)
+    expect(attrs['120510000000']).toEqual({
+      areaKm2: 229.73,
+      populationTotal: 74113,
+      populationMale: 36154,
+    })
+    expect(parsed.merkmale.populationDate).toBe('2024-12-31')
+    expect(parsed.merkmale.columns.areaKm2).toBe(8)
+    expect(parsed.merkmale.columns.populationTotal).toBe(9)
   })
 
   const officialFixturePath = join(import.meta.dir, 'fixtures', 'AuszugGV2QAktuell.xlsx')

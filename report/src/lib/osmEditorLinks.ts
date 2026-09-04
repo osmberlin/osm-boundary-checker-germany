@@ -60,6 +60,48 @@ export function buildOpenStreetMapIdEditUrl(
   return url.toString()
 }
 
+/** iD standalone for a known relation, optional `addTags` (hub CTAs). */
+export function buildOpenStreetMapIdRelationEditUrl(input: {
+  relationId: number
+  addTags?: Record<string, string>
+}): string {
+  const url = new URL(OSM_ID_EDITOR)
+  const hash = new URLSearchParams()
+  hash.set('id', `r${input.relationId}`)
+  hash.set('disable_features', ID_DISABLE_FEATURES)
+  hash.set('hashtags', CHANGESET_HASHTAG_GRENZABGLEICH)
+  if (input.addTags && Object.keys(input.addTags).length > 0) {
+    hash.set(
+      'addTags',
+      Object.entries(input.addTags)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('|'),
+    )
+  }
+  url.hash = hash.toString()
+  return url.toString()
+}
+
+export function buildJosmLoadRelationUrl(input: {
+  relationId: number
+  addTags?: Record<string, string>
+}): string {
+  const params = new URLSearchParams({
+    relation_members: 'true',
+    objects: `r${input.relationId}`,
+    changeset_hashtags: CHANGESET_HASHTAG_GRENZABGLEICH,
+  })
+  if (input.addTags && Object.keys(input.addTags).length > 0) {
+    params.set(
+      'addtags',
+      Object.entries(input.addTags)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('|'),
+    )
+  }
+  return `${JOSM_REMOTE}/load_object?${params.toString()}`
+}
+
 /** Browse URL for the matched OSM object on openstreetmap.org (read-only). */
 export function buildOpenStreetMapBrowseRelationUrl(row: ReportRow): string | null {
   const ref = parseReportRowOsmRef(row.osmRelationId)

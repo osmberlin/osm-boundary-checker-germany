@@ -21,6 +21,16 @@ import {
 import { germanKeyLookupBundleSchema } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import {
+  regionalHubManifestSchema,
+  regionalHubMismatchFlagsFileSchema,
+  regionalHubOsmTagsFileSchema,
+  regionalHubWikidataFileSchema,
+  type RegionalHubManifest,
+  type RegionalHubMismatchFlagsFile,
+  type RegionalHubOsmTagsFile,
+  type RegionalHubWikidataFile,
+} from '../../../scripts/shared/regionalHubPayload.ts'
+import {
   type AddrPostcodeGeoJsonFeatureCollection,
   type AddrPostcodeHit,
   fetchOverpassQuery,
@@ -58,6 +68,10 @@ import {
   featureApiUrl,
   arsSuccessorsUrl,
   germanKeyLookupUrl,
+  regionalHubManifestUrl,
+  regionalHubMismatchFlagsUrl,
+  regionalHubOsmTagsUrl,
+  regionalHubWikidataUrl,
   runStatusUrl,
   snapshotsUrl,
 } from './paths'
@@ -232,6 +246,70 @@ export function germanKeyLookupQueryOptions() {
   return queryOptions({
     queryKey: ['german-key-lookup'],
     queryFn: () => loadGermanKeyLookup(),
+  })
+}
+
+async function loadOptionalParsed<T>(url: string, parse: (raw: unknown) => T): Promise<T | null> {
+  const r = await fetch(url, { headers: { Accept: 'application/json' } })
+  if (r.status === 404) return null
+  if (!r.ok) throw new Error(`Failed to load ${url}: ${r.status}`)
+  const contentType = (r.headers.get('content-type') ?? '').toLowerCase()
+  // Vite SPA fallback (and some static hosts) return HTML 200 for missing files.
+  if (!contentType.includes('application/json')) return null
+  return parse(await readJsonStrict(url, r))
+}
+
+export async function loadRegionalHubManifest(): Promise<RegionalHubManifest | null> {
+  return loadOptionalParsed(regionalHubManifestUrl(), (raw) => regionalHubManifestSchema.parse(raw))
+}
+
+export async function loadRegionalHubOsmTags(): Promise<RegionalHubOsmTagsFile | null> {
+  return loadOptionalParsed(regionalHubOsmTagsUrl(), (raw) =>
+    regionalHubOsmTagsFileSchema.parse(raw),
+  )
+}
+
+export async function loadRegionalHubWikidata(): Promise<RegionalHubWikidataFile | null> {
+  return loadOptionalParsed(regionalHubWikidataUrl(), (raw) =>
+    regionalHubWikidataFileSchema.parse(raw),
+  )
+}
+
+export async function loadRegionalHubMismatchFlags(): Promise<RegionalHubMismatchFlagsFile | null> {
+  return loadOptionalParsed(regionalHubMismatchFlagsUrl(), (raw) =>
+    regionalHubMismatchFlagsFileSchema.parse(raw),
+  )
+}
+
+export function regionalHubManifestQueryOptions() {
+  return queryOptions({
+    queryKey: ['regional-hub-manifest'],
+    queryFn: loadRegionalHubManifest,
+    staleTime: Infinity,
+  })
+}
+
+export function regionalHubOsmTagsQueryOptions() {
+  return queryOptions({
+    queryKey: ['regional-hub-osm-tags'],
+    queryFn: loadRegionalHubOsmTags,
+    staleTime: Infinity,
+  })
+}
+
+export function regionalHubWikidataQueryOptions() {
+  return queryOptions({
+    queryKey: ['regional-hub-wikidata'],
+    queryFn: loadRegionalHubWikidata,
+    staleTime: Infinity,
+  })
+}
+
+export function regionalHubMismatchFlagsQueryOptions() {
+  return queryOptions({
+    queryKey: ['regional-hub-mismatch-flags'],
+    queryFn: loadRegionalHubMismatchFlags,
+    staleTime: Infinity,
   })
 }
 

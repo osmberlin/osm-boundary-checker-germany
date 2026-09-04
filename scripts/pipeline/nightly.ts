@@ -670,6 +670,36 @@ async function main() {
       if (relationIndexExitCode !== 0) failed = true
     }
 
+    if (phase !== 'download') {
+      const hubStep = 'pipeline:regional-hub'
+      const hubT0 = Date.now()
+      appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step: hubStep })
+      writeState(statePath, { ...state, phase: hubStep, updatedAt: nowIso() })
+      const hubExitCode = await runCommand(
+        'bun',
+        ['run', '--filter', './scripts', 'regional-hub:generate'],
+        workspaceRoot,
+        hubStep,
+      )
+      const hubDurationMs = Date.now() - hubT0
+      appendJsonl(logPath, {
+        kind: 'step_end',
+        runId,
+        at: nowIso(),
+        step: hubStep,
+        status: hubExitCode === 0 ? 'ok' : 'fail',
+        durationMs: hubDurationMs,
+        exitCode: hubExitCode,
+      })
+      upsertSharedBranchStatus(processingDir, hubStep, {
+        status: hubExitCode === 0 ? 'success' : 'failed_no_cache',
+        usedCache: false,
+        errorCode: hubExitCode === 0 ? undefined : String(hubExitCode),
+        retryHint: hubExitCode === 0 ? undefined : 'automatic retry next nightly run',
+      })
+      if (hubExitCode !== 0) failed = true
+    }
+
     const finalStatus = failed ? 'fail' : 'ok'
     const finishedAt = nowIso()
     const runDurationMs = Date.now() - runT0

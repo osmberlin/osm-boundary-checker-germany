@@ -14,6 +14,12 @@ import {
   comparisonQueryOptions,
   discussionsRegistryQueryOptions,
   featureQueryOptions,
+  germanKeyLookupQueryOptions,
+  regionalHubManifestQueryOptions,
+  regionalHubMismatchFlagsQueryOptions,
+  regionalHubOsmTagsQueryOptions,
+  regionalHubWikidataQueryOptions,
+  arsSuccessorsQueryOptions,
   snapshotsQueryOptions,
 } from './data/load'
 import { relationResolverIndexUrl, routerBasePath } from './data/paths'
@@ -24,6 +30,7 @@ import {
   FEATURE_DETAIL_ROUTE_FROM,
   parseFeatureDetailRouteParams,
 } from './lib/parseFeatureDetailRouteParams'
+import { padRegional12 } from './lib/regionalHubDisplay'
 import { decideRelationResolution, type RelationResolverCandidate } from './lib/relationResolver'
 import { validateRelationResolverSearch } from './lib/relationResolverSearch'
 import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
@@ -36,6 +43,9 @@ import { FeatureDetail } from './pages/FeatureDetail'
 import { GermanKeyExplorer } from './pages/GermanKeyExplorer'
 import { Home } from './pages/Home'
 import { ProcessingStatus } from './pages/ProcessingStatus'
+import { RegionalHubDetail } from './pages/RegionalHubDetail'
+import { RegionalHubIndex } from './pages/RegionalHubIndex'
+import { RegionalHubSources } from './pages/RegionalHubSources'
 import { RelationResolver } from './pages/RelationResolver'
 import type { ComparisonForReport } from './types/report'
 
@@ -137,6 +147,75 @@ const germanKeyExplorerRoute = createRoute({
   component: GermanKeyExplorer,
 })
 
+function parseRegionalArsParams(params: { ars: string }): { ars: string } {
+  const padded = padRegional12(params.ars)
+  return { ars: padded ?? params.ars.replace(/\D/g, '') }
+}
+
+const regionalHubIndexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/regional',
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(germanKeyLookupQueryOptions()),
+      context.queryClient.ensureQueryData(regionalHubManifestQueryOptions()),
+      context.queryClient.ensureQueryData(regionalHubMismatchFlagsQueryOptions()),
+    ])
+  },
+  pendingComponent: () => <RouteLoadingPane title={de.routeLoading.regionalHub} />,
+  head: () => ({
+    meta: [
+      { title: `${de.regionalHub.metaTitle} | ${de.appTitle}` },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
+  component: RegionalHubIndex,
+})
+
+const regionalHubDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/regional/$ars',
+  params: { parse: parseRegionalArsParams },
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(germanKeyLookupQueryOptions()),
+      context.queryClient.ensureQueryData(regionalHubOsmTagsQueryOptions()),
+      context.queryClient.ensureQueryData(regionalHubWikidataQueryOptions()),
+      context.queryClient.ensureQueryData(regionalHubManifestQueryOptions()),
+      context.queryClient.ensureQueryData(arsSuccessorsQueryOptions()),
+    ])
+  },
+  pendingComponent: () => {
+    return <RouteLoadingPane title={de.routeLoading.regionalHub} />
+  },
+  head: ({ params }) => ({
+    meta: [
+      { title: `${params.ars} | ${de.regionalHub.metaTitle} | ${de.appTitle}` },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
+  component: RegionalHubDetail,
+})
+
+const regionalHubSourcesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tools/regional/sources',
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(regionalHubManifestQueryOptions()),
+      context.queryClient.ensureQueryData(germanKeyLookupQueryOptions()),
+    ])
+  },
+  pendingComponent: () => <RouteLoadingPane title={de.routeLoading.regionalHub} />,
+  head: () => ({
+    meta: [
+      { title: `${de.regionalHub.sourcesTitle} | ${de.appTitle}` },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
+  component: RegionalHubSources,
+})
+
 const areaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/$areaId',
@@ -235,6 +314,9 @@ const routeTree = rootRoute.addChildren([
   statusRoute,
   changelogRoute,
   germanKeyExplorerRoute,
+  regionalHubIndexRoute,
+  regionalHubDetailRoute,
+  regionalHubSourcesRoute,
   areaRoute,
   featureRoute,
   relationResolverRoute,

@@ -14,6 +14,7 @@ import type { Gv100AdRow } from './gv100AdRow.ts'
 import { parseDdMmYy, parseDdMmYyyy } from './gv100Dates.ts'
 import { formatValidationErrors, validateGvHierarchy } from './gv100HierarchyValidate.ts'
 import { rowsToLookupMaps, type LookupDuplicateWarning } from './gv100LookupMaps.ts'
+import { rowsToGemeindeAttributes, type GvAuszugMerkmale } from './gv100Merkmale.ts'
 import { parseGv100AdTxtRows } from './parseGv100AdTxt.ts'
 import { gvAuszugXlsxBasename, parseGvAuszugXlsx } from './parseGvAuszugXlsx.ts'
 
@@ -124,6 +125,7 @@ type ResolvedSource = {
   archiveEntry: string
   snapshotDate: string
   rows: Gv100AdRow[]
+  merkmale?: GvAuszugMerkmale
 }
 
 type LookupMaps = GermanKeyLookupMaps
@@ -238,6 +240,7 @@ async function loadLatestExcelCandidate(downloadUrl: string): Promise<ResolvedSo
     archiveEntry: parsed.archiveEntry,
     snapshotDate: parsed.snapshotDate,
     rows: parsed.rows,
+    merkmale: parsed.merkmale,
   }
 }
 
@@ -410,6 +413,11 @@ async function main(): Promise<void> {
     loadLatestExcelCandidate,
   )
   const latestMaps = rowsToLookupMapsWithLoggedDuplicates(latestResolved.rows)
+  const gemeindeAttributesByArs = rowsToGemeindeAttributes(latestResolved.rows)
+  const gemeindenWithPopulation = Object.values(gemeindeAttributesByArs).filter(
+    (attr) => attr.populationTotal !== undefined,
+  ).length
+  const merkmale = latestResolved.merkmale
 
   const latestDataset: GermanKeyLatestDataset = {
     id: 'latest',
@@ -422,6 +430,20 @@ async function main(): Promise<void> {
       snapshotDate: latestResolved.snapshotDate,
     },
     ...latestMaps,
+    gemeindeAttributesByArs,
+    ...(merkmale?.populationDate ? { populationDate: merkmale.populationDate } : {}),
+    destatisMerkmale: {
+      ...(merkmale?.headerLabels.areaKm2
+        ? { areaColumnHeader: merkmale.headerLabels.areaKm2 }
+        : {}),
+      ...(merkmale?.headerLabels.populationTotal
+        ? { populationColumnHeader: merkmale.headerLabels.populationTotal }
+        : {}),
+      ...(merkmale?.headerLabels.populationMale
+        ? { maleColumnHeader: merkmale.headerLabels.populationMale }
+        : {}),
+      gemeindenWithPopulation,
+    },
   }
 
   const obsoleteMaps = emptyLookupMaps()
@@ -504,6 +526,12 @@ async function main(): Promise<void> {
     output: OUTPUT_JSON_RELATIVE_PATH,
     bundeslaender: Object.keys(validated.latest.bundeslaender).length,
     gemeindenByAgs: Object.keys(validated.latest.gemeindenByAgs).length,
+    gemeindenWithPopulation:
+      validated.latest.destatisMerkmale?.gemeindenWithPopulation ??
+      Object.values(validated.latest.gemeindeAttributesByArs ?? {}).filter(
+        (attr) => attr.populationTotal !== undefined,
+      ).length,
+    populationDate: validated.latest.populationDate,
     obsoleteGemeindenByAgs: Object.keys(validated.obsolete.maps.gemeindenByAgs).length,
     obsoleteGemeindenByArs: Object.keys(validated.obsolete.maps.gemeindenByArs).length,
   })

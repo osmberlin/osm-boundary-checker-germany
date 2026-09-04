@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useParams } from '@tanstack/react-router'
+import { Link, useParams } from '@tanstack/react-router'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
@@ -31,6 +31,7 @@ import { de } from '../i18n/de'
 import { featureDetailHasComparisonMap } from '../lib/featureDetailHasComparisonMap'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
 import { FEATURE_DETAIL_ROUTE_FROM } from '../lib/parseFeatureDetailRouteParams'
+import { padRegional12 } from '../lib/regionalHubDisplay'
 import { safeDecodeURIComponent } from '../lib/safeDecodeURIComponent'
 import type { ComparisonForReport, OgcWfsInspectSource, ReportRow } from '../types/report'
 
@@ -109,6 +110,31 @@ function FeatureDetailWithMapContext({
         />
 
         <UpdateMapInstructions areaId={areaKey} row={row} />
+
+        {(() => {
+          if (!data.filterConfigSummary.osmMatchProperties?.includes('de:regionalschluessel')) {
+            return null
+          }
+          const digits = row.canonicalMatchKey.replace(/\D/g, '')
+          const ars =
+            digits.length === 12
+              ? digits
+              : digits.length === 2 || digits.length === 5
+                ? padRegional12(digits)
+                : null
+          if (!ars) return null
+          return (
+            <p className="text-sm">
+              <Link
+                to="/regional/$ars"
+                params={{ ars }}
+                className="text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+              >
+                {de.feature.regionalHubLink}
+              </Link>
+            </p>
+          )
+        })()}
 
         <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
 

@@ -12,7 +12,13 @@ function escapeXml(value: string): string {
 }
 
 function columnRef(columnIndex: number, rowNumber: number): string {
-  return `${String.fromCharCode(65 + columnIndex)}${rowNumber}`
+  let n = columnIndex
+  let letters = ''
+  do {
+    letters = String.fromCharCode(65 + (n % 26)) + letters
+    n = Math.floor(n / 26) - 1
+  } while (n >= 0)
+  return `${letters}${rowNumber}`
 }
 
 function inlineCell(columnIndex: number, rowNumber: number, value: string | number): string {
@@ -30,16 +36,57 @@ function rowXml(rowNumber: number, values: (string | number)[]): string {
   return `<row r="${rowNumber}">${cells}</row>`
 }
 
-/** GV100 row as GVAuszugQ Excel columns A–H (B = snapshot date, unused by parser). */
+/** GV100 row as GVAuszugQ Excel columns A–H, plus I–K merkmale when present. */
 export function gvRowToExcelValues(row: Gv100AdRow): (string | number)[] {
-  return [row.satzart, row.snapshotDateRaw, row.land, row.rb, row.kreis, row.vb, row.gem, row.name]
+  const identity: (string | number)[] = [
+    row.satzart,
+    row.snapshotDateRaw,
+    row.land,
+    row.rb,
+    row.kreis,
+    row.vb,
+    row.gem,
+    row.name,
+  ]
+  if (row.areaKm2 === undefined && row.populationTotal === undefined) return identity
+  return [...identity, row.areaKm2 ?? '', row.populationTotal ?? '', row.populationMale ?? '']
+}
+
+const MERKMALE_HEADER_ROWS: Record<number, (string | number)[]> = {
+  1: ['Gemeinden in Deutschland nach Fläche, Bevölkerung und Postleitzahl am 30.06.2026'],
+  3: [
+    'Satzart',
+    'Textkennzeichen',
+    'Amtlicher Regionalschlüssel (ARS)',
+    '',
+    '',
+    '',
+    '',
+    'Gemeindename',
+    'Fläche km2 1)',
+    'Bevölkerung auf Grundlage des Zensus 2022',
+  ],
+  4: ['', '', 'Land', 'RB', 'Kreis', 'VB', 'Gem', '', '', 'insgesamt', 'männlich'],
+  5: [
+    '',
+    '',
+    'Gebietsstand am 30.06.2026 (2. Quartal)',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '31.12.2024 (Jahr)',
+    '31.12.2024 (Jahr)',
+  ],
 }
 
 /** Minimal valid `.xlsx` for `parseGvAuszugXlsx` tests (no Destatis download). */
 export async function buildMinimalGvAuszugXlsx(dataRows: Gv100AdRow[]): Promise<Buffer> {
   const sheetRows: string[] = []
   for (let headerRow = 1; headerRow < 7; headerRow++) {
-    sheetRows.push(`<row r="${headerRow}"/>`)
+    const values = MERKMALE_HEADER_ROWS[headerRow]
+    sheetRows.push(values ? rowXml(headerRow, values) : `<row r="${headerRow}"/>`)
   }
   for (let i = 0; i < dataRows.length; i++) {
     sheetRows.push(rowXml(7 + i, gvRowToExcelValues(dataRows[i]!)))

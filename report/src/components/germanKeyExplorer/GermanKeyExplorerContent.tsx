@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { useId, useState } from 'react'
 import type { ArsSuccessorTable } from '../../../../scripts/shared/arsSuccessorTable.ts'
 import { lookupSuccessorForExplorerKey } from '../../../../scripts/shared/arsSuccessorTable.ts'
@@ -628,21 +629,34 @@ export function GermanKeyExplorerContent({
             </div>
           </section>
 
-          {agsForPortal ? (
+          {padded12.length === 12 || agsForPortal ? (
             <section className="space-y-2">
               <h2 className="text-base font-semibold text-slate-100">{t.linksTitle}</h2>
               <ul className="list-inside list-disc space-y-1 text-sm text-slate-300">
-                <li>
-                  <span className="text-slate-400">{t.linksDetailPage}: </span>
-                  <a
-                    href={statistikportalGemeindeUrl(agsForPortal)}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-                  >
-                    statistikportal.de/de/gemeindeverzeichnis/{agsForPortal}
-                  </a>
-                </li>
+                {padded12.length === 12 ? (
+                  <li>
+                    <Link
+                      to="/regional/$ars"
+                      params={{ ars: padded12 }}
+                      className="text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+                    >
+                      {t.linksRegionalHub}
+                    </Link>
+                  </li>
+                ) : null}
+                {agsForPortal ? (
+                  <li>
+                    <span className="text-slate-400">{t.linksDetailPage}: </span>
+                    <a
+                      href={statistikportalGemeindeUrl(agsForPortal)}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+                    >
+                      statistikportal.de/de/gemeindeverzeichnis/{agsForPortal}
+                    </a>
+                  </li>
+                ) : null}
               </ul>
             </section>
           ) : null}

@@ -27,28 +27,46 @@ export function PageBreadcrumb() {
               homeCurrent: false,
               items: [{ name: de.germanKeyExplorer.title, current: true }],
             }
-          : (() => {
-              const areaId = segs[0]
-              if (!areaId) return { homeCurrent: true, items: [] }
-              const areaLabel = areaDisplayNameForId(areaId)
-
-              if (segs.length === 1) {
-                return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
+          : segs[0] === 'tools' && segs[1] === 'regional' && segs[2] === 'sources'
+            ? {
+                homeCurrent: false,
+                items: [{ name: de.regionalHub.sourcesTitle, current: true }],
               }
-
-              if (segs[1] === 'feature' && segs[2]) {
-                const fk = segs[2]
-                return {
+            : segs[0] === 'regional' && segs[1]
+              ? {
                   homeCurrent: false,
                   items: [
-                    { name: areaLabel, to: `/${areaId}` },
-                    { name: shortFeatureKey(fk), current: true },
+                    { name: de.regionalHub.title, to: '/regional' },
+                    { name: segs[1], current: true },
                   ],
                 }
-              }
+              : segs[0] === 'regional'
+                ? {
+                    homeCurrent: false,
+                    items: [{ name: de.regionalHub.title, current: true }],
+                  }
+                : (() => {
+                    const areaId = segs[0]
+                    if (!areaId) return { homeCurrent: true, items: [] }
+                    const areaLabel = areaDisplayNameForId(areaId)
 
-              return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
-            })()
+                    if (segs.length === 1) {
+                      return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
+                    }
+
+                    if (segs[1] === 'feature' && segs[2]) {
+                      const fk = segs[2]
+                      return {
+                        homeCurrent: false,
+                        items: [
+                          { name: areaLabel, to: `/${areaId}` },
+                          { name: shortFeatureKey(fk), current: true },
+                        ],
+                      }
+                    }
+
+                    return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
+                  })()
 
   return (
     <AppBreadcrumb appTitle={de.appTitle} homeCurrent={crumbs.homeCurrent} items={crumbs.items} />

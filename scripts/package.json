@@ -6,6 +6,7 @@
     "compare": "bun run compare/compare-boundaries.ts",
     "german-key-lookup:update": "bun run report/generate-german-key-lookup.ts",
     "german-key-lookup:weekly": "bun run report/generate-german-key-lookup.ts --weekly",
+    "regional-hub:generate": "bun run report/generate-regional-hub.ts",
     "report:data-flow-sizes": "bun run data-flow-sizes/report.ts",
     "pipeline:nightly:download": "bun run pipeline/nightly.ts --phase download",
     "pipeline:nightly:extract": "bun run pipeline/nightly.ts --phase extract",

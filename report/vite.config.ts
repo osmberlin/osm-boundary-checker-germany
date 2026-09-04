@@ -1,4 +1,4 @@
-import { copyFileSync } from 'node:fs'
+import { copyFileSync, existsSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import babel from '@rolldown/plugin-babel'
@@ -29,6 +29,39 @@ function spaGithubPages404(): Plugin {
   }
 }
 
+/**
+ * Vite SPA fallback rewrites missing URLs to index.html (200). Optional runtime
+ * JSON under /data and /datasets must 404 instead so loaders can treat them as absent.
+ */
+function staticRuntimeNoSpaFallback(): Plugin {
+  return {
+    name: 'static-runtime-no-spa-fallback',
+    configureServer(server) {
+      const publicRoot = resolve(server.config.publicDir)
+      server.middlewares.use((req, res, next) => {
+        const pathname = decodeURIComponent((req.url ?? '').split('?')[0] ?? '')
+        if (!pathname.startsWith('/data/') && !pathname.startsWith('/datasets/')) {
+          next()
+          return
+        }
+        const filePath = resolve(publicRoot, pathname.slice(1))
+        if (filePath !== publicRoot && !filePath.startsWith(`${publicRoot}/`)) {
+          res.statusCode = 403
+          res.end('Forbidden')
+          return
+        }
+        if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+          res.statusCode = 404
+          res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+          res.end('Not found')
+          return
+        }
+        next()
+      })
+    },
+  }
+}
+
 export default defineConfig(({ command }) => ({
   // Production: custom domain root (https://grenzabgleich.osm-verkehrswende.org/). Dev: '/'.
   base: command === 'build' ? '/' : '/',
@@ -37,6 +70,7 @@ export default defineConfig(({ command }) => ({
     react(),
     babel({ presets: [reactCompilerPreset()] }),
     spaGithubPages404(),
+    staticRuntimeNoSpaFallback(),
   ],
   server: {
     port: 5174,
