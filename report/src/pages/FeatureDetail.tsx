@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from '@tanstack/react-router'
+import { useState } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { padRegional12 } from '../../../scripts/shared/regionalArs.ts'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
@@ -56,7 +57,8 @@ function FeatureDetailWithMapContext({
   mapViewParam: MapViewParam
   showCompareFailedNotice: boolean
 }) {
-  const { getLiveQueryBbox } = useLiveQueryBboxFromMap()
+  const [viewportEpoch, setViewportEpoch] = useState(0)
+  const { getLiveQueryBbox } = useLiveQueryBboxFromMap(viewportEpoch)
   const overpass = useFeatureDetailOverpass(featureLookupKey)
   const addrPostcode = useFeatureDetailOverpassAddrPostcode(featureLookupKey)
   const wfs = useFeatureDetailWfs({
@@ -99,6 +101,7 @@ function FeatureDetailWithMapContext({
           overpassGeojson={filteredLiveOverlays.overpassGeojson}
           addrPostcodeGeojson={filteredLiveOverlays.addrPostcodeGeojson}
           wfsGeojson={filteredLiveOverlays.wfsGeojson}
+          onViewportSettled={() => setViewportEpoch((n) => n + 1)}
         />
 
         <OfficialOnlyCandidatesSection

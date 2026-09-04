@@ -23,6 +23,7 @@ export function FeatureDetailMapSection({
   overpassGeojson,
   addrPostcodeGeojson,
   wfsGeojson,
+  onViewportSettled,
 }: {
   areaKey: string
   data: ComparisonForReport
@@ -35,6 +36,7 @@ export function FeatureDetailMapSection({
   overpassGeojson: OverpassGeoJsonFeatureCollection | null
   addrPostcodeGeojson: AddrPostcodeGeoJsonFeatureCollection | null
   wfsGeojson: GeoJSON.FeatureCollection | null
+  onViewportSettled?: () => void
 }) {
   const mapLayers = useComparisonMapLayers()
   const { showOnlySelected } = useFeatureDetailMapBoundaryScope()
@@ -69,6 +71,7 @@ export function FeatureDetailMapSection({
           detailMaxBounds={detailMaxBounds}
           hasMetrics={row.metrics != null}
           onOverlapPick={setOverlapPickKeys}
+          onViewportSettled={onViewportSettled}
         />
       </div>
       <MapOverlapPickDialog

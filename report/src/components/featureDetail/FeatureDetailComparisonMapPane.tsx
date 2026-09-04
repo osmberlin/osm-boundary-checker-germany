@@ -36,6 +36,7 @@ type Props = {
   detailMaxBounds: [[number, number], [number, number]] | undefined
   hasMetrics: boolean
   onOverlapPick: (keys: string[]) => void
+  onViewportSettled?: () => void
 }
 
 export function FeatureDetailComparisonMapPane({
@@ -51,6 +52,7 @@ export function FeatureDetailComparisonMapPane({
   detailMaxBounds,
   hasMetrics,
   onOverlapPick,
+  onViewportSettled,
 }: Props) {
   const navigate = useNavigate()
   const { showOfficial, showOsm, showDiff } = useComparisonMapLayers()
@@ -76,6 +78,7 @@ export function FeatureDetailComparisonMapPane({
               <MapPane
                 mapId={COMPARISON_MAP_ID}
                 mapMinZoom={data.filterConfigSummary.minZoom}
+                onViewportSettled={onViewportSettled}
                 sources={{
                   primary: {
                     pmtilesUrl: comparisonPmtilesMaplibreUrl(areaKey),

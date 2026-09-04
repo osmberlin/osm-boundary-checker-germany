@@ -93,6 +93,7 @@ export default function MapPane({
   overlays,
   mapId,
   mapMinZoom,
+  onViewportSettled,
 }: {
   sources: MapPaneSources
   view: MapPaneView
@@ -109,6 +110,8 @@ export default function MapPane({
    * `--minimum-zoom` when > 0; use `0` for no floor.
    */
   mapMinZoom: number
+  /** Feature detail: bump live WFS/Overpass bbox after load and every settled move. */
+  onViewportSettled?: () => void
 }) {
   const { primary, diff: diffSource, unmatched } = sources
   const { featureId, mapBbox, maxBounds, urlMapView, onMoveEndCommitUrl } = view
@@ -183,9 +186,12 @@ export default function MapPane({
     skipNextMoveEndCommitRef.current = overviewBoundsCamera
     ensureComparisonMapSprites(e.target)
     setIsStripePatternReady(true)
+    onViewportSettled?.()
   }
 
   function onMoveEnd(e: ViewStateChangeEvent) {
+    // Live-query bbox must bump even when we skip URL commit (first fitBounds moveend).
+    onViewportSettled?.()
     if (skipNextMoveEndCommitRef.current) {
       skipNextMoveEndCommitRef.current = false
       return
