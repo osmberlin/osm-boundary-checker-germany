@@ -36,7 +36,7 @@ export function parsePopulationNumber(raw: string | number | undefined | null): 
 
 export function numericOsmRelationId(raw: string | undefined): string | undefined {
   if (!raw) return undefined
-  const match = /(?:relation\/)?(\d+)/i.exec(raw.trim())
+  const match = /^(?:relation\/)?(\d+)$/i.exec(raw.trim())
   return match?.[1]
 }
 
@@ -64,9 +64,11 @@ export function regionalHubIssues(input: RegionalHubCompareInput): RegionalHubMi
   const issues: RegionalHubMismatchFlag[] = []
   const osmWd = input.osmWikidata?.trim()
   const wdQid = input.wdQid?.trim()
-  if (wdQid && !osmWd && p402Agrees(input.osmId, input.wdOsmRelationId)) {
-    issues.push('osm_wikidata')
-  } else if (wdQid && osmWd && normalizeQid(osmWd) !== normalizeQid(wdQid)) {
+  const osmRelationExists = Boolean(numericOsmRelationId(input.osmId))
+  const p402Ok = p402Agrees(input.osmId, input.wdOsmRelationId)
+  const missingOsmWikidata = Boolean(wdQid && !osmWd)
+  const qidMismatch = Boolean(wdQid && osmWd && normalizeQid(osmWd) !== normalizeQid(wdQid))
+  if (osmRelationExists && p402Ok && (missingOsmWikidata || qidMismatch)) {
     issues.push('osm_wikidata')
   }
 

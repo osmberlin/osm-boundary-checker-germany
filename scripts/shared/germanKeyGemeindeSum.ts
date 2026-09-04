@@ -1,9 +1,15 @@
 import type { GermanKeyGemeindeAttribute } from './germanKeyLookupPayload.ts'
+import type { GermanKeyLookupBundle } from './germanKeyLookupPayload.ts'
 
 function roundKm2(value: number): number {
   return Math.round(value * 100) / 100
 }
 
+/**
+ * Sum Fläche/EWZ for Gemeinden whose ARS starts with `prefix`.
+ * `attributes` is satzart-60 Gemeinden only — Land/Kreis/Verband keys are
+ * not in the map, so prefix totals do not double-count higher rows.
+ */
 export function sumGemeindeAttributesForPrefix(
   attributes: Record<string, GermanKeyGemeindeAttribute>,
   prefix: string,
@@ -36,4 +42,20 @@ export function sumGemeindeAttributesForPrefix(
     ...(hasPop ? { populationTotal } : {}),
     ...(hasMale ? { populationMale } : {}),
   }
+}
+
+/** Direct Gemeinde attributes, or Land/Kreis/Verband totals from member Gemeinden. */
+export function destatisAttributesForArs(
+  bundle: GermanKeyLookupBundle,
+  ars12: string,
+): GermanKeyGemeindeAttribute | null {
+  const attrs = bundle.latest.gemeindeAttributesByArs ?? {}
+  const direct = attrs[ars12]
+  if (direct && (direct.populationTotal !== undefined || direct.areaKm2 !== undefined)) {
+    return direct
+  }
+  if (ars12.endsWith('0000000000')) return sumGemeindeAttributesForPrefix(attrs, ars12.slice(0, 2))
+  if (ars12.endsWith('0000000')) return sumGemeindeAttributesForPrefix(attrs, ars12.slice(0, 5))
+  if (ars12.endsWith('000')) return sumGemeindeAttributesForPrefix(attrs, ars12.slice(0, 9))
+  return direct ?? null
 }

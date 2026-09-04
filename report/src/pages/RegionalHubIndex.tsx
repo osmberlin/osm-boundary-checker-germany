@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { useId, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
+import { padRegional12 } from '../../../scripts/shared/regionalArs.ts'
 import type { RegionalHubMismatchFlag } from '../../../scripts/shared/regionalHubPayload.ts'
 import { AlertNotice } from '../components/AlertNotice'
 import {
@@ -28,7 +29,6 @@ import {
   searchGermanKeyDisplayNames,
   type GermanKeyNameSearchHit,
 } from '../lib/germanKeyLookupBundle'
-import { padRegional12 } from '../lib/regionalHubDisplay'
 
 const t = de.regionalHub
 
@@ -65,7 +65,6 @@ export function RegionalHubIndex() {
   const [feedback, setFeedback] = useState<string | null>(null)
   const [pickHits, setPickHits] = useState<GermanKeyNameSearchHit[] | null>(null)
   const [filter, setFilter] = useState<'all' | 'action'>('all')
-  const [openLand, setOpenLand] = useState<string | null>(null)
 
   function goToArs(raw: string) {
     const ars = padRegional12(raw)
@@ -111,6 +110,7 @@ export function RegionalHubIndex() {
   const lands = bundle
     ? Object.entries(bundle.latest.bundeslaender).sort(([a], [b]) => a.localeCompare(b))
     : []
+  const rowsByLandCode = useMemo(() => (bundle ? hubRowsByLandCode(bundle) : {}), [bundle])
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-8 text-left sm:px-6 lg:px-8">
@@ -196,35 +196,16 @@ export function RegionalHubIndex() {
         </AlertNotice>
       ) : (
         <ul className="mt-4 space-y-2">
-          {lands.map(([code, name]) => {
-            const landArs = padRegional12(code) ?? `${code}0000000000`
-            return (
-              <li key={code} className="rounded-lg border border-slate-700 bg-slate-900/40">
-                <details
-                  className="group"
-                  open={openLand === code}
-                  onToggle={(ev) => {
-                    const el = ev.currentTarget
-                    setOpenLand(el.open ? code : openLand === code ? null : openLand)
-                  }}
-                >
-                  <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-100">
-                    <span className="font-mono text-xs text-slate-400">{code}</span> {name}
-                  </summary>
-                  {openLand === code && bundle ? (
-                    <LandChildren
-                      landCode={code}
-                      landArs={landArs}
-                      landName={name}
-                      bundle={bundle}
-                      flags={flags}
-                      filter={filter}
-                    />
-                  ) : null}
-                </details>
-              </li>
-            )
-          })}
+          {lands.map(([code, name]) => (
+            <LandAccordionItem
+              key={code}
+              code={code}
+              name={name}
+              rows={rowsByLandCode[code] ?? []}
+              flags={flags}
+              filter={filter}
+            />
+          ))}
         </ul>
       )}
 
@@ -271,39 +252,73 @@ export function RegionalHubIndex() {
   )
 }
 
-function LandChildren({
-  landCode,
-  landArs,
-  landName,
-  bundle,
+type HubBrowseRow = { ars: string; name: string }
+
+function hubRowsByLandCode(bundle: GermanKeyLookupBundle): Record<string, HubBrowseRow[]> {
+  const byCode: Record<string, HubBrowseRow[]> = {}
+  for (const [landCode, landName] of Object.entries(bundle.latest.bundeslaender)) {
+    const landArs = padRegional12(landCode) ?? `${landCode}0000000000`
+    byCode[landCode] = [{ ars: landArs, name: landName }]
+  }
+  for (const [key, name] of Object.entries(bundle.latest.kreise)) {
+    const list = byCode[key.slice(0, 2)]
+    if (!list) continue
+    const ars = padRegional12(key)
+    if (ars) list.push({ ars, name })
+  }
+  for (const [ars, name] of Object.entries(bundle.latest.gemeindenByArs)) {
+    const list = byCode[ars.slice(0, 2)]
+    if (!list) continue
+    list.push({ ars, name })
+  }
+  const uniqueByCode: Record<string, HubBrowseRow[]> = {}
+  for (const [code, rows] of Object.entries(byCode)) {
+    const seen = new Set<string>()
+    uniqueByCode[code] = rows.filter((row) => {
+      if (seen.has(row.ars)) return false
+      seen.add(row.ars)
+      return true
+    })
+  }
+  return uniqueByCode
+}
+
+function LandAccordionItem({
+  code,
+  name,
+  rows,
   flags,
   filter,
 }: {
-  landCode: string
-  landArs: string
-  landName: string
-  bundle: GermanKeyLookupBundle
+  code: string
+  name: string
+  rows: HubBrowseRow[]
   flags: Record<string, RegionalHubMismatchFlag>
   filter: 'all' | 'action'
 }) {
-  const rows: { ars: string; name: string }[] = [{ ars: landArs, name: landName }]
-  for (const [key, name] of Object.entries(bundle.latest.kreise)) {
-    if (!key.startsWith(landCode)) continue
-    const ars = padRegional12(key)
-    if (ars) rows.push({ ars, name })
-  }
-  for (const [ars, name] of Object.entries(bundle.latest.gemeindenByArs)) {
-    if (!ars.startsWith(landCode)) continue
-    rows.push({ ars, name })
-  }
-  const seen = new Set<string>()
-  const unique = rows.filter((row) => {
-    if (seen.has(row.ars)) return false
-    seen.add(row.ars)
-    return true
-  })
-  const visible =
-    filter === 'action' ? unique.filter((row) => flags[row.ars] !== undefined) : unique
+  const [open, setOpen] = useState(false)
+  return (
+    <li className="rounded-lg border border-slate-700 bg-slate-900/40">
+      <details className="group" onToggle={(ev) => setOpen(ev.currentTarget.open)}>
+        <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-slate-100">
+          <span className="font-mono text-xs text-slate-400">{code}</span> {name}
+        </summary>
+        {open ? <LandChildren rows={rows} flags={flags} filter={filter} /> : null}
+      </details>
+    </li>
+  )
+}
+
+function LandChildren({
+  rows,
+  flags,
+  filter,
+}: {
+  rows: HubBrowseRow[]
+  flags: Record<string, RegionalHubMismatchFlag>
+  filter: 'all' | 'action'
+}) {
+  const visible = filter === 'action' ? rows.filter((row) => flags[row.ars] !== undefined) : rows
   if (visible.length === 0) {
     return <p className="px-4 pb-4 text-sm text-slate-500">{t.emptyBrowse}</p>
   }

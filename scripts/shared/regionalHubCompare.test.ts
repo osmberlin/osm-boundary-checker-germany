@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { parsePopulationNumber, primaryRegionalHubIssue } from '../shared/regionalHubCompare.ts'
+import {
+  numericOsmRelationId,
+  parsePopulationNumber,
+  primaryRegionalHubIssue,
+} from '../shared/regionalHubCompare.ts'
 
 describe('primaryRegionalHubIssue', () => {
   test('prefers adding OSM wikidata when P1388 is unique and P402 agrees', () => {
@@ -26,6 +30,45 @@ describe('primaryRegionalHubIssue', () => {
         destatisDate: '2024-12-31',
       }),
     ).toBe('osm_population')
+  })
+
+  test('does not suggest OSM wikidata when OSM has no relation', () => {
+    expect(
+      primaryRegionalHubIssue({
+        destatisPop: 74113,
+        destatisDate: '2024-12-31',
+        wdQid: 'Q3931',
+        wdOsmRelationId: '62470',
+      }),
+    ).toBe('osm_population')
+  })
+
+  test('does not suggest OSM wikidata on QID mismatch when P402 disagrees', () => {
+    expect(
+      primaryRegionalHubIssue({
+        destatisPop: 74113,
+        destatisDate: '2024-12-31',
+        osmId: 'relation/111',
+        osmWikidata: 'Q9999',
+        wdQid: 'Q3931',
+        wdOsmRelationId: '62470',
+      }),
+    ).toBe('osm_population')
+  })
+
+  test('suggests OSM wikidata on QID mismatch when P402 agrees', () => {
+    expect(
+      primaryRegionalHubIssue({
+        destatisPop: 74113,
+        destatisDate: '2024-12-31',
+        osmId: 'relation/62470',
+        osmWikidata: 'Q9999',
+        wdQid: 'Q3931',
+        wdOsmRelationId: '62470',
+        wdPop: 73921,
+        wdDate: '2023-12-31',
+      }),
+    ).toBe('osm_wikidata')
   })
 
   test('asks for OSM population when Destatis is newer', () => {
@@ -79,5 +122,11 @@ describe('primaryRegionalHubIssue', () => {
   test('parsePopulationNumber strips grouping characters', () => {
     expect(parsePopulationNumber('74.113')).toBe(74113)
     expect(parsePopulationNumber('74,113')).toBe(74113)
+  })
+
+  test('numericOsmRelationId ignores ways and requires a relation id', () => {
+    expect(numericOsmRelationId('relation/62470')).toBe('62470')
+    expect(numericOsmRelationId('62470')).toBe('62470')
+    expect(numericOsmRelationId('way/62470')).toBeUndefined()
   })
 })

@@ -101,6 +101,12 @@ export function shouldSkipWikidataFetch(
 ): boolean {
   if (force || !existing?.generatedAt) return false
   if (existing.queryHash !== queryHash) return false
+  if (
+    existing.skipReason === 'wikidata_last_good_fallback' ||
+    existing.skipReason === 'wikidata_fetch_failed'
+  ) {
+    return false
+  }
   const generatedMs = Date.parse(existing.generatedAt)
   if (!Number.isFinite(generatedMs)) return false
   return nowMs - generatedMs < SKIP_MS
@@ -164,7 +170,17 @@ export async function fetchWikidataRegionalDump(options: {
           sparqlError: String(splitError),
         }
       }
-      throw splitError
+      return regionalHubWikidataFileSchema.parse({
+        generatedAt: now.toISOString(),
+        queryHash,
+        durationMs: Date.now() - started,
+        rowCount: 0,
+        duplicateArsCount: 0,
+        byArs: {},
+        skipped: true,
+        skipReason: 'wikidata_fetch_failed',
+        sparqlError: String(splitError),
+      })
     }
   }
 }

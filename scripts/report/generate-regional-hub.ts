@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadFeatureCollection } from '../compare/lib/loadFeatureCollection.ts'
-import { sumGemeindeAttributesForPrefix } from '../shared/germanKeyGemeindeSum.ts'
+import { destatisAttributesForArs } from '../shared/germanKeyGemeindeSum.ts'
 import {
   germanKeyLookupBundleSchema,
   type GermanKeyLookupBundle,
@@ -21,7 +21,7 @@ import {
 } from '../shared/regionalHubPayload.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
-import { sharedAdminFgbPath } from './emitRegionalOsmTags.ts'
+import { regionalOsmTagsCachePath, sharedAdminFgbPath } from './emitRegionalOsmTags.ts'
 import { fetchWikidataRegionalDump } from './fetchWikidataRegional.ts'
 import { collectRegionalOsmTags } from './regionalOsmTags.ts'
 
@@ -62,25 +62,6 @@ function writeNamed(dirs: string[], basename: string, payload: unknown): void {
   }
 }
 
-function destatisPopForArs(
-  bundle: GermanKeyLookupBundle,
-  ars12: string,
-): { populationTotal?: number; areaKm2?: number } {
-  const attrs = bundle.latest.gemeindeAttributesByArs ?? {}
-  const direct = attrs[ars12]
-  if (direct?.populationTotal !== undefined || direct?.areaKm2 !== undefined) return direct
-  if (ars12.endsWith('0000000000')) {
-    return sumGemeindeAttributesForPrefix(attrs, ars12.slice(0, 2)) ?? {}
-  }
-  if (ars12.endsWith('0000000')) {
-    return sumGemeindeAttributesForPrefix(attrs, ars12.slice(0, 5)) ?? {}
-  }
-  if (ars12.endsWith('000')) {
-    return sumGemeindeAttributesForPrefix(attrs, ars12.slice(0, 9)) ?? {}
-  }
-  return {}
-}
-
 function collectHubArsKeys(
   bundle: GermanKeyLookupBundle,
   osm: RegionalHubOsmTagsFile,
@@ -110,7 +91,7 @@ function buildMismatchFlags(
   const destatisDate = bundle.latest.populationDate
   const byArs: RegionalHubMismatchFlagsFile['byArs'] = {}
   for (const ars of collectHubArsKeys(bundle, osm, wikidata)) {
-    const destatis = destatisPopForArs(bundle, ars)
+    const destatis = destatisAttributesForArs(bundle, ars) ?? {}
     const osmTag = osm.byArs[ars]
     const wd = wikidata.byArs[ars]
     const flag = primaryRegionalHubIssue({
@@ -134,21 +115,34 @@ async function loadOsmTags(
   runtimeRoot: string,
   existing: RegionalHubOsmTagsFile | null,
 ): Promise<RegionalHubOsmTagsFile> {
-  const fgbPath = sharedAdminFgbPath(runtimeRoot)
-  if (!existsSync(fgbPath)) {
-    if (existing) {
-      logLine('OSM FGB missing; keeping last-good tags', { path: fgbPath })
-      return { ...existing, generatedAt: existing.generatedAt }
+  const sidecarPath = regionalOsmTagsCachePath(runtimeRoot)
+  const sidecarRaw = readJsonIfExists(sidecarPath)
+  if (sidecarRaw !== null) {
+    const parsed = regionalHubOsmTagsFileSchema.safeParse(sidecarRaw)
+    if (parsed.success) {
+      logLine('using OSM tags sidecar', { path: sidecarPath })
+      return parsed.data
     }
-    return regionalHubOsmTagsFileSchema.parse({
-      generatedAt: new Date().toISOString(),
-      featureCount: 0,
-      byArs: {},
-    })
+    logLine('OSM tags sidecar invalid; ignoring', { path: sidecarPath })
   }
-  logLine('reading OSM admin FGB', { path: fgbPath })
-  const collection = await loadFeatureCollection(fgbPath)
-  return collectRegionalOsmTags(collection)
+
+  const fgbPath = sharedAdminFgbPath(runtimeRoot)
+  if (existsSync(fgbPath)) {
+    logLine('reading OSM admin FGB', { path: fgbPath })
+    const collection = await loadFeatureCollection(fgbPath)
+    return collectRegionalOsmTags(collection)
+  }
+
+  if (existing) {
+    logLine('OSM FGB missing; keeping last-good tags', { path: fgbPath })
+    return { ...existing, generatedAt: existing.generatedAt }
+  }
+
+  return regionalHubOsmTagsFileSchema.parse({
+    generatedAt: new Date().toISOString(),
+    featureCount: 0,
+    byArs: {},
+  })
 }
 
 function loadLookup(workspaceRoot: string): GermanKeyLookupBundle {
@@ -197,7 +191,7 @@ async function main(): Promise<void> {
   logLine('mismatch flags', { count: Object.keys(mismatch.byArs).length })
 
   const sampleArs = '120510000000'
-  const sample = destatisPopForArs(bundle, sampleArs)
+  const sample = destatisAttributesForArs(bundle, sampleArs) ?? {}
   const manifest: RegionalHubManifest = regionalHubManifestSchema.parse({
     generatedAt,
     destatis: {

@@ -210,5 +210,3 @@ export function rowsToGemeindeAttributes(rows: Gv100AdRow[]): Record<string, Gem
     [...out.entries()].sort(([a], [b]) => a.localeCompare(b, 'de', { numeric: true })),
   )
 }
-
-export { sumGemeindeAttributesForPrefix } from '../shared/germanKeyGemeindeSum.ts'

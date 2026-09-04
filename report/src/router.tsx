@@ -7,6 +7,7 @@ import {
   redirect,
   useParams,
 } from '@tanstack/react-router'
+import { padRegional12 } from '../../scripts/shared/regionalArs.ts'
 import { ReportLayout } from './App'
 import { RouteLoadingPane } from './components/RouteLoadingPane'
 import { areasIndex } from './data/areasIndex'
@@ -30,7 +31,6 @@ import {
   FEATURE_DETAIL_ROUTE_FROM,
   parseFeatureDetailRouteParams,
 } from './lib/parseFeatureDetailRouteParams'
-import { padRegional12 } from './lib/regionalHubDisplay'
 import { decideRelationResolution, type RelationResolverCandidate } from './lib/relationResolver'
 import { validateRelationResolverSearch } from './lib/relationResolverSearch'
 import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLookups'
@@ -83,6 +83,11 @@ function FeaturePendingPane() {
   const { featureKey } = useParams({ from: FEATURE_DETAIL_ROUTE_FROM })
   const decoded = safeDecodeURIComponent(featureKey)
   return <RouteLoadingPane title={de.routeLoading.feature(decoded)} />
+}
+
+function RegionalHubDetailPendingPane() {
+  const { ars } = useParams({ from: '/regional/$ars' })
+  return <RouteLoadingPane title={de.routeLoading.regionalHubDetail(ars)} />
 }
 
 const socialImageUrl = socialSharingImageAbsoluteUrl()
@@ -149,7 +154,10 @@ const germanKeyExplorerRoute = createRoute({
 
 function parseRegionalArsParams(params: { ars: string }): { ars: string } {
   const padded = padRegional12(params.ars)
-  return { ars: padded ?? params.ars.replace(/\D/g, '') }
+  if (!padded || padded.length !== 12) {
+    throw redirect({ to: '/regional' })
+  }
+  return { ars: padded }
 }
 
 const regionalHubIndexRoute = createRoute({
@@ -185,9 +193,7 @@ const regionalHubDetailRoute = createRoute({
       context.queryClient.ensureQueryData(arsSuccessorsQueryOptions()),
     ])
   },
-  pendingComponent: () => {
-    return <RouteLoadingPane title={de.routeLoading.regionalHub} />
-  },
+  pendingComponent: RegionalHubDetailPendingPane,
   head: ({ params }) => ({
     meta: [
       { title: `${params.ars} | ${de.regionalHub.metaTitle} | ${de.appTitle}` },

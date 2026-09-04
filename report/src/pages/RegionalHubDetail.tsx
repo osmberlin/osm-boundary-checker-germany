@@ -2,8 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from '@tanstack/react-router'
 import { useState } from 'react'
 import { lookupSuccessorForExplorerKey } from '../../../scripts/shared/arsSuccessorTable.ts'
+import { destatisAttributesForArs } from '../../../scripts/shared/germanKeyGemeindeSum.ts'
 import { geometryAreaIdForArs } from '../../../scripts/shared/regionalArs.ts'
-import { numericOsmRelationId } from '../../../scripts/shared/regionalHubCompare.ts'
+import {
+  numericOsmRelationId,
+  regionalHubIssues,
+} from '../../../scripts/shared/regionalHubCompare.ts'
 import type { RegionalHubMismatchFlag } from '../../../scripts/shared/regionalHubPayload.ts'
 import { AlertNotice } from '../components/AlertNotice'
 import { sharedButtonClass } from '../components/sharedButtonStyles'
@@ -20,23 +24,14 @@ import { EM_DASH, formatDeInteger } from '../lib/formatDe'
 import { formatSnapshotDateLabelDe } from '../lib/formatSourceDownloadedAt'
 import { ags8FromArs12Digits, statistikportalGemeindeUrl } from '../lib/germanKeyExplorer'
 import { resolveGemeindeNameByArs } from '../lib/germanKeyLookupBundle'
-import {
-  buildJosmLoadRelationUrl,
-  buildOpenStreetMapIdRelationEditUrl,
-} from '../lib/osmEditorLinks'
 import { DEFAULT_OVERPASS_INTERPRETER_URL } from '../lib/overpassServers'
+import { primaryCta, secondaryActions } from '../lib/regionalHubActions'
 import {
-  destatisAttributesForArs,
   displayNameForArs,
   hubCompareInputForArs,
   newestPopulationSource,
-  regionalHubIssues,
 } from '../lib/regionalHubDisplay'
-import {
-  destatisPopulationQuickStatementsUrl,
-  osmRelationP402QuickStatementsUrl,
-  wikidataItemUrl,
-} from '../lib/regionalHubQuickStatements'
+import { wikidataItemUrl } from '../lib/regionalHubQuickStatements'
 
 const t = de.regionalHub
 const linkClass =
@@ -160,34 +155,39 @@ export function RegionalHubDetail() {
             </p>
           ) : null}
         </AlertNotice>
-      ) : destatis?.populationTotal === undefined ? (
-        <div className="rounded-md border border-slate-600 bg-slate-800/40 p-4 text-sm text-slate-300">
-          {t.noOfficialPopulation}
-        </div>
-      ) : primary == null ? (
-        <div className="rounded-md border border-slate-600 bg-slate-800/40 p-4 text-sm text-slate-300">
-          {t.verdictOk}
-        </div>
       ) : (
-        <AlertNotice>
-          <ul className="list-inside list-disc space-y-1">
-            {issues.map((flag) => (
-              <li key={flag}>
-                {verdictCopy(flag, flag === 'osm_wikidata' && Boolean(osm?.wikidata))}
-              </li>
-            ))}
-          </ul>
-          {primaryCta({
-            primary,
-            osmWikidataMismatch: Boolean(osm?.wikidata),
-            relationId,
-            destatisPop: destatis?.populationTotal,
-            destatisDate: bundle?.latest.populationDate,
-            wdQid: wd?.qid,
-            sourceUrl: bundle?.latest.sourcePublicUrl ?? '',
-            retrievedIso: manifestQuery.data?.generatedAt ?? new Date().toISOString(),
-          })}
-        </AlertNotice>
+        <div className="space-y-3">
+          {destatis?.populationTotal === undefined ? (
+            <div className="rounded-md border border-slate-600 bg-slate-800/40 p-4 text-sm text-slate-300">
+              {t.noOfficialPopulation}
+            </div>
+          ) : null}
+          {issues.length > 0 && primary != null ? (
+            <AlertNotice>
+              <ul className="list-inside list-disc space-y-1">
+                {issues.map((flag) => (
+                  <li key={flag}>
+                    {verdictCopy(flag, flag === 'osm_wikidata' && Boolean(osm?.wikidata))}
+                  </li>
+                ))}
+              </ul>
+              {primaryCta({
+                primary,
+                osmWikidataMismatch: Boolean(osm?.wikidata),
+                relationId,
+                destatisPop: destatis?.populationTotal,
+                destatisDate: bundle?.latest.populationDate,
+                wdQid: wd?.qid,
+                sourceUrl: bundle?.latest.sourcePublicUrl ?? '',
+                retrievedIso: manifestQuery.data?.generatedAt ?? new Date().toISOString(),
+              })}
+            </AlertNotice>
+          ) : destatis?.populationTotal !== undefined ? (
+            <div className="rounded-md border border-slate-600 bg-slate-800/40 p-4 text-sm text-slate-300">
+              {t.verdictOk}
+            </div>
+          ) : null}
+        </div>
       )}
 
       <div className="mt-8 overflow-x-auto rounded-lg border border-slate-700">
@@ -322,152 +322,4 @@ function LatestChip() {
 
 function formatPop(n: number | undefined): string {
   return n == null ? EM_DASH : formatDeInteger(n)
-}
-
-function primaryCta(input: {
-  primary: RegionalHubMismatchFlag
-  osmWikidataMismatch: boolean
-  relationId: string | undefined
-  destatisPop: number | undefined
-  destatisDate: string | undefined
-  wdQid: string | undefined
-  sourceUrl: string
-  retrievedIso: string
-}) {
-  const label =
-    input.primary === 'osm_wikidata' && input.osmWikidataMismatch
-      ? t.ctaOsmWikidataCheck
-      : input.primary === 'osm_wikidata'
-        ? t.ctaOsmWikidata
-        : input.primary === 'osm_population'
-          ? t.ctaOsmPopulation
-          : input.primary === 'wikidata_population'
-            ? t.ctaWikidataPopulation
-            : t.ctaWikidataP402
-  const href = hrefForIssue(input.primary, input)
-  if (!href) return null
-  return (
-    <p className="mt-3">
-      <a href={href} className={sharedButtonClass} target="_blank" rel="noreferrer noopener">
-        {label}
-      </a>
-    </p>
-  )
-}
-
-function hrefForIssue(
-  flag: RegionalHubMismatchFlag,
-  input: {
-    relationId: string | undefined
-    destatisPop: number | undefined
-    destatisDate: string | undefined
-    wdQid: string | undefined
-    sourceUrl: string
-    retrievedIso: string
-  },
-): string | null {
-  const rel = input.relationId ? Number(input.relationId) : null
-  if (flag === 'osm_wikidata' || flag === 'osm_population') {
-    if (rel == null) return null
-    const addTags: Record<string, string> = {}
-    if (flag === 'osm_wikidata' && input.wdQid) addTags.wikidata = input.wdQid
-    if (flag === 'osm_population' && input.destatisPop != null && input.destatisDate) {
-      addTags.population = String(input.destatisPop)
-      addTags['population:date'] = input.destatisDate.slice(0, 10)
-    }
-    return buildOpenStreetMapIdRelationEditUrl({ relationId: rel, addTags })
-  }
-  if (
-    flag === 'wikidata_population' &&
-    input.wdQid &&
-    input.destatisPop != null &&
-    input.destatisDate
-  ) {
-    return destatisPopulationQuickStatementsUrl({
-      qid: input.wdQid,
-      population: input.destatisPop,
-      pointInTimeIso: input.destatisDate,
-      sourceUrl: input.sourceUrl,
-      retrievedIso: input.retrievedIso,
-    })
-  }
-  if (flag === 'wikidata_p402' && input.wdQid && input.relationId) {
-    return osmRelationP402QuickStatementsUrl(input.wdQid, input.relationId)
-  }
-  return input.wdQid
-    ? wikidataItemUrl(input.wdQid, flag === 'wikidata_p402' ? 'P402' : 'P1082')
-    : null
-}
-
-function secondaryActions(input: {
-  issues: RegionalHubMismatchFlag[]
-  primary: RegionalHubMismatchFlag | null
-  relationId: string | undefined
-  destatisPop: number | undefined
-  destatisDate: string | undefined
-  wdQid: string | undefined
-  sourceUrl: string
-  retrievedIso: string
-  osmWikidata: string | undefined
-}) {
-  const secondary = input.issues.filter((flag) => flag !== input.primary)
-  const rel = input.relationId ? Number(input.relationId) : null
-  return (
-    <>
-      {rel != null ? (
-        <p className="text-xs text-slate-500">
-          {input.wdQid ? t.helperOsmWikidata(input.wdQid) : null}
-          {input.destatisPop != null && input.destatisDate
-            ? ` ${t.helperOsmPopulation(String(input.destatisPop), input.destatisDate.slice(0, 10))}`
-            : null}
-        </p>
-      ) : null}
-      {secondary.map((flag) => {
-        const href = hrefForIssue(flag, input)
-        if (!href) return null
-        const label =
-          flag === 'osm_wikidata'
-            ? input.osmWikidata
-              ? t.ctaOsmWikidataCheck
-              : t.ctaOsmWikidata
-            : flag === 'osm_population'
-              ? t.ctaOsmPopulation
-              : flag === 'wikidata_population'
-                ? t.ctaWikidataPopulation
-                : t.ctaWikidataP402
-        return (
-          <a
-            key={flag}
-            href={href}
-            className="text-sm text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            {label}
-          </a>
-        )
-      })}
-      {input.primary === 'wikidata_population' || input.issues.includes('wikidata_population') ? (
-        <p className="text-xs text-slate-500">{t.qsReviewHint}</p>
-      ) : null}
-      {rel != null ? (
-        <a
-          href={buildJosmLoadRelationUrl({ relationId: rel })}
-          className="text-sm text-slate-400 underline decoration-slate-700 underline-offset-2"
-        >
-          {t.josmEdit}
-        </a>
-      ) : null}
-      {input.wdQid ? (
-        <a
-          href={wikidataItemUrl(input.wdQid)}
-          className={linkClass}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t.qsOpenItem}
-        </a>
-      ) : null}
-    </>
-  )
 }
