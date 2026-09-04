@@ -4,6 +4,10 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-09
 
+### `253b37c`
+
+Im Gemeinde-Abgleich erscheint eine korrekt mit Regionalschlüssel getaggte Fläche nicht mehr als „nur amtlich“, nur weil die OSM-Geometrie von der amtlichen Fläche abgewandert ist. Beispiel: Insel Lütje Hörn in Niedersachsen — OSM kartiert die wandernde Sandbank, VG25 die katasterliche Verwaltungsgrenze; der Abgleich zeigt das als Zuordnung mit Geometrieunterschied.
+
 ### `4cb0939`
 
 Wenn der amtliche VG25-Stand noch den Regionalschlüssel vom Jahresende enthält, Destatis und OSM aber schon den neuen, zeigt der Abgleich das als Geometrie-Match mit Hinweis — nicht als zwei Lücken. Beispiele: Bönebüttel, Schmölln, Hanau. Auf der Detailseite stehen alter und aktueller Schlüssel mit Datenständen und Links zum Schlüssel-Explorer. Der Text fordert nicht mehr, den alten Schlüssel nach OSM zu schreiben.
