@@ -352,7 +352,7 @@ export function candidatesFgbPathForProfile(
   runtimeRoot: string,
   config: BoundaryConfig,
 ): string | null {
-  const profileId = config.osm.profileId as OsmProfileId
+  const profileId = config.osm.profileId
   const basename =
     profileId === 'postal_code'
       ? GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME

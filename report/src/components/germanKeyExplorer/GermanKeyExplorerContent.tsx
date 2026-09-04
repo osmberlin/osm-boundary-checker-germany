@@ -318,7 +318,7 @@ export function GermanKeyExplorerContent({
       ? resolveGemeindeNameByAgs(bundle, ags8From12)
       : d.length === 8
         ? resolveGemeindeNameByAgs(bundle, d)
-        : { value: null as string | null }
+        : { value: null }
 
   const obsoleteMetaFields = [
     ...(segmentCells ? Object.values(segmentCells) : []),
@@ -338,7 +338,7 @@ export function GermanKeyExplorerContent({
     },
     {
       value: ags8From12 ?? '—',
-      valueSuffix: null as string | null,
+      valueSuffix: null,
       osmKey: 'de:amtlicher_gemeindeschluessel',
       bkgKey: 'AGS',
       length: '8',

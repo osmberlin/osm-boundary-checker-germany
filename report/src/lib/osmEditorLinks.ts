@@ -64,7 +64,7 @@ export function buildOpenStreetMapIdEditUrl(
 export function buildOpenStreetMapIdRelationEditUrl(input: {
   relationId: number
   addTags?: Record<string, string>
-}): string {
+}) {
   const url = new URL(OSM_ID_EDITOR)
   const hash = new URLSearchParams()
   hash.set('id', `r${input.relationId}`)
@@ -85,7 +85,7 @@ export function buildOpenStreetMapIdRelationEditUrl(input: {
 export function buildJosmLoadRelationUrl(input: {
   relationId: number
   addTags?: Record<string, string>
-}): string {
+}) {
   const params = new URLSearchParams({
     relation_members: 'true',
     objects: `r${input.relationId}`,

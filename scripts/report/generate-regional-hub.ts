@@ -44,17 +44,18 @@ function logLine(
   console.log(suffix ? `[regional-hub] ${message} ${suffix}` : `[regional-hub] ${message}`)
 }
 
-function readJsonIfExists(path: string): unknown | null {
+function readJsonIfExists(path: string) {
   if (!existsSync(path)) return null
   try {
-    return JSON.parse(readFileSync(path, 'utf8')) as unknown
+    const raw: unknown = JSON.parse(readFileSync(path, 'utf8'))
+    return raw
   } catch (error) {
     logLine('existing JSON unreadable', { path, detail: String(error) })
     return null
   }
 }
 
-function writeNamed(dirs: string[], basename: string, payload: unknown): void {
+function writeNamed(dirs: string[], basename: string, payload: unknown) {
   const text = `${JSON.stringify(payload)}\n`
   for (const dir of dirs) {
     mkdirSync(dir, { recursive: true })
@@ -66,7 +67,7 @@ function collectHubArsKeys(
   bundle: GermanKeyLookupBundle,
   osm: RegionalHubOsmTagsFile,
   wikidata: RegionalHubWikidataFile,
-): string[] {
+) {
   const keys = new Set<string>()
   for (const ars of Object.keys(bundle.latest.gemeindenByArs)) keys.add(ars)
   for (const land of Object.keys(bundle.latest.bundeslaender)) {
@@ -87,7 +88,7 @@ function buildMismatchFlags(
   osm: RegionalHubOsmTagsFile,
   wikidata: RegionalHubWikidataFile,
   generatedAt: string,
-): RegionalHubMismatchFlagsFile {
+) {
   const destatisDate = bundle.latest.populationDate
   const byArs: RegionalHubMismatchFlagsFile['byArs'] = {}
   for (const ars of collectHubArsKeys(bundle, osm, wikidata)) {
@@ -111,10 +112,7 @@ function buildMismatchFlags(
   return regionalHubMismatchFlagsFileSchema.parse({ generatedAt, byArs })
 }
 
-async function loadOsmTags(
-  runtimeRoot: string,
-  existing: RegionalHubOsmTagsFile | null,
-): Promise<RegionalHubOsmTagsFile> {
+async function loadOsmTags(runtimeRoot: string, existing: RegionalHubOsmTagsFile | null) {
   const sidecarPath = regionalOsmTagsCachePath(runtimeRoot)
   const sidecarRaw = readJsonIfExists(sidecarPath)
   if (sidecarRaw !== null) {
@@ -145,7 +143,7 @@ async function loadOsmTags(
   })
 }
 
-function loadLookup(workspaceRoot: string): GermanKeyLookupBundle {
+function loadLookup(workspaceRoot: string) {
   const path = join(workspaceRoot, LOOKUP_REL)
   const raw = readJsonIfExists(path)
   if (!raw) {
@@ -154,7 +152,7 @@ function loadLookup(workspaceRoot: string): GermanKeyLookupBundle {
   return germanKeyLookupBundleSchema.parse(raw)
 }
 
-async function main(): Promise<void> {
+async function main() {
   const { force } = parseArgs(process.argv.slice(2))
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)

@@ -83,7 +83,7 @@ const wfsGeoJsonFeatureCollectionSchema = z.object({
       type: z.literal('Feature'),
       id: z.union([z.string(), z.number()]).optional(),
       properties: z.record(z.string(), z.unknown()).nullable(),
-      geometry: z.unknown().nullable(),
+      geometry: z.custom<GeoJSON.Geometry>().nullable(),
     }),
   ),
 })
@@ -201,7 +201,7 @@ function parseGeoJsonFeatureCollection(text: string): WfsFeature[] | null {
     return parsed.data.features.map((feature) => ({
       id: feature.id,
       properties: feature.properties ?? null,
-      geometry: (feature.geometry ?? null) as GeoJSON.Geometry | null,
+      geometry: feature.geometry ?? null,
     }))
   } catch {
     return null

@@ -40,16 +40,16 @@ const t = de.regionalHub
 const linkClass =
   'text-sm text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 
-function formatDate(raw: string | undefined): string | null {
+function formatDate(raw: string | undefined) {
   if (!raw) return null
   return formatSnapshotDateLabelDe(raw.slice(0, 10)) || raw
 }
 
-function hubTdClass(tone: HubCellTone): string {
+function hubTdClass(tone: HubCellTone) {
   return cn('px-3 py-2', tone === 'ok' && 'bg-emerald-500/15', tone === 'bad' && 'bg-amber-500/10')
 }
 
-function hubTdTitle(tone: HubCellTone, title?: string): string | undefined {
+function hubTdTitle(tone: HubCellTone, title?: string) {
   return (
     title ?? (tone === 'ok' ? t.cellToneOkTitle : tone === 'bad' ? t.cellToneBadTitle : undefined)
   )
@@ -64,25 +64,26 @@ function HubEmpty({
   title?: string
   label?: string
 }) {
-  if (kind === 'na') {
-    return (
-      <abbr className="cursor-help text-slate-600 no-underline" title={title ?? t.cellNaTitle}>
-        {label ?? t.cellNa}
-      </abbr>
-    )
+  switch (kind) {
+    case 'na':
+      return (
+        <abbr className="cursor-help text-slate-600 no-underline" title={title ?? t.cellNaTitle}>
+          {label ?? t.cellNa}
+        </abbr>
+      )
+    case 'optional':
+      return (
+        <span className="text-slate-500" title={title ?? t.cellOptionalTitle}>
+          {label ?? t.missingValue}
+        </span>
+      )
+    case 'missing':
+      return (
+        <span className="text-amber-200/90" title={title ?? t.cellMissingTitle}>
+          {label ?? t.cellMissing}
+        </span>
+      )
   }
-  if (kind === 'optional') {
-    return (
-      <span className="text-slate-500" title={title ?? t.cellOptionalTitle}>
-        {label ?? t.missingValue}
-      </span>
-    )
-  }
-  return (
-    <span className="text-amber-200/90" title={title ?? t.cellMissingTitle}>
-      {label ?? t.cellMissing}
-    </span>
-  )
 }
 
 function WikidataQidLink({ raw }: { raw: string }) {
@@ -95,7 +96,7 @@ function WikidataQidLink({ raw }: { raw: string }) {
   )
 }
 
-function verdictCopy(flag: RegionalHubMismatchFlag, mismatch: boolean): string {
+function verdictCopy(flag: RegionalHubMismatchFlag, mismatch: boolean) {
   switch (flag) {
     case 'osm_wikidata':
       return mismatch ? t.verdictOsmWikidataMismatch : t.verdictOsmWikidataMissing

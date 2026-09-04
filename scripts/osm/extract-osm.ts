@@ -115,14 +115,20 @@ function sortKinds(kinds: ExtractKind[]): ExtractKind[] {
 function mergeTagsFilterExpressions(workspaceRoot: string, kinds: ExtractKind[]): string[] {
   const merged = new Set<string>(DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS)
   for (const kind of kinds) {
-    if (kind === 'admin') {
-      for (const expr of buildSharedAdminOgrSql(workspaceRoot).tagsFilterExpressions) {
-        merged.add(expr)
-      }
-    } else if (kind === 'admin_candidates') {
-      for (const expr of buildSharedAdminCandidatesOgrSql(workspaceRoot).tagsFilterExpressions) {
-        merged.add(expr)
-      }
+    switch (kind) {
+      case 'admin':
+        for (const expr of buildSharedAdminOgrSql(workspaceRoot).tagsFilterExpressions) {
+          merged.add(expr)
+        }
+        break
+      case 'admin_candidates':
+        for (const expr of buildSharedAdminCandidatesOgrSql(workspaceRoot).tagsFilterExpressions) {
+          merged.add(expr)
+        }
+        break
+      case 'plz':
+      case 'plz_candidates':
+        break
     }
   }
   return Array.from(merged)
@@ -326,7 +332,7 @@ function parseArgs(argv: string[]) {
       kindExplicit = true
       const v = argv[i + 1]?.trim().toLowerCase()
       if (v === 'admin' || v === 'plz' || v === 'admin_candidates' || v === 'plz_candidates') {
-        kind = v as ExtractKind
+        kind = v
         i++
         continue
       }

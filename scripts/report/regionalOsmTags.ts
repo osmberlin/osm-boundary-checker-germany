@@ -1,11 +1,8 @@
 import type { Feature, FeatureCollection } from 'geojson'
 import { padRegional12 } from '../shared/regionalArs.ts'
-import type { RegionalHubOsmTag, RegionalHubOsmTagsFile } from '../shared/regionalHubPayload.ts'
+import type { RegionalHubOsmTag } from '../shared/regionalHubPayload.ts'
 
-function propString(
-  props: Record<string, unknown> | null | undefined,
-  key: string,
-): string | undefined {
+function propString(props: Record<string, unknown> | null | undefined, key: string) {
   if (!props) return undefined
   const raw = props[key]
   if (raw === null || raw === undefined) return undefined
@@ -13,9 +10,7 @@ function propString(
   return text === '' ? undefined : text
 }
 
-function osmIdFromProperties(
-  props: Record<string, unknown> | null | undefined,
-): string | undefined {
+function osmIdFromProperties(props: Record<string, unknown> | null | undefined) {
   const atId = propString(props, '@id')
   if (atId) return atId
   const osmId = propString(props, 'osm_id')
@@ -31,9 +26,7 @@ function osmIdFromProperties(
   return undefined
 }
 
-export function regionalOsmTagFromFeature(
-  feature: Feature,
-): { ars12: string; tag: RegionalHubOsmTag } | null {
+export function regionalOsmTagFromFeature(feature: Feature) {
   const props = (feature.properties ?? {}) as Record<string, unknown>
   const arsRaw = propString(props, 'de:regionalschluessel')
   if (!arsRaw) return null
@@ -52,15 +45,15 @@ export function regionalOsmTagFromFeature(
 }
 
 /** Prefer relation ids over closed ways when the same ARS appears twice. */
-function osmIdRank(osmId: string): number {
+function osmIdRank(osmId: string) {
   return osmId.startsWith('relation/') ? 0 : 1
 }
 
-function osmTagScore(tag: RegionalHubOsmTag): number {
+function osmTagScore(tag: RegionalHubOsmTag) {
   return (tag.wikidata ? 1 : 0) + (tag.population ? 1 : 0)
 }
 
-function mergeOsmTags(primary: RegionalHubOsmTag, secondary: RegionalHubOsmTag): RegionalHubOsmTag {
+function mergeOsmTags(primary: RegionalHubOsmTag, secondary: RegionalHubOsmTag) {
   return {
     osmId: primary.osmId,
     population: primary.population ?? secondary.population,
@@ -69,7 +62,7 @@ function mergeOsmTags(primary: RegionalHubOsmTag, secondary: RegionalHubOsmTag):
   }
 }
 
-function pickOsmTag(prev: RegionalHubOsmTag, next: RegionalHubOsmTag): RegionalHubOsmTag {
+function pickOsmTag(prev: RegionalHubOsmTag, next: RegionalHubOsmTag) {
   const prevRank = osmIdRank(prev.osmId)
   const nextRank = osmIdRank(next.osmId)
   if (nextRank < prevRank) return mergeOsmTags(next, prev)
@@ -81,7 +74,7 @@ function pickOsmTag(prev: RegionalHubOsmTag, next: RegionalHubOsmTag): RegionalH
 export function collectRegionalOsmTags(
   collection: FeatureCollection,
   generatedAt = new Date().toISOString(),
-): RegionalHubOsmTagsFile {
+) {
   const byArs: Record<string, RegionalHubOsmTag> = {}
   for (const feature of collection.features) {
     const parsed = regionalOsmTagFromFeature(feature)

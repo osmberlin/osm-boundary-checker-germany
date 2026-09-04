@@ -752,9 +752,7 @@ export async function runCompare(
           ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
           ...(bboxFilter ? { bboxFilter } : {}),
           idNormalizationPreset: preset,
-          osmProfileId: config.osm.profileId as Parameters<
-            typeof matchCandidatesForOfficialOnly
-          >[0]['options']['osmProfileId'],
+          osmProfileId: config.osm.profileId,
           osmMatchProperty,
         },
       })

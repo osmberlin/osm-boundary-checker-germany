@@ -79,7 +79,7 @@ function resolveGpkgPath(runtimeRoot: string, cliGpkg: string | null): string {
 }
 
 function readBkgLayerForArea(workspaceRoot: string, area: string): AreaLayerSpec | null {
-  const doc = loadAreaConfig(workspaceRoot, area) as Record<string, unknown>
+  const doc = loadAreaConfig(workspaceRoot, area)
   const parsed = parseDatasetConfig(area, doc)
   if (parsed.officialMode === 'profile') {
     const profileId = parsed.officialProfile

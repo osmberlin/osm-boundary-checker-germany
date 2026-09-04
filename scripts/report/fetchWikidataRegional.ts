@@ -12,7 +12,7 @@ import {
   splitWikidataSparqlQueries,
 } from './wikidataRegionalSparql.ts'
 
-function wikidataQueryHash(query: string): string {
+function wikidataQueryHash(query: string) {
   const hasher = new Bun.CryptoHasher('sha256')
   hasher.update(query)
   return hasher.digest('hex').slice(0, 16)
@@ -37,12 +37,12 @@ const wikidataSparqlResultsSchema = z.object({
   }),
 })
 
-function bindingValue(row: SparqlBinding, key: string): string | undefined {
+function bindingValue(row: SparqlBinding, key: string) {
   const value = row[key]?.value?.trim()
   return value === '' ? undefined : value
 }
 
-function compactRow(row: SparqlBinding): { ars12: string; item: RegionalHubWikidataRow } | null {
+function compactRow(row: SparqlBinding) {
   const ars12 = padRegional12(bindingValue(row, 'ars') ?? '')
   const qid = bindingValue(row, 'qid')
   if (!ars12 || !qid) return null
@@ -61,20 +61,14 @@ function compactRow(row: SparqlBinding): { ars12: string; item: RegionalHubWikid
   return { ars12, item }
 }
 
-function wikidataRowIsPreferable(
-  next: RegionalHubWikidataRow,
-  prev: RegionalHubWikidataRow,
-): boolean {
+function wikidataRowIsPreferable(next: RegionalHubWikidataRow, prev: RegionalHubWikidataRow) {
   const nextDate = next.date ?? ''
   const prevDate = prev.date ?? ''
   if (nextDate !== prevDate) return nextDate > prevDate
   return next.pop != null && prev.pop == null
 }
 
-function mergeBindings(bindings: SparqlBinding[]): {
-  byArs: RegionalHubWikidataFile['byArs']
-  duplicateArsCount: number
-} {
+function mergeBindings(bindings: SparqlBinding[]) {
   const byArs: RegionalHubWikidataFile['byArs'] = {}
   let duplicateArsCount = 0
   for (const binding of bindings) {
@@ -91,7 +85,7 @@ function mergeBindings(bindings: SparqlBinding[]): {
   return { byArs, duplicateArsCount }
 }
 
-async function postSparql(query: string): Promise<SparqlBinding[]> {
+async function postSparql(query: string) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), SPARQL_TIMEOUT_MS)
   try {
@@ -121,7 +115,7 @@ export function shouldSkipWikidataFetch(
   queryHash: string,
   nowMs = Date.now(),
   force = false,
-): boolean {
+) {
   if (force || !existing?.generatedAt) return false
   if (existing.queryHash !== queryHash) return false
   if (
@@ -139,7 +133,7 @@ export async function fetchWikidataRegionalDump(options: {
   existing: RegionalHubWikidataFile | null
   force?: boolean
   now?: Date
-}): Promise<RegionalHubWikidataFile> {
+}) {
   const queryHash = wikidataQueryHash(allWikidataSparqlQueries()[0]!.query)
   const now = options.now ?? new Date()
   if (shouldSkipWikidataFetch(options.existing, queryHash, now.getTime(), options.force === true)) {

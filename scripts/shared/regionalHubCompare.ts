@@ -13,7 +13,7 @@ export type RegionalHubCompareInput = {
   wdOsmRelationId?: string
 }
 
-function normalizeIsoDate(raw: string | undefined): string | undefined {
+function normalizeIsoDate(raw: string | undefined) {
   if (!raw) return undefined
   const trimmed = raw.trim()
   if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10)
@@ -25,7 +25,7 @@ function normalizeIsoDate(raw: string | undefined): string | undefined {
   return undefined
 }
 
-export function parsePopulationNumber(raw: string | number | undefined | null): number | undefined {
+export function parsePopulationNumber(raw: string | number | undefined | null) {
   if (raw === null || raw === undefined) return undefined
   if (typeof raw === 'number' && Number.isFinite(raw)) return Math.round(raw)
   const digits = String(raw).replace(/\D/g, '')
@@ -34,13 +34,13 @@ export function parsePopulationNumber(raw: string | number | undefined | null): 
   return Number.isFinite(n) ? n : undefined
 }
 
-export function numericOsmRelationId(raw: string | undefined): string | undefined {
+export function numericOsmRelationId(raw: string | undefined) {
   if (!raw) return undefined
   const match = /^(?:relation\/)?(\d+)$/i.exec(raw.trim())
   return match?.[1]
 }
 
-function p402Agrees(osmId: string | undefined, wdOsmRelationId: string | undefined): boolean {
+function p402Agrees(osmId: string | undefined, wdOsmRelationId: string | undefined) {
   if (!wdOsmRelationId) return true
   const osm = numericOsmRelationId(osmId)
   const wd = numericOsmRelationId(wdOsmRelationId)
@@ -48,19 +48,19 @@ function p402Agrees(osmId: string | undefined, wdOsmRelationId: string | undefin
   return osm === wd
 }
 
-function dateIsOlder(candidate: string | undefined, reference: string | undefined): boolean {
+function dateIsOlder(candidate: string | undefined, reference: string | undefined) {
   const a = normalizeIsoDate(candidate)
   const b = normalizeIsoDate(reference)
   if (!a || !b) return false
   return a < b
 }
 
-function numbersDiffer(a: number | undefined, b: number | undefined): boolean {
+function numbersDiffer(a: number | undefined, b: number | undefined) {
   if (a === undefined || b === undefined) return false
   return a !== b
 }
 
-export function regionalHubIssues(input: RegionalHubCompareInput): RegionalHubMismatchFlag[] {
+export function regionalHubIssues(input: RegionalHubCompareInput) {
   const issues: RegionalHubMismatchFlag[] = []
   const osmWd = input.osmWikidata?.trim()
   const wdQid = input.wdQid?.trim()
@@ -110,9 +110,7 @@ export function regionalHubIssues(input: RegionalHubCompareInput): RegionalHubMi
  * (3) Wikidata P1082 from Destatis,
  * (4) Wikidata P402.
  */
-export function primaryRegionalHubIssue(
-  input: RegionalHubCompareInput,
-): RegionalHubMismatchFlag | null {
+export function primaryRegionalHubIssue(input: RegionalHubCompareInput) {
   return regionalHubIssues(input)[0] ?? null
 }
 
@@ -144,11 +142,11 @@ export const NEUTRAL_HUB_CELL_TONES: RegionalHubCellTones = {
   wdP402: 'neutral',
 }
 
-function presentTone(value: string | number | undefined): HubCellTone {
+function presentTone(value: string | number | undefined) {
   return value !== undefined && value !== '' ? 'ok' : 'bad'
 }
 
-function comparedPopTone(value: number | undefined, destatisPop: number | undefined): HubCellTone {
+function comparedPopTone(value: number | undefined, destatisPop: number | undefined) {
   if (destatisPop === undefined) return value === undefined ? 'bad' : 'neutral'
   if (value === undefined || numbersDiffer(value, destatisPop)) return 'bad'
   return 'ok'
@@ -159,10 +157,15 @@ function comparedDateTone(input: {
   value: string | undefined
   destatisDate: string | undefined
   missing: 'optional' | 'expected'
-}): HubCellTone {
+}) {
   if (dateIsOlder(input.value, input.destatisDate)) return 'bad'
   if (normalizeIsoDate(input.value)) return 'ok'
-  return input.missing === 'optional' ? 'neutral' : 'bad'
+  switch (input.missing) {
+    case 'optional':
+      return 'neutral'
+    case 'expected':
+      return 'bad'
+  }
 }
 
 export function regionalHubCellTones(input: RegionalHubCompareInput): RegionalHubCellTones {
@@ -199,7 +202,7 @@ export function regionalHubCellTones(input: RegionalHubCompareInput): RegionalHu
   }
 }
 
-export function normalizeQid(raw: string): string {
+export function normalizeQid(raw: string) {
   const trimmed = raw.trim()
   if (/^Q\d+$/i.test(trimmed)) return trimmed.toUpperCase()
   const match = /\/(Q\d+)/i.exec(trimmed)

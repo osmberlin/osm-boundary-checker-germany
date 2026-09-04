@@ -22,9 +22,8 @@ function buildRelationResolverIndex(runtimeRoot: string): RelationResolverIndex 
     const tablePath = join(datasetsRoot, area, 'output', 'comparison_table.json')
     if (!existsSync(tablePath)) continue
     try {
-      const parsed = comparisonForReportSchema.parse(
-        JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown,
-      )
+      const raw: unknown = JSON.parse(readFileSync(tablePath, 'utf-8'))
+      const parsed = comparisonForReportSchema.parse(raw)
 
       const pushRelationCandidate = (
         osmRelationIdRaw: string,

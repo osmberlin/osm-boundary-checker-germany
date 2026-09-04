@@ -3,7 +3,7 @@ import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { OFFICIAL_SOURCE_RELATIVE_PATH } from '../../shared/datasetPaths.ts'
 import { GERMANY_OSM_CACHE_DIR } from '../../shared/germanyOsmPbf.ts'
 import { resolveOfficialProfile } from '../../shared/officialProfiles.ts'
-import { resolveOsmProfile } from '../../shared/osmProfiles.ts'
+import { resolveOsmProfile, type OsmProfileId } from '../../shared/osmProfiles.ts'
 import {
   type OfficialKeyTransposition,
   parseOfficialKeyTransposition,
@@ -32,7 +32,7 @@ export type CompareConfig = {
 }
 
 export type OsmConfig = {
-  profileId: string
+  profileId: OsmProfileId
   /** Property on OSM features used as matching key (for example `de:regionalschluessel`, `postal_code`). */
   matchProperty: string
   /**

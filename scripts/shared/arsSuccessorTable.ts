@@ -58,28 +58,22 @@ export type ArsSuccessorRow = z.infer<typeof arsSuccessorRowSchema>
 export type ArsSuccessorTable = z.infer<typeof arsSuccessorTableSchema>
 
 /** AGS = LLRKK + GGG (skip the four Gemeindeverband digits). */
-export function ags8FromArs12(ars12: string): string | null {
+export function ags8FromArs12(ars12: string) {
   const d = ars12.replace(/\D/g, '')
   if (d.length !== 12) return null
   return `${d.slice(0, 5)}${d.slice(9, 12)}`
 }
 
-export function parseArsSuccessorTable(raw: unknown): ArsSuccessorTable {
+export function parseArsSuccessorTable(raw: unknown) {
   return arsSuccessorTableSchema.parse(raw)
 }
 
-export function lookupSuccessorByFromArs(
-  table: ArsSuccessorTable,
-  ars12: string,
-): ArsSuccessorRow | undefined {
+export function lookupSuccessorByFromArs(table: ArsSuccessorTable, ars12: string) {
   const d = ars12.replace(/\D/g, '')
   return table.successors.find((row) => row.fromArs === d)
 }
 
-export function lookupSuccessorByToArs(
-  table: ArsSuccessorTable,
-  ars12: string,
-): ArsSuccessorRow | undefined {
+export function lookupSuccessorByToArs(table: ArsSuccessorTable, ars12: string) {
   const d = ars12.replace(/\D/g, '')
   return table.successors.find((row) => row.toArs === d)
 }
@@ -87,10 +81,7 @@ export function lookupSuccessorByToArs(
 /**
  * Explorer lookup: exact 12-digit ARS, or an 8-digit AGS that belongs to exactly one row.
  */
-export function lookupSuccessorForExplorerKey(
-  table: ArsSuccessorTable,
-  rawKey: string,
-): { row: ArsSuccessorRow; side: 'from' | 'to' } | null {
+export function lookupSuccessorForExplorerKey(table: ArsSuccessorTable, rawKey: string) {
   const d = rawKey.replace(/\D/g, '')
   if (d.length === 12) {
     const from = lookupSuccessorByFromArs(table, d)

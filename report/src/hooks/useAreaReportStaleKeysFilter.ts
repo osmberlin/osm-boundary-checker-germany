@@ -6,22 +6,32 @@ export type StaleKeysFilter = (typeof STALE_KEYS_FILTERS)[number]
 
 const staleKeysSchema = z.enum(STALE_KEYS_FILTERS)
 
-export function parseStaleKeysFilter(value: unknown): StaleKeysFilter {
+export function parseStaleKeysFilter(value: unknown) {
   const parsed = staleKeysSchema.safeParse(value)
   return parsed.success ? parsed.data : 'all'
 }
 
+export function validateAreaReportSearch(search: Record<string, unknown>): {
+  staleKeys?: StaleKeysFilter
+} {
+  const parsed = staleKeysSchema.safeParse(search.staleKeys)
+  return {
+    ...search,
+    staleKeys: parsed.success && parsed.data !== 'all' ? parsed.data : undefined,
+  }
+}
+
 export function useAreaReportStaleKeysFilter() {
-  const navigate = useNavigate()
-  const search = useSearch({ strict: false }) as Record<string, unknown>
+  const navigate = useNavigate({ from: '/$areaId' })
+  const search = useSearch({ from: '/$areaId' })
   const staleKeys = parseStaleKeysFilter(search.staleKeys)
 
   const setStaleKeys = (next: StaleKeysFilter) => {
     void navigate({
-      search: ((prev: Record<string, unknown>) => ({
+      search: (prev) => ({
         ...prev,
         staleKeys: next === 'all' ? undefined : next,
-      })) as never,
+      }),
       replace: true,
       resetScroll: false,
     })

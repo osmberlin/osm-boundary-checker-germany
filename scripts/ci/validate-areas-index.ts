@@ -16,7 +16,7 @@ if (!existsSync(areaIndexPath)) {
   )
 }
 
-const mod = (await import(areaIndexPath.href)) as { default?: unknown }
+const mod: { default?: unknown } = await import(areaIndexPath.href)
 const parsed = areasIndexPayloadSchema.parse(mod.default)
 
 if (parsed.areas.length === 0) {

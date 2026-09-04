@@ -114,12 +114,13 @@ function parseOsmRef(value: unknown): {
   }
   if (typeof value !== 'string') return { type: null, id: null }
   const trimmed = value.trim()
-  const byPath = trimmed.match(/^(relation|way|node)\/(\d+)$/)
-  if (!byPath) return { type: null, id: null }
-  return {
-    type: (byPath[1] as 'relation' | 'way' | 'node') ?? null,
-    id: Number(byPath[2]),
+  const byPath = /^(?<type>relation|way|node)\/(?<id>\d+)$/.exec(trimmed)
+  const type = byPath?.groups?.type
+  const id = byPath?.groups?.id
+  if ((type === 'relation' || type === 'way' || type === 'node') && id !== undefined) {
+    return { type, id: Number(id) }
   }
+  return { type: null, id: null }
 }
 
 function normalizeFeatureProperties(raw: unknown): OverpassGeoJsonProperties | null {

@@ -10,7 +10,7 @@ import {
 import type { GermanKeySearch } from '../lib/germanKeySearch'
 
 export function GermanKeyExplorer() {
-  const search = useSearch({ strict: false }) as GermanKeySearch
+  const search = useSearch({ from: '/tools/german-key' })
   const navigate = useNavigate()
 
   const lookupQuery = useQuery(germanKeyLookupQueryOptions())

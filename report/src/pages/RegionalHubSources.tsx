@@ -10,7 +10,7 @@ const t = de.regionalHub
 const linkClass =
   'text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 
-function dateLabel(raw: string | undefined): string {
+function dateLabel(raw: string | undefined) {
   if (!raw) return t.provenanceUnknown
   return formatSnapshotDateLabelDe(raw.slice(0, 10)) || raw
 }

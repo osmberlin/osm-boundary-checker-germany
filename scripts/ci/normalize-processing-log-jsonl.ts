@@ -5,7 +5,7 @@ import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 
 export { parseProcessingLogJsonl }
 
-export function formatProcessingLogJsonl(events: LogEvent[]): string {
+export function formatProcessingLogJsonl(events: LogEvent[]) {
   if (events.length === 0) return ''
   return `${events.map((event) => JSON.stringify(event)).join('\n')}\n`
 }
@@ -14,7 +14,7 @@ export function normalizeProcessingLogJsonlText(text: string): string {
   return formatProcessingLogJsonl(parseProcessingLogJsonl(text))
 }
 
-function main(): void {
+function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const rel = process.argv[2]?.trim() || join('data', 'processing-log.jsonl')
   const path = rel.startsWith('/') ? rel : join(workspaceRoot, rel)

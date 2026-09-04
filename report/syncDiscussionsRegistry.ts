@@ -89,7 +89,7 @@ function buildRegistry(issues: GitHubIssueListItem[]): DiscussionRegistryFile {
 function readExistingRegistry(): DiscussionRegistryFile | null {
   if (!existsSync(OUT_FILE)) return null
   try {
-    const raw = JSON.parse(readFileSync(OUT_FILE, 'utf8')) as unknown
+    const raw: unknown = JSON.parse(readFileSync(OUT_FILE, 'utf8'))
     const parsed = discussionRegistryFileSchema.safeParse(raw)
     return parsed.success ? parsed.data : null
   } catch {

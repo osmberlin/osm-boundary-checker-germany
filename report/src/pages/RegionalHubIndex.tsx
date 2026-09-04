@@ -33,7 +33,7 @@ import {
 
 const t = de.regionalHub
 
-function statusLabel(flag: RegionalHubMismatchFlag | undefined): string | null {
+function statusLabel(flag: RegionalHubMismatchFlag | undefined) {
   if (!flag) return null
   switch (flag) {
     case 'osm_wikidata':
@@ -47,7 +47,7 @@ function statusLabel(flag: RegionalHubMismatchFlag | undefined): string | null {
   }
 }
 
-function provenanceLabel(raw: string | undefined): string {
+function provenanceLabel(raw: string | undefined) {
   if (!raw) return t.provenanceUnknown
   if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return formatSnapshotDateLabelDe(raw.slice(0, 10))
   try {
@@ -228,7 +228,7 @@ export function RegionalHubIndex() {
 
 type HubBrowseRow = { ars: string; name: string }
 
-function hubRowsByLandCode(bundle: GermanKeyLookupBundle): Record<string, HubBrowseRow[]> {
+function hubRowsByLandCode(bundle: GermanKeyLookupBundle) {
   const byCode: Record<string, HubBrowseRow[]> = {}
   for (const [landCode, landName] of Object.entries(bundle.latest.bundeslaender)) {
     const landArs = padRegional12(landCode) ?? `${landCode}0000000000`
@@ -257,10 +257,7 @@ function hubRowsByLandCode(bundle: GermanKeyLookupBundle): Record<string, HubBro
   return uniqueByCode
 }
 
-function landActionCount(
-  rows: HubBrowseRow[],
-  flags: Record<string, RegionalHubMismatchFlag>,
-): number {
+function landActionCount(rows: HubBrowseRow[], flags: Record<string, RegionalHubMismatchFlag>) {
   let n = 0
   for (const row of rows) {
     if (flags[row.ars] !== undefined) n += 1

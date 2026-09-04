@@ -28,23 +28,23 @@ export function germanKeyLookupUrl(): string {
   return withSiteBasePath('/data/german-key-lookup.json')
 }
 
-export function regionalHubManifestUrl(): string {
+export function regionalHubManifestUrl() {
   return withSiteBasePath('/data/regional-hub/manifest.json')
 }
 
-export function regionalHubOsmTagsUrl(): string {
+export function regionalHubOsmTagsUrl() {
   return withSiteBasePath('/data/regional-hub/osm-tags.json')
 }
 
-export function regionalHubWikidataUrl(): string {
+export function regionalHubWikidataUrl() {
   return withSiteBasePath('/data/regional-hub/wikidata.json')
 }
 
-export function regionalHubMismatchFlagsUrl(): string {
+export function regionalHubMismatchFlagsUrl() {
   return withSiteBasePath('/data/regional-hub/mismatch-flags.json')
 }
 
-export function arsSuccessorsUrl(): string {
+export function arsSuccessorsUrl() {
   return withSiteBasePath('/data/ars-successors.json')
 }
 

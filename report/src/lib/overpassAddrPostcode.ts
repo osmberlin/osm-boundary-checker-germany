@@ -92,12 +92,13 @@ function parseOsmRef(value: unknown): {
   }
   if (typeof value !== 'string') return { type: null, id: null }
   const trimmed = value.trim()
-  const byPath = trimmed.match(/^(relation|way|node)\/(\d+)$/)
-  if (!byPath) return { type: null, id: null }
-  return {
-    type: (byPath[1] as 'relation' | 'way' | 'node') ?? null,
-    id: Number(byPath[2]),
+  const byPath = /^(?<type>relation|way|node)\/(?<id>\d+)$/.exec(trimmed)
+  const type = byPath?.groups?.type
+  const id = byPath?.groups?.id
+  if ((type === 'relation' || type === 'way' || type === 'node') && id !== undefined) {
+    return { type, id: Number(id) }
   }
+  return { type: null, id: null }
 }
 
 function postcodeLabelFromTags(tags: Record<string, string>): string {
@@ -155,10 +156,17 @@ function normalizePointFeature(raw: unknown): AddrPostcodeGeoJsonFeature | null 
   if (geometry.type !== 'Point') return null
   const coords = geometry.coordinates
   if (!Array.isArray(coords) || coords.length < 2) return null
+  const lon = coords[0]
+  const lat = coords[1]
+  if (typeof lon !== 'number' || typeof lat !== 'number') return null
   const propsRaw = raw.properties
   const tags: Record<string, string> =
     isRecord(propsRaw) && isRecord(propsRaw.tags)
-      ? (propsRaw.tags as Record<string, string>)
+      ? Object.fromEntries(
+          Object.entries(propsRaw.tags).filter(
+            (entry): entry is [string, string] => typeof entry[1] === 'string',
+          ),
+        )
       : isRecord(propsRaw)
         ? Object.fromEntries(
             Object.entries(propsRaw).filter(
@@ -188,7 +196,7 @@ function normalizePointFeature(raw: unknown): AddrPostcodeGeoJsonFeature | null 
     rowKey,
   )
   if (!props) return null
-  return point(coords as [number, number], props)
+  return point([lon, lat], props)
 }
 
 function normalizeAddrPostcodeCollection(

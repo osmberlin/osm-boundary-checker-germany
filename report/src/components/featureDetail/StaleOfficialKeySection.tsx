@@ -15,7 +15,7 @@ import { GermanKeyVerifyLink } from '../GermanKeyVerifyLink'
 const verifyLinkClass =
   'text-sm font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 
-function compactStandDe(raw: string | null | undefined): string | null {
+function compactStandDe(raw: string | null | undefined) {
   const trimmed = raw?.trim()
   if (!trimmed) return null
   const label = formatIsoTimestampToCompactDateDe(trimmed)

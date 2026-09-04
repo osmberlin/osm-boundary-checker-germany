@@ -32,7 +32,7 @@ export function formatReportDateOnlyDe(at: TZDate): string {
 }
 
 /** Compact calendar date matching KPI `d. MMM yyyy` (no clock time). */
-export function formatReportCompactDateDe(at: TZDate): string {
+export function formatReportCompactDateDe(at: TZDate) {
   return format(at, 'd. MMM yyyy', { locale: deLocale })
 }
 
@@ -67,7 +67,7 @@ export function formatIsoTimestampToDateOnlyDe(raw: string): string {
 }
 
 /** ISO or `YYYY-MM-DD` → compact German date for parenthetical stands, or empty. */
-export function formatIsoTimestampToCompactDateDe(raw: string): string {
+export function formatIsoTimestampToCompactDateDe(raw: string) {
   const trimmed = raw.trim()
   if (!trimmed) return ''
   const berlin = parseReportTimestampToBerlin(trimmed)

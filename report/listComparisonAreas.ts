@@ -117,9 +117,8 @@ export function listGeoDataSources(runtimeRoot: string): GeoDataSource[] {
     const tablePath = join(datasetsRoot, entry.name, 'output', 'comparison_table.json')
     if (!existsSync(tablePath)) continue
     try {
-      const parsed = comparisonForReportSchema.parse(
-        JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown,
-      )
+      const raw: unknown = JSON.parse(readFileSync(tablePath, 'utf-8'))
+      const parsed = comparisonForReportSchema.parse(raw)
       const side = parsed.sourceMetadata?.official ?? null
       if (!side) continue
       const name = sourceDisplayName(side)
@@ -152,9 +151,8 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
     if (!existsSync(tablePath)) continue
     let parsedTable: z.infer<typeof comparisonForReportSchema> | null = null
     try {
-      parsedTable = comparisonForReportSchema.parse(
-        JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown,
-      )
+      const raw: unknown = JSON.parse(readFileSync(tablePath, 'utf-8'))
+      parsedTable = comparisonForReportSchema.parse(raw)
     } catch {
       continue
     }
@@ -212,9 +210,8 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
     const tablePath = join(datasetsRoot, area, 'output', 'comparison_table.json')
     if (!existsSync(tablePath)) continue
     try {
-      const parsed = comparisonForReportSchema.parse(
-        JSON.parse(readFileSync(tablePath, 'utf-8')) as unknown,
-      )
+      const raw: unknown = JSON.parse(readFileSync(tablePath, 'utf-8'))
+      const parsed = comparisonForReportSchema.parse(raw)
       const rows = parsed.rows ?? []
       let matched = 0
       let officialOnly = 0

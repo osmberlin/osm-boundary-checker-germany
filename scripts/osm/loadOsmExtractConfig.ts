@@ -74,7 +74,7 @@ function parseWithSchema<T>(area: string, schema: z.ZodType<T>, raw: unknown, la
 }
 
 function parseAreaExtractOverride(area: string, rawDoc: DatasetConfig): OsmExtractOverrideConfig {
-  const osm = rawDoc.osm as unknown
+  const osm = rawDoc.osm
   if (osm === undefined) return {}
   const osmObj = parseWithSchema(area, OsmObjectSchema, osm, 'osm')
   return osmObj.extract ?? {}

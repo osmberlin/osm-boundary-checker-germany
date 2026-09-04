@@ -26,13 +26,13 @@ export type GemeindeAttribute = {
   populationMale?: number
 }
 
-function cellString(value: unknown): string {
+function cellString(value: unknown) {
   if (value === null || value === undefined) return ''
   if (value instanceof Date) return value.toISOString().slice(0, 10)
   return String(value).trim()
 }
 
-function normalizeHeader(text: string): string {
+function normalizeHeader(text: string) {
   return text
     .toLowerCase()
     .replaceAll('ä', 'ae')
@@ -45,7 +45,7 @@ function normalizeHeader(text: string): string {
 }
 
 /** Parse `31.12.2024` / `31.12.2024 (Jahr)` from Destatis header/footnote cells. */
-export function parseGermanDotDate(raw: string): string | undefined {
+export function parseGermanDotDate(raw: string) {
   const match = /(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(raw)
   if (!match) return undefined
   const day = Number(match[1])
@@ -59,7 +59,7 @@ export function parseGermanDotDate(raw: string): string | undefined {
  * Quarterly Gebietsstand is often 31.03/30.06/30.09; Destatis Fortschreibung is 31.12.
  * If the snapshot itself is 31.12., use it; otherwise previous 31.12.
  */
-export function populationDateFromGebietsstand(snapshotIso: string): string {
+export function populationDateFromGebietsstand(snapshotIso: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(snapshotIso.trim())
   if (!match) return snapshotIso
   const year = Number(match[1])
@@ -69,7 +69,7 @@ export function populationDateFromGebietsstand(snapshotIso: string): string {
   return `${year - 1}-12-31`
 }
 
-export function parseExcelNumericCell(value: unknown): number | undefined {
+export function parseExcelNumericCell(value: unknown) {
   if (typeof value === 'number' && Number.isFinite(value)) return value
   const text = cellString(value).replace(/\s/g, '').replace(',', '.')
   if (text === '') return undefined
@@ -77,15 +77,12 @@ export function parseExcelNumericCell(value: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined
 }
 
-function roundKm2(value: number): number {
+function roundKm2(value: number) {
   return Math.round(value * 100) / 100
 }
 
 /** Scan GVAuszugQ header rows 1–6 (0-based 0–5) for Fläche / Bevölkerung columns. */
-export function parseGvAuszugMerkmaleFromHeaderRows(
-  headerRows: unknown[][],
-  snapshotIso: string,
-): GvAuszugMerkmale {
+export function parseGvAuszugMerkmaleFromHeaderRows(headerRows: unknown[][], snapshotIso: string) {
   const headerDump = headerRows.map((row, index) => ({
     row: index + 1,
     cells: (row ?? []).map((cell) => cellString(cell)),
@@ -147,7 +144,7 @@ export function applyExcelMerkmaleToRow(
   row: Gv100AdRow,
   cells: unknown[],
   merkmale: GvAuszugMerkmaleColumns,
-): Gv100AdRow {
+) {
   if (row.satzart.trim() !== '60') return row
   const areaRaw =
     merkmale.areaKm2 !== undefined ? parseExcelNumericCell(cells[merkmale.areaKm2]) : undefined
@@ -171,9 +168,7 @@ export function applyExcelMerkmaleToRow(
  * GV100AD satzart 60 tail (220-char records). After the 50-char name at 22–72:
  * skip 50, textkennzeichen 2, skip 4, area 11 (km²×100), population_total 11, population_male 11.
  */
-export function parseGv100AdSatzart60Tail(
-  line: string,
-): Pick<Gv100AdRow, 'areaKm2' | 'populationTotal' | 'populationMale'> {
+export function parseGv100AdSatzart60Tail(line: string) {
   if (line.length < 161) return {}
   const areaRaw = line.slice(128, 139)
   const popRaw = line.slice(139, 150)
@@ -188,13 +183,13 @@ export function parseGv100AdSatzart60Tail(
   }
 }
 
-function parseFixedWidthUnsignedInt(raw: string): number | undefined {
+function parseFixedWidthUnsignedInt(raw: string) {
   const trimmed = raw.trim()
   if (trimmed === '' || !/^\d+$/.test(trimmed)) return undefined
   return Number(trimmed)
 }
 
-export function rowsToGemeindeAttributes(rows: Gv100AdRow[]): Record<string, GemeindeAttribute> {
+export function rowsToGemeindeAttributes(rows: Gv100AdRow[]) {
   const out = new Map<string, GemeindeAttribute>()
   for (const row of rows) {
     if (row.satzart.trim() !== '60') continue

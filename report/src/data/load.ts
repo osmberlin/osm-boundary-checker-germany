@@ -1,9 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { changelogFileSchema, type ChangelogFile } from '@tordans/changelog-kit/schemas'
-import {
-  arsSuccessorTableSchema,
-  type ArsSuccessorTable,
-} from '../../../scripts/shared/arsSuccessorTable.ts'
+import { arsSuccessorTableSchema } from '../../../scripts/shared/arsSuccessorTable.ts'
 import {
   comparisonForReportSchema,
   featureDetailShardSchema,
@@ -25,10 +22,6 @@ import {
   regionalHubMismatchFlagsFileSchema,
   regionalHubOsmTagsFileSchema,
   regionalHubWikidataFileSchema,
-  type RegionalHubManifest,
-  type RegionalHubMismatchFlagsFile,
-  type RegionalHubOsmTagsFile,
-  type RegionalHubWikidataFile,
 } from '../../../scripts/shared/regionalHubPayload.ts'
 import {
   type AddrPostcodeGeoJsonFeatureCollection,
@@ -88,7 +81,8 @@ async function readJsonStrict(url: string, response: Response): Promise<unknown>
     )
   }
   try {
-    return JSON.parse(bodyText) as unknown
+    const raw: unknown = JSON.parse(bodyText)
+    return raw
   } catch (error) {
     const preview = textPreview(bodyText)
     throw new Error(
@@ -128,7 +122,7 @@ export async function loadGermanKeyLookup(): Promise<GermanKeyLookupBundle> {
   return germanKeyLookupBundleSchema.parse(await readJsonStrict(url, r))
 }
 
-export async function loadArsSuccessorTable(): Promise<ArsSuccessorTable | null> {
+export async function loadArsSuccessorTable() {
   const url = arsSuccessorsUrl()
   const r = await fetch(url)
   if (!r.ok) return null
@@ -249,7 +243,7 @@ export function germanKeyLookupQueryOptions() {
   })
 }
 
-async function loadOptionalParsed<T>(url: string, parse: (raw: unknown) => T): Promise<T | null> {
+async function loadOptionalParsed<T>(url: string, parse: (raw: unknown) => T) {
   const r = await fetch(url, { headers: { Accept: 'application/json' } })
   if (r.status === 404) return null
   if (!r.ok) throw new Error(`Failed to load ${url}: ${r.status}`)
@@ -259,23 +253,23 @@ async function loadOptionalParsed<T>(url: string, parse: (raw: unknown) => T): P
   return parse(await readJsonStrict(url, r))
 }
 
-export async function loadRegionalHubManifest(): Promise<RegionalHubManifest | null> {
+export async function loadRegionalHubManifest() {
   return loadOptionalParsed(regionalHubManifestUrl(), (raw) => regionalHubManifestSchema.parse(raw))
 }
 
-export async function loadRegionalHubOsmTags(): Promise<RegionalHubOsmTagsFile | null> {
+export async function loadRegionalHubOsmTags() {
   return loadOptionalParsed(regionalHubOsmTagsUrl(), (raw) =>
     regionalHubOsmTagsFileSchema.parse(raw),
   )
 }
 
-export async function loadRegionalHubWikidata(): Promise<RegionalHubWikidataFile | null> {
+export async function loadRegionalHubWikidata() {
   return loadOptionalParsed(regionalHubWikidataUrl(), (raw) =>
     regionalHubWikidataFileSchema.parse(raw),
   )
 }
 
-export async function loadRegionalHubMismatchFlags(): Promise<RegionalHubMismatchFlagsFile | null> {
+export async function loadRegionalHubMismatchFlags() {
   return loadOptionalParsed(regionalHubMismatchFlagsUrl(), (raw) =>
     regionalHubMismatchFlagsFileSchema.parse(raw),
   )

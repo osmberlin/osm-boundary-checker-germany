@@ -14,7 +14,7 @@ export function regionalHubEditorHrefs(input: {
   relationId: string | undefined
   wdQid: string | undefined
   osmWikidata?: string
-}): { id: string | null; josm: string | null; wikidata: string | null } {
+}) {
   const rel = input.relationId ? Number(input.relationId) : Number.NaN
   const hasRelation = Number.isFinite(rel)
   const qid = input.wdQid?.trim() || (input.osmWikidata ? normalizeQid(input.osmWikidata) : '')

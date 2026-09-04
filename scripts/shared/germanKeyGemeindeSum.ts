@@ -1,7 +1,6 @@
 import type { GermanKeyGemeindeAttribute } from './germanKeyLookupPayload.ts'
-import type { GermanKeyLookupBundle } from './germanKeyLookupPayload.ts'
 
-function roundKm2(value: number): number {
+function roundKm2(value: number) {
   return Math.round(value * 100) / 100
 }
 
@@ -13,7 +12,7 @@ function roundKm2(value: number): number {
 export function sumGemeindeAttributesForPrefix(
   attributes: Record<string, GermanKeyGemeindeAttribute>,
   prefix: string,
-): GermanKeyGemeindeAttribute | null {
+) {
   if (prefix === '') return null
   let areaKm2 = 0
   let populationTotal = 0
@@ -46,9 +45,11 @@ export function sumGemeindeAttributesForPrefix(
 
 /** Direct Gemeinde attributes, or Land/Kreis/Verband totals from member Gemeinden. */
 export function destatisAttributesForArs(
-  bundle: GermanKeyLookupBundle,
+  bundle: {
+    latest: { gemeindeAttributesByArs?: Record<string, GermanKeyGemeindeAttribute> }
+  },
   ars12: string,
-): GermanKeyGemeindeAttribute | null {
+) {
   const attrs = bundle.latest.gemeindeAttributesByArs ?? {}
   const direct = attrs[ars12]
   if (direct && (direct.populationTotal !== undefined || direct.areaKm2 !== undefined)) {

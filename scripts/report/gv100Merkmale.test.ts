@@ -5,7 +5,6 @@ import {
   destatisAttributesForArs,
   sumGemeindeAttributesForPrefix,
 } from '../shared/germanKeyGemeindeSum.ts'
-import type { GermanKeyLookupBundle } from '../shared/germanKeyLookupPayload.ts'
 import {
   parseGermanDotDate,
   parseGv100AdSatzart60Tail,
@@ -129,7 +128,7 @@ describe('gv100Merkmale', () => {
           '120520010001': { areaKm2: 20.25, populationTotal: 250 },
         },
       },
-    } as unknown as GermanKeyLookupBundle
+    }
     expect(destatisAttributesForArs(bundle, '120510000000')?.populationTotal).toBe(1000)
     expect(destatisAttributesForArs(bundle, '120000000000')?.populationTotal).toBe(1250)
     expect(destatisAttributesForArs(bundle, '120520000000')?.populationTotal).toBe(250)

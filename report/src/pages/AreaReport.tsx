@@ -37,7 +37,10 @@ import { SummaryStatColumn } from '../components/SummaryStatColumn'
 import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
-import { useAreaReportStaleKeysFilter } from '../hooks/useAreaReportStaleKeysFilter'
+import {
+  parseStaleKeysFilter,
+  useAreaReportStaleKeysFilter,
+} from '../hooks/useAreaReportStaleKeysFilter'
 import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
@@ -85,7 +88,7 @@ function unionMapBboxes(rows: AreaReportRow[]): [number, number, number, number]
   return [w, s, e, n]
 }
 
-function isStaleKeyRow(row: AreaReportRow): boolean {
+function isStaleKeyRow(row: AreaReportRow) {
   return row.staleOfficialKey != null || row.staleOfficialPredecessor != null
 }
 
@@ -337,7 +340,7 @@ export function AreaReport() {
                 <select
                   className="mt-1 block w-full rounded border border-slate-400 bg-white px-1.5 py-1 text-sm text-slate-900"
                   value={staleKeys}
-                  onChange={(event) => setStaleKeys(event.target.value as typeof staleKeys)}
+                  onChange={(event) => setStaleKeys(parseStaleKeysFilter(event.target.value))}
                 >
                   <option value="all">{st.staleKeysAll}</option>
                   <option value="only">{st.staleKeysOnly}</option>

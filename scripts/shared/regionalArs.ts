@@ -1,22 +1,22 @@
 import { normalizeOsmValue } from '../compare/lib/normalizeGermanKey.ts'
 
-export function padRegional12(raw: string): string | null {
+export function padRegional12(raw: string) {
   const digits = raw.replace(/\D/g, '')
   if (digits.length === 0) return null
   return normalizeOsmValue('de:regionalschluessel', digits, 'regional-12').canonicalMatchKey
 }
 
-export function arsLandPrefix(ars12: string): string {
+export function arsLandPrefix(ars12: string) {
   return ars12.slice(0, 2)
 }
 
-export function arsKreisPrefix(ars12: string): string {
+export function arsKreisPrefix(ars12: string) {
   return ars12.slice(0, 5)
 }
 
 export type RegionalArsLevel = 'land' | 'kreis' | 'verband' | 'gemeinde'
 
-export function classifyRegionalArsLevel(ars12: string): RegionalArsLevel {
+export function classifyRegionalArsLevel(ars12: string) {
   const gem = ars12.slice(9, 12)
   const vb = ars12.slice(5, 9)
   const kreis = ars12.slice(3, 5)
@@ -49,16 +49,18 @@ export const REGIONAL_GEMEINDE_AREA_BY_LAND: Record<string, string> = {
   '16': 'de-gemeinden-th',
 }
 
-export function geometryAreaIdForArs(
-  ars12: string,
-  gemeindenByArs: Record<string, string>,
-): string | null {
+export function geometryAreaIdForArs(ars12: string, gemeindenByArs: Record<string, string>) {
   if (Object.hasOwn(gemeindenByArs, ars12)) {
     return REGIONAL_GEMEINDE_AREA_BY_LAND[arsLandPrefix(ars12)] ?? null
   }
   const level = classifyRegionalArsLevel(ars12)
-  if (level === 'land') return REGIONAL_LAENDER_AREA_ID
-  if (level === 'kreis') return REGIONAL_LANDKREISE_AREA_ID
-  const gemeindeArea = REGIONAL_GEMEINDE_AREA_BY_LAND[arsLandPrefix(ars12)]
-  return gemeindeArea ?? null
+  switch (level) {
+    case 'land':
+      return REGIONAL_LAENDER_AREA_ID
+    case 'kreis':
+      return REGIONAL_LANDKREISE_AREA_ID
+    case 'verband':
+    case 'gemeinde':
+      return REGIONAL_GEMEINDE_AREA_BY_LAND[arsLandPrefix(ars12)] ?? null
+  }
 }

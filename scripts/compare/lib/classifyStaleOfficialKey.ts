@@ -34,10 +34,10 @@ export type DestatisArsPresence = {
   isObsoleteGemeindeArs: (ars12: string) => boolean
 }
 
-export function destatisArsPresenceFromBundle(bundle: GermanKeyLookupBundle): DestatisArsPresence {
+export function destatisArsPresenceFromBundle(bundle: GermanKeyLookupBundle) {
   return {
-    isLatestGemeindeArs: (ars12) => Object.hasOwn(bundle.latest.gemeindenByArs, ars12),
-    isObsoleteGemeindeArs: (ars12) =>
+    isLatestGemeindeArs: (ars12: string) => Object.hasOwn(bundle.latest.gemeindenByArs, ars12),
+    isObsoleteGemeindeArs: (ars12: string) =>
       Object.hasOwn(bundle.obsolete.maps.gemeindenByArs, ars12) &&
       !Object.hasOwn(bundle.latest.gemeindenByArs, ars12),
   }
@@ -45,28 +45,27 @@ export function destatisArsPresenceFromBundle(bundle: GermanKeyLookupBundle): De
 
 let cachedBundle: GermanKeyLookupBundle | null | undefined
 
-function germanKeyLookupPathFromRepo(): string {
+function germanKeyLookupPathFromRepo() {
   return join(
     dirname(fileURLToPath(import.meta.url)),
     '../../../report/public/data/german-key-lookup.json',
   )
 }
 
-export function loadDestatisArsPresence(): DestatisArsPresence | null {
+export function loadDestatisArsPresence() {
   if (cachedBundle === undefined) {
     const path = germanKeyLookupPathFromRepo()
     if (!existsSync(path)) {
       cachedBundle = null
       return null
     }
-    cachedBundle = germanKeyLookupBundleSchema.parse(
-      JSON.parse(readFileSync(path, 'utf-8')) as unknown,
-    )
+    const raw: unknown = JSON.parse(readFileSync(path, 'utf-8'))
+    cachedBundle = germanKeyLookupBundleSchema.parse(raw)
   }
   return cachedBundle ? destatisArsPresenceFromBundle(cachedBundle) : null
 }
 
-function candidateCanonicalArs(deRegionalRaw: string | null | undefined): string | null {
+function candidateCanonicalArs(deRegionalRaw: string | null | undefined) {
   if (deRegionalRaw == null || deRegionalRaw.trim() === '') return null
   const canonical = normalizeOsmValue(
     'de:regionalschluessel',
@@ -76,14 +75,14 @@ function candidateCanonicalArs(deRegionalRaw: string | null | undefined): string
   return /^\d{12}$/.test(canonical) ? canonical : null
 }
 
-function candidateAgs8(candidate: CandidateMatch): string | null {
+function candidateAgs8(candidate: CandidateMatch) {
   const agsDigits = candidate.deAgsRaw?.replace(/\D/g, '') ?? ''
   if (agsDigits.length === 8) return agsDigits
   const ars = candidateCanonicalArs(candidate.deRegionalRaw)
   return ars ? ags8FromArs12(ars) : null
 }
 
-export function uniqueOsmMapArsByAgs8(osmMapArs: readonly string[]): Map<string, string> {
+export function uniqueOsmMapArsByAgs8(osmMapArs: readonly string[]) {
   const byAgs = new Map<string, string[]>()
   for (const raw of osmMapArs) {
     const ars = raw.replace(/\D/g, '')
@@ -154,7 +153,7 @@ export function applyStaleOfficialKeyClassification(input: {
   destatis: DestatisArsPresence | null
   successors?: ArsSuccessorTable
   osmMapArs?: readonly string[]
-}): void {
+}) {
   if (input.preset !== 'regional-12' || input.destatis == null) return
   const successors = input.successors ?? loadArsSuccessorTable()
   const unmatchedKeys = new Set(input.unmatchedOsm.map((row) => row.canonicalMatchKey))
@@ -229,7 +228,7 @@ function successorOsmName(
   entry: StalePromoteOsmEntry,
   osmNameByKey: Map<string, string>,
   toArs: string,
-): string | null {
+) {
   const fromMap = osmNameByKey.get(toArs)?.trim()
   if (fromMap) return fromMap
   const fromProps = entry.properties?.name
@@ -248,7 +247,7 @@ export function promoteStaleOfficialRows(input: {
   osmByArs: Map<string, StalePromoteOsmEntry>
   osmNameByKey: Map<string, string>
   pickRelationId: (featureIds: string[], props: Record<string, unknown> | null) => string
-}): number[] {
+}) {
   const promotedIndexes: number[] = []
   const promotedToArs = new Set<string>()
   for (let i = 0; i < input.rows.length; i++) {

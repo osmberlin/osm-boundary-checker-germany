@@ -111,14 +111,19 @@ async function main() {
     explicitUrl: useExplicitOnly ? explicitUrl : null,
   })
   const downloadUrl = resolved.url
-  if (resolved.resolvedVia === 'dated_from_state') {
-    console.log(
-      `Geofabrik extract resolved from replication state: ${resolved.basename} (OSM data up to ${resolved.replicationTimestamp})`,
-    )
-  } else if (resolved.resolvedVia === 'latest_fallback') {
-    console.warn(
-      'Could not read Geofabrik germany-updates/state.txt; falling back to germany-latest.osm.pbf (symlink may be stale).',
-    )
+  switch (resolved.resolvedVia) {
+    case 'dated_from_state':
+      console.log(
+        `Geofabrik extract resolved from replication state: ${resolved.basename} (OSM data up to ${resolved.replicationTimestamp})`,
+      )
+      break
+    case 'latest_fallback':
+      console.warn(
+        'Could not read Geofabrik germany-updates/state.txt; falling back to germany-latest.osm.pbf (symlink may be stale).',
+      )
+      break
+    case 'explicit':
+      break
   }
 
   const timezone = resolveRefreshTimezone()

@@ -24,6 +24,7 @@ import {
   snapshotsQueryOptions,
 } from './data/load'
 import { relationResolverIndexUrl, routerBasePath } from './data/paths'
+import { validateAreaReportSearch } from './hooks/useAreaReportStaleKeysFilter'
 import { de } from './i18n/de'
 import { validateFeatureDetailSearch } from './lib/featureDetailSearch'
 import { validateGermanKeySearch } from './lib/germanKeySearch'
@@ -152,7 +153,7 @@ const germanKeyExplorerRoute = createRoute({
   component: GermanKeyExplorer,
 })
 
-function parseRegionalArsParams(params: { ars: string }): { ars: string } {
+function parseRegionalArsParams(params: { ars: string }) {
   const padded = padRegional12(params.ars)
   if (!padded || padded.length !== 12) {
     throw redirect({ to: '/regional' })
@@ -225,6 +226,7 @@ const regionalHubSourcesRoute = createRoute({
 const areaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/$areaId',
+  validateSearch: (search: Record<string, unknown>) => validateAreaReportSearch(search),
   loader: async ({ context, params }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(comparisonQueryOptions(params.areaId)),

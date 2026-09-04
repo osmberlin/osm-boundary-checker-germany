@@ -24,7 +24,7 @@ if (!existsSync(relationResolverIndexPath)) {
   throw new Error('Missing report/public/data/relation-resolver-index.json after refresh.')
 }
 
-const mod = (await import(areasIndexPath.href)) as { default?: unknown }
+const mod: { default?: unknown } = await import(areasIndexPath.href)
 const parsed = areasIndexPayloadSchema.parse(mod.default)
 if (parsed.areas.length === 0) {
   throw new Error('areasIndex.gen.ts has no areas after refresh')

@@ -159,7 +159,7 @@ function isoWeekKey(date: Date): string {
 function readExistingCheckedAt(jsonAbsPath: string): string | undefined {
   if (!existsSync(jsonAbsPath)) return undefined
   try {
-    const raw = JSON.parse(readFileSync(jsonAbsPath, 'utf8')) as unknown
+    const raw: unknown = JSON.parse(readFileSync(jsonAbsPath, 'utf8'))
     const parsed = germanKeyLookupBundleSchema.safeParse(raw)
     return parsed.success ? parsed.data.checkedAt : undefined
   } catch (error) {

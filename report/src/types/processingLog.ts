@@ -52,7 +52,7 @@ export const processingLogEventSchema = z.discriminatedUnion('kind', [
 
 export type LogEvent = z.infer<typeof processingLogEventSchema>
 
-export function parseProcessingLogJsonl(text: string): LogEvent[] {
+export function parseProcessingLogJsonl(text: string) {
   const out: LogEvent[] = []
   for (const line of text.split('\n')) {
     const trimmed = line.trim()
