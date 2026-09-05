@@ -1,5 +1,8 @@
 entries:
   - refs:
+      - 'd5636aa'
+    hide: true
+  - refs:
       - '253b37c'
     descriptionMd: |
       Im Gemeinde-Abgleich erscheint eine korrekt mit Regionalschlüssel getaggte Fläche nicht mehr als „nur amtlich“, nur weil die OSM-Geometrie von der amtlichen Fläche abgewandert ist. Beispiel: Insel Lütje Hörn in Niedersachsen — OSM kartiert die wandernde Sandbank, VG25 die katasterliche Verwaltungsgrenze; der Abgleich zeigt das als Zuordnung mit Geometrieunterschied.
