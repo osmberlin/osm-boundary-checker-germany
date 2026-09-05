@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { FeatureCollection } from 'geojson'
-import { unionFeaturesByKey } from './geoMerge.ts'
+import { bucketFeaturesByKey, unionFeaturesByKey } from './geoMerge.ts'
 
 describe('unionFeaturesByKey', () => {
   test('empty collection', () => {
@@ -8,7 +8,9 @@ describe('unionFeaturesByKey', () => {
     const m = unionFeaturesByKey(fc, () => 'a')
     expect(m.size).toBe(0)
   })
+})
 
+describe('bucketFeaturesByKey', () => {
   test('keeps properties from first feature per key', () => {
     const fc: FeatureCollection = {
       type: 'FeatureCollection',
@@ -47,8 +49,7 @@ describe('unionFeaturesByKey', () => {
         },
       ],
     }
-    const m = unionFeaturesByKey(fc, (p) => String((p as { id: string }).id))
-    const kg = m.get('1')
-    expect(kg?.properties).toEqual({ id: '1', name: 'first' })
+    const m = bucketFeaturesByKey(fc, (p) => String((p as { id: string }).id))
+    expect(m.get('1')?.properties).toEqual({ id: '1', name: 'first' })
   })
 })

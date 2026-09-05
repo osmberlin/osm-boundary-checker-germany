@@ -87,6 +87,10 @@ function defaultRustBinaryPath(): string {
   return join(here, '../../../rust/geom-sidecar/target/release/geom-sidecar' + ext)
 }
 
+function rustGeomSidecarBinaryPath(): string {
+  return process.env.RUST_GEOM_BIN?.trim() || defaultRustBinaryPath()
+}
+
 // Heavy datasets like `de-gemeinden` (≈11k municipalities × full Germany detail) explode the
 // per-call JSON payload to multiple GB when sent as a single batch, which causes OOM/SIGTERM
 // in CI. Process inputs in bounded chunks so each spawn stays well below memory limits.
@@ -123,7 +127,7 @@ function runRustCommand<TOutput>(
   payload: unknown,
   schema: z.ZodType<TOutput>,
 ): TOutput {
-  const bin = process.env.RUST_GEOM_BIN?.trim() || defaultRustBinaryPath()
+  const bin = rustGeomSidecarBinaryPath()
   if (!existsSync(bin)) {
     throw new Error(rustBootstrapHint(bin))
   }

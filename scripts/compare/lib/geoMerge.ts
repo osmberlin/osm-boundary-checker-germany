@@ -12,19 +12,18 @@ export type KeyedGeometry = {
   properties: Record<string, unknown> | null
 }
 
-/** Union all features sharing the same key; returns one MultiPolygon/Polygon or null. */
-export function unionFeaturesByKey(
+type FeatureKeyBucket = {
+  geoms: Geometry[]
+  featureIds: string[]
+  properties: Record<string, unknown> | null
+}
+
+/** Group features by match key; first non-empty properties win. Geometry union happens later in Rust. */
+export function bucketFeaturesByKey(
   fc: FeatureCollection,
   getKey: (props: GeoJsonProperties) => string | null,
-): Map<string, KeyedGeometry> {
-  const buckets = new Map<
-    string,
-    {
-      geoms: Geometry[]
-      featureIds: string[]
-      properties: Record<string, unknown> | null
-    }
-  >()
+): Map<string, FeatureKeyBucket> {
+  const buckets = new Map<string, FeatureKeyBucket>()
 
   for (const f of fc.features) {
     const key = getKey(f.properties)
@@ -51,6 +50,16 @@ export function unionFeaturesByKey(
       if (id && !b.featureIds.includes(id)) b.featureIds.push(id)
     }
   }
+
+  return buckets
+}
+
+/** Union all features sharing the same key; returns one MultiPolygon/Polygon or null. */
+export function unionFeaturesByKey(
+  fc: FeatureCollection,
+  getKey: (props: GeoJsonProperties) => string | null,
+): Map<string, KeyedGeometry> {
+  const buckets = bucketFeaturesByKey(fc, getKey)
 
   const rustResults = unionByKeyWithRust(
     Array.from(buckets.entries()).map(([key, { geoms, featureIds, properties }]) => ({
