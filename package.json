@@ -19,6 +19,7 @@
     "lint-check": "oxlint --deny-warnings -c oxlint.config.mjs .",
     "test-run": "bun run --parallel test-run:*",
     "test-run:scripts": "bun test scripts/",
+    "test-run:report-snapshot": "bun test report/prepareStaticSnapshotLib.test.ts",
     "test-run:report": "bun run --filter report test",
     "check": "bun run --parallel type-check lint format test-run knip-warn",
     "check-ci": "bun run --parallel type-check lint-check format-check test-run",

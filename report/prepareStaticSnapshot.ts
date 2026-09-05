@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs'
-import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readdir, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { arsSuccessorsJsonPath } from '../scripts/shared/arsSuccessorTableFs.ts'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
+import { removeGeneratedPublicData, withExclusiveSnapshotLock } from './prepareStaticSnapshotLib.ts'
 import { assertDatasetsRootExists, resolveRuntimeRoot } from './runtimeDataRoot.ts'
 
 const runtimeRoot = resolveRuntimeRoot()
@@ -21,113 +22,105 @@ async function copyIfExists(src: string, dest: string): Promise<boolean> {
 }
 
 async function main() {
-  const areaEntries = await readdir(srcDatasetsRoot, { withFileTypes: true })
-  const areaFolders = areaEntries.filter(
-    (entry) => entry.isDirectory() && !entry.name.startsWith('.'),
-  )
-  if (areaFolders.length === 0) {
-    throw new Error(
-      `[prepare-static-snapshot] No area folders found under ${srcDatasetsRoot}. Did you run the processing pipeline?`,
+  await withExclusiveSnapshotLock(async () => {
+    const areaEntries = await readdir(srcDatasetsRoot, { withFileTypes: true })
+    const areaFolders = areaEntries.filter(
+      (entry) => entry.isDirectory() && !entry.name.startsWith('.'),
     )
-  }
-
-  const germanKeyLookupPath = join(destDataRoot, 'german-key-lookup.json')
-  let germanKeyLookupBackup: Buffer | null = null
-  if (existsSync(germanKeyLookupPath)) {
-    germanKeyLookupBackup = await readFile(germanKeyLookupPath)
-  }
-  const regionalHubPath = join(destDataRoot, 'regional-hub')
-  let regionalHubBackup: string | null = null
-  if (existsSync(regionalHubPath)) {
-    regionalHubBackup = await mkdtemp(join(tmpdir(), 'regional-hub-snapshot-'))
-    await cp(regionalHubPath, regionalHubBackup, { recursive: true, force: true })
-  }
-
-  await rm(destDatasetsRoot, { recursive: true, force: true })
-  await rm(destDataRoot, { recursive: true, force: true })
-
-  let comparisonTableCount = 0
-  for (const entry of areaFolders) {
-    const area = entry.name
-    const areaSrc = join(srcDatasetsRoot, area)
-    const areaDest = join(destDatasetsRoot, area)
-    await copyIfExists(join(areaSrc, 'snapshots.json'), join(areaDest, 'snapshots.json'))
-    await copyIfExists(
-      join(areaSrc, 'output', 'comparison.pmtiles'),
-      join(areaDest, 'output', 'comparison.pmtiles'),
-    )
-    await copyIfExists(
-      join(areaSrc, 'output', 'comparison-diff.pmtiles'),
-      join(areaDest, 'output', 'comparison-diff.pmtiles'),
-    )
-    await copyIfExists(
-      join(areaSrc, 'output', 'unmatched.pmtiles'),
-      join(areaDest, 'output', 'unmatched.pmtiles'),
-    )
-    if (
-      await copyIfExists(
-        join(areaSrc, 'output', 'comparison_table.json'),
-        join(areaDest, 'output', 'comparison_table.json'),
+    if (areaFolders.length === 0) {
+      throw new Error(
+        `[prepare-static-snapshot] No area folders found under ${srcDatasetsRoot}. Did you run the processing pipeline?`,
       )
-    ) {
-      comparisonTableCount += 1
     }
-    await copyIfExists(join(areaSrc, 'output', 'features'), join(areaDest, 'output', 'features'))
+
+    const regionalHubPath = join(destDataRoot, 'regional-hub')
+    let regionalHubBackup: string | null = null
+    if (existsSync(regionalHubPath)) {
+      regionalHubBackup = await mkdtemp(join(tmpdir(), 'regional-hub-snapshot-'))
+      await cp(regionalHubPath, regionalHubBackup, { recursive: true, force: true })
+    }
+
+    await rm(destDatasetsRoot, { recursive: true, force: true })
+    await removeGeneratedPublicData(destDataRoot)
+
+    let comparisonTableCount = 0
+    for (const entry of areaFolders) {
+      const area = entry.name
+      const areaSrc = join(srcDatasetsRoot, area)
+      const areaDest = join(destDatasetsRoot, area)
+      await copyIfExists(join(areaSrc, 'snapshots.json'), join(areaDest, 'snapshots.json'))
+      await copyIfExists(
+        join(areaSrc, 'output', 'comparison.pmtiles'),
+        join(areaDest, 'output', 'comparison.pmtiles'),
+      )
+      await copyIfExists(
+        join(areaSrc, 'output', 'comparison-diff.pmtiles'),
+        join(areaDest, 'output', 'comparison-diff.pmtiles'),
+      )
+      await copyIfExists(
+        join(areaSrc, 'output', 'unmatched.pmtiles'),
+        join(areaDest, 'output', 'unmatched.pmtiles'),
+      )
+      if (
+        await copyIfExists(
+          join(areaSrc, 'output', 'comparison_table.json'),
+          join(areaDest, 'output', 'comparison_table.json'),
+        )
+      ) {
+        comparisonTableCount += 1
+      }
+      await copyIfExists(join(areaSrc, 'output', 'features'), join(areaDest, 'output', 'features'))
+      await copyIfExists(
+        join(areaSrc, 'output', 'official_for_edit'),
+        join(areaDest, 'output', 'official_for_edit'),
+      )
+    }
+
+    if (comparisonTableCount === 0) {
+      throw new Error(
+        `[prepare-static-snapshot] No output/comparison_table.json files found under ${srcDatasetsRoot}. Refusing to publish an empty report.`,
+      )
+    }
+
     await copyIfExists(
-      join(areaSrc, 'output', 'official_for_edit'),
-      join(areaDest, 'output', 'official_for_edit'),
+      join(runtimeRoot, 'data', 'processing-state.json'),
+      join(destDataRoot, 'processing-state.json'),
     )
-  }
-
-  if (comparisonTableCount === 0) {
-    throw new Error(
-      `[prepare-static-snapshot] No output/comparison_table.json files found under ${srcDatasetsRoot}. Refusing to publish an empty report.`,
+    await copyIfExists(
+      join(runtimeRoot, 'data', 'processing-log.jsonl'),
+      join(destDataRoot, 'processing-log.jsonl'),
     )
-  }
+    await copyIfExists(
+      join(runtimeRoot, 'data', 'run-status.json'),
+      join(destDataRoot, 'run-status.json'),
+    )
+    await copyIfExists(
+      join(runtimeRoot, 'data', 'osm-pipeline-state.json'),
+      join(destDataRoot, 'osm-pipeline-state.json'),
+    )
+    await copyIfExists(
+      join(runtimeRoot, 'data', 'relation-resolver-index.json'),
+      join(destDataRoot, 'relation-resolver-index.json'),
+    )
 
-  await copyIfExists(
-    join(runtimeRoot, 'data', 'processing-state.json'),
-    join(destDataRoot, 'processing-state.json'),
-  )
-  await copyIfExists(
-    join(runtimeRoot, 'data', 'processing-log.jsonl'),
-    join(destDataRoot, 'processing-log.jsonl'),
-  )
-  await copyIfExists(
-    join(runtimeRoot, 'data', 'run-status.json'),
-    join(destDataRoot, 'run-status.json'),
-  )
-  await copyIfExists(
-    join(runtimeRoot, 'data', 'osm-pipeline-state.json'),
-    join(destDataRoot, 'osm-pipeline-state.json'),
-  )
-  await copyIfExists(
-    join(runtimeRoot, 'data', 'relation-resolver-index.json'),
-    join(destDataRoot, 'relation-resolver-index.json'),
-  )
-
-  if (germanKeyLookupBackup !== null) {
     await mkdir(destDataRoot, { recursive: true })
-    await writeFile(germanKeyLookupPath, germanKeyLookupBackup)
-  }
+    const copiedRuntimeHub = await copyIfExists(
+      join(runtimeRoot, 'data', 'regional-hub'),
+      join(destDataRoot, 'regional-hub'),
+    )
+    if (!copiedRuntimeHub && regionalHubBackup !== null) {
+      await copyIfExists(regionalHubBackup, join(destDataRoot, 'regional-hub'))
+    }
+    if (regionalHubBackup !== null) {
+      await rm(regionalHubBackup, { recursive: true, force: true })
+    }
 
-  await mkdir(destDataRoot, { recursive: true })
-  const copiedRuntimeHub = await copyIfExists(
-    join(runtimeRoot, 'data', 'regional-hub'),
-    join(destDataRoot, 'regional-hub'),
-  )
-  if (!copiedRuntimeHub && regionalHubBackup !== null) {
-    await copyIfExists(regionalHubBackup, join(destDataRoot, 'regional-hub'))
-  }
-  if (regionalHubBackup !== null) {
-    await rm(regionalHubBackup, { recursive: true, force: true })
-  }
+    await copyIfExists(arsSuccessorsJsonPath(), join(destDataRoot, 'ars-successors.json'))
 
-  await copyIfExists(arsSuccessorsJsonPath(), join(destDataRoot, 'ars-successors.json'))
-
-  console.log(
-    `[prepare-static-snapshot] Wrote public datasets from ${runtimeRoot} (${comparisonTableCount} areas with comparison_table.json)`,
-  )
+    console.log(
+      `[prepare-static-snapshot] Wrote public datasets from ${runtimeRoot} (${comparisonTableCount} areas with comparison_table.json)`,
+    )
+  })
 }
 
 void main().catch((err) => {

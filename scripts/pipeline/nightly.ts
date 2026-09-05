@@ -41,6 +41,7 @@ import {
 } from '../shared/runStatus.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
+import { compareBoundariesCliArgs } from './compareBoundariesCliArgs.ts'
 
 type StepStatus = 'ok' | 'fail' | 'skipped'
 
@@ -502,8 +503,39 @@ async function main() {
       await runPhaseSteps(downloadSteps)
     }
 
+    const runRegionalHub = async () => {
+      const hubStep = 'pipeline:regional-hub'
+      const hubT0 = Date.now()
+      appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step: hubStep })
+      writeState(statePath, { ...state, phase: hubStep, updatedAt: nowIso() })
+      const hubExitCode = await runCommand(
+        'bun',
+        ['run', '--filter', './scripts', 'regional-hub:generate'],
+        workspaceRoot,
+        hubStep,
+      )
+      const hubDurationMs = Date.now() - hubT0
+      appendJsonl(logPath, {
+        kind: 'step_end',
+        runId,
+        at: nowIso(),
+        step: hubStep,
+        status: hubExitCode === 0 ? 'ok' : 'fail',
+        durationMs: hubDurationMs,
+        exitCode: hubExitCode,
+      })
+      upsertSharedBranchStatus(processingDir, hubStep, {
+        status: hubExitCode === 0 ? 'success' : 'failed_no_cache',
+        usedCache: false,
+        errorCode: hubExitCode === 0 ? undefined : String(hubExitCode),
+        retryHint: hubExitCode === 0 ? undefined : 'automatic retry next nightly run',
+      })
+      if (hubExitCode !== 0) failed = true
+    }
+
     if (phase === 'all' || phase === 'extract') {
       await runPhaseSteps(extractSteps)
+      await runRegionalHub()
     }
 
     if (phase === 'all' || phase === 'compare') {
@@ -528,7 +560,7 @@ async function main() {
         const hadCompareOutputBefore = readCompareGeneratedAt(runtimeRoot, area) != null
         const exitCode = await runCommand(
           'bun',
-          ['scripts/compare/compare-boundaries.ts', '--area', area],
+          compareBoundariesCliArgs(area),
           workspaceRoot,
           stepName,
         )
@@ -627,36 +659,6 @@ async function main() {
         retryHint: relationIndexExitCode === 0 ? undefined : 'automatic retry next nightly run',
       })
       if (relationIndexExitCode !== 0) failed = true
-    }
-
-    if (phase !== 'download') {
-      const hubStep = 'pipeline:regional-hub'
-      const hubT0 = Date.now()
-      appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step: hubStep })
-      writeState(statePath, { ...state, phase: hubStep, updatedAt: nowIso() })
-      const hubExitCode = await runCommand(
-        'bun',
-        ['run', '--filter', './scripts', 'regional-hub:generate'],
-        workspaceRoot,
-        hubStep,
-      )
-      const hubDurationMs = Date.now() - hubT0
-      appendJsonl(logPath, {
-        kind: 'step_end',
-        runId,
-        at: nowIso(),
-        step: hubStep,
-        status: hubExitCode === 0 ? 'ok' : 'fail',
-        durationMs: hubDurationMs,
-        exitCode: hubExitCode,
-      })
-      upsertSharedBranchStatus(processingDir, hubStep, {
-        status: hubExitCode === 0 ? 'success' : 'failed_no_cache',
-        usedCache: false,
-        errorCode: hubExitCode === 0 ? undefined : String(hubExitCode),
-        retryHint: hubExitCode === 0 ? undefined : 'automatic retry next nightly run',
-      })
-      if (hubExitCode !== 0) failed = true
     }
 
     const finalStatus = failed ? 'fail' : 'ok'

@@ -17,7 +17,7 @@ Artifacts are split by usage so recovery can restore only the failed part:
 - `compare-outputs` (optional tier): last-good per-area compare outputs and `snapshots.json`.
 - `report-runtime-last-good`: deploy-only user-facing report payload (`datasets/*/output/**`, `snapshots.json`, and selected `data/*` files).
 
-Regional hub JSON (`data/regional-hub/manifest.json`, `osm-tags.json`, `wikidata.json`, `mismatch-flags.json`) is produced by `regional-hub:generate` after OSM extract. OSM tags and Wikidata dumps are **not** git; they travel in `report-runtime-last-good` and are copied to Pages via `prepare-static-snapshot`. Destatis EWZ stays in committed `german-key-lookup.json` (pre-push weekly).
+Regional hub JSON (`data/regional-hub/manifest.json`, `osm-tags.json`, `wikidata.json`, `mismatch-flags.json`) is produced by `regional-hub:generate` after OSM extract. OSM tags and Wikidata dumps are **not** git; they travel in `report-runtime-last-good` and are copied to Pages via `prepare-static-snapshot`. Destatis EWZ stays in committed `german-key-lookup.json` (pre-push weekly). Snapshot must not delete committed `german-key-lookup.json` or `ars-successors.json`.
 
 ## Compare-ready keep/drop contract
 

@@ -58,7 +58,7 @@ Current behavior already helps:
 Current behavior that still drives long runtime:
 
 - OSM extract and per-area compares still dominate runtime; OSM/BKG/official downloads now follow a daily refresh window and reuse cache within the same window.
-- Area compares run sequentially.
+- Nightly compare uses `--no-sync` (GitHub Actions syncs runtime assets once after compare); regional hub runs after extract, not after compare.
 
 ## No-cost optimization playbook (stay on GitHub, no paid tools)
 

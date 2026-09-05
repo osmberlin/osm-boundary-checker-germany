@@ -175,7 +175,7 @@ async function main() {
     console.error(
       cliErr(
         'Usage: bun run scripts/compare/compare-boundaries.ts -- --area <folder> [--no-sync]\n' +
-          '  --no-sync  Skip report sync-runtime-assets (used when cli/compare batches areas).',
+          '  --no-sync  Skip report sync-runtime-assets (used when cli/compare or nightly batches compares).',
       ),
     )
     process.exit(1)
