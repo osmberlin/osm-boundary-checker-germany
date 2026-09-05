@@ -1,5 +1,11 @@
 entries:
   - refs:
+      - '71ac11d'
+    hide: true
+  - refs:
+      - '5f66ea5'
+    hide: true
+  - refs:
       - 'd5636aa'
     hide: true
   - refs:
