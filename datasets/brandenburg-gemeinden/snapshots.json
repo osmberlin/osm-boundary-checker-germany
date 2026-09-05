@@ -36,8 +36,8 @@
         "meanIou": 0.9948564390926609,
         "matched": 409,
         "unmatchedOsm": 65,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -47,8 +47,8 @@
         "meanIou": 0.9948564391042765,
         "matched": 409,
         "unmatchedOsm": 65,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -58,8 +58,8 @@
         "meanIou": 0.9948564391042765,
         "matched": 409,
         "unmatchedOsm": 65,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -69,8 +69,8 @@
         "meanIou": 0.9948564391042765,
         "matched": 409,
         "unmatchedOsm": 65,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -80,8 +80,8 @@
         "meanIou": 0.9948633088496693,
         "matched": 409,
         "unmatchedOsm": 65,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -91,8 +91,8 @@
         "meanIou": 0.994804312775717,
         "matched": 407,
         "unmatchedOsm": 0,
-        "reviews": 41,
-        "issues": 24
+        "issues": 24,
+        "reviews": 41
       }
     },
     {
@@ -102,8 +102,8 @@
         "meanIou": 0.9948633549404763,
         "matched": 409,
         "unmatchedOsm": 65,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -113,8 +113,8 @@
         "meanIou": 0.9948029635753598,
         "matched": 407,
         "unmatchedOsm": 4,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -124,8 +124,8 @@
         "meanIou": 0.9948029642740758,
         "matched": 407,
         "unmatchedOsm": 4,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -135,8 +135,8 @@
         "meanIou": 0.9948029642742121,
         "matched": 407,
         "unmatchedOsm": 4,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -146,8 +146,8 @@
         "meanIou": 0.9948029642742121,
         "matched": 407,
         "unmatchedOsm": 4,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -157,8 +157,8 @@
         "meanIou": 0.9948029642742121,
         "matched": 407,
         "unmatchedOsm": 4,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -168,8 +168,8 @@
         "meanIou": 0.9948225383705458,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -179,8 +179,8 @@
         "meanIou": 0.9948268597810238,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -190,8 +190,8 @@
         "meanIou": 0.9948268615707659,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -201,8 +201,8 @@
         "meanIou": 0.9948268615707659,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -212,8 +212,8 @@
         "meanIou": 0.9948268508828115,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -223,8 +223,8 @@
         "meanIou": 0.9948268508828115,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -234,8 +234,8 @@
         "meanIou": 0.9948268508828115,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -245,8 +245,8 @@
         "meanIou": 0.9948268508828115,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 40,
-        "issues": 25
+        "issues": 25,
+        "reviews": 40
       }
     },
     {
@@ -256,8 +256,8 @@
         "meanIou": 0.9948609083207205,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -267,8 +267,8 @@
         "meanIou": 0.9948609083207205,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -278,8 +278,8 @@
         "meanIou": 0.9948609083207205,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -289,8 +289,8 @@
         "meanIou": 0.9948609057722027,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -300,8 +300,8 @@
         "meanIou": 0.9948609057722027,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -311,8 +311,8 @@
         "meanIou": 0.9948656375054117,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -322,8 +322,8 @@
         "meanIou": 0.9948656375054117,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -333,8 +333,8 @@
         "meanIou": 0.9948656375054117,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -344,8 +344,8 @@
         "meanIou": 0.9948656375054117,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -355,8 +355,8 @@
         "meanIou": 0.9948701554851168,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -366,8 +366,8 @@
         "meanIou": 0.9948707823050393,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -377,8 +377,8 @@
         "meanIou": 0.9948733527487764,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -388,8 +388,8 @@
         "meanIou": 0.9948733527573763,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -399,8 +399,8 @@
         "meanIou": 0.9948733519207363,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -410,8 +410,8 @@
         "meanIou": 0.9948733519207363,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -421,8 +421,8 @@
         "meanIou": 0.9948733519207363,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -432,8 +432,8 @@
         "meanIou": 0.9948692701036334,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -443,8 +443,8 @@
         "meanIou": 0.9948692701036334,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -454,8 +454,8 @@
         "meanIou": 0.994888281619873,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -465,8 +465,8 @@
         "meanIou": 0.9948882830571828,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -476,8 +476,8 @@
         "meanIou": 0.9948882860324318,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -487,8 +487,8 @@
         "meanIou": 0.994888206010935,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -498,8 +498,8 @@
         "meanIou": 0.994888206010935,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -509,8 +509,8 @@
         "meanIou": 0.994888206010935,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -520,8 +520,8 @@
         "meanIou": 0.9948882060749099,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -531,8 +531,8 @@
         "meanIou": 0.9948906203306734,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -542,8 +542,8 @@
         "meanIou": 0.9948906203306734,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -553,8 +553,8 @@
         "meanIou": 0.9948906204319491,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 25
+        "issues": 25,
+        "reviews": 39
       }
     },
     {
@@ -564,8 +564,8 @@
         "meanIou": 0.9949250370444958,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -575,8 +575,8 @@
         "meanIou": 0.9949250370444958,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -586,8 +586,8 @@
         "meanIou": 0.9949250370444958,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -597,8 +597,8 @@
         "meanIou": 0.9949250370444958,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -608,8 +608,8 @@
         "meanIou": 0.9949250715815039,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -619,8 +619,8 @@
         "meanIou": 0.9949251076381905,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -630,8 +630,8 @@
         "meanIou": 0.9949251076381905,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -641,8 +641,8 @@
         "meanIou": 0.9949251076381905,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -652,8 +652,8 @@
         "meanIou": 0.9949251076381905,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -663,8 +663,8 @@
         "meanIou": 0.9949196522436167,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -674,8 +674,8 @@
         "meanIou": 0.9949196522436167,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -685,8 +685,8 @@
         "meanIou": 0.994919828986197,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -696,8 +696,8 @@
         "meanIou": 0.9949215272655166,
         "matched": 408,
         "unmatchedOsm": 3,
-        "reviews": 39,
-        "issues": 24
+        "issues": 24,
+        "reviews": 39
       }
     },
     {
@@ -707,8 +707,8 @@
         "meanIou": 0.9949302662112699,
         "matched": 413,
         "unmatchedOsm": 0,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -718,8 +718,8 @@
         "meanIou": 0.9949302662112699,
         "matched": 413,
         "unmatchedOsm": 0,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -729,8 +729,8 @@
         "meanIou": 0.9949305814083274,
         "matched": 413,
         "unmatchedOsm": 0,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -740,8 +740,8 @@
         "meanIou": 0.9949385255091284,
         "matched": 413,
         "unmatchedOsm": 0,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -751,8 +751,8 @@
         "meanIou": 0.9949385274870486,
         "matched": 413,
         "unmatchedOsm": 0,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -762,8 +762,8 @@
         "meanIou": 0.9949385274870486,
         "matched": 413,
         "unmatchedOsm": 0,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -773,8 +773,8 @@
         "meanIou": 0.9949385274870486,
         "matched": 413,
         "unmatchedOsm": 0,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -784,8 +784,8 @@
         "meanIou": 0.9949385274870486,
         "matched": 413,
         "unmatchedOsm": 0,
-        "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "reviews": 40
       }
     },
     {
@@ -795,8 +795,20 @@
         "meanIou": 0.9949385274870486,
         "matched": 413,
         "unmatchedOsm": 0,
+        "issues": 24,
+        "reviews": 40
+      }
+    },
+    {
+      "id": "2026-09-05",
+      "summary": {
+        "totalRows": 413,
+        "meanIou": 0.9949385274870486,
+        "matched": 413,
+        "unmatchedOsm": 0,
         "reviews": 40,
-        "issues": 24
+        "issues": 24,
+        "staleOfficialKey": 0
       }
     }
   ]
