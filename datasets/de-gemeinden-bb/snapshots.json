@@ -779,6 +779,18 @@
         "meanIou": 0.9946318894098211,
         "matched": 413,
         "unmatchedOsm": 0,
+        "issues": 23,
+        "reviews": 42,
+        "staleOfficialKey": 0
+      }
+    },
+    {
+      "id": "2026-09-06",
+      "summary": {
+        "totalRows": 413,
+        "meanIou": 0.9946318894098211,
+        "matched": 413,
+        "unmatchedOsm": 0,
         "reviews": 42,
         "issues": 23,
         "staleOfficialKey": 0
