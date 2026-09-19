@@ -890,6 +890,18 @@
         "meanIou": 0.911794827455802,
         "matched": 7,
         "unmatchedOsm": 0,
+        "issues": 1,
+        "reviews": 0,
+        "staleOfficialKey": 0
+      }
+    },
+    {
+      "id": "2026-09-19",
+      "summary": {
+        "totalRows": 7,
+        "meanIou": 0.911794827455802,
+        "matched": 7,
+        "unmatchedOsm": 0,
         "reviews": 0,
         "issues": 1,
         "staleOfficialKey": 0
