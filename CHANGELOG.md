@@ -2,6 +2,12 @@
 
 Automatisch aus `changelog.registry.yaml` erzeugt.
 
+## 2026-10
+
+### `5690fd3`
+
+Die BKG-Daten (VG25) gelten jetzt als OSM-kompatibel. Das BKG hat die CC BY 4.0 um ein [Addendum](https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf) ergänzt: Die Namensnennung auf der OSM-Contributors-Seite genügt, und die Weitergabe unter ODbL ist zulässig. In der Lizenzübersicht steht bei allen VG25-Datensätzen „Ja (Lizenz oder Freigabe)“ mit dem Addendum als Nachweis.
+
 ## 2026-09
 
 ### `253b37c`
