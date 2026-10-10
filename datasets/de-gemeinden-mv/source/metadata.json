@@ -12,9 +12,9 @@
     "licenseId": "cc_by_40",
     "licenseLabel": "CC-BY-4.0",
     "licenseSourceUrl": "https://creativecommons.org/licenses/by/4.0/",
-    "osmCompatibility": "unknown",
-    "osmCompatibilitySourceUrl": "https://creativecommons.org/licenses/by/4.0/",
-    "osmCompatibilityComment": "Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen."
+    "osmCompatibility": "yes_waiver",
+    "osmCompatibilitySourceUrl": "https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf",
+    "osmCompatibilityComment": "BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite)."
   },
   "osm": {
     "downloadedAt": "2026-05-05T20:21:15.000Z",

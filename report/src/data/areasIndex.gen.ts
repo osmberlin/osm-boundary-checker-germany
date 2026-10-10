@@ -446,10 +446,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-be',
@@ -457,10 +458,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-bw',
@@ -468,10 +470,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-by',
@@ -479,10 +482,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-hb',
@@ -490,10 +494,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-he',
@@ -501,10 +506,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-hh',
@@ -512,10 +518,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-mv',
@@ -523,10 +530,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-ni',
@@ -534,10 +542,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-nw',
@@ -545,10 +554,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-rp',
@@ -556,10 +566,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-sh',
@@ -567,10 +578,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-sl',
@@ -578,10 +590,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-sn',
@@ -589,10 +602,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-st',
@@ -600,10 +614,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-gemeinden-th',
@@ -611,10 +626,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-laender',
@@ -622,10 +638,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-landkreise',
@@ -633,10 +650,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-regierungsbezirke',
@@ -644,10 +662,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-staat',
@@ -655,10 +674,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'de-verwaltungsgemeinschaften',
@@ -666,10 +686,11 @@ const areasIndex = {
       officialSourceGroupKey: 'preset:bkg_vg25',
       officialLicenseLabel: 'CC-BY-4.0',
       officialLicenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-      officialOsmCompatibility: 'unknown',
-      officialOsmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+      officialOsmCompatibility: 'yes_waiver',
+      officialOsmCompatibilitySourceUrl:
+        'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
       officialOsmCompatibilityComment:
-        'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+        'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
     },
     {
       area: 'hamburg-bezirke',

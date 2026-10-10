@@ -36,10 +36,11 @@ const BKG_PROFILE_COMMON = {
   sourceDownloadUrl: BKG_ZIP_URL,
   licenseId: 'cc_by_40',
   licenseSourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
-  osmCompatibility: 'unknown',
-  osmCompatibilitySourceUrl: 'https://creativecommons.org/licenses/by/4.0/',
+  osmCompatibility: 'yes_waiver',
+  osmCompatibilitySourceUrl:
+    'https://sgx.geodatenzentrum.de/web_public/gdz/lizenz/ccby_v4_0_addendum_namensnennung.pdf',
   osmCompatibilityComment:
-    'Kompatibilitaet fuer OSM ist je Datensatz und Freigabekontext zu pruefen.',
+    'BKG ergaenzt die CC BY 4.0 fuer VG25 um ein Addendum: Namensnennung auf der OSM-Contributors-Seite genuegt, Weitergabe unter ODbL ist zulaessig (siehe Nutzungsbedingungen auf der Produktseite).',
 } as const
 
 export const OFFICIAL_PROFILES: Record<OfficialProfileId, OfficialProfile> = {
