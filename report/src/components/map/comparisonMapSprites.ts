@@ -1,4 +1,4 @@
-import type maplibregl from 'maplibre-gl'
+import type * as maplibregl from 'maplibre-gl'
 import { mapLayerColors } from '../mapLayerColors'
 
 export const OSM_UNMATCHED_OVERLAY_STRIPE_PATTERN_ID =
