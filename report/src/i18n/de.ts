@@ -44,7 +44,7 @@ export const de = {
     osmLinkLabel: 'OpenStreetMap',
     geoDataBetween: ' und ',
     bkgLinkHref: 'https://www.bkg.bund.de/',
-    bkgLinkLabel: 'Bundesamt für Kartographie und Geodäsie (VG250 u. a.)',
+    bkgLinkLabel: 'Bundesamt für Kartographie und Geodäsie (VG25 u. a.)',
     geoDataSuffix: '.',
     openSourceComponentsLine: 'Open-Source-Komponenten: ',
     openSourceThanks: [
@@ -86,8 +86,8 @@ export const de = {
     licenseSectionHeading: 'Lizenz und OSM-Kompatibilität der amtlichen Quelle',
     /** Homepage license table: first column is area display name, not feature name+key. */
     licenseTableAreaColumn: 'Gebiet',
-    /** Bundled BKG VG250 rows on homepage (same official preset family). */
-    licenseHomeBkgBundleLabel: 'Bundesamt für Kartographie und Geodäsie (VG250)',
+    /** Bundled BKG VG25 rows on homepage (same official preset family). */
+    licenseHomeBkgBundleLabel: 'Bundesamt für Kartographie und Geodäsie (VG25)',
     licenseHomeBkgBundleSubline:
       'Gemeinsame amtliche Grundlage für die deutschlandweiten LIST-Datensätze in dieser Übersicht.',
     /** Multiple areas sharing the same direct download URL (non-BKG bundle). */

@@ -1,7 +1,7 @@
 import { BKG_ZIP_URL } from '../../../scripts/shared/bkg.ts'
 import type { DatasetConfig } from '../../../scripts/shared/datasetConfig.ts'
 
-/** Canonical group key for all BKG VG250 WFS profile variants (`bkg_vg25_*`). */
+/** Canonical group key for all BKG VG25 profile variants (`bkg_vg25_*`). */
 export const OFFICIAL_SOURCE_GROUP_KEY_BKG_VG25 = 'preset:bkg_vg25' as const
 
 const BKG_VG25_PROFILE_PREFIX = 'bkg_vg25_'

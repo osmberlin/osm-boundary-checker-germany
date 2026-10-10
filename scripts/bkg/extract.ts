@@ -193,8 +193,8 @@ async function ensureGpkgPath(
       }
       if (action === 'gpkg') {
         const g = await p.text({
-          message: 'Path to DE_VG250.gpkg (or other VG25 .gpkg)',
-          placeholder: '/path/to/DE_VG250.gpkg',
+          message: 'Path to DE_VG25.gpkg',
+          placeholder: '/path/to/DE_VG25.gpkg',
         })
         if (p.isCancel(g)) {
           p.cancel('Cancelled.')

@@ -210,7 +210,7 @@ async function main(): Promise<void> {
   if (hasBkg) {
     options.push({
       value: '__bkg__',
-      label: `BKG VG250 → official.fgb (${bkgAreaCount} Dataset${bkgAreaCount === 1 ? '' : 's'})`,
+      label: `BKG VG25 → official.fgb (${bkgAreaCount} Dataset${bkgAreaCount === 1 ? '' : 's'})`,
       hint: 'extract:official -- --area …',
     })
   }
