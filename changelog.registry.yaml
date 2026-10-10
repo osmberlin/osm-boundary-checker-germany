@@ -1,5 +1,12 @@
 entries:
   - refs:
+      - '0fefe9b'
+    descriptionMd: |
+      In der Lizenzübersicht und im Quellen-Link heißt das BKG-Produkt jetzt richtig VG25 statt VG250.
+  - refs:
+      - 'e6e0188'
+    hide: true
+  - refs:
       - '708a76a'
     hide: true
   - refs:
