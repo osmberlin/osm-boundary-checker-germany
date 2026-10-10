@@ -4,7 +4,6 @@
 [install]
 minimumReleaseAge = 432000
 minimumReleaseAgeExcludes = [
-  "maplibre-gl",
   "typescript",
   "@typescript/typescript-darwin-arm64",
   "@typescript/typescript-linux-x64",
