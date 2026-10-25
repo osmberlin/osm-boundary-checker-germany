@@ -817,6 +817,20 @@ export function writeOutputs(
       attributeHintsByKey.set(row.canonicalMatchKey, row.attributeHints)
   }
 
+  // Matched rows: per-geometry bboxes so the detail map can reach both areas when they do not overlap.
+  const geometryBboxesByKey = new Map<string, Pick<StaticReportRow, 'officialBbox' | 'osmBbox'>>()
+  for (const row of rows) {
+    if (row.category !== 'matched') continue
+    const officialBbox = mapBboxForGeometry(row.officialGeometryWgs84)
+    const osmBbox = mapBboxForGeometry(row.osmGeometryWgs84)
+    if (officialBbox || osmBbox) {
+      geometryBboxesByKey.set(row.canonicalMatchKey, {
+        ...(officialBbox ? { officialBbox } : {}),
+        ...(osmBbox ? { osmBbox } : {}),
+      })
+    }
+  }
+
   const featureDir = join(outDir, 'features')
   const featureTmp = `${featureDir}.tmp-${Date.now()}`
   rmSync(featureTmp, { recursive: true, force: true })
@@ -828,7 +842,7 @@ export function writeOutputs(
     const candidates = candidatesByKey.get(row.canonicalMatchKey)
     const attributeHints = attributeHintsByKey.get(row.canonicalMatchKey)
     const shard: FeatureDetailShard = {
-      row,
+      row: { ...row, ...geometryBboxesByKey.get(row.canonicalMatchKey) },
       ...(candidates !== undefined ? { candidates } : {}),
       ...(attributeHints !== undefined ? { attributeHints } : {}),
     }

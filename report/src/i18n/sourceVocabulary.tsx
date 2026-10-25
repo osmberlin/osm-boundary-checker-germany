@@ -27,6 +27,12 @@ const vocabulary = {
     licenseSectionHeading: 'Lizenz und OSM-Kompatibilität der amtlichen Quelle',
     /** Appended to the geometry source name: where the geometry came from. */
     geometrySourceVia: '',
+    /** Disjoint-geometry notice: "Die … und die OSM-Fläche überschneiden sich nicht" (nominative). */
+    areaLabelNominative: 'amtliche Fläche',
+    /** Disjoint-geometry notice button: "Zur …" (dative). */
+    areaLabelDative: 'amtlichen Fläche',
+    /** Disjoint-geometry notice: "in den …" (dative plural). */
+    dataLabelDative: 'amtlichen Daten',
   },
   dtp: {
     dataHeading: 'DtP-Daten',
@@ -40,6 +46,9 @@ const vocabulary = {
     openJosmWithGeojson: 'In JOSM öffnen mit DtP-Grenze (GeoJSON)',
     licenseSectionHeading: 'Lizenz und OSM-Kompatibilität der Quelldaten',
     geometrySourceVia: ' (über DtP)',
+    areaLabelNominative: 'DtP-Fläche',
+    areaLabelDative: 'DtP-Fläche',
+    dataLabelDative: 'DtP-Daten',
   },
 } as const satisfies Record<SourceKind, Record<string, string>>
 

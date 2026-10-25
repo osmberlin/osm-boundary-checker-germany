@@ -115,6 +115,10 @@ export type ReportRow = {
   mapBbox: [number, number, number, number] | null
   /** Relative to the dataset folder: `output/official_for_edit/<basename>.geojson` or null. */
   officialForEditPath: string | null
+  /** Feature shard only (matched rows): WGS84 bbox of the official geometry. */
+  officialBbox?: [number, number, number, number]
+  /** Feature shard only (matched rows): WGS84 bbox of the OSM geometry. */
+  osmBbox?: [number, number, number, number]
   /** GeoJSON properties from the compare merge (official side). */
   officialProperties: Record<string, unknown> | null
   /** GeoJSON properties from the compare merge (OSM). */

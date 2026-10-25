@@ -125,6 +125,10 @@ const reportRowBaseShape = {
 export const reportRowSchema = z.object({
   ...reportRowBaseShape,
   officialLicense: officialLicenseSchema.optional(),
+  /** Matched rows, shard only: WGS84 bbox of the official geometry (not in `comparison_table.json`). */
+  officialBbox: bboxSchema.optional(),
+  /** Matched rows, shard only: WGS84 bbox of the OSM geometry (not in `comparison_table.json`). */
+  osmBbox: bboxSchema.optional(),
 })
 
 /** Row of `comparison_table.json`: no licence; the feature shard keeps the `officialLicense`. */

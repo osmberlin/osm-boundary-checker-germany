@@ -588,6 +588,16 @@ export const de = {
       return `Heute (${core})`
     },
     staleOfficialKeyNoEditHint: 'Bitte nicht den alten amtlichen Schlüssel nach OSM schreiben.',
+    disjointGeometryNoticeAria: 'Flächen überschneiden sich nicht',
+    disjointGeometryNoticeLead: (opts: {
+      areaLabel: string
+      distanceKm: string
+      matchProperty: string
+      dataLabel: string
+    }) =>
+      `Die ${opts.areaLabel} und die OSM-Fläche überschneiden sich nicht und liegen bis zu ${opts.distanceKm} km auseinander. Vermutlich ist der Schlüssel (${opts.matchProperty}) in OSM oder in den ${opts.dataLabel} falsch.`,
+    disjointGeometryZoomToArea: (areaLabel: string) => `Zur ${areaLabel}`,
+    disjointGeometryZoomToOsm: 'Zur OSM-Fläche',
     expectedOsmTagsStaleLead:
       'Der Abgleich nutzt den exakten 12-stelligen Regionalschlüssel. Hier weicht der amtliche Stand nur deshalb ab, weil VG25 älter ist als Destatis und OSM — nicht weil ein OSM-Tag fehlt.',
     decodeKeyExplorerLink: 'Schlüssel-Felder dekodieren',

@@ -4,6 +4,7 @@ import {
   comparisonForReportSchema,
   featureDetailShardSchema,
   reportRowSchema,
+  tableRowSchema,
   unmatchedOsmRowSchema,
 } from './comparisonPayload.ts'
 
@@ -158,6 +159,28 @@ describe('staleOfficialKey fields', () => {
       },
     })
     expect(parsed.staleOfficialKey?.source).toBe('osm_map')
+  })
+})
+
+describe('officialBbox and osmBbox', () => {
+  const matchedBboxRow = {
+    ...validRow,
+    category: 'matched' as const,
+    osmRelationId: 'way/1',
+    officialBbox: [7.5, 51.1, 7.6, 51.2],
+    osmBbox: [13.7, 52.1, 13.8, 52.2],
+  }
+
+  test('feature shard row keeps both bboxes', () => {
+    const parsed = featureDetailShardSchema.parse({ row: matchedBboxRow })
+    expect(parsed.row.officialBbox).toEqual([7.5, 51.1, 7.6, 51.2])
+    expect(parsed.row.osmBbox).toEqual([13.7, 52.1, 13.8, 52.2])
+  })
+
+  test('comparison table rows drop the bboxes', () => {
+    const parsed = tableRowSchema.parse(matchedBboxRow)
+    expect(parsed).not.toHaveProperty('officialBbox')
+    expect(parsed).not.toHaveProperty('osmBbox')
   })
 })
 

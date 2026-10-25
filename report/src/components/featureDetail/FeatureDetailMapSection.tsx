@@ -10,6 +10,7 @@ import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { InfoNotice } from '../InfoNotice'
 import { MapOverlapPickDialog } from '../map/MapOverlapPickDialog'
+import { DisjointGeometryNotice } from './DisjointGeometryNotice'
 import { FeatureDetailComparisonMapPane } from './FeatureDetailComparisonMapPane'
 import { FeatureDetailMapLayerKpiSection } from './FeatureDetailMapLayerKpiSection'
 import { toDetailMapMaxBounds } from './featureDetailMapSectionUtils'
@@ -52,6 +53,7 @@ export function FeatureDetailMapSection({
   return (
     <div className="w-full">
       <div className="flex w-full flex-col gap-0">
+        <DisjointGeometryNotice row={row} data={data} />
         <FeatureDetailMapLayerKpiSection
           layerIdPrefix={layerId}
           metrics={row.metrics}
