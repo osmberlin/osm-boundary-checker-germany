@@ -16,7 +16,7 @@ import {
   parseDownloadOfficial,
 } from '../scripts/shared/downloadOfficialConfig.ts'
 
-type MenuVal = '__bkg__' | `http:${number}`
+type MenuVal = '__bkg__' | '__dtp__' | `http:${number}`
 
 function discoverAreas(repoRoot: string): string[] {
   const datasetsRoot = join(repoRoot, DATASETS_DIRECTORY)
@@ -36,6 +36,10 @@ function isBkgExtractArea(config: DatasetConfig): boolean {
   return false
 }
 
+function isDtpExtractArea(config: DatasetConfig): boolean {
+  return config.officialMode === 'dtp'
+}
+
 function runFilterScript(repoRoot: string, script: string, args: string[] = []): number {
   const r = spawnSync('bun', ['run', '--filter', './scripts', script, ...args], {
     cwd: repoRoot,
@@ -46,10 +50,12 @@ function runFilterScript(repoRoot: string, script: string, args: string[] = []):
 
 function classify(repoRoot: string): {
   bkgAreaCount: number
+  dtpAreaCount: number
   httpGroups: { url: string; areas: string[]; spec: DownloadOfficialHttp }[]
 } {
   const areas = discoverAreas(repoRoot)
   let bkgAreaCount = 0
+  let dtpAreaCount = 0
   const urlToGroup = new Map<string, { areas: string[]; spec: DownloadOfficialHttp }>()
   for (const area of areas) {
     let cfg: DatasetConfig
@@ -59,6 +65,7 @@ function classify(repoRoot: string): {
       continue
     }
     if (isBkgExtractArea(cfg)) bkgAreaCount++
+    if (isDtpExtractArea(cfg)) dtpAreaCount++
     if (cfg.officialMode !== 'direct') continue
     try {
       const spec = parseDownloadOfficial(cfg)
@@ -76,7 +83,7 @@ function classify(repoRoot: string): {
   const httpGroups = [...urlToGroup.entries()]
     .map(([url, g]) => ({ url, areas: g.areas.sort(), spec: g.spec }))
     .sort((a, b) => a.url.localeCompare(b.url))
-  return { bkgAreaCount, httpGroups }
+  return { bkgAreaCount, dtpAreaCount, httpGroups }
 }
 
 function parseArgv(argv: string[]) {
@@ -103,11 +110,11 @@ function parseArgv(argv: string[]) {
 function printHelp(): void {
   console.log(`Usage: bun run extract:official [options]
 
-Interactive: pick BKG extract and/or HTTP-official groups (grouped by download URL).
+Interactive: pick BKG extract, DtP extract (from the .cache/dtp cache) and/or HTTP-official groups (grouped by download URL).
 
-  --area <folder>             Run only that dataset (BKG extract or HTTP official)
+  --area <folder>             Run only that dataset (BKG extract, DtP extract or HTTP official)
   --force                     Forward to BKG / HTTP download engines
-  --yes / --non-interactive   BKG (if any) + all HTTP official areas, no menu (required for automation)
+  --yes / --non-interactive   BKG (if any) + DtP (if any) + all HTTP official areas, no menu (required for automation)
   -h, --help                  This text
 
 HTTP official fetch only (no menu): bun run download -- --yes --targets official
@@ -124,13 +131,14 @@ async function main(): Promise<void> {
   }
 
   const repoRoot = process.cwd()
-  const { bkgAreaCount, httpGroups } = classify(repoRoot)
+  const { bkgAreaCount, dtpAreaCount, httpGroups } = classify(repoRoot)
   const hasBkg = bkgAreaCount > 0
+  const hasDtp = dtpAreaCount > 0
   const hasHttp = httpGroups.length > 0
 
-  if (!hasBkg && !hasHttp) {
+  if (!hasBkg && !hasDtp && !hasHttp) {
     console.error(
-      cliErr(`No BKG-profile areas and no official.download areas under ${DATASETS_DIRECTORY}/.`),
+      cliErr(`No BKG-profile, DtP, or official.download areas under ${DATASETS_DIRECTORY}/.`),
     )
     process.exit(1)
   }
@@ -162,6 +170,12 @@ async function main(): Promise<void> {
       )
       if (c !== 0) code = c
     }
+    if (isDtpExtractArea(cfg)) {
+      ran = true
+      console.log(cliHeadline(`[extract:official] extract:dtp — ${a}`))
+      const c = runFilterScript(repoRoot, 'extract:dtp', ['--', '--area', a])
+      if (c !== 0) code = c
+    }
     if (cfg.officialMode === 'direct') {
       let spec: ReturnType<typeof parseDownloadOfficial> = null
       try {
@@ -178,7 +192,7 @@ async function main(): Promise<void> {
       }
     }
     if (!ran) {
-      console.error(cliErr(`Area ${a} is not a BKG extract area and has no official.download.`))
+      console.error(cliErr(`Area ${a} is not a BKG/DtP extract area and has no official.download.`))
       process.exit(1)
     }
     process.exit(code)
@@ -189,6 +203,11 @@ async function main(): Promise<void> {
     if (hasBkg) {
       console.log(cliHeadline('[extract:official] extract:bkg'))
       const c = runFilterScript(repoRoot, 'extract:bkg', ['--', '--yes'])
+      if (c !== 0) code = c
+    }
+    if (hasDtp) {
+      console.log(cliHeadline('[extract:official] extract:dtp'))
+      const c = runFilterScript(repoRoot, 'extract:dtp', [])
       if (c !== 0) code = c
     }
     if (hasHttp) {
@@ -211,6 +230,13 @@ async function main(): Promise<void> {
     options.push({
       value: '__bkg__',
       label: `BKG VG25 → official.fgb (${bkgAreaCount} Dataset${bkgAreaCount === 1 ? '' : 's'})`,
+      hint: 'extract:official -- --area …',
+    })
+  }
+  if (hasDtp) {
+    options.push({
+      value: '__dtp__',
+      label: `DtP Schutzgebiete → official.fgb (${dtpAreaCount} Dataset${dtpAreaCount === 1 ? '' : 's'})`,
       hint: 'extract:official -- --area …',
     })
   }
@@ -244,6 +270,11 @@ async function main(): Promise<void> {
   if (choice.includes('__bkg__')) {
     console.log(cliHeadline('[extract:official] extract:bkg'))
     const c = runFilterScript(repoRoot, 'extract:bkg', [])
+    if (c !== 0) code = c
+  }
+  if (choice.includes('__dtp__')) {
+    console.log(cliHeadline('[extract:official] extract:dtp'))
+    const c = runFilterScript(repoRoot, 'extract:dtp', [])
     if (c !== 0) code = c
   }
   for (let i = 0; i < httpGroups.length; i++) {

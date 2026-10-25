@@ -147,6 +147,16 @@ When `official.extractFilter` is set on an `admin_rs` dataset (BKG Gemeinden per
 
 ---
 
+## DtP data (protected areas)
+
+- **Product:** Digitize the Planet (DtP) API v2 protected areas. One shared cache in `.cache/dtp/` (`bun run --filter ./scripts download:dtp`, see `scripts/dtp/download.ts`), filled once for all protected-area datasets.
+- **Config:** `"officialProfile": "dtp_protected_areas"` plus `"official": { "dtp": { "categoryIds": [...], "requireWdpa": true } }` (see `datasets/de-schutzgebiete/config.jsonc`; category ids in `.cache/dtp/protected-area-categories.json`).
+- **Extract:** `bun run extract:official -- --area de-schutzgebiete` (runs `scripts/dtp/extract.ts`) writes `source/official.fgb` and `source/metadata.json`. Areas without a cache record yet are skipped and counted in the log; `wdpa` ids shared by several areas are kept and logged (compare unions them).
+- **Feature properties:** `wdpa`, `dtp_uuid`, `name`, `category_id`, `category_name`, `dtp_osm_ref`, `wikidata`, `natura2000_code`, `parent_uuid`, `state_ids` (comma-separated), `geometry_source_name`, `geometry_source_url`, `geometry_license_name`, `geometry_license_url`, `dtp_url`.
+- **Licence:** dataset block is `licenseId: mixed`; each geometry has its own licence in the `geometry_license_*` properties.
+
+---
+
 ## Berlin data (Bezirke example)
 
 - **Official:** Berlin ALKIS Bezirke via WFS GeoJSON, fetched by `extract:official` or `bun run download -- --yes --targets official` into `datasets/berlin-bezirke/source/official.fgb` (see `[datasets/berlin-bezirke/config.jsonc](../datasets/berlin-bezirke/config.jsonc)` and `[datasets/berlin-bezirke/README.md](../datasets/berlin-bezirke/README.md)`).

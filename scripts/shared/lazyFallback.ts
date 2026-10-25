@@ -13,6 +13,8 @@ import {
   GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
   GERMANY_OSM_CACHE_DIR,
   GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
 } from './germanyOsmPbf.ts'
@@ -87,7 +89,13 @@ export function restoreBkgCacheFromFallback(
 
 export function osmSharedExtractOutputReady(
   runtimeRoot: string,
-  kind: 'admin' | 'plz' | 'admin_candidates' | 'plz_candidates',
+  kind:
+    | 'admin'
+    | 'plz'
+    | 'admin_candidates'
+    | 'plz_candidates'
+    | 'protected_areas'
+    | 'protected_areas_candidates',
 ): boolean {
   const osmCacheDir = join(runtimeRoot, GERMANY_OSM_CACHE_DIR)
   const basenameByKind = {
@@ -95,6 +103,8 @@ export function osmSharedExtractOutputReady(
     plz: GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
     admin_candidates: GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
     plz_candidates: GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+    protected_areas: GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME,
+    protected_areas_candidates: GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME,
   } as const
   return existsSync(join(osmCacheDir, basenameByKind[kind]))
 }

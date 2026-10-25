@@ -9,6 +9,8 @@ dist/
 # Large downloaded artifacts at repo root only (not `report/public/data/` for static assets).
 /data/*
 !/data/processing-log.jsonl
+# Reviewed licence compatibility tables (per-geometry licences, e.g. DtP).
+!/data/license-compatibility/
 !report/src/data/
 !report/src/data/**
 report/src/data/relationResolverIndex.gen.ts

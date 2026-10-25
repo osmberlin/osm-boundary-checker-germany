@@ -47,6 +47,7 @@ import {
   type WfsFeature,
 } from '../lib/wfsGetFeature'
 import type {
+  AttributeHint,
   CandidateMatch,
   ComparisonForReport,
   FeatureDetailShard,
@@ -178,6 +179,7 @@ export async function loadDiscussionsRegistrySyncMeta(): Promise<DiscussionRegis
  */
 export type FeatureDetailComparison = ComparisonForReport & {
   candidates?: CandidateMatch[]
+  attributeHints?: AttributeHint[]
 }
 
 export async function loadFeatureOrFallback(
@@ -192,6 +194,7 @@ export async function loadFeatureOrFallback(
       rows: [shard.row],
       unmatchedOsm: [],
       ...(shard.candidates !== undefined ? { candidates: shard.candidates } : {}),
+      ...(shard.attributeHints !== undefined ? { attributeHints: shard.attributeHints } : {}),
     }
   } catch (shardError) {
     const matchedRow = comparison.rows.find((row) => row.canonicalMatchKey === featureKey)

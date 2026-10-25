@@ -8,23 +8,32 @@ import {
 
 const MAX_QUERY_LEN = 48_000
 
+/** `boundary` values behind an area's `overpassBoundaryTag` (protected areas include national parks). */
+export function overpassBoundaryValues(
+  boundaryTag: 'administrative' | 'postal_code' | 'protected_area',
+): string[] {
+  return boundaryTag === 'protected_area' ? ['protected_area', 'national_park'] : [boundaryTag]
+}
+
 /**
  * Overpass QL: `boundary=<tag>` relation/way features intersecting bbox (no extra tag filters).
  * Bbox: WGS84 [west, south, east, north] in degrees.
  */
 export function buildOverpassBoundaryQuery(
   bbox: [number, number, number, number],
-  boundaryTag: 'administrative' | 'postal_code' = 'administrative',
+  boundaryTag: 'administrative' | 'postal_code' | 'protected_area' = 'administrative',
 ): string {
   const [west, south, east, north] = bbox
   const s = south
   const w = west
   const n = north
   const e = east
+  const boundaryFilter = overpassBoundaryValues(boundaryTag).join('|')
+  const match = boundaryFilter.includes('|') ? `~"^(${boundaryFilter})$"` : `="${boundaryFilter}"`
   return `[out:json][timeout:90];
 (
-  relation["boundary"="${boundaryTag}"](${s},${w},${n},${e});
-  way["boundary"="${boundaryTag}"](${s},${w},${n},${e});
+  relation["boundary"${match}](${s},${w},${n},${e});
+  way["boundary"${match}](${s},${w},${n},${e});
 );
 out geom;`
 }

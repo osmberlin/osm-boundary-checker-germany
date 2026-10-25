@@ -14,6 +14,8 @@ import { spawnSync } from 'node:child_process'
  * - admin_candidates:   `.cache/osm/germany-admin-candidates.fgb` (POINTS — point-on-surface
  *                       for `match_candidates` / OSM-Kandidaten UI)
  * - plz_candidates:     `.cache/osm/germany-postal-code-candidates.fgb` (POINTS)
+ * - protected_areas:   `.cache/osm/germany-protected-areas-wdpa.fgb` (keyed polygons, `ref:WDPA`)
+ * - protected_areas_candidates: `.cache/osm/germany-protected-areas-candidates.fgb` (POINTS)
  *
  * Prerequisites: `osmium` and `ogr2ogr` on PATH; run `bun run download -- --yes --targets pbf` first
  * (or set `OSM_GERMANY_PBF` / `--pbf`). The candidate extracts use SpatiaLite's
@@ -35,8 +37,12 @@ import {
   GERMANY_OSM_FILTERED_BASENAME,
   GERMANY_OSM_PBF_BASENAME,
   GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_FILTERED_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
+  PROTECTED_AREAS_OSM_TAGS_FILTER_EXPRESSIONS,
 } from '../shared/germanyOsmPbf.ts'
 import { checkOsmPbfIntegrity } from '../shared/osmPbfIntegrity.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
@@ -103,10 +109,84 @@ FROM multipolygons
 WHERE boundary = 'postal_code'
 `.trim()
 
-type ExtractKind = 'admin' | 'plz' | 'admin_candidates' | 'plz_candidates'
+/**
+ * Protected-area multipolygons with `ref:WDPA` set (keyed polygons). Same `osm_id` / `osm_way_id` /
+ * `@id` handling as the admin extract. Feeds the `protected_area_wdpa` osmProfile.
+ */
+const PROTECTED_AREAS_WDPA_OGR_SQL = `
+SELECT
+  geometry,
+  osm_id,
+  osm_way_id,
+  ${OSM_MULTIPOLYGON_AT_ID_SQL},
+  "name",
+  "ref:WDPA",
+  "wikidata",
+  "boundary",
+  "leisure",
+  "protect_class",
+  "protection_title",
+  "ref:SCI",
+  "ref:natura2000",
+  "ref:DE",
+  "operator",
+  "dtp_id"
+FROM multipolygons
+WHERE "ref:WDPA" IS NOT NULL
+  AND TRIM("ref:WDPA") <> ''
+`.trim()
+
+/**
+ * Every protected-area multipolygon (no `ref:WDPA` requirement), collapsed to one inside point.
+ * The predicate is the union of the tags the tags-filter selects for protected areas.
+ */
+const PROTECTED_AREAS_CANDIDATES_OGR_SQL = `
+SELECT
+  ST_PointOnSurface(geometry) AS geometry,
+  osm_id,
+  osm_way_id,
+  "name",
+  "ref:WDPA",
+  "wikidata",
+  "boundary",
+  "leisure",
+  "protect_class",
+  "protection_title",
+  "ref:SCI",
+  "ref:natura2000",
+  "ref:DE",
+  "operator",
+  "dtp_id"
+FROM multipolygons
+WHERE boundary IN ('protected_area', 'national_park')
+  OR leisure = 'nature_reserve'
+  OR "protect_class" IS NOT NULL
+  OR "protection_title" IS NOT NULL
+  OR "ref:WDPA" IS NOT NULL
+`.trim()
+
+type ExtractKind =
+  | 'admin'
+  | 'plz'
+  | 'admin_candidates'
+  | 'plz_candidates'
+  | 'protected_areas'
+  | 'protected_areas_candidates'
 
 /** Stable run order when multiple `--kind` steps run in one invocation. */
-const EXTRACT_KIND_ORDER: ExtractKind[] = ['admin', 'admin_candidates', 'plz', 'plz_candidates']
+const EXTRACT_KIND_ORDER: ExtractKind[] = [
+  'admin',
+  'admin_candidates',
+  'plz',
+  'plz_candidates',
+  'protected_areas',
+  'protected_areas_candidates',
+]
+
+/** Kinds that read the protected-area tags-filter PBF instead of the administrative one. */
+function isProtectedAreaKind(kind: ExtractKind): boolean {
+  return kind === 'protected_areas' || kind === 'protected_areas_candidates'
+}
 
 function sortKinds(kinds: ExtractKind[]): ExtractKind[] {
   return EXTRACT_KIND_ORDER.filter((k) => kinds.includes(k))
@@ -128,6 +208,8 @@ function mergeTagsFilterExpressions(workspaceRoot: string, kinds: ExtractKind[])
         break
       case 'plz':
       case 'plz_candidates':
+      case 'protected_areas':
+      case 'protected_areas_candidates':
         break
     }
   }
@@ -146,7 +228,8 @@ When --kind is omitted:
 When --kind is set: runs that single kind only (no prompts), same as before.
 
 Options:
-  --kind admin|plz|admin_candidates|plz_candidates   Single extract (non-interactive)
+  --kind admin|plz|admin_candidates|plz_candidates|protected_areas|protected_areas_candidates
+                                                     Single extract (non-interactive)
   --pbf <path>                                       Input PBF (else OSM_GERMANY_PBF or default cache path)
   --skip-tags-filter / --force-tags-filter / --dry-run
   --yes / --non-interactive                          Skip prompts when --kind is omitted (default kinds: admin + admin_candidates)
@@ -157,6 +240,9 @@ Outputs (basenames from shared constants in code):
   admin_candidates    Point-on-surface admin layer → ${GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME}
   plz                 Postal polygons → ${GERMANY_OSM_SHARED_PLZ_FGB_BASENAME}
   plz_candidates      Postal candidate points → ${GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME}
+  protected_areas     Protected-area polygons with ref:WDPA → ${GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME}
+  protected_areas_candidates
+                      Protected-area candidate points → ${GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME}
 `)
 }
 
@@ -189,6 +275,16 @@ async function resolveKindsWhenImplicit(nonInteractive: boolean): Promise<Extrac
         value: 'plz_candidates',
         label: 'plz_candidates — PLZ-Kandidaten (Punkte)',
         hint: `${GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME} · postal_code candidate points`,
+      },
+      {
+        value: 'protected_areas',
+        label: 'protected_areas — Schutzgebiete mit ref:WDPA (Polygone)',
+        hint: `${GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME} · protected-area multipolygons with ref:WDPA`,
+      },
+      {
+        value: 'protected_areas_candidates',
+        label: 'protected_areas_candidates — Schutzgebiete (Punkte)',
+        hint: `${GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME} · all protected-area multipolygons as points`,
       },
     ],
     initialValues: [...defaultPair],
@@ -331,12 +427,21 @@ function parseArgs(argv: string[]) {
     if (a === '--kind') {
       kindExplicit = true
       const v = argv[i + 1]?.trim().toLowerCase()
-      if (v === 'admin' || v === 'plz' || v === 'admin_candidates' || v === 'plz_candidates') {
+      if (
+        v === 'admin' ||
+        v === 'plz' ||
+        v === 'admin_candidates' ||
+        v === 'plz_candidates' ||
+        v === 'protected_areas' ||
+        v === 'protected_areas_candidates'
+      ) {
         kind = v
         i++
         continue
       }
-      throw new Error(`--kind must be "admin", "plz", "admin_candidates", or "plz_candidates"`)
+      throw new Error(
+        `--kind must be "admin", "plz", "admin_candidates", "plz_candidates", "protected_areas", or "protected_areas_candidates"`,
+      )
     }
     if (a === '--area') {
       console.warn(
@@ -377,6 +482,39 @@ function runOsmiumTagsFilter(
     process.exit(1)
   }
   if (r.status !== 0) process.exit(r.status ?? 1)
+}
+
+/**
+ * Returns the PBF that ogr2ogr should read: the filtered intermediate (created or reused), or the
+ * full input when `--skip-tags-filter` is set.
+ */
+function prepareFilteredPbf(args: {
+  inputPbf: string
+  filteredPbf: string
+  expressions: string[]
+  skipTagsFilter: boolean
+  forceTagsFilter: boolean
+  dryRun: boolean
+}): string {
+  if (args.skipTagsFilter) {
+    console.log(
+      cliWarn('Using full input PBF for ogr2ogr (--skip-tags-filter). This can be very slow.'),
+    )
+    return args.inputPbf
+  }
+  const runFilter =
+    args.dryRun || shouldRunTagsFilter(args.inputPbf, args.filteredPbf, args.forceTagsFilter)
+  if (runFilter) {
+    console.log(
+      cliHeadline(
+        `Running osmium tags-filter → ${args.filteredPbf}\n  expressions: ${args.expressions.join(', ')}`,
+      ),
+    )
+    runOsmiumTagsFilter(args.inputPbf, args.filteredPbf, args.expressions, args.dryRun)
+  } else {
+    console.log(cliMuted(`Reusing filtered PBF (up to date):\n  ${args.filteredPbf}`))
+  }
+  return args.filteredPbf
 }
 
 function runOgr2ogr(
@@ -519,6 +657,19 @@ function resolveExtractTarget(workspaceRoot: string, kind: ExtractKind): Extract
   if (kind === 'plz') {
     return { basename: GERMANY_OSM_SHARED_PLZ_FGB_BASENAME, sql: SHARED_OSM_PLZ_OGR_SQL }
   }
+  if (kind === 'protected_areas') {
+    return {
+      basename: GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME,
+      sql: PROTECTED_AREAS_WDPA_OGR_SQL,
+    }
+  }
+  if (kind === 'protected_areas_candidates') {
+    return {
+      basename: GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME,
+      sql: PROTECTED_AREAS_CANDIDATES_OGR_SQL,
+      geometryType: 'POINT',
+    }
+  }
   return {
     basename: GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
     sql: SHARED_OSM_PLZ_CANDIDATES_OGR_SQL,
@@ -570,29 +721,38 @@ async function runSharedExtract(
     }
   }
 
-  const filteredPbf = join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_FILTERED_BASENAME)
-  const expressions = mergeTagsFilterExpressions(workspaceRoot, ordered)
   const osmHeaderTimestamp = readOsmHeaderTimestampForExtract(inputPbf, dryRun)
 
-  let pbfForOgr = inputPbf
-
-  if (!skipTagsFilter) {
-    const runFilter = dryRun || shouldRunTagsFilter(inputPbf, filteredPbf, forceTagsFilter)
-    if (runFilter) {
-      console.log(
-        cliHeadline(
-          `Running osmium tags-filter → ${filteredPbf}\n  expressions: ${expressions.join(', ')}`,
-        ),
-      )
-      runOsmiumTagsFilter(inputPbf, filteredPbf, expressions, dryRun)
-    } else {
-      console.log(cliMuted(`Reusing filtered PBF (up to date):\n  ${filteredPbf}`))
-    }
-    pbfForOgr = filteredPbf
-  } else {
-    console.log(
-      cliWarn('Using full input PBF for ogr2ogr (--skip-tags-filter). This can be very slow.'),
-    )
+  // Admin-family kinds share one filtered PBF. Protected-area kinds use their own intermediate
+  // PBF, because their tags-filter expressions do not overlap the administrative one.
+  const pbfForKind = new Map<ExtractKind, string>()
+  const adminKinds = ordered.filter((kind) => !isProtectedAreaKind(kind))
+  const protectedKinds = ordered.filter((kind) => isProtectedAreaKind(kind))
+  if (adminKinds.length > 0) {
+    const pbf = prepareFilteredPbf({
+      inputPbf,
+      filteredPbf: join(runtimeRoot, GERMANY_OSM_CACHE_DIR, GERMANY_OSM_FILTERED_BASENAME),
+      expressions: mergeTagsFilterExpressions(workspaceRoot, adminKinds),
+      skipTagsFilter,
+      forceTagsFilter,
+      dryRun,
+    })
+    for (const kind of adminKinds) pbfForKind.set(kind, pbf)
+  }
+  if (protectedKinds.length > 0) {
+    const pbf = prepareFilteredPbf({
+      inputPbf,
+      filteredPbf: join(
+        runtimeRoot,
+        GERMANY_OSM_CACHE_DIR,
+        GERMANY_OSM_PROTECTED_AREAS_FILTERED_BASENAME,
+      ),
+      expressions: [...PROTECTED_AREAS_OSM_TAGS_FILTER_EXPRESSIONS],
+      skipTagsFilter,
+      forceTagsFilter,
+      dryRun,
+    })
+    for (const kind of protectedKinds) pbfForKind.set(kind, pbf)
   }
 
   for (const kind of ordered) {
@@ -603,6 +763,8 @@ async function runSharedExtract(
         `\nShared OSM extract (${kind}) → ${join(GERMANY_OSM_CACHE_DIR, target.basename)}`,
       ),
     )
+    const pbfForOgr = pbfForKind.get(kind)
+    if (pbfForOgr == null) throw new Error(`No input PBF prepared for --kind ${kind}`)
     runOgr2ogr(
       pbfForOgr,
       outFgb,

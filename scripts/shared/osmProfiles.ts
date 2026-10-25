@@ -1,10 +1,16 @@
 import { z } from 'zod'
 import {
+  GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
 } from './germanyOsmPbf.ts'
 
-export const osmProfileIdSchema = z.enum(['admin_rs', 'admin_name', 'postal_code'])
+export const osmProfileIdSchema = z.enum([
+  'admin_rs',
+  'admin_name',
+  'postal_code',
+  'protected_area_wdpa',
+])
 export type OsmProfileId = z.infer<typeof osmProfileIdSchema>
 
 const osmProfileSchema = z.object({
@@ -26,6 +32,10 @@ export const OSM_PROFILES: Record<OsmProfileId, OsmProfile> = {
   postal_code: {
     sharedFgbBasename: GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
     matchProperty: 'postal_code',
+  },
+  protected_area_wdpa: {
+    sharedFgbBasename: GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME,
+    matchProperty: 'ref:WDPA',
   },
 }
 

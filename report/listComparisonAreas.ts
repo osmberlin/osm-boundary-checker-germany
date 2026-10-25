@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { loadAreaConfig } from '../scripts/shared/areaConfig.ts'
 import { comparisonForReportSchema } from '../scripts/shared/comparisonPayload.ts'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
+import { isOsmCompatible } from '../scripts/shared/licenseCompatibility.ts'
 import { resolveOsmProfile } from '../scripts/shared/osmProfiles.ts'
 import { sourceMetadataSideSchema } from '../scripts/shared/sourceMetadata.ts'
 import {
@@ -162,6 +163,16 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
     const officialOsmCompatibilityRaw = official?.osmCompatibility ?? 'unknown'
     const officialOsmCompatibilitySourceUrlRaw = official?.osmCompatibilitySourceUrl ?? ''
     const officialOsmCompatibilityCommentRaw = official?.osmCompatibilityComment ?? ''
+    const licenseBreakdown = parsedTable.sourceMetadata?.licenseBreakdown ?? []
+    const officialLicenseMixed =
+      licenseBreakdown.length > 0
+        ? {
+            compatibleCount: licenseBreakdown
+              .filter((entry) => isOsmCompatible(entry.osmCompatibility))
+              .reduce((sum, entry) => sum + entry.rowCount, 0),
+            totalCount: licenseBreakdown.reduce((sum, entry) => sum + entry.rowCount, 0),
+          }
+        : null
     let officialSourceGroupKeyValue: string
     try {
       const cfg = loadAreaConfig(runtimeRoot, area)
@@ -172,6 +183,8 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
         area,
       )
     }
+    // A licence per geometry is never merged with other datasets on the homepage.
+    if (officialLicenseMixed) officialSourceGroupKeyValue = `mixed:${area}`
     const summary: AreaLicenseSummary = {
       area,
       displayName: parsedTable.displayName,
@@ -183,7 +196,8 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
       officialOsmCompatibility:
         officialOsmCompatibilityRaw === 'no' ||
         officialOsmCompatibilityRaw === 'yes_licence' ||
-        officialOsmCompatibilityRaw === 'yes_waiver'
+        officialOsmCompatibilityRaw === 'yes_waiver' ||
+        officialOsmCompatibilityRaw === 'partial'
           ? officialOsmCompatibilityRaw
           : 'unknown',
       ...(officialOsmCompatibilitySourceUrlRaw
@@ -192,6 +206,7 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
       ...(officialOsmCompatibilityCommentRaw
         ? { officialOsmCompatibilityComment: officialOsmCompatibilityCommentRaw }
         : {}),
+      ...(officialLicenseMixed ? { officialLicenseMixed } : {}),
     }
     out.push(summary)
   }

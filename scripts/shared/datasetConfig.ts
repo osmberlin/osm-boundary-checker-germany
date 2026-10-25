@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { officialHttpDownloadSchema } from './downloadOfficialConfig.ts'
+import { DTP_OFFICIAL_PROFILE_ID, DTP_OFFICIAL_SOURCE, dtpSelectionSchema } from './dtpOfficial.ts'
 import { officialProfileIdSchema, resolveOfficialProfile } from './officialProfiles.ts'
 import { osmProfileIdSchema } from './osmProfiles.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
@@ -77,7 +78,7 @@ const compareSchema = z
   })
 
 const idNormalizationSchema = z.object({
-  preset: z.enum(['berlin-bezirk-rs5', 'amtlicher-8', 'regional-12', 'plz-5', 'text']),
+  preset: z.enum(['berlin-bezirk-rs5', 'amtlicher-8', 'regional-12', 'plz-5', 'text', 'wdpa']),
 })
 
 const ogcInspectSourceSchema = z
@@ -114,6 +115,12 @@ const osmConfigSchema = z
       .optional(),
     adminLevels: nonEmptyStringArray.optional(),
     ignoreRelationIds: nonEmptyStringArray.optional(),
+    /**
+     * DtP datasets only (default on): `unmatchedOsm` keeps only OSM objects whose tags fit the type
+     * scope of one of the dataset's DtP categories (`scripts/shared/protectedAreaCategories.ts`).
+     * Key matches are never dropped. Set `false` to list every `ref:WDPA` object.
+     */
+    protectedAreaTypeScope: z.boolean().optional(),
   })
   .strict()
 
@@ -156,9 +163,27 @@ const profileAreaConfigSchema = z
   })
   .strict()
 
+/** DtP protected areas: `officialProfile: "dtp_protected_areas"` + `official.dtp` (category selection). */
+const dtpAreaConfigSchema = z
+  .object({
+    officialMode: z.literal('dtp'),
+    displayName: trimmedString,
+    titlePrefix: trimmedString,
+    officialProfile: z.literal(DTP_OFFICIAL_PROFILE_ID),
+    official: z.object({ dtp: dtpSelectionSchema }).strict(),
+    osmProfile: osmProfileIdSchema,
+    osm: osmConfigSchema.optional(),
+    idNormalization: idNormalizationSchema,
+    metricsCrs: trimmedString,
+    compare: compareSchema,
+    ogcInspectSources: z.array(ogcInspectSourceSchema).optional(),
+  })
+  .strict()
+
 const datasetConfigUnionSchema = z.discriminatedUnion('officialMode', [
   directAreaConfigSchema,
   profileAreaConfigSchema,
+  dtpAreaConfigSchema,
 ])
 
 function issuePath(issue: z.core.$ZodIssue): string {
@@ -168,6 +193,7 @@ function issuePath(issue: z.core.$ZodIssue): string {
 
 export type DirectAreaConfig = z.infer<typeof directAreaConfigSchema>
 export type ProfileAreaConfig = z.infer<typeof profileAreaConfigSchema>
+export type DtpAreaConfig = z.infer<typeof dtpAreaConfigSchema>
 export type DatasetConfig = z.infer<typeof datasetConfigUnionSchema>
 
 export function parseDatasetConfig(area: string, rawConfig: unknown): DatasetConfig {
@@ -175,7 +201,12 @@ export function parseDatasetConfig(area: string, rawConfig: unknown): DatasetCon
     throw new Error(`${area}: config.(root): expected an object`)
   }
   const root = rawConfig as Record<string, unknown>
-  const mode = root.officialProfile === undefined ? 'direct' : 'profile'
+  const mode =
+    root.officialProfile === undefined
+      ? 'direct'
+      : root.officialProfile === DTP_OFFICIAL_PROFILE_ID
+        ? 'dtp'
+        : 'profile'
   const withMode = { ...root, officialMode: mode }
   const parsed = datasetConfigUnionSchema.safeParse(withMode)
   if (!parsed.success) {
@@ -200,6 +231,18 @@ export function officialSourceFromDatasetConfig(config: DatasetConfig) {
       osmCompatibility: profile.osmCompatibility,
       osmCompatibilitySourceUrl: profile.osmCompatibilitySourceUrl,
       osmCompatibilityComment: profile.osmCompatibilityComment,
+    } as const
+  }
+  if (config.officialMode === 'dtp') {
+    return {
+      provider: DTP_OFFICIAL_SOURCE.provider,
+      dataset: DTP_OFFICIAL_SOURCE.dataset,
+      sourcePublicUrl: DTP_OFFICIAL_SOURCE.sourcePublicUrl,
+      sourceDownloadUrl: DTP_OFFICIAL_SOURCE.sourceDownloadUrl,
+      licenseId: DTP_OFFICIAL_SOURCE.licenseId,
+      licenseSourceUrl: DTP_OFFICIAL_SOURCE.licenseSourceUrl,
+      osmCompatibility: DTP_OFFICIAL_SOURCE.osmCompatibility,
+      osmCompatibilityComment: DTP_OFFICIAL_SOURCE.osmCompatibilityComment,
     } as const
   }
   return config.official.source ?? null

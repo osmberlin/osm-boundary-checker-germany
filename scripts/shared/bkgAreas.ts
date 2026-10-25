@@ -18,6 +18,7 @@ export function discoverBkgAreaFolderNames(workspaceRoot: string): string[] {
       out.push(area)
       continue
     }
+    if (parsed.officialMode === 'dtp') continue
     const extractFilter = parsed.official.extractFilter
     if (!extractFilter) continue
     if (parsed.compare.officialMatchProperty !== 'ARS') continue

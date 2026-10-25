@@ -1,3 +1,5 @@
+import { ExclamationTriangleIcon } from '@heroicons/react/20/solid'
+import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { officialForEditGeojsonHref } from '../data/paths'
@@ -8,7 +10,8 @@ import {
   buildOpenStreetMapBrowseRelationUrl,
   buildOpenStreetMapIdEditUrl,
 } from '../lib/osmEditorLinks'
-import type { ReportRow } from '../types/report'
+import { resolveRowLicense } from '../lib/resolveRowLicense'
+import type { ComparisonForReport, ReportRow } from '../types/report'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
 import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 import { sharedButtonClass } from './sharedButtonStyles'
@@ -65,8 +68,17 @@ function RevealInfoNote({
   )
 }
 
-export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: ReportRow }) {
+export function UpdateMapInstructions({
+  areaId,
+  row,
+  sourceMetadata,
+}: {
+  areaId: string
+  row: ReportRow
+  sourceMetadata?: ComparisonForReport['sourceMetadata']
+}) {
   const u = de.feature.updateMap
+  const osmCompatibility = resolveRowLicense(row, sourceMetadata).osmCompatibility
   const officialHref = officialForEditGeojsonHref(areaId, row)
   const officialBasename = officialHref?.split('/').pop()
   const officialDownloadFilename = officialBasename?.endsWith('.geojson')
@@ -85,6 +97,39 @@ export function UpdateMapInstructions({ areaId, row }: { areaId: string; row: Re
       <ProvenanceGridSectionHeader title={u.title} />
 
       <div className="border-t border-slate-700">
+        {osmCompatibility === 'no' || osmCompatibility === 'unknown' ? (
+          <div
+            className="flex items-start gap-3 border-b border-slate-700/80 px-4 py-4 sm:px-6"
+            role="status"
+          >
+            <ExclamationTriangleIcon
+              aria-hidden
+              className="mt-0.5 size-5 shrink-0 text-orange-400"
+            />
+            <p className="min-w-0 text-sm leading-relaxed text-orange-200/90">
+              <Link
+                to="/$areaId/feature/$featureKey"
+                params={{ areaId, featureKey: row.canonicalMatchKey }}
+                hash="report-licence-section"
+                className="font-medium text-orange-100 underline decoration-orange-500/50 hover:text-orange-50"
+              >
+                {osmCompatibility === 'no' ? (
+                  <>
+                    {u.licenceNoLinkBeforeBold}
+                    <strong className="font-semibold text-orange-50">
+                      {u.licenceNoLinkBoldKeine}
+                    </strong>
+                    {u.licenceNoLinkAfterBold}
+                  </>
+                ) : (
+                  u.licenceUnknownLinkSentence
+                )}
+              </Link>{' '}
+              {u.licenceResearchOnlyDisclaimer}
+            </p>
+          </div>
+        ) : null}
+
         <dl className="divide-y divide-slate-700/80">
           <ProvenanceGridRow
             asDl

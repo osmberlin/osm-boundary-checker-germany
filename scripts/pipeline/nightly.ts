@@ -66,6 +66,8 @@ type PipelineStepName =
   | 'extract:osm:plz'
   | 'extract:osm:admin_candidates'
   | 'extract:osm:plz_candidates'
+  | 'extract:osm:protected_areas'
+  | 'extract:osm:protected_areas_candidates'
 type PipelineStep = { step: PipelineStepName; args: string[] }
 const DEFAULT_COMPARE_CONCURRENCY = 2
 
@@ -218,6 +220,10 @@ function osmExtractKindForStep(
       return 'admin_candidates'
     case 'extract:osm:plz_candidates':
       return 'plz_candidates'
+    case 'extract:osm:protected_areas':
+      return 'protected_areas'
+    case 'extract:osm:protected_areas_candidates':
+      return 'protected_areas_candidates'
     case 'download:bkg':
     case 'download:official':
     case 'download:osm':
@@ -272,6 +278,8 @@ async function main() {
   let skipExtractOsmPlz = false
   let skipExtractOsmAdminCandidates = false
   let skipExtractOsmPlzCandidates = false
+  let skipExtractOsmProtectedAreas = false
+  let skipExtractOsmProtectedAreasCandidates = false
 
   try {
     const downloadSteps: PipelineStep[] = [
@@ -303,6 +311,23 @@ async function main() {
         step: 'extract:osm:plz_candidates',
         args: ['run', '--filter', './scripts', 'extract:osm', '--', '--kind', 'plz_candidates'],
       },
+      // Protected areas read their own filtered PBF (osmium tags-filter on nature/protection tags).
+      {
+        step: 'extract:osm:protected_areas',
+        args: ['run', '--filter', './scripts', 'extract:osm', '--', '--kind', 'protected_areas'],
+      },
+      {
+        step: 'extract:osm:protected_areas_candidates',
+        args: [
+          'run',
+          '--filter',
+          './scripts',
+          'extract:osm',
+          '--',
+          '--kind',
+          'protected_areas_candidates',
+        ],
+      },
     ]
 
     const runPhaseSteps = async (phaseSteps: PipelineStep[]) => {
@@ -323,6 +348,9 @@ async function main() {
           (phaseStep.step === 'extract:osm:plz' && skipExtractOsmPlz) ||
           (phaseStep.step === 'extract:osm:admin_candidates' && skipExtractOsmAdminCandidates) ||
           (phaseStep.step === 'extract:osm:plz_candidates' && skipExtractOsmPlzCandidates) ||
+          (phaseStep.step === 'extract:osm:protected_areas' && skipExtractOsmProtectedAreas) ||
+          (phaseStep.step === 'extract:osm:protected_areas_candidates' &&
+            skipExtractOsmProtectedAreasCandidates) ||
           (osmExtractKind != null && osmSharedExtractOutputReady(runtimeRoot, osmExtractKind))
         let commandExitCode = 0
         if (shouldSkipFromFallback) {
@@ -383,6 +411,8 @@ async function main() {
                   skipExtractOsmPlz = true
                   skipExtractOsmAdminCandidates = true
                   skipExtractOsmPlzCandidates = true
+                  skipExtractOsmProtectedAreas = true
+                  skipExtractOsmProtectedAreasCandidates = true
                 } else {
                   stepStatus = 'fail'
                 }
@@ -439,6 +469,8 @@ async function main() {
               case 'extract:osm:plz':
               case 'extract:osm:admin_candidates':
               case 'extract:osm:plz_candidates':
+              case 'extract:osm:protected_areas':
+              case 'extract:osm:protected_areas_candidates':
                 stepStatus = 'fail'
                 break
             }

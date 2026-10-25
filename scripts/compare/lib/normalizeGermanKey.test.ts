@@ -81,3 +81,34 @@ describe('normalize text keys', () => {
     expect(n.canonicalMatchKey).toBe('friedrichshain')
   })
 })
+
+describe('wdpa preset', () => {
+  test('normalizeOsmValue keeps a plain numeric ref:WDPA as the canonical key', () => {
+    const n = normalizeOsmValue('ref:WDPA', '555555', 'wdpa')
+    expect(n.canonicalMatchKey).toBe('555555')
+    expect(n.preset).toBe('wdpa')
+    expect(n.notes).toEqual([])
+  })
+
+  test('normalizeOsmValue trims surrounding whitespace', () => {
+    expect(normalizeOsmValue('ref:WDPA', ' 555555 ', 'wdpa').canonicalMatchKey).toBe('555555')
+  })
+
+  test('normalizeOsmValue rejects multi-value ref:WDPA instead of gluing digits', () => {
+    const n = normalizeOsmValue('ref:WDPA', '555555;666666', 'wdpa')
+    expect(n.canonicalMatchKey).toBe('')
+    expect(n.notes).toContain('wdpa-not-digits-only')
+  })
+
+  test('normalizeOsmValue rejects non-digit and empty values', () => {
+    expect(normalizeOsmValue('ref:WDPA', 'DE-123', 'wdpa').canonicalMatchKey).toBe('')
+    expect(normalizeOsmValue('ref:WDPA', '  ', 'wdpa').canonicalMatchKey).toBe('')
+    expect(normalizeOsmValue('ref:WDPA', undefined, 'wdpa').canonicalMatchKey).toBe('')
+  })
+
+  test('normalizeOfficialValue trims digits and rejects multi-value input', () => {
+    expect(normalizeOfficialValue(' 555555 ', 'wdpa')).toBe('555555')
+    expect(normalizeOfficialValue('555555;666666', 'wdpa')).toBe('')
+    expect(normalizeOfficialValue('', 'wdpa')).toBe('')
+  })
+})

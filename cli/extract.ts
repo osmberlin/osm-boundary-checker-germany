@@ -32,7 +32,7 @@ function isBkgExtractArea(config: DatasetConfig): boolean {
   return false
 }
 
-/** Datasets with BKG extract path and/or official.download (same notion as extract:official). */
+/** Datasets with BKG/DtP extract path and/or official.download (same notion as extract:official). */
 function countAmtlicheDownloads(repoRoot: string): number {
   let n = 0
   for (const area of discoverAreas(repoRoot)) {
@@ -50,7 +50,7 @@ function countAmtlicheDownloads(repoRoot: string): number {
         hasHttp = false
       }
     }
-    if (isBkgExtractArea(cfg) || hasHttp) n++
+    if (isBkgExtractArea(cfg) || cfg.officialMode === 'dtp' || hasHttp) n++
   }
   return n
 }
@@ -65,7 +65,7 @@ Interactive: select pipeline steps; OSM runs before official when both are selec
 
 Focused CLIs:
   bun run extract:osm        OSM PBF handling + FlatGeobuf kinds
-  bun run extract:official   BKG + HTTP/Direct groups
+  bun run extract:official   BKG + DtP + HTTP/Direct groups
 
 Downloads (PBF, BKG ZIP, HTTP fetch): bun run download
 `)
@@ -108,7 +108,7 @@ async function main(): Promise<void> {
         {
           value: 'official',
           label: 'Extract official datasets',
-          hint: `${amtlicheN} configured areas (BKG and/or HTTP)`,
+          hint: `${amtlicheN} configured areas (BKG, DtP and/or HTTP)`,
         },
       ],
       initialValues: ['osm', 'official'],

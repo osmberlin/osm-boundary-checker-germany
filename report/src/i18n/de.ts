@@ -106,6 +106,30 @@ export const de = {
       no: 'Nein',
       yes_licence: 'Ja (Lizenz oder Freigabe)',
       yes_waiver: 'Ja (Lizenz oder Freigabe)',
+      /** Dataset level only: licence differs per geometry. */
+      partial: 'Teilweise',
+    },
+    /** Licence per geometry (DtP): row-level section, area overview table and homepage row. */
+    licensePerGeometry: {
+      mixedLabel: 'Pro Gebiet unterschiedlich',
+      geometrySourceLabel: 'Geometriequelle',
+      overviewHint:
+        'Die Lizenz steht bei Digitize the Planet pro Geometrie. Ob sie zu OSM passt, bewerten wir selbst; eine Freigabe der Quelle (Behörde) hebt die Standardregel einer Lizenz auf.',
+      columnSource: 'Quelle',
+      columnLicense: 'Lizenz',
+      columnAreas: 'Gebiete',
+      columnCompatible: 'OSM-kompatibel',
+      columnRule: 'Regelung / Nachweis',
+      unknownSource: 'Unbekannte Quelle',
+      evidenceLink: 'Nachweis',
+      decidedAt: (date: string) => `Entschieden am ${date}`,
+      summaryHint:
+        'Die Lizenz steht bei Digitize the Planet pro Geometrie; sie ist deshalb für jedes Gebiet einzeln zu prüfen.',
+      showOverview: (sourceCount: number) =>
+        `Lizenzübersicht anzeigen (${sourceCount} Quellen und Lizenzen)`,
+      homeOverviewLink: 'Lizenzübersicht',
+      homePartial: (compatible: string, total: string) =>
+        `Teilweise (${compatible} von ${total} Gebieten)`,
     },
     osmHeading: 'OpenStreetMap Daten',
     osmSourceHeading: 'Datenquelle der OSM-Daten',
@@ -145,6 +169,8 @@ export const de = {
     },
     compareBoundaryTag: (value: string) =>
       `Im OSM-Extrakt und für Live-Anbindungen gilt \`boundary=${value}\`.`,
+    compareBoundaryTagMultiple: (valuesCsv: string) =>
+      `Im OSM-Extrakt und für Live-Anbindungen gelten \`boundary\`-Werte: ${valuesCsv}.`,
     compareAdminLevels: (levelsCsv: string) =>
       `Erwartete \`admin_level\`-Werte auf der OSM-Seite für diesen Datensatz: ${levelsCsv}.`,
     compareMatchCriteriaProperty:
@@ -594,8 +620,66 @@ export const de = {
     candidatesNoName: '(ohne Name)',
     candidatesEmptyValue: '–',
 
+    protectedCandidatesLead:
+      'Kandidaten sind OSM-Schutzgebiete, die zu dieser DtP-Fläche passen könnten, aber noch kein passendes ref:WDPA tragen. Die Signale zeigen, woran wir den Kandidaten erkannt haben; die stärksten stehen oben (maximal 5 Kandidaten).',
+    protectedCandidatesMatchHintBefore:
+      'Wenn der Kandidat dasselbe Gebiet beschreibt, ergänzen Sie in OSM die vorgeschlagenen Tags, vor allem',
+    protectedCandidatesColumnObject: 'OSM-Objekt',
+    protectedCandidatesColumnSignals: 'Signale',
+    protectedCandidatesColumnCurrent: 'Aktuell in OSM',
+    protectedCandidatesColumnSuggested: 'Vorschlag',
+    protectedCandidatesCurrentNone: 'keine Typ-Tags',
+    protectedCandidatesNameSimilarity: (percent: number) => `Namensähnlichkeit ${percent} %`,
+    protectedCandidatesSignal: {
+      dtp_id: 'dtp_id',
+      dtp_osm_ref: 'DtP-OSM-Verweis',
+      wikidata: 'Wikidata',
+      natura2000: 'Natura-2000-Code',
+      inside: 'Lage + Typ',
+      name: 'Name',
+    },
+    protectedCandidatesSignalTitle: {
+      dtp_id: 'Das OSM-Objekt trägt das Tag dtp_id mit der UUID dieser DtP-Fläche.',
+      dtp_osm_ref: 'DtP verweist selbst auf dieses OSM-Objekt.',
+      wikidata: 'Dasselbe wikidata-Tag wie im DtP-Datensatz.',
+      natura2000:
+        'Derselbe Natura-2000-Gebietscode (ref:DE, ref:SCI oder ref:natura2000) wie im DtP-Datensatz.',
+      inside:
+        'Der Innenpunkt des OSM-Objekts liegt in der verkleinerten DtP-Fläche und die Typ-Tags passen zur Kategorie.',
+      name: 'Ähnlicher Name in unmittelbarer Nähe der DtP-Fläche.',
+    },
+    copyTags: 'Tags kopieren',
+    copyTagsDone: 'Kopiert',
+    copyTagsAria: (osmObject: string) => `Vorgeschlagene Tags für ${osmObject} kopieren`,
+
+    attributeHints: {
+      aria: 'Hinweise zu Attributen des zugeordneten OSM-Objekts',
+      title: 'Hinweise zu Attributen',
+      lead: 'Vorschläge für das zugeordnete OSM-Objekt, abgeleitet aus dem DtP-Datensatz. Sie ändern nichts an der Zuordnung oder an den Kennzahlen.',
+      expected: 'Erwartet',
+      actual: 'In OSM',
+      actualNone: 'nicht gesetzt',
+      suggestion: 'Vorschlag',
+      titles: {
+        type_tags: (categoryName: string | null) =>
+          categoryName
+            ? `Typ-Tags passen nicht zur Kategorie „${categoryName}“`
+            : 'Typ-Tags passen nicht zur Kategorie',
+        wikidata_missing: 'wikidata fehlt in OSM, DtP kennt einen Wert',
+        wikidata_differs: 'wikidata weicht vom DtP-Wert ab',
+        osm_ref_differs: 'DtP verweist auf ein anderes OSM-Objekt',
+        natura2000_missing: 'Natura-2000-Code fehlt in OSM oder weicht ab',
+      },
+    },
+
     updateMap: {
       title: 'Daten in OSM bearbeiten',
+      licenceUnknownLinkSentence: 'Die Lizenz der amtlichen Daten ist unbekannt.',
+      licenceNoLinkBeforeBold: 'Für diese Daten besteht ',
+      licenceNoLinkBoldKeine: 'keine',
+      licenceNoLinkAfterBold: ' Freigabe zur Nutzung in OSM.',
+      licenceResearchOnlyDisclaimer:
+        'Dieser Abgleich darf daher nur als Basis für eine eigene Recherche genutzt werden.',
       osmBrowseHeading: 'Auf osm.org',
       openOsmOrg: 'OSM-Objekt auf osm.org öffnen',
       openOsmOrgDisabledHint: 'Für diesen Eintrag ist kein OSM-Objekt hinterlegt.',

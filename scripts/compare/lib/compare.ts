@@ -2,8 +2,10 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as turf from '@turf/turf'
 import type { BBox, Feature, Geometry, MultiPolygon, Polygon } from 'geojson'
+import type { AttributeHint } from '../../shared/comparisonPayload.ts'
 import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
+import { matchesAnyCategoryScope } from '../../shared/protectedAreaCategories.ts'
 import {
   applyStaleOfficialKeyClassification,
   loadDestatisArsPresence,
@@ -41,6 +43,8 @@ import {
   type OsmMatchKeyContext,
 } from './osmMatchKey.ts'
 import { projectGeometry } from './projectGeometry.ts'
+import { matchProtectedAreaCandidates } from './protectedAreaCandidates.ts'
+import { computeProtectedAreaAttributeHints } from './protectedAreaHints.ts'
 import {
   calculateMetricsBatchWithRust,
   filterByOfficialCoverageWithRust,
@@ -73,6 +77,8 @@ export type CompareRow = {
    * means the phase was skipped (e.g. candidate FGB missing).
    */
   candidates?: CandidateMatch[]
+  /** Matched protected-area rows: tag suggestions (type tags, wikidata, osm ref, Natura 2000 code). */
+  attributeHints?: AttributeHint[]
   staleOfficialKey?: StaleOfficialKey
 }
 
@@ -530,7 +536,10 @@ export async function runCompare(
     const s = osmMap.get(key)
     const officialGeom = o?.geometry ?? null
     const osmGeom = s?.geometry ?? null
-    const nameLabel = osmNameByKey.get(key) ?? key
+    const officialName = o?.properties?.name
+    const nameLabel =
+      osmNameByKey.get(key) ??
+      (typeof officialName === 'string' && officialName.trim() ? officialName.trim() : key)
 
     const category: CompareRow['category'] = officialGeom && osmGeom ? 'matched' : 'official_only'
 
@@ -593,6 +602,21 @@ export async function runCompare(
   }
   instrumentation?.setInFlightPhase?.(null)
 
+  if (config.osm.profileId === 'protected_area_wdpa') {
+    let rowsWithHints = 0
+    for (const row of rows) {
+      if (row.category !== 'matched') continue
+      const hints = computeProtectedAreaAttributeHints({
+        officialProperties: row.officialProperties,
+        osmProperties: row.osmProperties,
+      })
+      if (hints.length === 0) continue
+      row.attributeHints = hints
+      rowsWithHints++
+    }
+    console.log(`[compare:${areaFolder}] attribute_hints rowsWithHints=${rowsWithHints}`)
+  }
+
   const adminLevelAllowList =
     config.osm.adminLevels && config.osm.adminLevels.length > 0
       ? new Set(config.osm.adminLevels)
@@ -601,6 +625,8 @@ export async function runCompare(
   const unmatchedOsm: UnmatchedOsmRow[] = []
   let droppedUnmatchedByAdminLevel = 0
   let droppedUnmatchedByOfficialPrefix = 0
+  let droppedUnmatchedByTypeScope = 0
+  const protectedAreaCategoryIds = config.osm.protectedAreaCategoryIds ?? null
   const tFilterUnmatchedAdminLevel = Date.now()
   for (const key of Array.from(osmMap.keys()).sort()) {
     if (officialKeySet.has(key)) continue
@@ -612,6 +638,14 @@ export async function runCompare(
     // at admin_level=6/4, but keep the OSM-only report scoped to the configured level.
     if (adminLevelAllowList && (adminLevel == null || !adminLevelAllowList.has(adminLevel))) {
       droppedUnmatchedByAdminLevel++
+      continue
+    }
+    // Protected areas: keep only OSM objects whose tags fit one of the dataset's categories.
+    if (
+      protectedAreaCategoryIds &&
+      !matchesAnyCategoryScope(props ?? {}, protectedAreaCategoryIds)
+    ) {
+      droppedUnmatchedByTypeScope++
       continue
     }
     if (!keepUnmatchedOsmForOfficialPrefix(key, unmatchedOfficialPrefix)) {
@@ -630,17 +664,22 @@ export async function runCompare(
       osmGeometryWgs84: s.geometry ?? null,
     })
   }
-  if (adminLevelAllowList || unmatchedOfficialPrefix != null) {
+  if (adminLevelAllowList || unmatchedOfficialPrefix != null || protectedAreaCategoryIds) {
     phaseLogger?.('filter_unmatched_admin_level', Date.now() - tFilterUnmatchedAdminLevel, {
       dropped: droppedUnmatchedByAdminLevel,
       remaining: unmatchedOsm.length,
       configuredAdminLevels: adminLevelAllowList?.size ?? 0,
       droppedByOfficialPrefix: droppedUnmatchedByOfficialPrefix,
       officialPrefix: unmatchedOfficialPrefix,
+      droppedByTypeScope: droppedUnmatchedByTypeScope,
     })
-    if (droppedUnmatchedByAdminLevel > 0 || droppedUnmatchedByOfficialPrefix > 0) {
+    if (
+      droppedUnmatchedByAdminLevel > 0 ||
+      droppedUnmatchedByOfficialPrefix > 0 ||
+      droppedUnmatchedByTypeScope > 0
+    ) {
       console.log(
-        `[compare:${areaFolder}] unmatched_osm filter droppedAdminLevel=${droppedUnmatchedByAdminLevel} droppedOfficialPrefix=${droppedUnmatchedByOfficialPrefix} remaining=${unmatchedOsm.length}`,
+        `[compare:${areaFolder}] unmatched_osm filter droppedAdminLevel=${droppedUnmatchedByAdminLevel} droppedOfficialPrefix=${droppedUnmatchedByOfficialPrefix} droppedTypeScope=${droppedUnmatchedByTypeScope} remaining=${unmatchedOsm.length}`,
       )
     }
   }
@@ -699,20 +738,32 @@ export async function runCompare(
             ? (row.officialGeometryWgs84 as Polygon | MultiPolygon)
             : null,
       }))
-      const matches = matchCandidatesForOfficialOnly({
-        rows: officialOnlyInputs,
-        officialKeySet,
-        candidatePoints: eligible,
-        options: {
-          shrinkFactor: config.compare.candidateShrinkFactor,
-          ...(adminLevelAllowList ? { adminLevelAllowList } : {}),
-          ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
-          ...(bboxFilter ? { bboxFilter } : {}),
-          idNormalizationPreset: preset,
-          osmProfileId: config.osm.profileId,
-          osmMatchProperty,
-        },
-      })
+      const matches =
+        config.osm.profileId === 'protected_area_wdpa'
+          ? matchProtectedAreaCandidates({
+              rows: officialOnlyRowIndexes.map(({ row }, i) => ({
+                canonicalMatchKey: row.canonicalMatchKey,
+                officialGeometryWgs84: officialOnlyInputs[i]!.officialGeometryWgs84,
+                officialProperties: row.officialProperties,
+              })),
+              officialKeySet,
+              candidatePoints: eligible,
+              options: { shrinkFactor: config.compare.candidateShrinkFactor },
+            })
+          : matchCandidatesForOfficialOnly({
+              rows: officialOnlyInputs,
+              officialKeySet,
+              candidatePoints: eligible,
+              options: {
+                shrinkFactor: config.compare.candidateShrinkFactor,
+                ...(adminLevelAllowList ? { adminLevelAllowList } : {}),
+                ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
+                ...(bboxFilter ? { bboxFilter } : {}),
+                idNormalizationPreset: preset,
+                osmProfileId: config.osm.profileId,
+                osmMatchProperty,
+              },
+            })
       let totalCandidates = 0
       for (const { row, index } of officialOnlyRowIndexes) {
         const candidatesForRow = matches.get(row.canonicalMatchKey) ?? []

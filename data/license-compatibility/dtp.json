@@ -1,0 +1,105 @@
+{
+  "licenseRules": [
+    {
+      "id": "dtp-license-cc0-de",
+      "licenseName": "Deutschland Zero (CC0-DE)",
+      "licenseId": "custom",
+      "osmCompatibility": "yes_licence",
+      "evidenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.de",
+      "comment": "Gemeinfreie Widmung (Zero); Übernahme in OSM ist ohne Namensnennung zulässig.",
+      "decidedAt": "2026-10-25"
+    },
+    {
+      "id": "dtp-license-dl-de-zero-20",
+      "licenseName": "DL-DE Zero-2.0",
+      "licenseId": "dl_de_zero_20",
+      "osmCompatibility": "yes_licence",
+      "evidenceUrl": "https://www.govdata.de/dl-de/zero-2-0",
+      "comment": "Datenlizenz Deutschland Zero 2.0 ist ohne Bedingungen nutzbar; Übernahme in OSM ist zulässig.",
+      "decidedAt": "2026-10-25"
+    },
+    {
+      "id": "dtp-license-odbl-10",
+      "licenseName": "ODbL 1.0",
+      "licenseId": "odbl_10",
+      "osmCompatibility": "yes_licence",
+      "evidenceUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "comment": "Gleiche Lizenz wie OSM-Daten; Übernahme in OSM ist zulässig.",
+      "decidedAt": "2026-10-25"
+    },
+    {
+      "id": "dtp-license-cc-by-40",
+      "licenseName": "CC BY 4.0",
+      "licenseId": "cc_by_40",
+      "osmCompatibility": "no",
+      "evidenceUrl": "https://wiki.openstreetmap.org/wiki/DE:Permissions",
+      "comment": "Standardregel CC BY 4.0: Namensnennung ist in OSM nicht umsetzbar; keine Freigabe bekannt (siehe DE:Permissions).",
+      "decidedAt": "2026-10-25"
+    },
+    {
+      "id": "dtp-license-cc-by-sa-40",
+      "licenseName": "CC BY-SA 4.0",
+      "licenseId": "cc_by_sa_40",
+      "osmCompatibility": "no",
+      "evidenceUrl": "https://wiki.openstreetmap.org/wiki/DE:Permissions",
+      "comment": "Standardregel CC BY-SA 4.0: Share-Alike ist nicht mit der ODbL vereinbar; keine Freigabe bekannt (siehe DE:Permissions).",
+      "decidedAt": "2026-10-25"
+    },
+    {
+      "id": "dtp-license-dl-de-by",
+      "licenseName": "DL-DE BY",
+      "licenseId": "custom",
+      "osmCompatibility": "no",
+      "evidenceUrl": "https://wiki.openstreetmap.org/wiki/DE:Permissions",
+      "comment": "Standardregel DL-DE BY (ohne Versionsangabe): Namensnennung ist in OSM nicht umsetzbar; keine Freigabe bekannt (siehe DE:Permissions).",
+      "decidedAt": "2026-10-25"
+    },
+    {
+      "id": "dtp-license-dl-de-by-20",
+      "licenseName": "DL-DE BY-2.0",
+      "licenseId": "dl_de_by_20",
+      "osmCompatibility": "no",
+      "evidenceUrl": "https://wiki.openstreetmap.org/wiki/DE:Permissions",
+      "comment": "Standardregel DL-DE BY-2.0: Namensnennung ist in OSM nicht umsetzbar; keine Freigabe bekannt (siehe DE:Permissions).",
+      "decidedAt": "2026-10-25"
+    },
+    {
+      "id": "dtp-license-cc-by-nd-40",
+      "licenseName": "CC BY-ND 4.0",
+      "licenseId": "cc_by_nd_40",
+      "osmCompatibility": "no",
+      "evidenceUrl": "https://wiki.openstreetmap.org/wiki/DE:Permissions",
+      "comment": "Standardregel CC BY-ND 4.0: Bearbeitungen sind ausgeschlossen, damit ist keine Übernahme in OSM möglich.",
+      "decidedAt": "2026-10-25"
+    },
+    {
+      "id": "dtp-license-geonutzv",
+      "licenseName": "GeoNutzV",
+      "licenseId": "geonutzv",
+      "osmCompatibility": "no",
+      "evidenceUrl": "https://wiki.openstreetmap.org/wiki/DE:Permissions",
+      "comment": "Standardregel GeoNutzV: Namensnennung ist in OSM nicht umsetzbar; keine Freigabe bekannt (siehe DE:Permissions).",
+      "decidedAt": "2026-10-25"
+    },
+    {
+      "id": "dtp-license-other-restriction",
+      "licenseName": "otherRestriction",
+      "licenseId": "other_restriction",
+      "osmCompatibility": "no",
+      "evidenceUrl": "https://wiki.openstreetmap.org/wiki/DE:Permissions",
+      "comment": "Standardregel otherRestriction: die Nutzungsbedingungen der Quelle sind individuell; keine Freigabe bekannt (siehe DE:Permissions).",
+      "decidedAt": "2026-10-25"
+    }
+  ],
+  "sourceOverrides": [
+    {
+      "id": "dtp-source-lfu-by-cc-by-40",
+      "sourceName": "Bayerisches Landesamt für Umwelt",
+      "licenseName": "CC BY 4.0",
+      "osmCompatibility": "yes_waiver",
+      "evidenceUrl": "https://wiki.openstreetmap.org/wiki/DE:Permissions",
+      "comment": "Bayerisches Landesamt für Umwelt hat die ODbL-Nutzung am 19.10.2022 freigegeben (DE:Permissions).",
+      "decidedAt": "2026-10-25"
+    }
+  ]
+}

@@ -262,7 +262,10 @@ function buildHomeLicenseRowGroups(rows: AreaLicenseSummary[]): HomeLicenseRowGr
   const membersByMergeKey = new Map<string, AreaLicenseSummary[]>()
 
   rows.forEach((row, index) => {
-    const mk = officialLicenseTableMergeKey(row.officialSourceGroupKey, licenseTupleParts(row))
+    // A licence per geometry is never merged with other rows.
+    const mk = row.officialLicenseMixed
+      ? `mixed\x1f${row.area}`
+      : officialLicenseTableMergeKey(row.officialSourceGroupKey, licenseTupleParts(row))
     if (!firstIndexByMergeKey.has(mk)) {
       firstIndexByMergeKey.set(mk, index)
     }
@@ -314,8 +317,40 @@ function HomeLicenseMergedDatasetLinks({ members }: { members: AreaLicenseSummar
   )
 }
 
+/** Dataset with a licence per geometry: no single licence or evidence link, but a link to the overview. */
+function HomeMixedLicenseCells({
+  row,
+  mixed,
+}: {
+  row: AreaLicenseSummary
+  mixed: NonNullable<AreaLicenseSummary['officialLicenseMixed']>
+}) {
+  const g = de.provenance.licensePerGeometry
+  return (
+    <>
+      <td className="px-3 py-2">{g.mixedLabel}</td>
+      <td className="px-3 py-2">
+        {g.homePartial(formatDeInteger(mixed.compatibleCount), formatDeInteger(mixed.totalCount))}
+      </td>
+      <td className="px-3 py-2">
+        <Link
+          to="/$areaId"
+          params={{ areaId: row.area }}
+          hash="report-licence-section"
+          className="text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+        >
+          {g.homeOverviewLink}
+        </Link>
+      </td>
+    </>
+  )
+}
+
 function HomeLicenseCells({ row }: { row: AreaLicenseSummary }) {
   const p = de.provenance
+  if (row.officialLicenseMixed) {
+    return <HomeMixedLicenseCells row={row} mixed={row.officialLicenseMixed} />
+  }
   return (
     <>
       <td className="px-3 py-2">

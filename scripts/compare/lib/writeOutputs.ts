@@ -18,7 +18,9 @@ import {
   type ComparisonFilterConfigSummary,
   type ComparisonForReport,
   type FeatureDetailShard,
+  type OfficialLicense,
   type ReportRow as StaticReportRow,
+  type TableReportRow as StaticTableRow,
   type SnapshotsJson,
   type UnmatchedOsmReportRow as StaticUnmatchedOsmRow,
 } from '../../shared/comparisonPayload.ts'
@@ -35,6 +37,7 @@ import type {
   UnmatchedOsmRow,
 } from './compare.ts'
 import { computeMeanIou } from './metrics/index.ts'
+import type { OfficialLicenseOutputs } from './officialLicenses.ts'
 import {
   runTippecanoe,
   TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM,
@@ -53,7 +56,7 @@ const OFFICIAL_FOR_EDIT_DIR = 'official_for_edit'
 const OFFICIAL_FOR_EDIT_SIMPLIFY_METERS = 2.5
 const OFFICIAL_FOR_EDIT_SIMPLIFY_DEGREES = OFFICIAL_FOR_EDIT_SIMPLIFY_METERS / 111_320
 const OFFICIAL_FOR_EDIT_COORD_PRECISION = 6
-export type OverpassBoundaryTag = 'administrative' | 'postal_code'
+export type OverpassBoundaryTag = 'administrative' | 'postal_code' | 'protected_area'
 
 function compactOfficialSource(
   side: SourceMetadataSide | null | undefined,
@@ -97,11 +100,34 @@ function flattenOfficialSourceForProperties(
   return Object.keys(out).length > 0 ? out : undefined
 }
 
+/** Row-level licence overrides the dataset block in the download (same `officialSource.*` keys). */
+function flattenRowLicenseForProperties(
+  license: OfficialLicense | undefined,
+): Record<string, string> | undefined {
+  if (!license) return undefined
+  const out: Record<string, string> = {
+    'officialSource.licenseId': license.licenseId,
+    'officialSource.licenseLabel': license.licenseLabel,
+    'officialSource.osmCompatibility': license.osmCompatibility,
+  }
+  if (license.licenseSourceUrl) out['officialSource.licenseSourceUrl'] = license.licenseSourceUrl
+  if (license.osmCompatibilitySourceUrl) {
+    out['officialSource.osmCompatibilitySourceUrl'] = license.osmCompatibilitySourceUrl
+  }
+  if (license.osmCompatibilityComment) {
+    out['officialSource.osmCompatibilityComment'] = license.osmCompatibilityComment
+  }
+  if (license.sourceName) out['officialSource.geometrySourceName'] = license.sourceName
+  if (license.sourceUrl) out['officialSource.geometrySourceUrl'] = license.sourceUrl
+  return out
+}
+
 function writeOfficialForEditGeojson(
   outDir: string,
   rows: CompareRow[],
   sourceMetadata: ComparisonSourceMetadata,
   stemByKey: Map<string, string> | null,
+  officialLicenseByKey: ReadonlyMap<string, OfficialLicense> | null = null,
 ) {
   const dir = join(outDir, OFFICIAL_FOR_EDIT_DIR)
   const tmpDir = `${dir}.tmp-${Date.now()}`
@@ -126,6 +152,7 @@ function writeOfficialForEditGeojson(
         nameLabel: r.nameLabel,
         boundarySource: 'external' as const,
         ...officialMeta,
+        ...flattenRowLicenseForProperties(officialLicenseByKey?.get(r.canonicalMatchKey)),
       },
       geometry: normalizeOfficialForEditGeometry(geom),
     }
@@ -357,7 +384,7 @@ function removeObsoleteOutputFiles(outDir: string) {
   }
 }
 
-function buildStaticPayloadBase(
+export function buildStaticPayloadBase(
   areaFolder: string,
   displayName: string,
   titlePrefix: string,
@@ -370,6 +397,7 @@ function buildStaticPayloadBase(
   filterConfigSummary: ComparisonFilterConfigSummary,
   ogcInspectSources: OgcWfsInspectSource[],
   compareRulesSummary: CompareRulesSummary | null,
+  officialLicenses: OfficialLicenseOutputs | null = null,
 ): Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> {
   const out: Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> = {
     area: areaFolder,
@@ -382,8 +410,11 @@ function buildStaticPayloadBase(
     hasUnmatchedPmtiles,
     tippecanoeLayer: TIPPECANOE_LAYER,
     sourceMetadata: {
-      official: sourceMetadata.official,
+      official: officialLicenses
+        ? { ...sourceMetadata.official, osmCompatibility: officialLicenses.datasetOsmCompatibility }
+        : sourceMetadata.official,
       osm: sourceMetadata.osm,
+      ...(officialLicenses ? { licenseBreakdown: officialLicenses.breakdown } : {}),
     },
     filterConfigSummary,
   }
@@ -397,9 +428,10 @@ function buildStaticPayloadBase(
   return out
 }
 
-function comparisonRowToPayload(
+export function comparisonRowToPayload(
   row: CompareRow,
   stemByKeyForOfficial: Map<string, string> | null,
+  officialLicense?: OfficialLicense,
 ): StaticReportRow {
   const editStem = stemByKeyForOfficial?.get(row.canonicalMatchKey)
   const officialForEditPath =
@@ -417,6 +449,40 @@ function comparisonRowToPayload(
     officialProperties: row.officialProperties,
     osmProperties: row.osmProperties,
     ...(row.staleOfficialKey ? { staleOfficialKey: row.staleOfficialKey } : {}),
+    ...(officialLicense ? { officialLicense } : {}),
+  }
+}
+
+/** What a dataset drops from the rows of `comparison_table.json` (feature shards keep everything). */
+export type TableRowSlimming = {
+  /** Table rows carry `officialProperties: null`. */
+  dropOfficialProperties: boolean
+  /** Table rows carry `osmProperties: null`. */
+  dropOsmProperties: boolean
+}
+
+/**
+ * DtP: the area page reads name, metrics, category and licence from the feature shard and the
+ * comparison row, so table rows carry neither the official nor the OSM properties.
+ */
+export const DTP_TABLE_ROW_SLIMMING: TableRowSlimming = {
+  dropOfficialProperties: true,
+  dropOsmProperties: true,
+}
+
+/**
+ * Slim projection of a full row for `comparison_table.json`: no licence (the feature shard has it);
+ * `slimming` (when set) drops the properties the area page does not read.
+ */
+export function comparisonRowToTableRow(
+  row: StaticReportRow,
+  slimming: TableRowSlimming | null = null,
+): StaticTableRow {
+  const { officialLicense: _officialLicense, officialProperties, osmProperties, ...rest } = row
+  return {
+    ...rest,
+    officialProperties: slimming?.dropOfficialProperties ? null : officialProperties,
+    osmProperties: slimming?.dropOsmProperties ? null : osmProperties,
   }
 }
 
@@ -505,6 +571,10 @@ export function writeOutputs(
   mapMinZoom: number,
   phaseLogger?: ComparePhaseLogger,
   instrumentation?: CompareInstrumentation,
+  /** Per-geometry licences (DtP); `null` keeps the single dataset licence. */
+  officialLicenses: OfficialLicenseOutputs | null = null,
+  /** DtP: properties dropped from table rows (shards keep all); `null` keeps everything. */
+  tableRowSlimming: TableRowSlimming | null = null,
 ): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
   const buildDir = join(outDir, BUILD_DIR)
@@ -537,7 +607,13 @@ export function writeOutputs(
     withOfficialRows.length > 0
       ? assignOfficialForEditStems(withOfficialRows.map((r) => r.canonicalMatchKey))
       : null
-  writeOfficialForEditGeojson(outDir, rows, sourceMetadata, stemByKeyForOfficial)
+  writeOfficialForEditGeojson(
+    outDir,
+    rows,
+    sourceMetadata,
+    stemByKeyForOfficial,
+    officialLicenses?.byKey ?? null,
+  )
 
   let hasPmtiles = false
   if (overlayFc.features.length > 0) {
@@ -696,8 +772,15 @@ export function writeOutputs(
     filterConfigSummary,
     ogcInspectSources,
     compareRulesSummary,
+    officialLicenses,
   )
-  const payloadRows = rows.map((row) => comparisonRowToPayload(row, stemByKeyForOfficial))
+  const payloadRows = rows.map((row) =>
+    comparisonRowToPayload(
+      row,
+      stemByKeyForOfficial,
+      officialLicenses?.byKey.get(row.canonicalMatchKey),
+    ),
+  )
   const payloadUnmatched = unmatchedOsm.map(unmatchedRowToPayload)
 
   const tWritePayloads = Date.now()
@@ -708,7 +791,7 @@ export function writeOutputs(
   })
   writeStaticJson(join(outDir, TABLE_JSON), {
     ...base,
-    rows: payloadRows,
+    rows: payloadRows.map((row) => comparisonRowToTableRow(row, tableRowSlimming)),
     unmatchedOsm: payloadUnmatched,
   } satisfies ComparisonForReport)
 
@@ -723,6 +806,12 @@ export function writeOutputs(
     }
   }
 
+  const attributeHintsByKey = new Map<string, CompareRow['attributeHints']>()
+  for (const row of rows) {
+    if (row.attributeHints?.length)
+      attributeHintsByKey.set(row.canonicalMatchKey, row.attributeHints)
+  }
+
   const featureDir = join(outDir, 'features')
   const featureTmp = `${featureDir}.tmp-${Date.now()}`
   rmSync(featureTmp, { recursive: true, force: true })
@@ -732,9 +821,11 @@ export function writeOutputs(
   for (const row of payloadRows) {
     featureShardCount++
     const candidates = candidatesByKey.get(row.canonicalMatchKey)
+    const attributeHints = attributeHintsByKey.get(row.canonicalMatchKey)
     const shard: FeatureDetailShard = {
       row,
       ...(candidates !== undefined ? { candidates } : {}),
+      ...(attributeHints !== undefined ? { attributeHints } : {}),
     }
     writeStaticJson(join(featureTmp, `${encodeURIComponent(row.canonicalMatchKey)}.json`), shard)
     if (

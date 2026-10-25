@@ -11,15 +11,30 @@ import { cliErr } from '../scripts/shared/cliStyle.ts'
 import {
   GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
   GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME,
   GERMANY_OSM_SHARED_FGB_BASENAME,
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
 } from '../scripts/shared/germanyOsmPbf.ts'
 
-type ExtractKind = 'admin' | 'plz' | 'admin_candidates' | 'plz_candidates'
+type ExtractKind =
+  | 'admin'
+  | 'plz'
+  | 'admin_candidates'
+  | 'plz_candidates'
+  | 'protected_areas'
+  | 'protected_areas_candidates'
 
 type PbfFlow = 'reuse_filtered' | 'force_filter'
 
-const KIND_ORDER: ExtractKind[] = ['admin', 'admin_candidates', 'plz', 'plz_candidates']
+const KIND_ORDER: ExtractKind[] = [
+  'admin',
+  'admin_candidates',
+  'plz',
+  'plz_candidates',
+  'protected_areas',
+  'protected_areas_candidates',
+]
 
 function sortKinds(kinds: ExtractKind[]): ExtractKind[] {
   return KIND_ORDER.filter((k) => kinds.includes(k))
@@ -66,7 +81,7 @@ function printHelp(): void {
 Interactive wizard (default): .fgb from cache vs fresh PBF-Extract (--force-tags-filter), then which
 FlatGeobufs to build. Each step runs scripts/osm/extract-osm.ts with an explicit --kind (TTY-safe).
 
-  --yes / --non-interactive   Build all four kinds without prompts (CI-friendly; reuse filtered PBF when valid)
+  --yes / --non-interactive   Build all kinds without prompts (CI-friendly; reuse filtered PBFs when valid)
   --help, -h                  This text
 
 Options after -- are forwarded to each extract-osm run (e.g. --dry-run, --pbf <path>, --force-tags-filter).
@@ -135,6 +150,16 @@ async function main(): Promise<void> {
           value: 'plz_candidates',
           label: 'plz_candidates — PLZ-Kandidaten (Punkte)',
           hint: GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+        },
+        {
+          value: 'protected_areas',
+          label: 'protected_areas — Schutzgebiete mit ref:WDPA (Polygone)',
+          hint: GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME,
+        },
+        {
+          value: 'protected_areas_candidates',
+          label: 'protected_areas_candidates — Schutzgebiete (Punkte)',
+          hint: GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME,
         },
       ],
       initialValues: [...KIND_ORDER],

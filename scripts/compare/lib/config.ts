@@ -16,6 +16,7 @@ export type IdNormalizationPreset =
   | 'regional-12'
   | 'plz-5'
   | 'text'
+  | 'wdpa'
 
 /** Optional compare tuning (bbox prefilter, etc.). */
 export type CompareConfig = {
@@ -45,6 +46,11 @@ export type OsmConfig = {
   adminLevels?: string[]
   /** Optional OSM relation IDs (numeric strings) to exclude from compare. */
   ignoreRelationIds?: string[]
+  /**
+   * DtP category ids whose type scope (union) filters `unmatchedOsm`; unset = no type scope.
+   * Derived from `official.dtp.categoryIds` unless `osm.protectedAreaTypeScope` is `false`.
+   */
+  protectedAreaCategoryIds?: number[]
   /** Basename under `.cache/osm` resolved from `osmProfile`. */
   sharedFgbBasename: string
 }
@@ -129,9 +135,18 @@ function parseOsmConfig(areaLabel: string, config: DatasetConfig): OsmConfig {
     'osm.adminLevels',
   )
 
+  if (osmConfig?.protectedAreaTypeScope === true && config.officialMode !== 'dtp') {
+    throw new Error(`${areaLabel}: osm.protectedAreaTypeScope requires a DtP official profile`)
+  }
+  const protectedAreaCategoryIds =
+    config.officialMode === 'dtp' && osmConfig?.protectedAreaTypeScope !== false
+      ? [...config.official.dtp.categoryIds]
+      : undefined
+
   return {
     profileId: config.osmProfile,
     matchProperty: profile.matchProperty,
+    ...(protectedAreaCategoryIds ? { protectedAreaCategoryIds } : {}),
     ...(matchCriteria ? { matchCriteria } : {}),
     ...(adminLevels ? { adminLevels } : {}),
     ...(ignoreRelationIds ? { ignoreRelationIds } : {}),

@@ -5,6 +5,7 @@ import { MapProvider } from 'react-map-gl/maplibre'
 import { padRegional12 } from '../../../scripts/shared/regionalArs.ts'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
+import { AttributeHintsSection } from '../components/featureDetail/AttributeHintsSection'
 import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmTagsSection'
 import { FeatureDetailHeader } from '../components/featureDetail/FeatureDetailHeader'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
@@ -112,7 +113,9 @@ function FeatureDetailWithMapContext({
           overpassBoundaryTag={data.overpassBoundaryTag}
         />
 
-        <UpdateMapInstructions areaId={areaKey} row={row} />
+        <AttributeHintsSection row={row} hints={data.attributeHints} />
+
+        <UpdateMapInstructions areaId={areaKey} row={row} sourceMetadata={data.sourceMetadata} />
 
         {(() => {
           if (!data.filterConfigSummary.osmMatchProperties?.includes('de:regionalschluessel')) {
@@ -176,7 +179,7 @@ function FeatureDetailWithMapContext({
           />
         ) : null}
 
-        <ReportLicenseCompatibilitySection data={data} />
+        <ReportLicenseCompatibilitySection data={data} row={row} />
       </div>
     </div>
   )

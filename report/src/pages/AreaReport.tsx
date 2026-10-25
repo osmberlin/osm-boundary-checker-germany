@@ -1,35 +1,19 @@
 import { computeMeanIou } from '@compare-metrics/mean-iou/compute.ts'
 import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import {
-  lazy,
-  type CSSProperties,
-  type MouseEvent,
-  type ReactNode,
-  Suspense,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from 'react'
+import { useNavigate, useParams } from '@tanstack/react-router'
+import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { AreaReportHeader } from '../components/AreaReportHeader'
+import { AreaReportTable } from '../components/AreaReportTable'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { KpiRow, KpiSectionRow, KpiToggleCell } from '../components/FeatureStatBlocks'
-import { IssueBadge } from '../components/IssueBadge'
 import { COMPARISON_MAP_ID } from '../components/map/comparisonMapConstants'
 import { ComparisonMapZoomHintOverlay } from '../components/map/ComparisonMapZoomHintOverlay'
 import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
-import {
-  AreaDeltaInfoButton,
-  HausdorffInfoButton,
-  IouInfoButton,
-  IssueIndicatorInfoButton,
-  MeanIouInfoButton,
-} from '../components/MetricInfoModal'
+import { MeanIouInfoButton } from '../components/MetricInfoModal'
 import { OfficialDatasetAgeInfoButton } from '../components/OfficialDatasetAgeInfoModal'
-import { ReportCategoryPill, ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
+import { ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { RouteLoadingPane } from '../components/RouteLoadingPane'
@@ -38,25 +22,18 @@ import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } 
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
 import {
+  isStaleKeyRow,
   parseStaleKeysFilter,
   useAreaReportStaleKeysFilter,
 } from '../hooks/useAreaReportStaleKeysFilter'
-import { type AreaTableSortKey, useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
+import { useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { categoryLabelDe, de } from '../i18n/de'
 import { handleComparisonMapFeatureClick } from '../lib/comparisonMapFeatureClick'
 import { isOlderThanDays } from '../lib/dataAge'
 import { normalizeUnmatchedRows } from '../lib/findFeatureDetailRow'
-import {
-  EM_DASH,
-  formatDeFixed,
-  formatDeInteger,
-  formatDeIou,
-  formatDeMeters,
-  formatDeOrDash,
-  formatDePercentPoints,
-} from '../lib/formatDe'
+import { EM_DASH, formatDeFixed, formatDeInteger, formatDeIou } from '../lib/formatDe'
 import { officialAreaSummaryFreshness } from '../lib/officialAreaSummaryFreshness'
 import { osmAreaSummaryFreshness } from '../lib/osmAreaSummaryFreshness'
 import { kpiFreshnessLinesFromIso } from '../lib/reportFreshnessLines'
@@ -86,10 +63,6 @@ function unionMapBboxes(rows: AreaReportRow[]): [number, number, number, number]
   }
   if (!(w < e && s < n)) return null
   return [w, s, e, n]
-}
-
-function isStaleKeyRow(row: AreaReportRow) {
-  return row.staleOfficialKey != null || row.staleOfficialPredecessor != null
 }
 
 export function AreaReport() {
@@ -240,12 +213,6 @@ export function AreaReport() {
   const reportIsOld = isOlderThanDays(data.generatedAt, 5)
   const officialIsOld = officialFresh.isOld
   const osmIsOld = osmFresh.isOld
-  const iouMax = maxFiniteValue(sortedRows.map((row) => row.metrics?.iou))
-  const areaDiffAbsMax = maxFiniteValue(
-    sortedRows.map((row) => absOrNull(row.metrics?.areaDiffPct)),
-  )
-  const hausdorffMax = maxFiniteValue(sortedRows.map((row) => row.metrics?.hausdorffM))
-  const hausdorffP95Max = maxFiniteValue(sortedRows.map((row) => row.metrics?.hausdorffP95M))
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
@@ -477,203 +444,14 @@ export function AreaReport() {
         </div>
 
         <div>
-          <div className="overflow-x-auto rounded border border-slate-700">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-900">
-                <tr>
-                  <SortableTh
-                    column="name"
-                    label={de.areaReport.table.name}
-                    align="left"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onSort={setColumn}
-                  />
-                  <SortableTh
-                    column="category"
-                    label={de.areaReport.table.category}
-                    align="left"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onSort={setColumn}
-                  />
-                  <SortableTh
-                    column="iou"
-                    label={de.areaReport.table.iou}
-                    align="right"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onSort={setColumn}
-                    labelEnd={
-                      <IouInfoButton
-                        className="-mr-0.5"
-                        iconClassName="size-[0.95rem]"
-                        bandContext={{ metricsCrs: data.metricsCrs }}
-                      />
-                    }
-                  />
-                  <SortableTh
-                    column="area"
-                    label={de.areaReport.table.areaDelta}
-                    align="right"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onSort={setColumn}
-                    labelEnd={
-                      <AreaDeltaInfoButton
-                        className="-mr-0.5"
-                        iconClassName="size-[0.95rem]"
-                        bandContext={{ metricsCrs: data.metricsCrs }}
-                      />
-                    }
-                  />
-                  <SortableTh
-                    column="haus"
-                    label={de.areaReport.table.hausdorff}
-                    align="right"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onSort={setColumn}
-                    labelEnd={
-                      <HausdorffInfoButton
-                        className="-mr-0.5"
-                        iconClassName="size-[0.95rem]"
-                        bandContext={{ metricsCrs: data.metricsCrs }}
-                      />
-                    }
-                  />
-                  <SortableTh
-                    column="haus95"
-                    label={de.areaReport.table.hausdorffP95}
-                    align="right"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onSort={setColumn}
-                    labelEnd={
-                      <HausdorffInfoButton
-                        className="-mr-0.5"
-                        iconClassName="size-[0.95rem]"
-                        bandContext={{ metricsCrs: data.metricsCrs }}
-                      />
-                    }
-                  />
-                  <SortableTh
-                    column="issue"
-                    label={de.areaReport.table.issueIndicator}
-                    align="left"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onSort={setColumn}
-                    labelEnd={
-                      <IssueIndicatorInfoButton
-                        className="-mr-0.5"
-                        iconClassName="size-[0.95rem]"
-                      />
-                    }
-                  />
-                  <th
-                    className="px-3 py-2 text-right text-slate-100"
-                    aria-label={de.areaReport.table.view}
-                  />
-                </tr>
-              </thead>
-              <tbody>
-                {sortedRows.map((row) => {
-                  const detailParams = {
-                    areaId: areaKey,
-                    featureKey: row.canonicalMatchKey,
-                  } as const
-                  const navigateToFeature = () =>
-                    navigate({
-                      to: '/$areaId/feature/$featureKey',
-                      params: detailParams,
-                    })
-                  return (
-                    <tr
-                      key={row.canonicalMatchKey}
-                      className="group cursor-pointer border-t border-slate-800 transition-colors focus-within:bg-slate-800/55 hover:bg-slate-800/55"
-                      tabIndex={0}
-                      onClick={() => {
-                        void navigateToFeature()
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          void navigateToFeature()
-                        }
-                      }}
-                    >
-                      <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
-                      <td className="px-3 py-2">
-                        <ReportCategoryPill category={row.category}>
-                          {categoryLabelDe(row.category)}
-                        </ReportCategoryPill>
-                        {isStaleKeyRow(row) ? (
-                          <span className="mt-1 block text-xs font-medium text-amber-300">
-                            {st.staleKeyBadge}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                        <MetricCellBar
-                          ratio={normalizedRatio(row.metrics?.iou, iouMax)}
-                          value={row.metrics ? formatDeIou(row.metrics.iou) : EM_DASH}
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                        <MetricCellBar
-                          ratio={normalizedRatio(
-                            absOrNull(row.metrics?.areaDiffPct),
-                            areaDiffAbsMax,
-                          )}
-                          value={
-                            row.metrics ? formatDePercentPoints(row.metrics.areaDiffPct) : EM_DASH
-                          }
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                        <MetricCellBar
-                          ratio={normalizedRatio(row.metrics?.hausdorffM, hausdorffMax)}
-                          value={
-                            row.metrics
-                              ? formatDeOrDash(row.metrics.hausdorffM, formatDeMeters)
-                              : EM_DASH
-                          }
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-right text-slate-100 tabular-nums">
-                        <MetricCellBar
-                          ratio={normalizedRatio(row.metrics?.hausdorffP95M, hausdorffP95Max)}
-                          value={
-                            row.metrics
-                              ? formatDeOrDash(row.metrics.hausdorffP95M, formatDeMeters)
-                              : EM_DASH
-                          }
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-left text-slate-100">
-                        <IssueBadge level={row.metrics?.issueIndicator?.level} />
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <Link
-                          className="inline-flex items-center text-slate-500 transition-colors group-hover:text-sky-300 focus-visible:text-sky-300"
-                          to="/$areaId/feature/$featureKey"
-                          params={detailParams}
-                          onClick={(event: MouseEvent<HTMLAnchorElement>) =>
-                            event.stopPropagation()
-                          }
-                          aria-label={`${de.areaReport.table.view}: ${row.nameLabel}`}
-                        >
-                          <span className="sr-only">{de.areaReport.table.view}</span>
-                          <span aria-hidden>→</span>
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <AreaReportTable
+            rows={sortedRows}
+            areaKey={areaKey}
+            metricsCrs={data.metricsCrs}
+            sortBy={sortBy}
+            sortDir={sortDir}
+            onSort={setColumn}
+          />
 
           <MapOverlapPickDialog
             open={overlapPickKeys !== null}
@@ -689,46 +467,6 @@ export function AreaReport() {
       </div>
     </div>
   )
-}
-
-function MetricCellBar({ ratio, value }: { ratio: number | null; value: string }) {
-  return (
-    <div className="relative overflow-hidden rounded-sm px-1" style={metricBarStyle(ratio)}>
-      <span className="relative z-10">{value}</span>
-    </div>
-  )
-}
-
-function metricBarStyle(ratio: number | null): CSSProperties | undefined {
-  if (ratio === null) return undefined
-  const pct = Math.round(Math.max(0, Math.min(1, ratio)) * 1000) / 10
-  if (pct <= 0) return undefined
-  const stop = `${pct}%`
-  return {
-    backgroundImage: `linear-gradient(90deg, rgba(14, 116, 144, 0.35) 0%, rgba(14, 116, 144, 0.35) ${stop}, transparent ${stop}, transparent 100%)`,
-  }
-}
-
-function normalizedRatio(value: number | null | undefined, max: number): number | null {
-  if (value == null) return null
-  if (!Number.isFinite(value)) return null
-  if (!(max > 0)) return null
-  return value / max
-}
-
-function maxFiniteValue(values: Array<number | null | undefined>): number {
-  let max = 0
-  for (const value of values) {
-    if (value == null) continue
-    if (!Number.isFinite(value)) continue
-    if (value > max) max = value
-  }
-  return max
-}
-
-function absOrNull(value: number | null | undefined): number | null {
-  if (value == null) return null
-  return Number.isFinite(value) ? Math.abs(value) : null
 }
 
 function formatHeadlineSourceLabel(
@@ -747,61 +485,6 @@ function formatHeadlineSourceLabel(
     return suffix ? `${sourceUrl} (${suffix})` : sourceUrl
   }
   return suffix
-}
-
-function SortableTh({
-  column,
-  label,
-  align,
-  sortBy,
-  sortDir,
-  onSort,
-  labelEnd,
-}: {
-  column: AreaTableSortKey
-  label: string
-  align: 'left' | 'right'
-  sortBy: AreaTableSortKey
-  sortDir: 'asc' | 'desc'
-  onSort: (c: AreaTableSortKey) => void
-  labelEnd?: ReactNode
-}) {
-  const active = sortBy === column
-  return (
-    <th
-      scope="col"
-      className={
-        align === 'right'
-          ? 'px-3 py-2 text-right text-slate-100'
-          : 'px-3 py-2 text-left text-slate-100'
-      }
-      aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
-    >
-      <div
-        className={
-          align === 'right'
-            ? 'flex w-full items-center justify-end gap-0.5'
-            : 'flex w-full items-center justify-start gap-0.5'
-        }
-      >
-        <button
-          type="button"
-          onClick={() => onSort(column)}
-          className={
-            align === 'right'
-              ? 'inline-flex items-center gap-1 font-medium text-slate-100 hover:text-sky-400'
-              : 'inline-flex items-center gap-1 font-medium text-slate-100 hover:text-sky-400'
-          }
-        >
-          <span>{label}</span>
-          <span className="font-mono text-xs text-slate-400" aria-hidden>
-            {active ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
-          </span>
-        </button>
-        {labelEnd}
-      </div>
-    </th>
-  )
 }
 
 function useMeasuredElementSize<T extends HTMLElement>() {

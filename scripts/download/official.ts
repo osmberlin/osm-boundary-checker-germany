@@ -243,13 +243,20 @@ async function processArea(
   }
 
   if (!spec) {
+    const dtpManaged = raw.officialMode === 'dtp'
     const bkgManaged =
       raw.officialMode === 'profile' ||
       (raw.officialMode === 'direct' && raw.official.extractFilter !== undefined)
-    const skipReason = bkgManaged ? 'official_managed_via_bkg_extract' : 'no_download_config'
-    const skipDetail = bkgManaged
-      ? 'area is sourced via BKG extract/profile; HTTP official.download is intentionally absent'
-      : 'area has compare config but no official.download source configured'
+    const skipReason = dtpManaged
+      ? 'official_managed_via_dtp_extract'
+      : bkgManaged
+        ? 'official_managed_via_bkg_extract'
+        : 'no_download_config'
+    const skipDetail = dtpManaged
+      ? 'area is sourced from the DtP cache (extract:dtp); HTTP official.download is intentionally absent'
+      : bkgManaged
+        ? 'area is sourced via BKG extract/profile; HTTP official.download is intentionally absent'
+        : 'area has compare config but no official.download source configured'
     emitCacheDecision({
       source: 'official',
       area,

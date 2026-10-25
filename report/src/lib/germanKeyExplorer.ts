@@ -105,6 +105,8 @@ export function sourceKeyForPreset(preset: IdNormalizationPreset): string {
       return 'postal_code'
     case 'text':
       return 'name'
+    case 'wdpa':
+      return 'ref:WDPA'
     case 'amtlicher-8':
     case 'berlin-bezirk-rs5':
     case 'regional-12':

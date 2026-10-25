@@ -7,6 +7,7 @@ import type {
   ReportRow,
 } from '../../types/report'
 import { ProvenanceGridSectionHeader } from '../ProvenanceGridSectionHeader'
+import { ProtectedAreaCandidatesList } from './ProtectedAreaCandidatesList'
 
 function boundaryModeFromData(
   overpassBoundaryTag: OverpassBoundaryTag | undefined,
@@ -160,6 +161,16 @@ export function OfficialOnlyCandidatesSection({
   if (row.category !== 'official_only') return null
   if (candidates === undefined) return null
 
+  if (overpassBoundaryTag === 'protected_area') {
+    return (
+      <ProtectedAreaCandidatesSection
+        row={row}
+        candidates={candidates}
+        filterConfigSummary={filterConfigSummary}
+      />
+    )
+  }
+
   const isPostalCodeProfile = candidates.some((candidate) => candidate.postalCodeRaw !== undefined)
   const boundaryMode = boundaryModeFromData(overpassBoundaryTag)
   const osmTagsJoined = osmMatchTagsJoinedForProse(filterConfigSummary, boundaryMode)
@@ -237,6 +248,48 @@ export function OfficialOnlyCandidatesSection({
               />
             ))}
           </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+/** Protected-area (DtP) variant: signals as badges, suggested tags with copy button. */
+function ProtectedAreaCandidatesSection({
+  row,
+  candidates,
+  filterConfigSummary,
+}: {
+  row: ReportRow
+  candidates: CandidateMatch[]
+  filterConfigSummary: ComparisonFilterConfigSummary
+}) {
+  const matchTag = filterConfigSummary.osmMatchProperties?.[0]?.trim() || 'ref:WDPA'
+  const matchKey = row.canonicalMatchKey?.trim() ?? ''
+  return (
+    <section
+      className="overflow-hidden rounded-lg border border-sky-800/50 bg-sky-950/45 shadow-sm"
+      aria-label={de.feature.candidatesSectionAria}
+    >
+      <ProvenanceGridSectionHeader title={de.feature.candidatesSectionTitle}>
+        <p className="mt-2 max-w-4xl text-sm text-slate-400">
+          {de.feature.protectedCandidatesLead}
+        </p>
+        {matchKey.length > 0 ? (
+          <p className="mt-2 max-w-4xl text-sm text-slate-400">
+            {de.feature.protectedCandidatesMatchHintBefore}{' '}
+            <code className="rounded bg-slate-950/80 px-1.5 py-0.5 font-mono text-xs break-all text-slate-200 ring-1 ring-slate-700/80">
+              {matchTag}={matchKey}
+            </code>
+            .
+          </p>
+        ) : null}
+      </ProvenanceGridSectionHeader>
+      <div className="border-t border-sky-800/45 px-4 py-6 sm:px-6">
+        {candidates.length === 0 ? (
+          <p className="text-sm text-slate-400">{de.feature.candidatesEmpty}</p>
+        ) : (
+          <ProtectedAreaCandidatesList candidates={candidates} />
         )}
       </div>
     </section>

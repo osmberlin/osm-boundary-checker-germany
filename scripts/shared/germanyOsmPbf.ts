@@ -29,6 +29,19 @@ export const GERMANY_OSM_SHARED_PLZ_FGB_BASENAME = 'germany-postal-code-boundari
 export const GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME = 'germany-admin-candidates.fgb'
 /** Candidate POINTS-only FGB for `boundary=postal_code` multipolygons (any `postal_code`). */
 export const GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME = 'germany-postal-code-candidates.fgb'
+/** Intermediate PBF after `osmium tags-filter` for protected areas (separate from the admin one). */
+export const GERMANY_OSM_PROTECTED_AREAS_FILTERED_BASENAME = 'germany-protected-areas.osm.pbf'
+/**
+ * Shared FlatGeobuf for protected-area multipolygons with `ref:WDPA` set (keyed by `ref:WDPA`).
+ * Feeds the `protected_area_wdpa` osmProfile.
+ */
+export const GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME = 'germany-protected-areas-wdpa.fgb'
+/**
+ * Candidate POINTS-only FGB for all protected-area multipolygons (no `ref:WDPA` requirement).
+ * Points are `ST_PointOnSurface` of the polygon.
+ */
+export const GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME =
+  'germany-protected-areas-candidates.fgb'
 
 /** Shared OSM FlatGeobufs staged in `source-cache-osm` fallback artifacts (no PBF). */
 export const COMPARE_READY_OSM_FGB_BASENAMES = [
@@ -36,6 +49,8 @@ export const COMPARE_READY_OSM_FGB_BASENAMES = [
   GERMANY_OSM_SHARED_PLZ_FGB_BASENAME,
   GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
   GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME,
 ] as const
 
 export const DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS = [
@@ -43,6 +58,15 @@ export const DEFAULT_OSM_TAGS_FILTER_EXPRESSIONS = [
   'w/boundary=administrative',
   'r/boundary=postal_code',
   'w/boundary=postal_code',
+] as const
+
+/** `osmium tags-filter` expressions for the protected-area extract (its own intermediate PBF). */
+export const PROTECTED_AREAS_OSM_TAGS_FILTER_EXPRESSIONS = [
+  'nwr/boundary=protected_area',
+  'nwr/boundary=national_park',
+  'nwr/leisure=nature_reserve',
+  'nwr/protect_class',
+  'nwr/protection_title',
 ] as const
 
 export const germanyOsmSourceDefaultsSchema = z.object({

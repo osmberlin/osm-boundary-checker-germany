@@ -1,5 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { z } from 'zod'
+import type { AreaReportRow } from '../types/report'
 
 export const STALE_KEYS_FILTERS = ['all', 'only', 'hide'] as const
 export type StaleKeysFilter = (typeof STALE_KEYS_FILTERS)[number]
@@ -19,6 +20,11 @@ export function validateAreaReportSearch(search: Record<string, unknown>): {
     ...search,
     staleKeys: parsed.success && parsed.data !== 'all' ? parsed.data : undefined,
   }
+}
+
+/** Stale official key (successor already current) or the unmatched OSM row paired with one. */
+export function isStaleKeyRow(row: AreaReportRow): boolean {
+  return row.staleOfficialKey != null || row.staleOfficialPredecessor != null
 }
 
 export function useAreaReportStaleKeysFilter() {

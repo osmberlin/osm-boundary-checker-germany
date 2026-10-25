@@ -1,11 +1,19 @@
 import type {
   IdNormalizationPreset,
+  LicenseBreakdownEntry,
+  OfficialLicense,
   OsmMatchCriteriaSummary,
 } from '../../../scripts/shared/comparisonPayload.ts'
-import type { OsmSourceMetadataPersisted } from '../../../scripts/shared/sourceMetadata.ts'
+import type {
+  DatasetLicenseId,
+  OsmLicenseCompatibility,
+  OsmSourceMetadataPersisted,
+} from '../../../scripts/shared/sourceMetadata.ts'
+
+export type { LicenseBreakdownEntry }
 
 export type ReportCategory = 'matched' | 'official_only' | 'unmatched_osm'
-export type OverpassBoundaryTag = 'administrative' | 'postal_code'
+export type OverpassBoundaryTag = 'administrative' | 'postal_code' | 'protected_area'
 
 export type ReportMetrics = {
   iou: number
@@ -41,6 +49,7 @@ export type SourceMetadataSide = {
     | 'bkg_gdz_aktualitaetsstand'
     | 'ogc_api_features_collection'
     | 'osm_pbf_header'
+    | 'dtp_api_updated_at'
     | 'manual_override'
     | 'unknown'
   provider?: string
@@ -49,18 +58,11 @@ export type SourceMetadataSide = {
   sourcePublicUrl: string
   sourceDownloadUrl: string
   note?: string
-  licenseId?:
-    | 'unknown'
-    | 'odbl_10'
-    | 'cc_by_30'
-    | 'cc_by_40'
-    | 'cc0_10'
-    | 'dl_de_by_20'
-    | 'dl_de_zero_20'
-    | 'custom'
+  licenseId?: DatasetLicenseId
   licenseLabel?: string
   licenseSourceUrl?: string
-  osmCompatibility?: 'unknown' | 'no' | 'yes_licence' | 'yes_waiver'
+  /** `partial` only on dataset level when rows carry their own licence (`officialLicense`). */
+  osmCompatibility?: OsmLicenseCompatibility
   osmCompatibilitySourceUrl?: string
   osmCompatibilityComment?: string
   license?: string
@@ -126,6 +128,11 @@ export type ReportRow = {
   staleOfficialPredecessor?: {
     fromArs: string
   }
+  /**
+   * Licence of this geometry (DtP); absent for datasets with one licence per dataset.
+   * Only in feature shards.
+   */
+  officialLicense?: OfficialLicense
 }
 
 /** OSM polygon whose normalized `de:regionalschluessel` has no row in this area’s official export. */
@@ -167,6 +174,8 @@ export type ComparisonForReport = {
   sourceMetadata: {
     official: SourceMetadataSide
     osm: OsmSourceMetadataPersisted
+    /** One entry per geometry source × licence, sorted by `rowCount` descending; datasets with `officialLicense` rows only. */
+    licenseBreakdown?: LicenseBreakdownEntry[]
   }
   /** Compact compare filter summary from `<area>/config.jsonc` (includes `minZoom`). */
   filterConfigSummary: ComparisonFilterConfigSummary
@@ -215,6 +224,42 @@ export type CandidateMatch = {
   deAgsRaw?: string | null
   /** Postal code profile only. */
   postalCodeRaw?: string | null
+  /** Protected-area profile: signals that found this candidate, strongest first. */
+  signals?: CandidateSignalId[]
+  /** Protected-area profile: normalized name similarity 0..1. */
+  nameSimilarity?: number
+  /** Protected-area profile: current tags on the candidate (null = tag missing). */
+  refWdpa?: string | null
+  wikidata?: string | null
+  protectionTitle?: string | null
+  protectClass?: string | null
+  /** Protected-area profile: tags to add to the OSM object, key → value. */
+  suggestedTags?: Record<string, string>
+}
+
+export type CandidateSignalId =
+  | 'dtp_id'
+  | 'dtp_osm_ref'
+  | 'wikidata'
+  | 'natura2000'
+  | 'inside'
+  | 'name'
+
+export type AttributeHintId =
+  | 'type_tags'
+  | 'wikidata_missing'
+  | 'wikidata_differs'
+  | 'osm_ref_differs'
+  | 'natura2000_missing'
+
+/** Tag suggestion for a matched protected-area row. Mirrors `attributeHintSchema`. */
+export type AttributeHint = {
+  id: AttributeHintId
+  /** Expected `key=value` strings (`type/id` for `osm_ref_differs`). */
+  expected: string[]
+  /** Current OSM values for the same keys; empty = missing. */
+  actual: string[]
+  suggestedTags?: Record<string, string>
 }
 
 /** Slim per-feature shard at `output/features/<featureKey>.json`. */
@@ -226,4 +271,6 @@ export type FeatureDetailShard = {
    * missing).
    */
   candidates?: CandidateMatch[]
+  /** Matched protected-area rows: tag suggestions; absent when there are none. */
+  attributeHints?: AttributeHint[]
 }

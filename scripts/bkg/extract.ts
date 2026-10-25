@@ -86,6 +86,7 @@ function readBkgLayerForArea(workspaceRoot: string, area: string): AreaLayerSpec
     const layer = resolveOfficialProfile(profileId).extractLayer
     return { area, profileId, layer }
   }
+  if (parsed.officialMode === 'dtp') return null
 
   const extractFilter = parsed.official.extractFilter
   if (!extractFilter) return null

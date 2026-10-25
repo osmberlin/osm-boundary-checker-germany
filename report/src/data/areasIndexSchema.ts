@@ -27,9 +27,16 @@ export const areaLicenseSummarySchema = z.object({
   officialSourceGroupKey: z.string().min(1),
   officialLicenseLabel: z.string().min(1),
   officialLicenseSourceUrl: z.string().optional(),
-  officialOsmCompatibility: z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver']),
+  officialOsmCompatibility: z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver', 'partial']),
   officialOsmCompatibilitySourceUrl: z.string().optional(),
   officialOsmCompatibilityComment: z.string().optional(),
+  /** Set when the dataset has a licence per geometry (`licenseBreakdown`): rows that may go into OSM vs. all rows. */
+  officialLicenseMixed: z
+    .object({
+      compatibleCount: z.number().int().nonnegative(),
+      totalCount: z.number().int().nonnegative(),
+    })
+    .optional(),
 })
 export type AreaLicenseSummary = z.infer<typeof areaLicenseSummarySchema>
 

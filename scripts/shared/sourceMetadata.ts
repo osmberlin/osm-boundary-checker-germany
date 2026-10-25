@@ -47,6 +47,8 @@ export const sourceDateSourceSchema = z
     /** Hamburg etc.: `extent.temporal.interval` from OGC API Features collection JSON. */
     'ogc_api_features_collection',
     'osm_pbf_header',
+    /** DtP API v2: max `updated_at` over the list sweep (`.cache/dtp/download-metadata.json`). */
+    'dtp_api_updated_at',
     'manual_override',
     'unknown',
   ])
@@ -60,6 +62,13 @@ export const datasetLicenseIdSchema = z.enum([
   'cc0_10',
   'dl_de_by_20',
   'dl_de_zero_20',
+  'cc_by_sa_40',
+  'cc_by_nd_40',
+  'geonutzv',
+  /** Licence text of the data holder says "other restriction" (DtP `otherRestriction`). */
+  'other_restriction',
+  /** One licence per feature (for example DtP protected areas); the dataset block cannot name a single one. */
+  'mixed',
   'custom',
 ])
 export type DatasetLicenseId = z.infer<typeof datasetLicenseIdSchema>
@@ -72,6 +81,11 @@ export const DATASET_LICENSE_LABELS: Record<DatasetLicenseId, string> = {
   cc0_10: 'CC0-1.0',
   dl_de_by_20: 'DL-DE-BY-2.0',
   dl_de_zero_20: 'DL-DE-ZERO-2.0',
+  cc_by_sa_40: 'CC-BY-SA-4.0',
+  cc_by_nd_40: 'CC-BY-ND-4.0',
+  geonutzv: 'GeoNutzV',
+  other_restriction: 'otherRestriction',
+  mixed: 'Pro Gebiet unterschiedlich',
   custom: 'custom',
 }
 
@@ -79,7 +93,15 @@ export function datasetLicenseLabelForId(id: DatasetLicenseId): string {
   return DATASET_LICENSE_LABELS[id]
 }
 
-export const osmLicenseCompatibilitySchema = z.enum(['unknown', 'no', 'yes_licence', 'yes_waiver'])
+export const osmLicenseCompatibilitySchema = z.enum([
+  'unknown',
+  'no',
+  'yes_licence',
+  'yes_waiver',
+  /** Dataset-level only: rows of one dataset differ (some compatible, some not). */
+  'partial',
+])
+export type OsmLicenseCompatibility = z.infer<typeof osmLicenseCompatibilitySchema>
 
 const sourceMetadataCommonSideSchema = z.object({
   downloadedAt: optionalIsoInstantStringSchema,

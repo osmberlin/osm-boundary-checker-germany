@@ -2,10 +2,12 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import * as turf from '@turf/turf'
 import type { BBox, Feature, MultiPolygon, Point, Polygon } from 'geojson'
+import type { CandidateSignalId } from '../../shared/comparisonPayload.ts'
 import {
   GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME,
   GERMANY_OSM_CACHE_DIR,
   GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME,
+  GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME,
 } from '../../shared/germanyOsmPbf.ts'
 import type { OsmProfileId } from '../../shared/osmProfiles.ts'
 import type { BoundaryConfig, IdNormalizationPreset } from './config.ts'
@@ -44,6 +46,17 @@ export type CandidateMatch = {
   deAgsRaw?: string | null
   /** Raw `postal_code` value on the candidate (postal_code profile only). */
   postalCodeRaw?: string | null
+  /** Protected-area profile: signals that found this candidate, strongest first. */
+  signals?: CandidateSignalId[]
+  /** Protected-area profile: normalized name similarity 0..1. */
+  nameSimilarity?: number
+  /** Protected-area profile: current tags on the candidate (null = tag missing). */
+  refWdpa?: string | null
+  wikidata?: string | null
+  protectionTitle?: string | null
+  protectClass?: string | null
+  /** Protected-area profile: tags to add to the OSM object, key → value. */
+  suggestedTags?: Record<string, string>
 }
 
 /**
@@ -101,7 +114,7 @@ function parseNonZeroOsmIntField(raw: unknown): string | null {
  * for relation-built areas (mutually exclusive when `osm_id=yes` in osmconf). Do not infer
  * primitive type from OSM’s `type=*` tag or from the sign of `osm_id`.
  */
-function osmTypeAndIdFromCandidateProps(props: Record<string, unknown>): {
+export function osmTypeAndIdFromCandidateProps(props: Record<string, unknown>): {
   osmType: 'way' | 'relation'
   osmId: string
 } | null {
@@ -112,13 +125,13 @@ function osmTypeAndIdFromCandidateProps(props: Record<string, unknown>): {
   return null
 }
 
-function trimmedOrNull(value: unknown): string | null {
+export function trimmedOrNull(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const t = value.trim()
   return t.length > 0 ? t : null
 }
 
-function bboxOfShrunkPolygon(geometry: Polygon | MultiPolygon): BBox {
+export function bboxOfShrunkPolygon(geometry: Polygon | MultiPolygon): BBox {
   return turf.bbox({ type: 'Feature', geometry, properties: {} } as Feature) as BBox
 }
 
@@ -189,9 +202,9 @@ function canonicalKeyForCandidate(
  * Index over candidate points, filterable by bbox query. Wraps `turf.geojsonRbush` so we
  * can keep the rest of the matcher decoupled from the underlying tree implementation.
  */
-type CandidateIndex = ReturnType<typeof turf.geojsonRbush<Point, Record<string, unknown>>>
+export type CandidateIndex = ReturnType<typeof turf.geojsonRbush<Point, Record<string, unknown>>>
 
-function buildCandidateIndex(features: Feature<Point>[]): CandidateIndex {
+export function buildCandidateIndex(features: Feature<Point>[]): CandidateIndex {
   const tree = turf.geojsonRbush<Point, Record<string, unknown>>()
   if (features.length === 0) return tree
   tree.load({
@@ -201,7 +214,10 @@ function buildCandidateIndex(features: Feature<Point>[]): CandidateIndex {
   return tree
 }
 
-function searchByBbox(tree: CandidateIndex, bbox: BBox): Feature<Point, Record<string, unknown>>[] {
+export function searchByBbox(
+  tree: CandidateIndex,
+  bbox: BBox,
+): Feature<Point, Record<string, unknown>>[] {
   return tree.search(bbox).features
 }
 
@@ -356,7 +372,9 @@ export function candidatesFgbPathForProfile(
   const basename =
     profileId === 'postal_code'
       ? GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME
-      : GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME
+      : profileId === 'protected_area_wdpa'
+        ? GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME
+        : GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME
   return join(runtimeRoot, GERMANY_OSM_CACHE_DIR, basename)
 }
 

@@ -99,6 +99,17 @@ export function normalizeOsmValue(
   } else if (preset === 'text') {
     canonicalMatchKey = normalizeTextKey(raw)
     presetLabel = 'text'
+  } else if (preset === 'wdpa') {
+    // WDPA ids are plain numbers. Multi-value tags (`;`) and anything else are not normalizable,
+    // so the canonical key stays empty instead of joining on digits that were glued together.
+    const trimmed = raw.trim()
+    if (/^\d+$/.test(trimmed)) {
+      canonicalMatchKey = trimmed
+    } else {
+      canonicalMatchKey = ''
+      notes.push('wdpa-not-digits-only')
+    }
+    presetLabel = 'wdpa'
   }
 
   return {
@@ -123,6 +134,10 @@ export function normalizeOfficialValue(
   }
   if (preset === 'text') {
     return normalizeTextKey(raw)
+  }
+  if (preset === 'wdpa') {
+    const trimmed = raw.trim()
+    return /^\d+$/.test(trimmed) ? trimmed : ''
   }
   if (preset === 'regional-12' && digits.length > 0) {
     if (digits.length >= 12) return digits.slice(0, 12)

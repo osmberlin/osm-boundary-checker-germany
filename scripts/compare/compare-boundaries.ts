@@ -14,6 +14,7 @@ import {
 } from '../shared/comparisonPayload.ts'
 import type { DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
+import { loadLicenseCompatibilityTable } from '../shared/licenseCompatibility.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
 import { resolveOsmProfile } from '../shared/osmProfiles.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
@@ -21,7 +22,12 @@ import { buildComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
 import { readAreaSourceMetadataFile } from '../shared/sourceMetadataIo.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 import { type ComparePhaseLogger, runCompare } from './lib/compare.ts'
-import { type OverpassBoundaryTag, writeOutputs } from './lib/writeOutputs.ts'
+import { buildOfficialLicenseOutputs } from './lib/officialLicenses.ts'
+import {
+  DTP_TABLE_ROW_SLIMMING,
+  type OverpassBoundaryTag,
+  writeOutputs,
+} from './lib/writeOutputs.ts'
 
 function parseArgs(argv: string[]) {
   let area: string | null = null
@@ -56,7 +62,10 @@ function getWorkspaceRoot(): string {
 }
 
 function overpassBoundaryTagFromMatchProperty(matchProperty: string): OverpassBoundaryTag {
-  return matchProperty.trim().toLowerCase() === 'postal_code' ? 'postal_code' : 'administrative'
+  const normalized = matchProperty.trim().toLowerCase()
+  if (normalized === 'postal_code') return 'postal_code'
+  if (normalized === 'ref:wdpa') return 'protected_area'
+  return 'administrative'
 }
 
 function nowIso(): string {
@@ -268,6 +277,27 @@ async function main() {
     const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
     const overpassBoundaryTag = overpassBoundaryTagFromMatchProperty(config.osm.matchProperty)
     const displayName = parseAreaDisplayName(area, configRaw)
+    const officialLicenses =
+      configRaw.officialMode === 'dtp'
+        ? buildOfficialLicenseOutputs(rows, loadLicenseCompatibilityTable(workspaceRoot, 'dtp'))
+        : null
+    if (officialLicenses) {
+      console.log(
+        cliMuted(
+          `[compare] licences: ${officialLicenses.compatibleCount}/${officialLicenses.totalCount} rows OSM-compatible (${officialLicenses.datasetOsmCompatibility}), ${officialLicenses.breakdown.length} source x licence groups`,
+        ),
+      )
+      if (officialLicenses.unknownLicenses.size > 0) {
+        const names = [...officialLicenses.unknownLicenses]
+          .map(([name, count]) => `${name} (${count})`)
+          .join(', ')
+        console.warn(
+          cliWarn(
+            `[compare] licence names missing in data/license-compatibility/dtp.json: ${names}`,
+          ),
+        )
+      }
+    }
     writeOutputs(
       areaPath,
       area,
@@ -294,6 +324,8 @@ async function main() {
           inFlightPhase = phase
         },
       },
+      officialLicenses,
+      configRaw.officialMode === 'dtp' ? DTP_TABLE_ROW_SLIMMING : null,
     )
     checkpoint('after_write_outputs')
     console.log(

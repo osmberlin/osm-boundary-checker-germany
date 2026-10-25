@@ -1,7 +1,12 @@
 import { z } from 'zod'
 import { ogcWfsInspectSourceSchema } from './ogcInspectSources.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
-import { osmSourceMetadataPersistedSchema, sourceMetadataSideSchema } from './sourceMetadata.ts'
+import {
+  datasetLicenseIdSchema,
+  osmLicenseCompatibilitySchema,
+  osmSourceMetadataPersistedSchema,
+  sourceMetadataSideSchema,
+} from './sourceMetadata.ts'
 
 export const reportMetricsSchema = z.object({
   iou: z.number(),
@@ -47,7 +52,62 @@ export const staleOfficialPredecessorSchema = z
   })
   .strict()
 
-export const reportRowSchema = z.object({
+/**
+ * Licence of one official geometry (DtP: one licence and source per area), resolved at compare time
+ * from `geometry_license_*` / `geometry_source_*` and the reviewed table in `data/license-compatibility/`.
+ * Absent for datasets with one licence per dataset (`sourceMetadata.official`).
+ */
+export const officialLicenseSchema = z
+  .object({
+    licenseId: datasetLicenseIdSchema,
+    licenseLabel: z.string().trim().min(1),
+    licenseSourceUrl: z.string().optional(),
+    osmCompatibility: osmLicenseCompatibilitySchema,
+    osmCompatibilitySourceUrl: z.string().optional(),
+    osmCompatibilityComment: z.string().optional(),
+    sourceName: z.string().optional(),
+    sourceUrl: z.string().optional(),
+    /** Entry of the compatibility table that applied; absent when the licence is not in the table. */
+    ruleId: z.string().optional(),
+    /** `${sourceName}|${licenseLabel}`; matches `licenseBreakdown[].groupKey` and the `licenseGroup` URL param. */
+    groupKey: z.string().min(1),
+  })
+  .strict()
+
+/** One geometry source × licence of a dataset, with the number of rows it covers. */
+export const licenseBreakdownEntrySchema = officialLicenseSchema
+  .extend({
+    rowCount: z.number().int().nonnegative(),
+    /** Date of the compatibility decision (`decidedAt` of the applied table entry). */
+    decidedAt: z.string().optional(),
+  })
+  .strict()
+
+export const ATTRIBUTE_HINT_IDS = [
+  'type_tags',
+  'wikidata_missing',
+  'wikidata_differs',
+  'osm_ref_differs',
+  'natura2000_missing',
+] as const
+
+/**
+ * Suggestion for a matched row (protected areas): OSM tags that do not fit the DtP record.
+ * Stored in the feature shard only.
+ */
+export const attributeHintSchema = z
+  .object({
+    id: z.enum(ATTRIBUTE_HINT_IDS),
+    /** What the DtP record / category rule expects (`key=value`, or `type/id` for `osm_ref_differs`). */
+    expected: z.array(z.string()),
+    /** What OSM has today for the same keys (empty = tag missing). */
+    actual: z.array(z.string()),
+    /** Tags to add or change, key → value. */
+    suggestedTags: z.record(z.string(), z.string()).optional(),
+  })
+  .strict()
+
+const reportRowBaseShape = {
   canonicalMatchKey: z.string(),
   nameLabel: z.string(),
   category: z.enum(['matched', 'official_only']),
@@ -58,7 +118,16 @@ export const reportRowSchema = z.object({
   officialProperties: z.record(z.string(), z.unknown()).nullable(),
   osmProperties: z.record(z.string(), z.unknown()).nullable(),
   staleOfficialKey: staleOfficialKeySchema.optional(),
+}
+
+/** Full row as stored in the feature shard (`output/features/<key>.json`), incl. the resolved licence. */
+export const reportRowSchema = z.object({
+  ...reportRowBaseShape,
+  officialLicense: officialLicenseSchema.optional(),
 })
+
+/** Row of `comparison_table.json`: no licence; the feature shard keeps the `officialLicense`. */
+export const tableRowSchema = z.object(reportRowBaseShape)
 
 export const unmatchedOsmRowSchema = z.object({
   canonicalMatchKey: z.string(),
@@ -72,6 +141,8 @@ export const unmatchedOsmRowSchema = z.object({
 export const comparisonSourceMetadataEmbeddedSchema = z.object({
   official: sourceMetadataSideSchema,
   osm: osmSourceMetadataPersistedSchema.optional().default({}),
+  /** Only for datasets with a licence per geometry; sorted by `rowCount` descending. */
+  licenseBreakdown: z.array(licenseBreakdownEntrySchema).optional(),
 })
 
 /** Subset of direct `official.extractFilter` embedded for report provenance. */
@@ -110,6 +181,7 @@ export const idNormalizationPresetSchema = z.enum([
   'regional-12',
   'plz-5',
   'text',
+  'wdpa',
 ])
 
 export const osmMatchCriteriaSummarySchema = z.discriminatedUnion('kind', [
@@ -128,7 +200,7 @@ export const comparisonForReportSchema = z.object({
   titlePrefix: z.string().trim().min(1),
   generatedAt: z.string(),
   metricsCrs: z.string(),
-  overpassBoundaryTag: z.enum(['administrative', 'postal_code']).optional(),
+  overpassBoundaryTag: z.enum(['administrative', 'postal_code', 'protected_area']).optional(),
   hasPmtiles: z.boolean(),
   hasUnmatchedPmtiles: z.boolean().optional(),
   tippecanoeLayer: z.string(),
@@ -139,9 +211,18 @@ export const comparisonForReportSchema = z.object({
   /** From optional `osm.matchCriteria` in area config. */
   osmMatchCriteria: osmMatchCriteriaSummarySchema.optional(),
   ogcInspectSources: z.array(ogcWfsInspectSourceSchema).optional(),
-  rows: z.array(reportRowSchema),
+  rows: z.array(tableRowSchema),
   unmatchedOsm: z.array(unmatchedOsmRowSchema),
 })
+
+export const CANDIDATE_SIGNAL_IDS = [
+  'dtp_id',
+  'dtp_osm_ref',
+  'wikidata',
+  'natura2000',
+  'inside',
+  'name',
+] as const
 
 /**
  * Schema for an additive candidate OSM feature surfaced on the FeatureDetail page next to
@@ -162,6 +243,17 @@ export const candidateMatchSchema = z
     deAgsRaw: z.string().nullable().optional(),
     /** Postal code profile only. */
     postalCodeRaw: z.string().nullable().optional(),
+    /** Protected-area profile: signals that found this candidate, strongest first. */
+    signals: z.array(z.enum(CANDIDATE_SIGNAL_IDS)).optional(),
+    /** Protected-area profile: normalized name similarity 0..1. */
+    nameSimilarity: z.number().min(0).max(1).optional(),
+    /** Protected-area profile: current tags on the candidate (null = tag missing). */
+    refWdpa: z.string().nullable().optional(),
+    wikidata: z.string().nullable().optional(),
+    protectionTitle: z.string().nullable().optional(),
+    protectClass: z.string().nullable().optional(),
+    /** Protected-area profile: tags to add to the OSM object, key → value. */
+    suggestedTags: z.record(z.string(), z.string()).optional(),
   })
   .strict()
 
@@ -172,9 +264,13 @@ export const featureDetailShardSchema = z.object({
    * found nothing; absent = phase was skipped (matched rows or candidate FGB missing).
    */
   candidates: z.array(candidateMatchSchema).optional(),
+  /** Matched protected-area rows: tag suggestions; absent when there are none. */
+  attributeHints: z.array(attributeHintSchema).optional(),
 })
 
 export type CandidateMatch = z.infer<typeof candidateMatchSchema>
+export type CandidateSignalId = (typeof CANDIDATE_SIGNAL_IDS)[number]
+export type AttributeHint = z.infer<typeof attributeHintSchema>
 
 export const snapshotsSchema = z.object({
   area: z.string(),
@@ -196,7 +292,10 @@ export const snapshotsSchema = z.object({
 })
 
 export type ReportMetrics = z.infer<typeof reportMetricsSchema>
+export type OfficialLicense = z.infer<typeof officialLicenseSchema>
+export type LicenseBreakdownEntry = z.infer<typeof licenseBreakdownEntrySchema>
 export type ReportRow = z.infer<typeof reportRowSchema>
+export type TableReportRow = z.infer<typeof tableRowSchema>
 export type UnmatchedOsmReportRow = z.infer<typeof unmatchedOsmRowSchema>
 export type ComparisonForReport = z.infer<typeof comparisonForReportSchema>
 export type ComparisonFilterConfigSummary = z.infer<typeof comparisonFilterConfigSummarySchema>

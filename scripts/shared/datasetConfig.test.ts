@@ -60,4 +60,66 @@ describe('parseDatasetConfig', () => {
       }),
     ).toThrow()
   })
+
+  const dtpBase = {
+    displayName: 'Schutzgebiete',
+    titlePrefix: 'Schutzgebiet',
+    officialProfile: 'dtp_protected_areas',
+    osmProfile: 'protected_area_wdpa',
+    idNormalization: { preset: 'wdpa' },
+    metricsCrs: 'EPSG:25832',
+    compare: {
+      officialMatchProperty: 'wdpa',
+      bboxFilter: 'none',
+      osmScopeFilter: 'none',
+      minZoom: 5,
+    },
+  }
+
+  test('parses DtP config branch and defaults requireWdpa', () => {
+    const parsed = parseDatasetConfig('area-dtp', {
+      ...dtpBase,
+      official: { dtp: { categoryIds: [1, 50] } },
+    })
+    expect(parsed.officialMode).toBe('dtp')
+    if (parsed.officialMode !== 'dtp') throw new Error('Expected dtp config branch')
+    expect(parsed.official.dtp).toEqual({ categoryIds: [1, 50], requireWdpa: true })
+  })
+
+  test('DtP config requires official.dtp', () => {
+    expect(() => parseDatasetConfig('bad', dtpBase)).toThrow(/official/)
+  })
+
+  test('DtP config rejects empty, duplicate and non-integer categoryIds', () => {
+    for (const categoryIds of [[], [1, 1], [1.5], [0]]) {
+      expect(() =>
+        parseDatasetConfig('bad', { ...dtpBase, official: { dtp: { categoryIds } } }),
+      ).toThrow()
+    }
+  })
+
+  test('DtP config rejects unknown keys', () => {
+    expect(() =>
+      parseDatasetConfig('bad', {
+        ...dtpBase,
+        official: { dtp: { categoryIds: [1], extra: true } },
+      }),
+    ).toThrow()
+    expect(() =>
+      parseDatasetConfig('bad', {
+        ...dtpBase,
+        official: { dtp: { categoryIds: [1] }, extractLayer: 'x' },
+      }),
+    ).toThrow()
+  })
+
+  test('official.dtp is not allowed with a BKG profile', () => {
+    expect(() =>
+      parseDatasetConfig('bad', {
+        ...dtpBase,
+        officialProfile: 'bkg_vg25_gem',
+        official: { dtp: { categoryIds: [1] } },
+      }),
+    ).toThrow()
+  })
 })

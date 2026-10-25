@@ -10,6 +10,7 @@ import {
   formatIsoTimestampToDateOnlyDe,
 } from '../lib/formatSourceDownloadedAt'
 import { germanKeyExplorerLinkValueOrNull } from '../lib/germanKeyExplorer'
+import { overpassBoundaryValues } from '../lib/overpassBbox'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
 import type { ComparisonFilterConfigSummary, ComparisonForReport, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
@@ -202,14 +203,19 @@ function compareFilterItems(
   const summary = areasIndex.summaries.find((x) => x.area === data.area)
   const adminLevels = filter?.adminLevels?.length ? filter.adminLevels : summary?.osmAdminLevels
   const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
+  const boundaryValues = overpassBoundaryValues(boundaryValue)
   const osmItems: ReactElement[] = []
   const officialItems: ReactElement[] = []
 
   osmItems.push(
     <FilterItem
       key="compare-boundary"
-      code={`boundary=${boundaryValue}`}
-      description={p.compareBoundaryTag(boundaryValue)}
+      code={boundaryValues.map((value) => `boundary=${value}`).join(' | ')}
+      description={
+        boundaryValues.length > 1
+          ? p.compareBoundaryTagMultiple(boundaryValues.join(', '))
+          : p.compareBoundaryTag(boundaryValue)
+      }
     />,
   )
 

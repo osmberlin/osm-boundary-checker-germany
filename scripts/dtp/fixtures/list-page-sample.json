@@ -1,0 +1,66 @@
+{
+  "count": 3,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "uuid": "125c1fe9-4554-4e69-8c46-014f86d614f8",
+      "name": "Hochreuthe",
+      "name_de": "Hochreuthe",
+      "name_en": "Hochreuthe",
+      "name_sl": null,
+      "category_id": 19,
+      "dtp_url": "https://platform.digitizetheplanet.org/en/protected_area/hochreuthe/",
+      "dtp_api_url": "https://platform.digitizetheplanet.org/api/v2/protected-areas/125c1fe9-4554-4e69-8c46-014f86d614f8",
+      "dtp_widget_url": "https://platform.digitizetheplanet.org/en/protected_area_widget/125c1fe9-4554-4e69-8c46-014f86d614f8/",
+      "external_references": [],
+      "created_at": "2026-10-14T09:27:56.595805Z",
+      "updated_at": "2026-10-22T06:33:51.540897Z",
+      "parent_uuid": null,
+      "area_in_km2": 0.2531
+    },
+    {
+      "uuid": "03e2cd91-c830-4a6d-8798-19d5f1ae8c51",
+      "name": "Bergbaufolgelandschaft Bruckdorf",
+      "name_de": null,
+      "name_en": "Bergbaufolgelandschaft Bruckdorf",
+      "name_sl": null,
+      "category_id": 5,
+      "dtp_url": "https://platform.digitizetheplanet.org/en/protected_area/bergbaufolgelandschaft-bruckdorf/",
+      "dtp_api_url": "https://platform.digitizetheplanet.org/api/v2/protected-areas/03e2cd91-c830-4a6d-8798-19d5f1ae8c51",
+      "dtp_widget_url": "https://platform.digitizetheplanet.org/en/protected_area_widget/03e2cd91-c830-4a6d-8798-19d5f1ae8c51/",
+      "external_references": [
+        {
+          "name": "wdpa",
+          "id": "555755356",
+          "url": "https://www.protectedplanet.net/555755356"
+        },
+        {
+          "name": "source_id",
+          "id": "st_LSG0110HAL",
+          "url": null
+        }
+      ],
+      "created_at": "2026-05-28T16:21:58.143462Z",
+      "updated_at": "2026-06-25T11:32:57.192850Z",
+      "parent_uuid": null,
+      "area_in_km2": 5.036
+    },
+    {
+      "uuid": "eb70e802-53db-4ed1-9398-a5beda39f744",
+      "name": "Geigelstein - Betretungsregelung",
+      "name_de": "Geigelstein - Betretungsregelung",
+      "name_en": "Geigelstein - Betretungsregelung",
+      "name_sl": null,
+      "category_id": 2,
+      "dtp_url": "https://platform.digitizetheplanet.org/en/protected_area/geigelstein-betretungsregelung/",
+      "dtp_api_url": "https://platform.digitizetheplanet.org/api/v2/protected-areas/eb70e802-53db-4ed1-9398-a5beda39f744",
+      "dtp_widget_url": "https://platform.digitizetheplanet.org/en/protected_area_widget/eb70e802-53db-4ed1-9398-a5beda39f744/",
+      "external_references": [],
+      "created_at": "2026-03-10T10:17:10.969209Z",
+      "updated_at": "2026-09-29T08:28:33.512629Z",
+      "parent_uuid": "ca188c26-85a1-4a04-b85a-b731a5be0baf",
+      "area_in_km2": 10.2712
+    }
+  ]
+}
