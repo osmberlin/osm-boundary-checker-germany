@@ -72,10 +72,15 @@ export default defineConfig(({ command }) => ({
     spaGithubPages404(),
     staticRuntimeNoSpaFallback(),
   ],
+  // 127.0.0.1 and a fixed, project-specific port (5174 is taken by other Vite projects on this
+  // machine), like the sibling OSM projects; an OSM OAuth redirect will need a stable origin.
   server: {
-    port: 5174,
+    port: 5185,
     strictPort: true,
     host: '127.0.0.1',
+    // A compare run rewrites tens of thousands of files here; watching them hangs the dev server.
+    // They are static data fetched at runtime, so a reload picks them up without HMR.
+    watch: { ignored: ['**/public/datasets/**', '**/public/data/**'] },
     fs: {
       // Bun globalStore realpaths packages into ~/.bun/install/cache/links (Fontsource woff2).
       // Extend defaults — do not replace the workspace root.
@@ -87,7 +92,7 @@ export default defineConfig(({ command }) => ({
     },
   },
   preview: {
-    port: 4173,
+    port: 5186,
     strictPort: true,
     host: '127.0.0.1',
   },

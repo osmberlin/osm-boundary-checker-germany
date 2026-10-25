@@ -19,7 +19,7 @@ bun run scripts/pipeline/nightly.ts -- --phase all
 cd report && bun run dev
 ```
 
-Open the URL printed by the dev server (default port 3000).
+Open http://127.0.0.1:5185 (fixed port, IPv4 only; `localhost` may resolve to IPv6 and not connect). `bun run preview` serves the build on http://127.0.0.1:5186.
 
 `DATA_ROOT` overrides where `datasets/` and `data/` are read from (defaults to the repo root).
 
