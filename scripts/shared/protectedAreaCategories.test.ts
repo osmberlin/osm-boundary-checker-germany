@@ -17,6 +17,16 @@ describe('category scopes', () => {
     ).toBe(false)
   })
 
+  test('LSG and Naturpark share class 5, a Naturpark title keeps it out of LSG', () => {
+    const naturpark = { protect_class: '5', protection_title: 'Naturpark' }
+    expect(matchesCategoryScope(naturpark, 5)).toBe(false)
+    expect(matchesCategoryScope(naturpark, 4)).toBe(true)
+    expect(
+      matchesCategoryScope({ protect_class: '5', protection_title: 'Landschaftsschutzgebiet' }, 5),
+    ).toBe(true)
+    expect(matchesCategoryScope({ protect_class: '5' }, 5)).toBe(true)
+  })
+
   test('FFH and Vogelschutz share class 97, the title decides', () => {
     const ffh = { protect_class: '97', protection_title: 'Fauna-Flora-Habitat-Gebiet' }
     const spa = { protect_class: '97', protection_title: 'Vogelschutzgebiet' }

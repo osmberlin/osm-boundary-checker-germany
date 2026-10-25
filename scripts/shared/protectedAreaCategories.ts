@@ -120,7 +120,10 @@ export const PROTECTED_AREA_CATEGORY_RULES: readonly ProtectedAreaCategoryRule[]
       protect_class: '5',
       protection_title: 'Landschaftsschutzgebiet',
     },
-    inScope: (tags) => titleMatches(tags, LSG_TITLE) || hasClass(tags, '5'),
+    // Naturparks also carry protect_class=5: the title decides, class 5 alone only without a Naturpark title.
+    inScope: (tags) =>
+      titleMatches(tags, LSG_TITLE) ||
+      (hasClass(tags, '5') && !titleMatches(tags, NATURPARK_TITLE)),
   },
   {
     id: 7,
