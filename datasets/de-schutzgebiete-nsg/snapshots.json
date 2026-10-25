@@ -1,0 +1,18 @@
+{
+  "area": "de-schutzgebiete-nsg",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-10-25",
+      "summary": {
+        "totalRows": 8692,
+        "meanIou": 0.9760343403993479,
+        "matched": 6377,
+        "unmatchedOsm": 236,
+        "reviews": 271,
+        "issues": 1856,
+        "staleOfficialKey": 0
+      }
+    }
+  ]
+}

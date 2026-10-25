@@ -1,0 +1,18 @@
+{
+  "area": "de-grossschutzgebiete",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-10-25",
+      "summary": {
+        "totalRows": 48,
+        "meanIou": 0.9177588262614798,
+        "matched": 5,
+        "unmatchedOsm": 16,
+        "reviews": 0,
+        "issues": 3,
+        "staleOfficialKey": 0
+      }
+    }
+  ]
+}

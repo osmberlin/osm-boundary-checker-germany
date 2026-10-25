@@ -5,6 +5,12 @@ export const DTP_API_BASE = 'https://platform.digitizetheplanet.org/api/v2'
 /** Germany in the DtP country list (`/countries`). */
 export const DTP_COUNTRY_ID_GERMANY = 1
 
+/**
+ * The list defaults to managed areas only (5,183 of 24,663 in Germany, 2026-10-25). Unmanaged areas
+ * have geometries too (BfN, EEA, Länder), just no rules maintained by an administration.
+ */
+export const DTP_INCLUDE_UNMANAGED = true
+
 /** List endpoints return this many items per page; the API rejects `page_size`. */
 export const DTP_LIST_PAGE_SIZE = 50
 

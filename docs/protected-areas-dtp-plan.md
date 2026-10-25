@@ -8,7 +8,7 @@ Goal: compare the protected-area geometries that Digitize the Planet e.V. (DtP) 
 
 - Base `https://platform.digitizetheplanet.org/api/v2`, no key, no rate limit, fair use (cache, use `fields`). Terms: `termsOfService` in `/schema` → digitizetheplanet.org/nutzungsbedingungen (VII.2 allows them to restrict automated bulk queries).
 - License: CC0 by default, but every geometry carries its own `geodata.license` and `geodata.source` (22 licenses in use, incl. CC BY-ND 4.0, GeoNutzV, `otherRestriction`).
-- `/protected-areas?country_id=1&fields=all`: 5,183 managed areas, 50 per page (fixed) → 104 pages. Returns `uuid`, `category_id`, `name`, `external_references`, `updated_at`, `area_in_km2`, **no geometry**.
+- `/protected-areas?country_id=1&fields=all`: 5,183 managed areas by default; with `include_unmanaged=true` 24,663 (unmanaged areas have geometries too, just no rules maintained by an administration). 50 per page (fixed) → 494 pages. The sync uses `include_unmanaged=true`. Returns `uuid`, `category_id`, `name`, `external_references`, `updated_at`, `area_in_km2`, **no geometry**.
 - `/protected-areas/{uuid}?fields=geodata`: MultiPolygon (EPSG:4326, 7 decimals), centroid, source, license. ~1.7 KB–large, ~0.1 s per request.
 - `/protected-areas/deleted?deleted_after=YYYY-MM-DD`: deletions (3 in the last 30 days).
 - `updated_after` / `created_after` filters exist (UTC day granularity).
@@ -54,6 +54,19 @@ Bootstrap: first full harvest once, via `workflow_dispatch` or locally, then upl
 If the artifact is missing (expired, first run on a fork): fall back to a full harvest under the cap and mark the datasets as incomplete until the next runs fill it.
 
 ## 3. Datasets
+
+**Decided 2026-10-25: four datasets.** The local v1 with one dataset only held the 5,183 "managed" DtP areas (API default). With `include_unmanaged=true` DtP has 24,663 areas in Germany; ~95 % of the former "OSM only" rows were unmanaged DtP areas. One dataset with ~23,000 rows would be ~15 MB and overlap heavily, so:
+
+| Dataset                 | DtP categories                                    | Areas with WDPA                                |
+| ----------------------- | ------------------------------------------------- | ---------------------------------------------- |
+| `de-schutzgebiete-nsg`  | 2 Naturschutzgebiet, 50 Nationales Naturmonument  | ~8,700                                         |
+| `de-schutzgebiete-lsg`  | 5 Landschaftsschutzgebiet                         | ~9,140                                         |
+| `de-natura2000`         | 7 FFH-Gebiet, 8 Vogelschutzgebiet                 | ~5,220                                         |
+| `de-grossschutzgebiete` | 1 Nationalpark, 3 Biosphärenreservat, 4 Naturpark | ~40 (only 14 of 105 Naturparks have a WDPA id) |
+
+Out of scope: Wald-Wild-Schongebiete, Wildschutzgebiete, Ruhezonen and other zones (~450, no WDPA id; possible later as a dataset keyed on the DtP OSM reference / OSM `dtp_id`).
+
+The reasoning below is the earlier discussion that led to this split.
 
 As few datasets as possible; split only where the comparison itself differs.
 

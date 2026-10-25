@@ -1,0 +1,22 @@
+{
+  "official": {
+    "downloadedAt": "2026-10-25T09:25:29.411Z",
+    "sourceUpdatedAt": "2026-10-23T07:08:30.760Z",
+    "sourceUpdatedAtVerifiedAt": "2026-10-25T09:29:04.563Z",
+    "sourceDateSource": "dtp_api_updated_at",
+    "provider": "Digitize the Planet e.V.",
+    "dataset": "Schutzgebiete (API v2)",
+    "sourcePublicUrl": "https://platform.digitizetheplanet.org/de/api/dokumentation/",
+    "sourceDownloadUrl": "https://platform.digitizetheplanet.org/api/v2/protected-areas",
+    "licenseId": "mixed",
+    "licenseLabel": "Pro Gebiet unterschiedlich",
+    "licenseSourceUrl": "https://digitizetheplanet.org/nutzungsbedingungen/",
+    "osmCompatibility": "unknown",
+    "osmCompatibilityComment": "Jede Geometrie hat bei DtP eine eigene Lizenz und Quelle; die Kompatibilitaet mit OSM haengt vom einzelnen Gebiet ab."
+  },
+  "osm": {
+    "downloadedAt": "2026-08-31T20:21:20.000Z",
+    "extractedAt": "2026-10-25T05:47:15Z",
+    "sourceDateSource": "osm_pbf_header"
+  }
+}

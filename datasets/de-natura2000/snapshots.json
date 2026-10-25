@@ -1,0 +1,18 @@
+{
+  "area": "de-natura2000",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-10-25",
+      "summary": {
+        "totalRows": 5218,
+        "meanIou": 0.9220998467651575,
+        "matched": 147,
+        "unmatchedOsm": 3,
+        "reviews": 4,
+        "issues": 59,
+        "staleOfficialKey": 0
+      }
+    }
+  ]
+}

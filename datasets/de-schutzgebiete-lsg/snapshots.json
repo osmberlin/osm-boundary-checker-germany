@@ -1,0 +1,18 @@
+{
+  "area": "de-schutzgebiete-lsg",
+  "metricsCrs": "EPSG:25832",
+  "runs": [
+    {
+      "id": "2026-10-25",
+      "summary": {
+        "totalRows": 9143,
+        "meanIou": 0.9551912993609991,
+        "matched": 229,
+        "unmatchedOsm": 27,
+        "reviews": 5,
+        "issues": 47,
+        "staleOfficialKey": 0
+      }
+    }
+  ]
+}

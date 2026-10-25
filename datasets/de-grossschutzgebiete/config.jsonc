@@ -1,0 +1,25 @@
+{
+  "displayName": "Deutschland Großschutzgebiete (DtP)",
+  "titlePrefix": "Großschutzgebiet",
+  "officialProfile": "dtp_protected_areas",
+  "osmProfile": "protected_area_wdpa",
+
+  "official": {
+    "dtp": {
+      // DtP category ids (.cache/dtp/protected-area-categories.json): 1 Nationalpark, 3 Biosphärenreservat, 4 Naturpark.
+      "categoryIds": [1, 3, 4],
+      // Only areas with a WDPA id; the dataset joins on ref:WDPA.
+      "requireWdpa": true,
+    },
+  },
+  "idNormalization": {
+    "preset": "wdpa",
+  },
+  "metricsCrs": "EPSG:25832",
+  "compare": {
+    "minZoom": 5,
+    "officialMatchProperty": "wdpa",
+    "bboxFilter": "none",
+    "osmScopeFilter": "none",
+  },
+}

@@ -22,6 +22,7 @@ import {
   DTP_CACHE_DIR,
   DTP_CATEGORIES_FILE,
   DTP_COUNTRY_ID_GERMANY,
+  DTP_INCLUDE_UNMANAGED,
   DTP_DEFAULT_MAX_DETAILS,
   DTP_DEFAULT_PAUSE_MS,
   DTP_DEFAULT_REVERIFY_DAYS,
@@ -234,7 +235,13 @@ async function sweepInventory(
   for (let page = 1; ; page++) {
     const json = await dtpGetJson(
       '/protected-areas',
-      { country_id: DTP_COUNTRY_ID_GERMANY, fields: 'all', ordering, page },
+      {
+        country_id: DTP_COUNTRY_ID_GERMANY,
+        include_unmanaged: String(DTP_INCLUDE_UNMANAGED),
+        fields: 'all',
+        ordering,
+        page,
+      },
       'list',
       pauseMs,
     )
