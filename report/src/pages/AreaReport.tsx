@@ -36,6 +36,7 @@ import { handleComparisonMapFeatureClick } from '../lib/comparisonMapFeatureClic
 import { isOlderThanDays } from '../lib/dataAge'
 import { normalizeUnmatchedRows } from '../lib/findFeatureDetailRow'
 import { EM_DASH, formatDeFixed, formatDeInteger, formatDeIou } from '../lib/formatDe'
+import { isSchluesselExplorerPreset } from '../lib/germanKeyExplorer'
 import { officialAreaSummaryFreshness } from '../lib/officialAreaSummaryFreshness'
 import { osmAreaSummaryFreshness } from '../lib/osmAreaSummaryFreshness'
 import { kpiFreshnessLinesFromIso } from '../lib/reportFreshnessLines'
@@ -106,7 +107,10 @@ export function AreaReport() {
   const mainRows =
     data?.rows.filter((r) => r.category === 'matched' || r.category === 'official_only') ?? []
   const unmatchedRows = data ? normalizeUnmatchedRows(data) : []
+  // Outdated keys come from the Destatis ARS successor check; other keys (PLZ, WDPA) never have them.
+  const showStaleKeys = isSchluesselExplorerPreset(data?.idNormalizationPreset)
   const matchesStaleKeysFilter = (row: AreaReportRow): boolean => {
+    if (!showStaleKeys) return true
     const stale = isStaleKeyRow(row)
     if (staleKeys === 'hide') return !stale
     if (staleKeys === 'only') return stale
@@ -137,7 +141,9 @@ export function AreaReport() {
       ? []
       : mainRows.filter((r) => r.category === 'official_only').map((r) => r.canonicalMatchKey)
   const unmatchedMapAllowlist = !data || enabledSet.has('unmatched_osm') ? null : []
-  const overviewMapBbox = unionMapBboxes(visibleRows)
+  // All rows, not the visible ones: the bbox seeds the map key, so a filter-dependent bbox
+  // would remount the map on every category toggle.
+  const overviewMapBbox = unionMapBboxes([...mainRows, ...unmatchedRows])
 
   const chartData = !data
     ? []
@@ -301,24 +307,26 @@ export function AreaReport() {
               value={formatDeInteger(catCounts.unmatched_osm)}
               swatch={<ReportCategorySquareSwatch category="unmatched_osm" />}
             />
-            <div className="flex min-w-0 flex-col gap-y-1">
-              <dd className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums sm:text-3xl">
-                {formatDeInteger(catCounts.staleOfficialKey)}
-              </dd>
-              <dt className="text-sm font-medium text-slate-800">{st.staleOfficialKeyLabel}</dt>
-              <label className="text-xs text-slate-600">
-                {st.staleKeysFilterLabel}
-                <select
-                  className="mt-1 block w-full rounded border border-slate-400 bg-white px-1.5 py-1 text-sm text-slate-900"
-                  value={staleKeys}
-                  onChange={(event) => setStaleKeys(parseStaleKeysFilter(event.target.value))}
-                >
-                  <option value="all">{st.staleKeysAll}</option>
-                  <option value="only">{st.staleKeysOnly}</option>
-                  <option value="hide">{st.staleKeysHide}</option>
-                </select>
-              </label>
-            </div>
+            {showStaleKeys ? (
+              <div className="flex min-w-0 flex-col gap-y-1">
+                <dd className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums sm:text-3xl">
+                  {formatDeInteger(catCounts.staleOfficialKey)}
+                </dd>
+                <dt className="text-sm font-medium text-slate-800">{st.staleOfficialKeyLabel}</dt>
+                <label className="text-xs text-slate-600">
+                  {st.staleKeysFilterLabel}
+                  <select
+                    className="mt-1 block w-full rounded border border-slate-400 bg-white px-1.5 py-1 text-sm text-slate-900"
+                    value={staleKeys}
+                    onChange={(event) => setStaleKeys(parseStaleKeysFilter(event.target.value))}
+                  >
+                    <option value="all">{st.staleKeysAll}</option>
+                    <option value="only">{st.staleKeysOnly}</option>
+                    <option value="hide">{st.staleKeysHide}</option>
+                  </select>
+                </label>
+              </div>
+            ) : null}
           </KpiSectionRow>
 
           <div>
