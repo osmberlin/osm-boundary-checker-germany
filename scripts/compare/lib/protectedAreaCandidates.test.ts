@@ -70,6 +70,26 @@ describe('matchProtectedAreaCandidates', () => {
     expect(candidates[2]!.suggestedTags).toEqual({ 'ref:WDPA': '111' })
   })
 
+  test('tags hold the non-empty OSM columns without ids and geometry', () => {
+    const inside = point(10.05, 50.05, {
+      osm_id: '3',
+      name: 'Hochwald',
+      dtp_id: '',
+      wikidata: null,
+      geometry: 'x',
+      ...nsgTags,
+    })
+    const out = matchProtectedAreaCandidates({
+      rows: [row({})],
+      officialKeySet: new Set(['111']),
+      candidatePoints: [inside],
+    })
+    expect(out.get('111')![0]!.tags).toEqual({
+      name: 'Hochwald',
+      ...nsgTags,
+    })
+  })
+
   test('wikidata and natura2000 signals add wikidata/ref:DE suggestions', () => {
     const byQ = point(7, 47, { osm_id: '4', name: 'X', wikidata: 'Q5' })
     const bySite = point(8, 48, {

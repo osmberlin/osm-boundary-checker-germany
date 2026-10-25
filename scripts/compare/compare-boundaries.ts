@@ -12,7 +12,7 @@ import {
   type ComparisonFilterConfigSummary,
   type ReportMetrics,
 } from '../shared/comparisonPayload.ts'
-import type { DatasetConfig } from '../shared/datasetConfig.ts'
+import { sourceKindFromDatasetConfig, type DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { loadLicenseCompatibilityTable } from '../shared/licenseCompatibility.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
@@ -326,6 +326,7 @@ async function main() {
       },
       officialLicenses,
       configRaw.officialMode === 'dtp' ? DTP_TABLE_ROW_SLIMMING : null,
+      sourceKindFromDatasetConfig(configRaw),
     )
     checkpoint('after_write_outputs')
     console.log(

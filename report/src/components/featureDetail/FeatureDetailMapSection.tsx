@@ -56,6 +56,7 @@ export function FeatureDetailMapSection({
           layerIdPrefix={layerId}
           metrics={row.metrics}
           mapLayers={mapLayers}
+          sourceKind={data.sourceKind}
         />
 
         <FeatureDetailComparisonMapPane

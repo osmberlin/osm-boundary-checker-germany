@@ -3,9 +3,12 @@ import {
   InformationCircleIcon,
   QuestionMarkCircleIcon,
 } from '@heroicons/react/20/solid'
+import { useState } from 'react'
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
+import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { useOverpassRelationTags } from '../hooks/useOverpassRelationTags'
 import { de } from '../i18n/de'
+import { renderWithAbbr, SourceTerm, sourceText } from '../i18n/sourceVocabulary'
 import { pickOsmDatasetExtractDate } from '../lib/datasetExtractDataDates'
 import { EM_DASH } from '../lib/formatDe'
 import { formatIsoTimestampToAbsoluteDe } from '../lib/formatSourceDownloadedAt'
@@ -14,7 +17,7 @@ import {
   isGermanKeyExplorerDisplayKey,
 } from '../lib/germanKeyExplorer'
 import { parseReportRowOsmRef, type ParsedReportRowOsmRef } from '../lib/osmObjectRef'
-import type { ComparisonForReport, ReportRow } from '../types/report'
+import type { CandidateMatch, ComparisonForReport, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
@@ -194,6 +197,8 @@ function verificationIndicatorsFromOfficial(
     .sort((a, b) => a.key.localeCompare(b.key, 'de'))
 }
 
+const HTTP_URL_PATTERN = /^https?:\/\//
+
 function DatasetPropertyCard({ properties }: { properties: Record<string, unknown> }) {
   const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
   const verifyLinkClass =
@@ -215,7 +220,20 @@ function DatasetPropertyCard({ properties }: { properties: Record<string, unknow
             <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
             <dd className="min-w-0 break-words text-slate-100">
               <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <span className="min-w-0">{formatPropertyValue(v)}</span>
+                <span className="min-w-0">
+                  {typeof v === 'string' && HTTP_URL_PATTERN.test(v) ? (
+                    <a
+                      href={v}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="break-all text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+                    >
+                      {v}
+                    </a>
+                  ) : (
+                    formatPropertyValue(v)
+                  )}
+                </span>
                 {linkVal ? (
                   <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />
                 ) : null}
@@ -237,10 +255,12 @@ function DatasetLiveComparedPropertyCard({
   properties,
   officialProperties,
   acceptedRegionalSchluessel,
+  sourceKind,
 }: {
   properties: Record<string, string>
   officialProperties: Record<string, unknown>
   acceptedRegionalSchluessel?: string | null
+  sourceKind: SourceKind | undefined
 }) {
   const officialByOsmKeyPrimary = transposeOfficialToOsm(officialProperties)
   const officialByAnyOsmKey = new Map<string, TransposedOfficialEntry>()
@@ -309,7 +329,7 @@ function DatasetLiveComparedPropertyCard({
                         className="mt-0.5 size-4 shrink-0 text-amber-500"
                       />
                       <span className="text-xs text-slate-300">
-                        {de.feature.datasetOsmLiveCompareDifferentLabel}{' '}
+                        <SourceTerm kind={sourceKind} term="dataHeading" />:{' '}
                         <code className={codeClass}>{expectedValues.join(' | ')}</code>
                         {mappedOfficial ? (
                           <>
@@ -453,10 +473,12 @@ function OsmLiveRelationTagsRow({
   osmRef,
   officialProperties,
   acceptedRegionalSchluessel,
+  sourceKind,
 }: {
   osmRef: ParsedReportRowOsmRef
   officialProperties: Record<string, unknown>
   acceptedRegionalSchluessel?: string | null
+  sourceKind: SourceKind | undefined
 }) {
   const live = useOverpassRelationTags(String(osmRef.numericId))
   const captionText =
@@ -500,7 +522,11 @@ function OsmLiveRelationTagsRow({
           </div>
           <p className="flex items-center gap-1.5 text-xs text-slate-400">
             <InformationCircleIcon aria-hidden="true" className="size-4 shrink-0 text-sky-300" />
-            <span>{de.feature.datasetOsmLiveCompareHint}</span>
+            <span>
+              {renderWithAbbr(
+                de.feature.datasetOsmLiveCompareHint(sourceText(sourceKind, 'dataHeading')),
+              )}
+            </span>
           </p>
         </div>
       )}
@@ -525,6 +551,7 @@ function OsmLiveRelationTagsRow({
               properties={live.tags}
               officialProperties={officialProperties}
               acceptedRegionalSchluessel={acceptedRegionalSchluessel}
+              sourceKind={sourceKind}
             />
           ) : (
             <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveEmpty}</p>
@@ -542,13 +569,22 @@ function OsmLiveRelationTagsRow({
   )
 }
 
+const candidateKeyOf = (candidate: CandidateMatch) => `${candidate.osmType}/${candidate.osmId}`
+
 export function FeatureDatasetProperties({
   row,
   data,
+  candidates,
 }: {
   row: ReportRow
   data: ComparisonForReport
+  /** Protected-area candidates (shard); only candidates with `tags` can be shown. */
+  candidates?: CandidateMatch[]
 }) {
+  const [candidateKey, setCandidateKey] = useState('')
+  const taggedCandidates = (candidates ?? []).filter((candidate) => candidate.tags !== undefined)
+  const selectedCandidate =
+    taggedCandidates.find((candidate) => candidateKeyOf(candidate) === candidateKey) ?? null
   const official = forDisplayOfficial(row.officialProperties)
   const osm = forDisplay(row.osmProperties)
 
@@ -579,7 +615,7 @@ export function FeatureDatasetProperties({
             rightColumnClassName="mt-2"
             title={
               <span className="text-sm/6 font-medium text-slate-200">
-                {de.feature.datasetOfficialCardTitle}
+                <SourceTerm kind={data.sourceKind} term="dataFilteredHeading" />
               </span>
             }
             titleAside={<OfficialDatasetAgeInfoLink side={data.sourceMetadata?.official} />}
@@ -621,13 +657,37 @@ export function FeatureDatasetProperties({
               </>
             }
           >
-            <DatasetPropertyCard properties={osm} />
+            {taggedCandidates.length > 0 ? (
+              <div className="flex flex-col gap-1">
+                <label htmlFor="feature-osm-candidate" className="text-xs text-slate-400">
+                  {de.feature.datasetOsmCandidateSelectLabel}
+                </label>
+                <select
+                  id="feature-osm-candidate"
+                  value={candidateKey}
+                  onChange={(e) => setCandidateKey(e.target.value)}
+                  className="block w-full max-w-full rounded-md border border-slate-600 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 shadow-sm focus:border-sky-600 focus:ring-1 focus:ring-sky-600/30 focus:outline-none"
+                >
+                  <option value="">{de.feature.datasetPropertiesEmpty}</option>
+                  {taggedCandidates.map((candidate) => (
+                    <option key={candidateKeyOf(candidate)} value={candidateKeyOf(candidate)}>
+                      {`${candidate.name ?? de.feature.candidatesNoName} (${candidateKeyOf(candidate)})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+            {selectedCandidate ? (
+              <p className="text-xs text-slate-400">{de.feature.datasetOsmCandidateTagsLabel}</p>
+            ) : null}
+            <DatasetPropertyCard properties={selectedCandidate?.tags ?? osm} />
           </ProvenanceGridRow>
           {osmRef != null && (
             <OsmLiveRelationTagsRow
               osmRef={osmRef}
               officialProperties={official}
               acceptedRegionalSchluessel={row.staleOfficialKey?.toArs}
+              sourceKind={data.sourceKind}
             />
           )}
         </dl>

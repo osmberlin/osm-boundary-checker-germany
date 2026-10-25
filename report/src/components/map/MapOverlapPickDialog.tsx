@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router'
-import { de, categoryLabelDe } from '../../i18n/de'
+import { de } from '../../i18n/de'
 import { resolveFeatureRowMeta } from '../../lib/comparisonMapFeatureClick'
 import type { ComparisonForReport } from '../../types/report'
+import { ReportCategoryLabel } from '../ReportCategoryLabel'
 import { ReportCategoryPill } from '../reportCategoryStyles'
 import {
   AppDialogActions,
@@ -54,7 +55,10 @@ export function MapOverlapPickDialog({
                   {meta ? (
                     <>
                       <ReportCategoryPill category={meta.category}>
-                        {categoryLabelDe(meta.category)}
+                        <ReportCategoryLabel
+                          category={meta.category}
+                          sourceKind={data.sourceKind}
+                        />
                       </ReportCategoryPill>
                       <span className="text-sm font-medium text-slate-100">{meta.nameLabel}</span>
                     </>

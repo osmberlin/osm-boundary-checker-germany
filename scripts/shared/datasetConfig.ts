@@ -4,6 +4,7 @@ import { DTP_OFFICIAL_PROFILE_ID, DTP_OFFICIAL_SOURCE, dtpSelectionSchema } from
 import { officialProfileIdSchema, resolveOfficialProfile } from './officialProfiles.ts'
 import { osmProfileIdSchema } from './osmProfiles.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
+import type { SourceKind } from './sourceKind.ts'
 import { datasetLicenseIdSchema, osmLicenseCompatibilitySchema } from './sourceMetadata.ts'
 
 const trimmedString = z.string().trim().min(1)
@@ -216,6 +217,13 @@ export function parseDatasetConfig(area: string, rawConfig: unknown): DatasetCon
     throw new Error(`${area}: ${details}`)
   }
   return parsed.data
+}
+
+/** Report wording of the official side: DtP datasets say "DtP", everything else "amtlich". */
+export function sourceKindFromDatasetConfig(
+  config: Pick<DatasetConfig, 'officialMode'>,
+): SourceKind {
+  return config.officialMode === 'dtp' ? 'dtp' : 'official'
 }
 
 export function officialSourceFromDatasetConfig(config: DatasetConfig) {

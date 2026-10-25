@@ -1,6 +1,8 @@
 import { meanIouChartDe } from '@compare-metrics/modalCopyDe.ts'
+import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { formatDeInteger } from '../lib/formatDe'
 import type { ReportRow } from '../types/report'
+import { sourceText } from './sourceVocabulary'
 
 /**
  * OSM admin RS datasets: shared paragraph under provenance „Vergleichsregeln“ when both German admin tags are listed.
@@ -74,7 +76,6 @@ export const de = {
     officialSourceUpdatedLabel: 'Amtliche Quelle aktualisiert',
     officialSourcePublishedLabel: 'Amtliche Quelle veröffentlicht',
     osmDownloadLabel: 'OSM-Geometrien (Download/Stand)',
-    officialHeading: 'Amtliche Daten',
     officialSourceHeading: 'Datenquelle der amtlichen Daten',
     officialMetaPrefix: 'Hinterlegt',
     sourceLinkLabel: 'Quelle (extern)',
@@ -83,7 +84,6 @@ export const de = {
     dataSourceLabel: 'Datenquelle',
     directDownloadLabel: 'Direktdownload',
     licenseLabel: 'Lizenz',
-    licenseSectionHeading: 'Lizenz und OSM-Kompatibilität der amtlichen Quelle',
     /** Homepage license table: first column is area display name, not feature name+key. */
     licenseTableAreaColumn: 'Gebiet',
     /** Bundled BKG VG25 rows on homepage (same official preset family). */
@@ -142,7 +142,6 @@ export const de = {
     compareDataOsCanonicalNote:
       'Die OSM-Zeile zeigt den kanonischen Vergleichsschlüssel nach Normalisierung aus `de:regionalschluessel` (Priorität und Normalisierung unter „Vergleichsregeln“; Tag-Rohwerte über Live-Eigenschaften).',
     compareDataOsmLabel: 'OSM-Daten',
-    compareDataOfficialLabel: 'Amtliche Daten',
     compareDataMissing: '(missing)',
     compareMappingLeadWithMetricsCrs: (crs: string) =>
       `Definiert, welche Felder aus amtlichen Daten und OSM einander zugeordnet werden und zu welchem gemeinsamen Schlüssel normalisiert wird. Metriken beziehen sich auf Projektion ${crs}.`,
@@ -350,7 +349,6 @@ export const de = {
     chartTitle: meanIouChartDe.chartTitle,
     /** Freshness block heading (line 1). */
     freshnessHeadingReport: 'Auswertung',
-    freshnessHeadingOfficial: 'Amtliche Daten',
     freshnessHeadingOsm: 'OSM Daten',
     freshnessSecondaryDownloadedPrefix: 'Download',
     freshnessSecondaryExtractedPrefix: 'Verarbeitet',
@@ -423,7 +421,6 @@ export const de = {
       symDiffShort: 'Symmetrische Diff.',
       /** KPI band: first column when there are no overlap metrics but the row is OSM-only or official-only. */
       unmatchedCompareLabel: 'Zuordnung',
-      areaOfficial: 'Amtliche Fläche',
       areaOsm: 'OSM-Fläche',
       diffMetricsRowAria: 'Differenz-Kennzahlen',
       layersRowAria: 'Flächen und Kartenebenen',
@@ -503,7 +500,6 @@ export const de = {
 
     datasetPropertiesSectionAria: 'Attribute aus dem Vergleich (amtlich und OSM)',
     datasetPropertiesSectionTitle: 'Attribute zum Zeitpunkt des Vergleichs',
-    datasetOfficialCardTitle: 'Amtliche Daten (Gefiltert)',
     datasetOsmCardTitle: 'OSM-Daten (Auszug)',
     /** `official.sourceUpdatedAt` / `sourcePublishedAt` (vendor reference date). */
     datasetExtractSourceDateLabel: 'Referenzdatum (Anbieter)',
@@ -530,14 +526,16 @@ export const de = {
     },
     datasetOsmOpenHistory: 'Auf osm.org anzeigen',
     datasetPropertiesEmpty: '—',
+    datasetOsmCandidateSelectLabel: 'Kandidat anzeigen',
+    datasetOsmCandidateTagsLabel: 'OSM-Kandidat (Auszug aus dem Vergleichsextrakt)',
 
     /** Live-Abruf row inside "Attribute zum Zeitpunkt des Vergleichs". */
     datasetOsmLiveCardTitle: 'OSM-Daten (Live-Abruf)',
     datasetOsmLiveButton: 'Von Overpass abfragen',
     datasetOsmLiveButtonHint: (id: number) => `Aktuelle Attribute für Relation ${id}`,
     /** Hint shown below the "Von Overpass abfragen" button to clarify the comparison purpose. */
-    datasetOsmLiveCompareHint:
-      'Nutze diese Funktion um weitere Werte aus den „Amtliche Daten“ oben mit OSM Daten abzugleichen.',
+    datasetOsmLiveCompareHint: (officialDataHeading: string) =>
+      `Nutze diese Funktion um weitere Werte aus den „${officialDataHeading}“ oben mit OSM Daten abzugleichen.`,
     datasetOsmLiveOverpassQueryLabel: 'Overpass-Abfrage',
     datasetOsmLiveLoading: 'Overpass antwortet …',
     datasetOsmLiveEmpty: 'OSM-Objekt nicht gefunden oder ohne Tags.',
@@ -546,8 +544,6 @@ export const de = {
     datasetOsmLiveInvalidJson: 'Unerwartete Overpass-Antwort.',
     /** 3rd column status: OSM live tag matches the value in the filtered official record. */
     datasetOsmLiveCompareMatchTooltip: 'Stimmt mit amtlichen Daten überein',
-    /** 3rd column status: key exists in filtered official, but live OSM value differs. */
-    datasetOsmLiveCompareDifferentLabel: 'Amtliche Daten:',
     /** 3rd column status: key from filtered official is missing in OSM live. Renders <code>{wert}</code> between prefix and suffix. */
     datasetOsmLiveCompareMissingPrefix: 'Wert',
     datasetOsmLiveCompareMissingSuffix: 'der amtlichen Daten könnte ergänzt werden.',
@@ -621,33 +617,29 @@ export const de = {
     candidatesEmptyValue: '–',
 
     protectedCandidatesLead:
-      'Kandidaten sind OSM-Schutzgebiete, die zu dieser DtP-Fläche passen könnten, aber noch kein passendes ref:WDPA tragen. Die Signale zeigen, woran wir den Kandidaten erkannt haben; die stärksten stehen oben (maximal 5 Kandidaten).',
-    protectedCandidatesMatchHintBefore:
-      'Wenn der Kandidat dasselbe Gebiet beschreibt, ergänzen Sie in OSM die vorgeschlagenen Tags, vor allem',
-    protectedCandidatesColumnObject: 'OSM-Objekt',
-    protectedCandidatesColumnSignals: 'Signale',
-    protectedCandidatesColumnCurrent: 'Aktuell in OSM',
-    protectedCandidatesColumnSuggested: 'Vorschlag',
+      'Diese OSM-Objekte könnten diese DtP-Fläche sein, tragen aber noch kein passendes ref:WDPA; die stärksten Kandidaten stehen oben.',
+    protectedCandidatesDetectedVia: 'Erkannt über:',
+    protectedCandidatesCta: 'Wenn dies dasselbe Gebiet ist, ergänze in OSM:',
+    protectedCandidatesColumnCurrent: 'Aktuell in OSM:',
     protectedCandidatesCurrentNone: 'keine Typ-Tags',
-    protectedCandidatesNameSimilarity: (percent: number) => `Namensähnlichkeit ${percent} %`,
     protectedCandidatesSignal: {
       dtp_id: 'dtp_id',
       dtp_osm_ref: 'DtP-OSM-Verweis',
       wikidata: 'Wikidata',
-      natura2000: 'Natura-2000-Code',
+      natura2000: 'Natura 2000',
       inside: 'Lage + Typ',
       name: 'Name',
     },
     protectedCandidatesSignalTitle: {
-      dtp_id: 'Das OSM-Objekt trägt das Tag dtp_id mit der UUID dieser DtP-Fläche.',
-      dtp_osm_ref: 'DtP verweist selbst auf dieses OSM-Objekt.',
-      wikidata: 'Dasselbe wikidata-Tag wie im DtP-Datensatz.',
-      natura2000:
-        'Derselbe Natura-2000-Gebietscode (ref:DE, ref:SCI oder ref:natura2000) wie im DtP-Datensatz.',
-      inside:
-        'Der Innenpunkt des OSM-Objekts liegt in der verkleinerten DtP-Fläche und die Typ-Tags passen zur Kategorie.',
-      name: 'Ähnlicher Name in unmittelbarer Nähe der DtP-Fläche.',
+      dtp_id: 'Das OSM-Objekt trägt die DtP-Kennung (dtp_id) dieses Gebiets.',
+      dtp_osm_ref: 'Digitize the Planet verweist selbst auf dieses OSM-Objekt.',
+      wikidata: 'Beide Seiten haben dieselbe Wikidata-ID.',
+      natura2000: 'Beide Seiten haben denselben Natura-2000-Gebietscode.',
+      inside: 'Das OSM-Objekt liegt in der DtP-Fläche und hat passende Schutzgebiets-Tags.',
+      name: 'Die Namen sind ähnlich.',
     },
+    protectedCandidatesSignalNameTitle: (percent: number) =>
+      `Die Namen sind ähnlich (${percent} %).`,
     copyTags: 'Tags kopieren',
     copyTagsDone: 'Kopiert',
     copyTagsAria: (osmObject: string) => `Vorgeschlagene Tags für ${osmObject} kopieren`,
@@ -683,7 +675,6 @@ export const de = {
       osmBrowseHeading: 'Auf osm.org',
       openOsmOrg: 'OSM-Objekt auf osm.org öffnen',
       openOsmOrgDisabledHint: 'Für diesen Eintrag ist kein OSM-Objekt hinterlegt.',
-      downloadOfficialHeading: 'Amtliches GeoJSON',
       idHeading: 'iD-Editor',
       josmHeading: 'JOSM (Remote Control)',
       downloadOfficial: 'GeoJSON herunterladen',
@@ -694,16 +685,12 @@ export const de = {
         'Hinweis: Beim Export werden die Umringe leicht vereinfacht (ca. 2,5 m Toleranz) und Koordinaten auf sechs Nachkommastellen gerundet — für überschaubare Dateigröße in iD/JOSM.',
       revealHintAriaLabel: 'Hinweis anzeigen',
       opensInNewWindowTitle: 'Öffnet in einem neuen Browser-Tab',
-      openIdWithOfficialGeojson: 'In iD öffnen mit amtlicher Grenze (GeoJSON)',
-      openIdWithoutOfficialGeojson: 'In iD öffnen (ohne amtliche Grenze)',
       idDisableFeaturesHint:
         'Hinweis: In iD werden u. a. Gebäude, Wege und Bahn usw. ausgeblendet; Grenzen, Gewässer und übergeordnete Straßen bleiben sichtbar. Wichtig: Es kann sein, dass einzelne Punkte in dieser Ansicht nicht verschoben werden können. Wenn das passiert, musst du die Filtereinstellungen ändern und bspw. die Landnutzung einschalten. Denn diese Situation bedeutet, dass die Grenze mit einem Element verklebt ist, das zur Zeit versteckt ist — und daher darf sie nicht „blind“ verschoben werden. In diesem Fall dann die Verklebung lösen und die Elemente getrennt voneinander behandeln.',
       josmRemoteLead:
         'Remote Control in den JOSM-Einstellungen aktivieren. Links rufen JOSM lokal auf (Port 8111).',
       josmLoadObject: 'OSM-Objekt in JOSM laden',
       josmLoadObjectTitle: 'OSM-Objekt in JOSM laden (Remote Control: load_object)',
-      josmImport: 'In JOSM öffnen mit amtlicher Grenze (GeoJSON)',
-      josmImportTitle: 'Amtliches GeoJSON als neue Ebene (Remote Control: import)',
       josmImportDisabledHint:
         'Kein amtlicher GeoJSON-Export — zuerst Vergleich mit amtlicher Geometrie oder aktuelle Auswertung (ohne Snapshot) nutzen.',
       josmImportFallback:
@@ -993,12 +980,12 @@ export function issueLevelLabelDe(level: 'ok' | 'review' | 'issue'): string {
   }
 }
 
-export function categoryLabelDe(cat: ReportRow['category']): string {
+export function categoryLabelDe(cat: ReportRow['category'], kind?: SourceKind): string {
   switch (cat) {
     case 'matched':
       return 'Zugeordnet'
     case 'official_only':
-      return 'Nur amtlich'
+      return sourceText(kind, 'onlyLabel')
     case 'unmatched_osm':
       return 'Nur OSM'
     default:

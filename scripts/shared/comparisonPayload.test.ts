@@ -81,6 +81,16 @@ describe('candidateMatchSchema', () => {
     expect(parsed.postalCodeRaw).toBe('13585')
   })
 
+  test('accepts protected-area candidate with tags', () => {
+    const parsed = candidateMatchSchema.parse({
+      osmType: 'relation',
+      osmId: '15447613',
+      name: 'Biosphärenreservat Rhön',
+      tags: { boundary: 'protected_area', protect_class: '98' },
+    })
+    expect(parsed.tags).toEqual({ boundary: 'protected_area', protect_class: '98' })
+  })
+
   test('rejects missing osmType', () => {
     expect(() =>
       candidateMatchSchema.parse({

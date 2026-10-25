@@ -6,9 +6,12 @@ import { sharedButtonTinyClass } from '../sharedButtonStyles'
 export function CopyTagsButton({
   tags,
   ariaLabel,
+  className = sharedButtonTinyClass,
 }: {
   tags: Record<string, string>
   ariaLabel: string
+  /** Defaults to the tiny inline style; pass `sharedButtonClass` for a primary action. */
+  className?: string
 }) {
   const [copied, setCopied] = useState(false)
   const text = Object.entries(tags)
@@ -29,7 +32,7 @@ export function CopyTagsButton({
   }
 
   return (
-    <button type="button" className={sharedButtonTinyClass} onClick={copy} aria-label={ariaLabel}>
+    <button type="button" className={className} onClick={copy} aria-label={ariaLabel}>
       {copied ? de.feature.copyTagsDone : de.feature.copyTags}
     </button>
   )

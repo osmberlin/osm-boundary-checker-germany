@@ -10,7 +10,7 @@ export function SummaryStatColumn({
   headingAdornment,
   hideDetailLine = false,
 }: {
-  heading: string
+  heading: ReactNode
   relativeLine: string
   absoluteLine: string
   detailLine?: string | null

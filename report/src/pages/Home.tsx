@@ -1,9 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { KpiCell, KpiRow } from '../components/FeatureStatBlocks'
+import { ReportCategoryLabel } from '../components/ReportCategoryLabel'
 import { ReportCategoryPill, UnmatchedOsmStatPill } from '../components/reportCategoryStyles'
 import { areasIndex, type AreaLicenseSummary } from '../data/areasIndex'
 import { categoryLabelDe, de } from '../i18n/de'
+import { sourceText } from '../i18n/sourceVocabulary'
 import { EM_DASH, formatDeInteger } from '../lib/formatDe'
 import {
   OFFICIAL_SOURCE_GROUP_KEY_BKG_VG25,
@@ -148,7 +150,10 @@ export function Home() {
                       <KpiCell
                         label={
                           <ReportCategoryPill category="official_only">
-                            {categoryLabelDe('official_only')}
+                            <ReportCategoryLabel
+                              category="official_only"
+                              sourceKind={entry?.sourceKind}
+                            />
                           </ReportCategoryPill>
                         }
                         value={officialOnly}
@@ -407,7 +412,9 @@ function HomeLicenseSection({
 
   return (
     <section className="mt-8 rounded border border-slate-700 bg-slate-900/50 p-4 text-sm text-slate-400">
-      <h2 className="mb-3 text-base font-semibold text-slate-100">{p.licenseSectionHeading}</h2>
+      <h2 className="mb-3 text-base font-semibold text-slate-100">
+        {sourceText(undefined, 'licenseSectionHeading')}
+      </h2>
       <div className="overflow-x-auto rounded border border-slate-700/70">
         <table className="min-w-full text-left text-xs text-slate-300">
           <thead className="bg-slate-900 text-slate-200">

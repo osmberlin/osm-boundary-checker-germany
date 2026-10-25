@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { ogcWfsInspectSourceSchema } from './ogcInspectSources.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
+import { sourceKindSchema } from './sourceKind.ts'
 import {
   datasetLicenseIdSchema,
   osmLicenseCompatibilitySchema,
@@ -201,6 +202,8 @@ export const comparisonForReportSchema = z.object({
   generatedAt: z.string(),
   metricsCrs: z.string(),
   overpassBoundaryTag: z.enum(['administrative', 'postal_code', 'protected_area']).optional(),
+  /** Wording of the official side in the report; absent means `official`. Only written for other kinds. */
+  sourceKind: sourceKindSchema.optional(),
   hasPmtiles: z.boolean(),
   hasUnmatchedPmtiles: z.boolean().optional(),
   tippecanoeLayer: z.string(),
@@ -254,6 +257,8 @@ export const candidateMatchSchema = z
     protectClass: z.string().nullable().optional(),
     /** Protected-area profile: tags to add to the OSM object, key → value. */
     suggestedTags: z.record(z.string(), z.string()).optional(),
+    /** Protected-area profile: the candidate's OSM tags (flat key → value). */
+    tags: z.record(z.string(), z.string()).optional(),
   })
   .strict()
 

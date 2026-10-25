@@ -4,6 +4,7 @@ import type {
   OfficialLicense,
   OsmMatchCriteriaSummary,
 } from '../../../scripts/shared/comparisonPayload.ts'
+import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import type {
   DatasetLicenseId,
   OsmLicenseCompatibility,
@@ -157,6 +158,8 @@ export type ComparisonForReport = {
   titlePrefix: string
   generatedAt: string
   metricsCrs: string
+  /** Wording of the official side (`sourceVocabulary`); absent means `official`. */
+  sourceKind?: SourceKind
   /** Overpass `boundary=*` value for live OSM lookup; defaults to `administrative` when absent. */
   overpassBoundaryTag?: OverpassBoundaryTag
   /** Overlay + split diff archives (`comparison.pmtiles` / `comparison-diff.pmtiles`) when true. */
@@ -235,6 +238,8 @@ export type CandidateMatch = {
   protectClass?: string | null
   /** Protected-area profile: tags to add to the OSM object, key → value. */
   suggestedTags?: Record<string, string>
+  /** Protected-area profile: the candidate's OSM tags (flat key → value). */
+  tags?: Record<string, string>
 }
 
 export type CandidateSignalId =

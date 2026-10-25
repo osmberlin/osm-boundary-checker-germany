@@ -1,5 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
+import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { de } from '../i18n/de'
+import { sourceText } from '../i18n/sourceVocabulary'
 import type { ReportRow } from '../types/report'
 import { mapLayerColors } from './mapLayerColors'
 import { hexToRgba } from './MapLegend'
@@ -131,12 +133,18 @@ export function LegendRectSwatch({ items }: { items: LegendRectItem[] }) {
   )
 }
 
-export function ReportCategorySquareSwatch({ category }: { category: ReportRow['category'] }) {
+export function ReportCategorySquareSwatch({
+  category,
+  sourceKind,
+}: {
+  category: ReportRow['category']
+  sourceKind?: SourceKind | undefined
+}) {
   if (category === 'matched') {
     const layerLabels = de.feature.stats
     return (
       <span className="inline-flex items-center gap-1" aria-hidden>
-        <LegendRect borderColor={o.line} title={layerLabels.areaOfficial} />
+        <LegendRect borderColor={o.line} title={sourceText(sourceKind, 'areaLabel')} />
         <LegendRect
           borderColor={OSM_PAIRED_LINE_BORDER_UI}
           backgroundColor={hexToRgba(osmPaired.fill, osmPaired.fillOpacity)}

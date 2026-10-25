@@ -1,5 +1,7 @@
 import { type RefObject, useEffect, useRef, useState } from 'react'
+import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { de } from '../i18n/de'
+import { SourceTerm, sourceText } from '../i18n/sourceVocabulary'
 import { formatDeInteger } from '../lib/formatDe'
 import { resolveRowLicense, type ResolvedLicense } from '../lib/resolveRowLicense'
 import type { ComparisonForReport, LicenseBreakdownEntry, ReportRow } from '../types/report'
@@ -38,7 +40,13 @@ function formatDecisionDate(date: string): string {
 }
 
 /** One licence (dataset block or the licence of a single geometry). */
-function ResolvedLicenseList({ license }: { license: ResolvedLicense }) {
+function ResolvedLicenseList({
+  license,
+  sourceKind,
+}: {
+  license: ResolvedLicense
+  sourceKind: SourceKind | undefined
+}) {
   const p = de.provenance
   const g = p.licensePerGeometry
   return (
@@ -47,11 +55,14 @@ function ResolvedLicenseList({ license }: { license: ResolvedLicense }) {
         <li>
           <span className="text-slate-500">{g.geometrySourceLabel}: </span>
           {license.sourceName ? (
-            license.sourceUrl ? (
-              <ExternalLink href={license.sourceUrl}>{license.sourceName}</ExternalLink>
-            ) : (
-              license.sourceName
-            )
+            <>
+              {license.sourceUrl ? (
+                <ExternalLink href={license.sourceUrl}>{license.sourceName}</ExternalLink>
+              ) : (
+                license.sourceName
+              )}
+              <SourceTerm kind={sourceKind} term="geometrySourceVia" />
+            </>
           ) : (
             g.unknownSource
           )}
@@ -234,7 +245,7 @@ export function ReportLicenseCompatibilitySection({
   row?: ReportRow | null
   className?: string
 }) {
-  const p = de.provenance
+  const licenseSectionHeading = sourceText(data.sourceKind, 'licenseSectionHeading')
   const breakdown = data.sourceMetadata?.licenseBreakdown
   const showBreakdown = row == null && breakdown != null && breakdown.length > 0
   const license = resolveRowLicense(row, data.sourceMetadata)
@@ -245,9 +256,9 @@ export function ReportLicenseCompatibilitySection({
       ref={sectionRef}
       id="report-licence-section"
       className={`overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 text-sm text-slate-400 shadow-sm ${className}`.trim()}
-      aria-label={p.licenseSectionHeading}
+      aria-label={licenseSectionHeading}
     >
-      <ProvenanceGridSectionHeader title={p.licenseSectionHeading} />
+      <ProvenanceGridSectionHeader title={licenseSectionHeading} />
       <div className="border-t border-slate-700">
         {showBreakdown ? (
           <LicenseBreakdownDisclosure breakdown={breakdown} sectionRef={sectionRef} />
@@ -256,9 +267,13 @@ export function ReportLicenseCompatibilitySection({
             <ProvenanceGridRow
               asDl
               rightColumnClassName="mt-2"
-              title={<h3 className="text-sm/6 font-medium text-slate-200">{p.officialHeading}</h3>}
+              title={
+                <h3 className="text-sm/6 font-medium text-slate-200">
+                  <SourceTerm kind={data.sourceKind} term="dataHeading" />
+                </h3>
+              }
             >
-              <ResolvedLicenseList license={license} />
+              <ResolvedLicenseList license={license} sourceKind={data.sourceKind} />
             </ProvenanceGridRow>
           </dl>
         )}

@@ -13,6 +13,7 @@ import { ComparisonMapZoomHintOverlay } from '../components/map/ComparisonMapZoo
 import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
 import { MeanIouInfoButton } from '../components/MetricInfoModal'
 import { OfficialDatasetAgeInfoButton } from '../components/OfficialDatasetAgeInfoModal'
+import { ReportCategoryLabel } from '../components/ReportCategoryLabel'
 import { ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
@@ -30,6 +31,7 @@ import { useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { categoryLabelDe, de } from '../i18n/de'
+import { SourceTerm } from '../i18n/sourceVocabulary'
 import { handleComparisonMapFeatureClick } from '../lib/comparisonMapFeatureClick'
 import { isOlderThanDays } from '../lib/dataAge'
 import { normalizeUnmatchedRows } from '../lib/findFeatureDetailRow'
@@ -247,7 +249,7 @@ export function AreaReport() {
               isOld={reportIsOld}
             />
             <SummaryStatColumn
-              heading={de.areaReport.freshnessHeadingOfficial}
+              heading={<SourceTerm kind={data.sourceKind} term="dataHeading" />}
               relativeLine={officialFresh.relativeLine ?? EM_DASH}
               absoluteLine={officialFresh.pairedAbsoluteLine}
               isOld={officialIsOld}
@@ -277,14 +279,16 @@ export function AreaReport() {
               onChange={(on) => setCategoryEnabled('matched', on)}
               label={categoryLabelDe('matched')}
               value={formatDeInteger(catCounts.matched)}
-              swatch={<ReportCategorySquareSwatch category="matched" />}
+              swatch={
+                <ReportCategorySquareSwatch category="matched" sourceKind={data.sourceKind} />
+              }
             />
             <KpiToggleCell
               inputId={`${statsInputId}-official`}
               checked={catCounts.official_only === 0 ? false : isCategoryEnabled('official_only')}
               disabled={catCounts.official_only === 0}
               onChange={(on) => setCategoryEnabled('official_only', on)}
-              label={categoryLabelDe('official_only')}
+              label={<ReportCategoryLabel category="official_only" sourceKind={data.sourceKind} />}
               value={formatDeInteger(catCounts.official_only)}
               swatch={<ReportCategorySquareSwatch category="official_only" />}
             />
@@ -448,6 +452,7 @@ export function AreaReport() {
             rows={sortedRows}
             areaKey={areaKey}
             metricsCrs={data.metricsCrs}
+            sourceKind={data.sourceKind}
             sortBy={sortBy}
             sortDir={sortDir}
             onSort={setColumn}

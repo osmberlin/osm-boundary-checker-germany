@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { parseDatasetConfig } from './datasetConfig.ts'
+import { parseDatasetConfig, sourceKindFromDatasetConfig } from './datasetConfig.ts'
 
 describe('parseDatasetConfig', () => {
   test('parses direct HTTP config branch', () => {
@@ -21,6 +21,7 @@ describe('parseDatasetConfig', () => {
       },
     })
     expect(parsed.officialMode).toBe('direct')
+    expect(sourceKindFromDatasetConfig(parsed)).toBe('official')
   })
 
   test('parses profile-driven config branch', () => {
@@ -84,6 +85,7 @@ describe('parseDatasetConfig', () => {
     expect(parsed.officialMode).toBe('dtp')
     if (parsed.officialMode !== 'dtp') throw new Error('Expected dtp config branch')
     expect(parsed.official.dtp).toEqual({ categoryIds: [1, 50], requireWdpa: true })
+    expect(sourceKindFromDatasetConfig(parsed)).toBe('dtp')
   })
 
   test('DtP config requires official.dtp', () => {

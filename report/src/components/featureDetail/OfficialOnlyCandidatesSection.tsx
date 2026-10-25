@@ -162,13 +162,7 @@ export function OfficialOnlyCandidatesSection({
   if (candidates === undefined) return null
 
   if (overpassBoundaryTag === 'protected_area') {
-    return (
-      <ProtectedAreaCandidatesSection
-        row={row}
-        candidates={candidates}
-        filterConfigSummary={filterConfigSummary}
-      />
-    )
+    return <ProtectedAreaCandidatesSection candidates={candidates} />
   }
 
   const isPostalCodeProfile = candidates.some((candidate) => candidate.postalCodeRaw !== undefined)
@@ -254,18 +248,8 @@ export function OfficialOnlyCandidatesSection({
   )
 }
 
-/** Protected-area (DtP) variant: signals as badges, suggested tags with copy button. */
-function ProtectedAreaCandidatesSection({
-  row,
-  candidates,
-  filterConfigSummary,
-}: {
-  row: ReportRow
-  candidates: CandidateMatch[]
-  filterConfigSummary: ComparisonFilterConfigSummary
-}) {
-  const matchTag = filterConfigSummary.osmMatchProperties?.[0]?.trim() || 'ref:WDPA'
-  const matchKey = row.canonicalMatchKey?.trim() ?? ''
+/** Protected-area (DtP) variant: per-candidate signals and a call to add the suggested tags. */
+function ProtectedAreaCandidatesSection({ candidates }: { candidates: CandidateMatch[] }) {
   return (
     <section
       className="overflow-hidden rounded-lg border border-sky-800/50 bg-sky-950/45 shadow-sm"
@@ -275,15 +259,6 @@ function ProtectedAreaCandidatesSection({
         <p className="mt-2 max-w-4xl text-sm text-slate-400">
           {de.feature.protectedCandidatesLead}
         </p>
-        {matchKey.length > 0 ? (
-          <p className="mt-2 max-w-4xl text-sm text-slate-400">
-            {de.feature.protectedCandidatesMatchHintBefore}{' '}
-            <code className="rounded bg-slate-950/80 px-1.5 py-0.5 font-mono text-xs break-all text-slate-200 ring-1 ring-slate-700/80">
-              {matchTag}={matchKey}
-            </code>
-            .
-          </p>
-        ) : null}
       </ProvenanceGridSectionHeader>
       <div className="border-t border-sky-800/45 px-4 py-6 sm:px-6">
         {candidates.length === 0 ? (

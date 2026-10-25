@@ -2,8 +2,10 @@ import { ExclamationTriangleIcon } from '@heroicons/react/20/solid'
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { officialForEditGeojsonHref } from '../data/paths'
 import { de } from '../i18n/de'
+import { SourceTerm, sourceText } from '../i18n/sourceVocabulary'
 import {
   absoluteUrlFromPath,
   buildJosmEditorLinks,
@@ -72,10 +74,12 @@ export function UpdateMapInstructions({
   areaId,
   row,
   sourceMetadata,
+  sourceKind,
 }: {
   areaId: string
   row: ReportRow
   sourceMetadata?: ComparisonForReport['sourceMetadata']
+  sourceKind?: SourceKind | undefined
 }) {
   const u = de.feature.updateMap
   const osmCompatibility = resolveRowLicense(row, sourceMetadata).osmCompatibility
@@ -89,15 +93,19 @@ export function UpdateMapInstructions({
   const osmBrowseUrl = buildOpenStreetMapBrowseRelationUrl(row)
   const josm = buildJosmEditorLinks(row, officialAbsolute)
   const canDownloadOfficial = officialHref != null
-  const idLinkLabel =
-    officialAbsolute != null ? u.openIdWithOfficialGeojson : u.openIdWithoutOfficialGeojson
+  const idLinkTerm = officialAbsolute != null ? 'openIdWithGeojson' : 'openIdWithoutGeojson'
+  const idLinkLabel = sourceText(sourceKind, idLinkTerm)
+  // OSM-only rows have no official geometry, so its licence is irrelevant for them.
+  const showLicenceNotice =
+    row.category !== 'unmatched_osm' &&
+    (osmCompatibility === 'no' || osmCompatibility === 'unknown')
 
   return (
     <section className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm">
       <ProvenanceGridSectionHeader title={u.title} />
 
       <div className="border-t border-slate-700">
-        {osmCompatibility === 'no' || osmCompatibility === 'unknown' ? (
+        {showLicenceNotice ? (
           <div
             className="flex items-start gap-3 border-b border-slate-700/80 px-4 py-4 sm:px-6"
             role="status"
@@ -135,7 +143,9 @@ export function UpdateMapInstructions({
             asDl
             rightColumnClassName="mt-2"
             title={
-              <h3 className="text-sm/6 font-medium text-slate-200">{u.downloadOfficialHeading}</h3>
+              <h3 className="text-sm/6 font-medium text-slate-200">
+                <SourceTerm kind={sourceKind} term="geojsonHeading" />
+              </h3>
             }
           >
             <div className="flex flex-col gap-2">
@@ -209,7 +219,7 @@ export function UpdateMapInstructions({
                   title={`${idLinkLabel} — ${u.opensInNewWindowTitle}`}
                   className={sharedButtonClass}
                 >
-                  {idLinkLabel}
+                  <SourceTerm kind={sourceKind} term={idLinkTerm} />
                 </a>
               </RevealInfoNote>
             </div>
@@ -226,14 +236,14 @@ export function UpdateMapInstructions({
                   href={josm.importGeojson}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title={`${u.josmImportTitle} — ${u.opensInNewWindowTitle}`}
+                  title={`${sourceText(sourceKind, 'geojsonLayerTitle')} — ${u.opensInNewWindowTitle}`}
                   className={sharedButtonClass}
                 >
-                  {u.josmImport}
+                  <SourceTerm kind={sourceKind} term="openJosmWithGeojson" />
                 </a>
               ) : (
                 <button type="button" disabled className={sharedButtonClass}>
-                  {u.josmImport}
+                  <SourceTerm kind={sourceKind} term="openJosmWithGeojson" />
                 </button>
               )}
               {josm.loadObject != null ? (

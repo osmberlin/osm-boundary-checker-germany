@@ -57,6 +57,8 @@ export type CandidateMatch = {
   protectClass?: string | null
   /** Protected-area profile: tags to add to the OSM object, key → value. */
   suggestedTags?: Record<string, string>
+  /** Protected-area profile: the candidate's OSM properties (non-empty columns, no ids/geometry). */
+  tags?: Record<string, string>
 }
 
 /**

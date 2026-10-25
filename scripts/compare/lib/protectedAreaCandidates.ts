@@ -206,6 +206,20 @@ function buildSuggestedTags(
   return suggested
 }
 
+/** Candidate FGB columns that are not OSM tags (object ids, geometry). */
+const CANDIDATE_TAG_SKIP_KEYS: ReadonlySet<string> = new Set(['osm_id', 'osm_way_id', 'geometry'])
+
+/** The candidate's OSM properties as a flat record, non-empty columns only. */
+function candidateTags(props: Record<string, unknown>): Record<string, string> {
+  const tags: Record<string, string> = {}
+  for (const [key, value] of Object.entries(props)) {
+    if (CANDIDATE_TAG_SKIP_KEYS.has(key) || value == null) continue
+    const text = String(value).trim()
+    if (text.length > 0) tags[key] = text
+  }
+  return tags
+}
+
 function strongestSignalIndex(signals: readonly CandidateSignalId[]): number {
   let best = SIGNAL_ORDER.length
   for (const signal of signals) best = Math.min(best, SIGNAL_ORDER.indexOf(signal))
@@ -337,6 +351,7 @@ export function matchProtectedAreaCandidates(input: {
         protectionTitle: trimmedOrNull(candidate.props.protection_title),
         protectClass: trimmedOrNull(candidate.props.protect_class),
         suggestedTags: buildSuggestedTags(candidate, row, categoryId),
+        tags: candidateTags(candidate.props),
       })),
     )
   }

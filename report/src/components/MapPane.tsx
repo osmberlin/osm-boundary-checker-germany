@@ -140,6 +140,7 @@ export default function MapPane({
   } | null>(null)
 
   const [isStripePatternReady, setIsStripePatternReady] = useState(false)
+  const [cursor, setCursor] = useState('grab')
   const onFeatureClick = interaction?.onFeatureClick
   const officialOnlyInteractiveFillId = `${SOURCE_ID}-overlay-official-only-fill`
   const interactiveLayerIds =
@@ -219,6 +220,7 @@ export default function MapPane({
   function onMapMouseMove(e: { target: maplibregl.Map; features?: GeoJSON.Feature[] }) {
     const map = e.target
     const fs = e.features
+    setCursor(fs?.length ? 'pointer' : 'grab')
     if (!fs?.length) {
       clearHoveredFeature(map)
       return
@@ -244,6 +246,8 @@ export default function MapPane({
   }
 
   function onMapMouseLeave(e: { target: maplibregl.Map }) {
+    // Reset explicitly, otherwise the cursor can stick at 'pointer'.
+    setCursor('grab')
     clearHoveredFeature(e.target)
   }
 
@@ -253,11 +257,8 @@ export default function MapPane({
       id={mapId}
       mapLib={maplibregl}
       initialViewState={initialViewState}
-      style={{
-        width: '100%',
-        height: '100%',
-        cursor: onFeatureClick ? 'pointer' : undefined,
-      }}
+      style={{ width: '100%', height: '100%' }}
+      cursor={cursor}
       mapStyle={COMPARISON_BASEMAP_STYLE}
       maxBounds={maxBounds}
       minZoom={mapMinZoom}

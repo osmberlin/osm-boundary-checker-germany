@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { sourceKindSchema } from '../../../scripts/shared/sourceKind.ts'
 
 export const geoDataSourceSchema = z.object({
   name: z.string().min(1),
@@ -17,6 +18,8 @@ export const areaHomeSummarySchema = z.object({
   staleOfficialKey: z.number().optional(),
   osmMatchProperties: z.array(z.string().min(1)).min(1).optional(),
   osmAdminLevels: z.array(z.string().min(1)).optional(),
+  /** Wording of the official side on the home card; absent means `official`. */
+  sourceKind: sourceKindSchema.optional(),
 })
 export type AreaHomeSummary = z.infer<typeof areaHomeSummarySchema>
 export type AreaSummary = AreaHomeSummary

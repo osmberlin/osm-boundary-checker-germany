@@ -4,12 +4,16 @@ import type { OsmMatchCriteriaSummary } from '../../../scripts/shared/comparison
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import { areasIndex } from '../data/areasIndex'
 import { de } from '../i18n/de'
+import { SourceTerm } from '../i18n/sourceVocabulary'
 import { EM_DASH } from '../lib/formatDe'
 import {
   formatFreshnessDisplayDe,
   formatIsoTimestampToDateOnlyDe,
 } from '../lib/formatSourceDownloadedAt'
-import { germanKeyExplorerLinkValueOrNull } from '../lib/germanKeyExplorer'
+import {
+  germanKeyExplorerLinkValueOrNull,
+  isSchluesselExplorerPreset,
+} from '../lib/germanKeyExplorer'
 import { overpassBoundaryValues } from '../lib/overpassBbox'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
 import type { ComparisonFilterConfigSummary, ComparisonForReport, ReportRow } from '../types/report'
@@ -302,7 +306,11 @@ function compareProvenanceDlRows(
   const p = de.provenance
   const mappingItems = compareMappingItems(data, filter)
   const { osmItems, officialItems } = compareFilterItems(data, filter)
-  const explorerKey = row == null ? null : germanKeyExplorerLinkValueOrNull(row.canonicalMatchKey)
+  // Only German Schlüssel (ARS/AGS) can be checked in the Schlüssel-Explorer, not PLZ or WDPA ids.
+  const explorerKey =
+    row == null || !isSchluesselExplorerPreset(data.idNormalizationPreset)
+      ? null
+      : germanKeyExplorerLinkValueOrNull(row.canonicalMatchKey)
   const compareDataItems =
     row == null
       ? []
@@ -322,7 +330,7 @@ function compareProvenanceDlRows(
               row.category === 'unmatched_osm'
                 ? p.compareDataMissing
                 : row.canonicalMatchKey || EM_DASH,
-            label: p.compareDataOfficialLabel,
+            label: <SourceTerm kind={data.sourceKind} term="dataHeading" />,
             showExplorerLink: row.category !== 'unmatched_osm' && explorerKey != null,
           },
         ]

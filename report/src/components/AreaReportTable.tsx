@@ -9,9 +9,10 @@ import {
   useRef,
   useState,
 } from 'react'
+import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { isStaleKeyRow } from '../hooks/useAreaReportStaleKeysFilter'
 import type { AreaTableSortKey } from '../hooks/useAreaReportTableSort'
-import { categoryLabelDe, de } from '../i18n/de'
+import { de } from '../i18n/de'
 import {
   EM_DASH,
   formatDeIou,
@@ -27,6 +28,7 @@ import {
   IouInfoButton,
   IssueIndicatorInfoButton,
 } from './MetricInfoModal'
+import { ReportCategoryLabel } from './ReportCategoryLabel'
 import { ReportCategoryPill } from './reportCategoryStyles'
 
 /** Typical height of a one-line row; rows are measured after they render. */
@@ -41,6 +43,7 @@ export function AreaReportTable({
   rows,
   areaKey,
   metricsCrs,
+  sourceKind,
   sortBy,
   sortDir,
   onSort,
@@ -48,6 +51,7 @@ export function AreaReportTable({
   rows: AreaReportRow[]
   areaKey: string
   metricsCrs: string
+  sourceKind?: SourceKind | undefined
   sortBy: AreaTableSortKey
   sortDir: 'asc' | 'desc'
   onSort: (column: AreaTableSortKey) => void
@@ -233,7 +237,7 @@ export function AreaReportTable({
                 <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
                 <td className="px-3 py-2">
                   <ReportCategoryPill category={row.category}>
-                    {categoryLabelDe(row.category)}
+                    <ReportCategoryLabel category={row.category} sourceKind={sourceKind} />
                   </ReportCategoryPill>
                   {isStaleKeyRow(row) ? (
                     <span className="mt-1 block text-xs font-medium text-amber-300">

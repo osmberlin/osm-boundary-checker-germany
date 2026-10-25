@@ -1,4 +1,6 @@
-import { categoryLabelDe, de, issueLevelLabelDe } from '../../i18n/de'
+import type { SourceKind } from '../../../../scripts/shared/sourceKind.ts'
+import { de, issueLevelLabelDe } from '../../i18n/de'
+import { SourceTerm } from '../../i18n/sourceVocabulary'
 import { isOlderThanDays } from '../../lib/dataAge'
 import { EM_DASH } from '../../lib/formatDe'
 import { officialAreaSummaryFreshness } from '../../lib/officialAreaSummaryFreshness'
@@ -8,6 +10,7 @@ import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { KpiRow } from '../FeatureStatBlocks'
 import { IssueIndicatorInfoButton } from '../MetricInfoModal'
 import { OfficialDatasetAgeInfoButton } from '../OfficialDatasetAgeInfoModal'
+import { ReportCategoryLabel } from '../ReportCategoryLabel'
 import { SummaryStatColumn } from '../SummaryStatColumn'
 
 const summaryKpiRowClassName =
@@ -55,7 +58,11 @@ export function FeatureDetailStatsSummarySection({
             }}
           />
         ) : isNonMatchedCategory(row.category) ? (
-          <NoMatchCategoryStatColumn label={s.unmatchedCompareLabel} category={row.category} />
+          <NoMatchCategoryStatColumn
+            label={s.unmatchedCompareLabel}
+            category={row.category}
+            sourceKind={data.sourceKind}
+          />
         ) : null}
         <SummaryStatColumn
           heading={de.areaReport.freshnessHeadingReport}
@@ -64,7 +71,7 @@ export function FeatureDetailStatsSummarySection({
           isOld={reportIsOld}
         />
         <SummaryStatColumn
-          heading={de.areaReport.freshnessHeadingOfficial}
+          heading={<SourceTerm kind={data.sourceKind} term="dataHeading" />}
           relativeLine={officialFresh.relativeLine ?? EM_DASH}
           absoluteLine={officialFresh.pairedAbsoluteLine}
           isOld={officialIsOld}
@@ -119,16 +126,17 @@ type IssueReasonCode = Parameters<typeof issueReasonLabelDe>[0]
 function NoMatchCategoryStatColumn({
   label,
   category,
+  sourceKind,
 }: {
   label: string
   category: 'official_only' | 'unmatched_osm'
+  sourceKind: SourceKind | undefined
 }) {
-  const primaryText = categoryLabelDe(category)
   return (
     <div className="flex min-w-0 flex-col gap-y-1">
       <dt className="text-sm font-medium text-slate-400">{label}</dt>
       <dd className="m-0 text-2xl font-semibold tracking-tight text-pretty text-rose-300 tabular-nums sm:text-3xl">
-        {primaryText}
+        <ReportCategoryLabel category={category} sourceKind={sourceKind} />
       </dd>
     </div>
   )

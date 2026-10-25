@@ -1,4 +1,6 @@
+import type { SourceKind } from '../../../../scripts/shared/sourceKind.ts'
 import { de } from '../../i18n/de'
+import { SourceTerm } from '../../i18n/sourceVocabulary'
 import { formatDeSquareKilometersFromM2 } from '../../lib/formatDe'
 import type { ReportRow } from '../../types/report'
 import { KpiSectionRow, KpiToggleCell } from '../FeatureStatBlocks'
@@ -12,9 +14,15 @@ type Props = {
   layerIdPrefix: string
   metrics: ReportRow['metrics']
   mapLayers: MapLayerControls
+  sourceKind: SourceKind | undefined
 }
 
-export function FeatureDetailMapLayerKpiSection({ layerIdPrefix, metrics, mapLayers }: Props) {
+export function FeatureDetailMapLayerKpiSection({
+  layerIdPrefix,
+  metrics,
+  mapLayers,
+  sourceKind,
+}: Props) {
   if (metrics == null) return null
 
   const featureStats = de.feature.stats
@@ -32,7 +40,7 @@ export function FeatureDetailMapLayerKpiSection({ layerIdPrefix, metrics, mapLay
         inputId={`${layerIdPrefix}-official`}
         checked={mapLayers.showOfficial}
         onChange={mapLayers.setShowOfficial}
-        label={featureStats.areaOfficial}
+        label={<SourceTerm kind={sourceKind} term="areaLabel" />}
         value={formatDeSquareKilometersFromM2(metrics.officialAreaM2)}
         swatch={
           <LegendRectSwatch

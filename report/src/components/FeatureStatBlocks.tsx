@@ -148,7 +148,7 @@ export function KpiToggleCell({
   checked: boolean
   onChange: (next: boolean) => void
   swatch: ReactNode
-  label: string
+  label: ReactNode
   value: ReactNode
   disabled?: boolean
   /** Optional trailing content after the label (e.g. map zoom hint). */

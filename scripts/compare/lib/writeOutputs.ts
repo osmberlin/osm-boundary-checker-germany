@@ -29,6 +29,7 @@ import {
   officialForEditGeojsonBasename,
 } from '../../shared/officialForEditGeojson.ts'
 import type { OgcWfsInspectSource } from '../../shared/ogcInspectSources.ts'
+import type { SourceKind } from '../../shared/sourceKind.ts'
 import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/sourceMetadata.ts'
 import type {
   CompareInstrumentation,
@@ -398,6 +399,7 @@ export function buildStaticPayloadBase(
   ogcInspectSources: OgcWfsInspectSource[],
   compareRulesSummary: CompareRulesSummary | null,
   officialLicenses: OfficialLicenseOutputs | null = null,
+  sourceKind: SourceKind = 'official',
 ): Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> {
   const out: Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> = {
     area: areaFolder,
@@ -406,6 +408,7 @@ export function buildStaticPayloadBase(
     generatedAt,
     metricsCrs,
     overpassBoundaryTag,
+    ...(sourceKind !== 'official' ? { sourceKind } : {}),
     hasPmtiles,
     hasUnmatchedPmtiles,
     tippecanoeLayer: TIPPECANOE_LAYER,
@@ -575,6 +578,7 @@ export function writeOutputs(
   officialLicenses: OfficialLicenseOutputs | null = null,
   /** DtP: properties dropped from table rows (shards keep all); `null` keeps everything. */
   tableRowSlimming: TableRowSlimming | null = null,
+  sourceKind: SourceKind = 'official',
 ): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
   const buildDir = join(outDir, BUILD_DIR)
@@ -773,6 +777,7 @@ export function writeOutputs(
     ogcInspectSources,
     compareRulesSummary,
     officialLicenses,
+    sourceKind,
   )
   const payloadRows = rows.map((row) =>
     comparisonRowToPayload(

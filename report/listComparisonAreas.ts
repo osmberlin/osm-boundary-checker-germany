@@ -253,6 +253,9 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
         officialOnly,
         unmatchedOsm: unmatched,
         ...(staleOfficialKey > 0 ? { staleOfficialKey } : {}),
+        ...(parsed.sourceKind != null && parsed.sourceKind !== 'official'
+          ? { sourceKind: parsed.sourceKind }
+          : {}),
         reviews,
         issues,
         ...(fromConfig.osmMatchProperties

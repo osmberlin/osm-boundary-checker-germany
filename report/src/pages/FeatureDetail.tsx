@@ -115,7 +115,12 @@ function FeatureDetailWithMapContext({
 
         <AttributeHintsSection row={row} hints={data.attributeHints} />
 
-        <UpdateMapInstructions areaId={areaKey} row={row} sourceMetadata={data.sourceMetadata} />
+        <UpdateMapInstructions
+          areaId={areaKey}
+          row={row}
+          sourceMetadata={data.sourceMetadata}
+          sourceKind={data.sourceKind}
+        />
 
         {(() => {
           if (!data.filterConfigSummary.osmMatchProperties?.includes('de:regionalschluessel')) {
@@ -144,7 +149,7 @@ function FeatureDetailWithMapContext({
 
         <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
 
-        <FeatureDatasetProperties row={row} data={data} />
+        <FeatureDatasetProperties row={row} data={data} candidates={data.candidates} />
 
         <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
 
@@ -179,7 +184,10 @@ function FeatureDetailWithMapContext({
           />
         ) : null}
 
-        <ReportLicenseCompatibilitySection data={data} row={row} />
+        {/* OSM-only rows have no official geometry, so there is no licence to show. */}
+        {row.category !== 'unmatched_osm' ? (
+          <ReportLicenseCompatibilitySection data={data} row={row} />
+        ) : null}
       </div>
     </div>
   )
