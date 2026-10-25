@@ -55,9 +55,42 @@ export function computeProtectedAreaAttributeHints(input: {
     }
     hints.push({
       id: 'type_tags',
+      target: 'osm',
       expected,
       actual: presentTypeTags(osm),
       suggestedTags,
+    })
+  }
+
+  // Only identity-matched rows can differ here: a key match means equal `wdpa` and `ref:WDPA`.
+  const officialWdpa = trimmed(official.wdpa)
+  const osmWdpa = trimmed(osm['ref:WDPA'])
+  const osmWdpaValues = osmWdpa
+    .split(';')
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+  if (officialWdpa.length === 0 && osmWdpaValues.length > 0) {
+    // The reference data lacks what OSM already has: a note for the reference data, not for OSM.
+    hints.push({
+      id: 'wdpa_missing_in_dtp',
+      target: 'reference',
+      expected: [],
+      actual: [`ref:WDPA=${osmWdpa}`],
+    })
+  } else if (officialWdpa.length > 0 && osmWdpaValues.length === 0) {
+    hints.push({
+      id: 'wdpa_missing_in_osm',
+      target: 'osm',
+      expected: [`ref:WDPA=${officialWdpa}`],
+      actual: [],
+      suggestedTags: { 'ref:WDPA': officialWdpa },
+    })
+  } else if (officialWdpa.length > 0 && !osmWdpaValues.includes(officialWdpa)) {
+    hints.push({
+      id: 'wdpa_differs',
+      target: 'osm',
+      expected: [`ref:WDPA=${officialWdpa}`],
+      actual: [`ref:WDPA=${osmWdpa}`],
     })
   }
 
@@ -71,6 +104,7 @@ export function computeProtectedAreaAttributeHints(input: {
     if (osmValues.length === 0) {
       hints.push({
         id: 'wikidata_missing',
+        target: 'osm',
         expected: [`wikidata=${officialWikidata}`],
         actual: [],
         suggestedTags: { wikidata: officialWikidata },
@@ -78,6 +112,7 @@ export function computeProtectedAreaAttributeHints(input: {
     } else if (!osmValues.includes(officialWikidata)) {
       hints.push({
         id: 'wikidata_differs',
+        target: 'osm',
         expected: [`wikidata=${officialWikidata}`],
         actual: [`wikidata=${osmWikidata}`],
       })
@@ -87,7 +122,7 @@ export function computeProtectedAreaAttributeHints(input: {
   const dtpRef = osmObjectRef(official.dtp_osm_ref)
   const osmRef = osmObjectRefFromProps(osm)
   if (dtpRef && osmRef && dtpRef !== osmRef) {
-    hints.push({ id: 'osm_ref_differs', expected: [dtpRef], actual: [osmRef] })
+    hints.push({ id: 'osm_ref_differs', target: 'osm', expected: [dtpRef], actual: [osmRef] })
   }
 
   const n2kCode = normalizeNatura2000Code(official.natura2000_code)
@@ -100,6 +135,7 @@ export function computeProtectedAreaAttributeHints(input: {
       .map(([key, value]) => `${key}=${value}`)
     hints.push({
       id: 'natura2000_missing',
+      target: 'osm',
       expected: [`${rule.natura2000RefKey}=${refDe}`],
       actual,
       suggestedTags: { [rule.natura2000RefKey]: refDe },

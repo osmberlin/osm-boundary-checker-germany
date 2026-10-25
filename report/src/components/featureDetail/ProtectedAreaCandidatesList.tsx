@@ -83,6 +83,20 @@ function ProtectedAreaCandidateRow({ candidate }: { candidate: CandidateMatch })
               </span>
             ))}
           </code>
+          {suggested.some(([key]) => key === 'dtp_id') ? (
+            <p className="max-w-3xl text-xs text-slate-400">
+              {de.feature.protectedCandidatesDtpIdNote.before}
+              <a
+                href={de.feature.protectedCandidatesDtpIdNote.href}
+                className={LINK_CLASS}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {de.feature.protectedCandidatesDtpIdNote.linkText}
+              </a>
+              {de.feature.protectedCandidatesDtpIdNote.after}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { DTP_KEYLESS_MATCH_KEY_PREFIX } from '../../../../scripts/shared/dtpOfficial.ts'
 import { areasIndex } from '../../data/areasIndex'
 import { de } from '../../i18n/de'
 import {
@@ -81,10 +82,21 @@ export function ExpectedOsmTagsSection({
   const summary = areasIndex.summaries.find((s) => s.area === areaKey)
   const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
   const adminLevels = summary?.osmAdminLevels ?? data.filterConfigSummary.adminLevels
+  // DtP areas without a WDPA id have no ref:WDPA to expect; the tag of the osm_tag rule links them.
+  const identityTags = (data.matchRules ?? []).flatMap((rule) =>
+    rule.kind === 'osm_tag' ? [rule.osmTag] : [],
+  )
+  const keylessDtpId = row.canonicalMatchKey.startsWith(DTP_KEYLESS_MATCH_KEY_PREFIX)
+    ? row.canonicalMatchKey.slice(DTP_KEYLESS_MATCH_KEY_PREFIX.length)
+    : null
   const matchProperties =
-    data.filterConfigSummary.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
-    summary?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
-    []
+    keylessDtpId && identityTags.length > 0
+      ? identityTags
+      : (data.filterConfigSummary.osmMatchProperties
+          ?.map((x) => x.trim())
+          .filter((x) => x.length > 0) ??
+        summary?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
+        [])
   const showKeyExplorer = matchProperties.some((mp) => isGermanKeyExplorerDisplayKey(mp))
 
   return (
@@ -121,7 +133,7 @@ export function ExpectedOsmTagsSection({
                 boundaryValue={boundaryValue}
                 adminLevels={adminLevels}
                 matchProperties={matchProperties}
-                matchValue={row.canonicalMatchKey}
+                matchValue={keylessDtpId ?? row.canonicalMatchKey}
               />
             </ProvenanceGridRow>
           </dl>

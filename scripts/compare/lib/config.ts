@@ -2,6 +2,11 @@ import { join } from 'node:path'
 import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { OFFICIAL_SOURCE_RELATIVE_PATH } from '../../shared/datasetPaths.ts'
 import { GERMANY_OSM_CACHE_DIR } from '../../shared/germanyOsmPbf.ts'
+import {
+  type MatchRule,
+  resolveMatchRules,
+  resolveOfficialMatchProperty,
+} from '../../shared/matchRules.ts'
 import { resolveOfficialProfile } from '../../shared/officialProfiles.ts'
 import { resolveOsmProfile, type OsmProfileId } from '../../shared/osmProfiles.ts'
 import {
@@ -36,12 +41,6 @@ export type OsmConfig = {
   profileId: OsmProfileId
   /** Property on OSM features used as matching key (for example `de:regionalschluessel`, `postal_code`). */
   matchProperty: string
-  /**
-   * Optional alternate matching criteria.
-   * - `property`: match on a property value (default behavior).
-   * - `relation_id`: match only selected relation IDs using `@id` (for example `relation/51477`).
-   */
-  matchCriteria?: { kind: 'property' } | { kind: 'relation_id'; relationIds: string[] }
   /** Optional OSM admin_level values to include (for example ["10"]). */
   adminLevels?: string[]
   /** Optional OSM relation IDs (numeric strings) to exclude from compare. */
@@ -94,6 +93,8 @@ export type BoundaryConfig = {
   compare: CompareConfig
   idNormalization: { preset: IdNormalizationPreset }
   metricsCrs: string
+  /** Ordered rules that pair an official row with its OSM object (`compare.matchRules`, or derived). */
+  matchRules: MatchRule[]
 }
 
 function toCompareConfig(compare: DatasetConfig['compare']): CompareConfig {
@@ -113,17 +114,6 @@ function toCompareConfig(compare: DatasetConfig['compare']): CompareConfig {
 function parseOsmConfig(areaLabel: string, config: DatasetConfig): OsmConfig {
   const profile = resolveOsmProfile(config.osmProfile)
   const osmConfig = config.osm
-  const matchCriteriaRaw = osmConfig?.matchCriteria
-  let matchCriteria: OsmConfig['matchCriteria'] | undefined
-  if (matchCriteriaRaw !== undefined) {
-    if (matchCriteriaRaw.kind === 'property') {
-      matchCriteria = { kind: 'property' }
-    } else if (matchCriteriaRaw.kind === 'relation_id') {
-      matchCriteria = { kind: 'relation_id', relationIds: matchCriteriaRaw.relationIds }
-    } else {
-      throw new Error(`${areaLabel}: osm.matchCriteria.kind must be "property" or "relation_id"`)
-    }
-  }
   const ignoreRelationIds = parseNumericIdStringArray(
     areaLabel,
     osmConfig?.ignoreRelationIds,
@@ -147,7 +137,6 @@ function parseOsmConfig(areaLabel: string, config: DatasetConfig): OsmConfig {
     profileId: config.osmProfile,
     matchProperty: profile.matchProperty,
     ...(protectedAreaCategoryIds ? { protectedAreaCategoryIds } : {}),
-    ...(matchCriteria ? { matchCriteria } : {}),
     ...(adminLevels ? { adminLevels } : {}),
     ...(ignoreRelationIds ? { ignoreRelationIds } : {}),
     sharedFgbBasename: profile.sharedFgbBasename,
@@ -155,7 +144,12 @@ function parseOsmConfig(areaLabel: string, config: DatasetConfig): OsmConfig {
 }
 
 export function loadBoundaryConfig(config: DatasetConfig, areaLabel = 'area'): BoundaryConfig {
-  const matchProperty = config.compare.officialMatchProperty
+  const matchProperty = resolveOfficialMatchProperty(config)
+  if (!matchProperty) {
+    throw new Error(
+      `${areaLabel}: compare.officialMatchProperty or a compare.matchRules key rule is required`,
+    )
+  }
   const directOfficial = config.officialMode === 'direct' ? config.official : null
 
   const keyTransposition = parseOfficialKeyTransposition(
@@ -192,6 +186,7 @@ export function loadBoundaryConfig(config: DatasetConfig, areaLabel = 'area'): B
     compare,
     idNormalization: { preset: config.idNormalization.preset },
     metricsCrs: config.metricsCrs,
+    matchRules: resolveMatchRules(config),
   }
 }
 

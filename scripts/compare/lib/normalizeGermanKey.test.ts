@@ -111,4 +111,10 @@ describe('wdpa preset', () => {
     expect(normalizeOfficialValue('555555;666666', 'wdpa')).toBe('')
     expect(normalizeOfficialValue('', 'wdpa')).toBe('')
   })
+
+  test('official side accepts the dtp-<uuid> key of areas without a WDPA id, OSM side never does', () => {
+    expect(normalizeOfficialValue('dtp-ABCD-1234', 'wdpa')).toBe('dtp-abcd-1234')
+    expect(normalizeOfficialValue('dtp-', 'wdpa')).toBe('')
+    expect(normalizeOsmValue('ref:WDPA', 'dtp-abcd-1234', 'wdpa').canonicalMatchKey).toBe('')
+  })
 })

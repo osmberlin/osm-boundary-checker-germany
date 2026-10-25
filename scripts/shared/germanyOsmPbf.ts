@@ -32,8 +32,8 @@ export const GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME = 'germany-postal-code-cand
 /** Intermediate PBF after `osmium tags-filter` for protected areas (separate from the admin one). */
 export const GERMANY_OSM_PROTECTED_AREAS_FILTERED_BASENAME = 'germany-protected-areas.osm.pbf'
 /**
- * Shared FlatGeobuf for protected-area multipolygons with `ref:WDPA` set (keyed by `ref:WDPA`).
- * Feeds the `protected_area_wdpa` osmProfile.
+ * Shared FlatGeobuf for all protected-area multipolygons (the key join uses those with a valid `ref:WDPA`;
+ * the others are reachable by OSM id for the identity fallback). Feeds the `protected_area_wdpa` osmProfile.
  */
 export const GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME = 'germany-protected-areas-wdpa.fgb'
 /**

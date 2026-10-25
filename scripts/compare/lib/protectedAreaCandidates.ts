@@ -19,6 +19,7 @@ import {
   shrinkOfficialPolygon,
   trimmedOrNull,
 } from './matchCandidates.ts'
+import { normalizeOsmObjectRef } from './runMatchRules.ts'
 
 /**
  * Candidates for `official_only` DtP protected-area rows (goal: suggest `ref:WDPA` in OSM).
@@ -154,13 +155,6 @@ function pushMulti<K, V>(map: Map<K, V[]>, key: K, value: V): void {
   else map.set(key, [value])
 }
 
-/** `way/123` / `relation/123` / `https://www.openstreetmap.org/relation/123` → `relation/123`. */
-function normalizeOsmRef(raw: unknown): string | null {
-  if (raw == null) return null
-  const m = /(way|relation)\/(\d+)/i.exec(String(raw))
-  return m ? `${m[1]!.toLowerCase()}/${m[2]}` : null
-}
-
 function toIndexed(feature: Feature<Point>): IndexedCandidate | null {
   const props = (feature.properties ?? {}) as Record<string, unknown>
   const decoded = osmTypeAndIdFromCandidateProps(props)
@@ -185,10 +179,15 @@ function buildSuggestedTags(
 ): Record<string, string> {
   const official = row.officialProperties ?? {}
   const suggested: Record<string, string> = {}
-  const wdpa = trimmedOrNull(official.wdpa) ?? row.canonicalMatchKey
-  if (wdpa.length > 0) suggested['ref:WDPA'] = wdpa
+  const wdpa = trimmedOrNull(official.wdpa)
+  if (wdpa) suggested['ref:WDPA'] = wdpa
+  // wikidata is the documented link, so it comes before the DtP id.
   const wikidata = trimmedOrNull(official.wikidata)
   if (wikidata && candidate.wikidata.length === 0) suggested.wikidata = wikidata
+  // Areas without a WDPA id (key `dtp-<uuid>`) have no ref:WDPA to suggest; `dtp_id` can still link
+  // them, but the tag is undocumented in OSM (the report says so next to it).
+  const dtpUuid = trimmedOrNull(official.dtp_uuid)
+  if (!wdpa && dtpUuid && candidate.dtpIds.length === 0) suggested.dtp_id = dtpUuid
   const rule = protectedAreaCategoryRule(categoryId)
   const n2kCode = normalizeNatura2000Code(official.natura2000_code)
   if (rule?.natura2000RefKey && n2kCode.length > 0 && candidate.natura2000.length === 0) {
@@ -235,6 +234,8 @@ export function matchProtectedAreaCandidates(input: {
   /** Canonical (`wdpa` preset) keys of all official rows. */
   officialKeySet: ReadonlySet<string>
   candidatePoints: ReadonlyArray<Feature<Point>>
+  /** OSM objects (`relation/1`) already paired with a row by the match rules. */
+  excludedOsmRefs?: ReadonlySet<string>
   options?: ProtectedAreaCandidateOptions
 }): Map<string, CandidateMatch[]> {
   const { rows, officialKeySet, candidatePoints } = input
@@ -268,6 +269,7 @@ export function matchProtectedAreaCandidates(input: {
     const signalsByRef = new Map<string, Set<CandidateSignalId>>()
     const found = new Map<string, IndexedCandidate>()
     const add = (candidate: IndexedCandidate, signal: CandidateSignalId) => {
+      if (input.excludedOsmRefs?.has(candidate.ref)) return
       // ref:WDPA that already belongs to another official row: that object is matched elsewhere.
       const wdpaValues = splitValues(candidate.props['ref:WDPA'])
       if (wdpaValues.some((v) => v !== row.canonicalMatchKey && officialKeySet.has(v))) return
@@ -280,7 +282,7 @@ export function matchProtectedAreaCandidates(input: {
     const dtpUuid = trimmedOrNull(official.dtp_uuid)?.toLowerCase()
     if (dtpUuid) for (const c of byDtpId.get(dtpUuid) ?? []) add(c, 'dtp_id')
 
-    const osmRef = normalizeOsmRef(official.dtp_osm_ref)
+    const osmRef = normalizeOsmObjectRef(official.dtp_osm_ref)
     if (osmRef) {
       const c = byRef.get(osmRef)
       if (c) add(c, 'dtp_osm_ref')

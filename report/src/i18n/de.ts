@@ -148,6 +148,28 @@ export const de = {
       `Definiert, welche Felder aus amtlichen Daten und OSM einander zugeordnet werden und zu welchem gemeinsamen Schlüssel normalisiert wird. Metriken beziehen sich auf Projektion ${crs}.`,
     compareMappingEmpty:
       'Keine expliziten Mapping-Regeln im Report eingebettet (Schlüsselfelder/Preset fehlen).',
+    /** One sentence under Vergleichsregeln when a dataset has several match rules. */
+    compareRulesOrderLead:
+      'Die Regeln laufen der Reihe nach: Jede Regel betrachtet nur Zeilen, die noch keinem OSM-Objekt zugeordnet sind, und ein OSM-Objekt wird höchstens einmal verwendet.',
+    /** Descriptions of the match rules; `data` is the dative plural of the source wording ("amtlichen Daten", "DtP-Daten"). */
+    matchRuleDescriptions: {
+      key: (officialProperty: string, osmTag: string, data: string) =>
+        `Das Feld \`${officialProperty}\` aus den ${data} wird mit dem Wert von \`${osmTag}\` auf dem OSM-Objekt verglichen. Beide Seiten werden vorher gleich normalisiert.`,
+      relation_id: (relationIds: string, officialProperty: string) =>
+        `Zuordnung nur für die OSM-Relation-ID(s) ${relationIds}; der Schlüssel kommt aus dem Feld \`${officialProperty}\`.`,
+      osm_reference: (officialProperty: string, data: string) =>
+        `Das Feld \`${officialProperty}\` aus den ${data} nennt ein OSM-Objekt (zum Beispiel relation/123); dieses Objekt wird zugeordnet.`,
+      osm_tag: (officialProperty: string, osmTag: string, data: string) =>
+        `Das OSM-Objekt, dessen Tag \`${osmTag}\` dem Wert von \`${officialProperty}\` aus den ${data} entspricht, wird zugeordnet.`,
+    },
+    /** Under Vergleichsdaten: the rule that paired this row; `rule` is the 1-based position. */
+    matchedByRule: (rule: number, how: string) => `Zugeordnet über Regel ${rule} (${how})`,
+    matchedByHow: {
+      key: 'Schlüssel',
+      relation_id: 'Relation-ID',
+      osm_reference: (data: string, ref: string) => `OSM-Verweis der ${data}: ${ref}`,
+      osm_tag: (osmTag: string, value: string) => `OSM-Tag ${osmTag} = ${value}`,
+    },
     /** Second paragraph under Vergleichsregeln when `osmMatchProperties` lists both German admin keys. */
     compareMappingDualGermanKeysLeadRsFirst: osmAdminGermanDualKeyLead.rsFirst,
     /** Single list item replacing two generic `compareOsmMatchTag` bullets for the German dual-key case. */
@@ -161,8 +183,6 @@ export const de = {
     compareFilterEmpty: 'Keine zusätzlichen Filterregeln im Report eingebettet.',
     compareNoCompareConfig:
       'Keine Abgleichskonfiguration im Report eingebettet (kein Filter-Summary oder Preset vorhanden).',
-    compareOsmMatchTag: (tag: string) =>
-      `Zuordnung erfolgt über den Wert von \`${tag}\` auf der OSM-Relation. Dieselbe Normalisierung wie auf der amtlichen Seite wird vor dem Vergleich angewendet.`,
     compareIdNormalization: (...args: [string, string]) => {
       void args
       return `Legt fest, wie Rohwerte aus amtlichem Schlüsselfeld und OSM-Tag vor dem paarweisen Abgleich normalisiert werden.`
@@ -173,10 +193,6 @@ export const de = {
       `Im OSM-Extrakt und für Live-Anbindungen gelten \`boundary\`-Werte: ${valuesCsv}.`,
     compareAdminLevels: (levelsCsv: string) =>
       `Erwartete \`admin_level\`-Werte auf der OSM-Seite für diesen Datensatz: ${levelsCsv}.`,
-    compareMatchCriteriaProperty:
-      'Zusätzliches OSM-Match über Tag-Vergleich (matchCriteria.kind=property gemäß Konfiguration).',
-    compareMatchCriteriaRelations: (ids: string) =>
-      `Zusätzliches OSM-Match nur für Relation-ID(s): ${ids}.`,
     /** Labels for idNormalization presets not covered by the Regional- und Gemeindeschlüssel-Explorer page. */
     idNormalizationPresetExtraLabels: {
       'plz-5': 'Postleitzahl',
@@ -191,8 +207,6 @@ export const de = {
       gml: 'GML',
     },
     filterDescriptions: {
-      officialMatchProperty: (value: string) =>
-        `Das Feld \`${value}\` aus den amtlichen Features wird als Match-Schlüssel mit OSM verwendet.`,
       bboxFilter: {
         none: 'Es wird kein Bounding-Box-Filter vor dem Matching angewendet.',
         official_bbox_overlap:
@@ -636,9 +650,16 @@ export const de = {
     candidatesEmptyValue: '–',
 
     protectedCandidatesLead:
-      'Diese OSM-Objekte könnten diese DtP-Fläche sein, tragen aber noch kein passendes ref:WDPA; die stärksten Kandidaten stehen oben.',
+      'Diese OSM-Objekte könnten diese DtP-Fläche sein, sind ihr aber noch nicht zugeordnet; die stärksten Kandidaten stehen oben.',
     protectedCandidatesDetectedVia: 'Erkannt über:',
     protectedCandidatesCta: 'Wenn dies dasselbe Gebiet ist, ergänze in OSM:',
+    /** Note next to a suggested `dtp_id` tag; `linkText` links to the tag's taginfo page. */
+    protectedCandidatesDtpIdNote: {
+      before: 'dtp_id ist in OSM in Gebrauch (ca. 425 Objekte), aber ',
+      linkText: 'nicht dokumentiert',
+      after: '; besser die Verknüpfung über wikidata nutzen.',
+      href: 'https://taginfo.openstreetmap.org/keys/dtp_id',
+    },
     protectedCandidatesColumnCurrent: 'Aktuell in OSM:',
     protectedCandidatesCurrentNone: 'keine Typ-Tags',
     protectedCandidatesSignal: {
@@ -666,11 +687,22 @@ export const de = {
     attributeHints: {
       aria: 'Hinweise zu Attributen des zugeordneten OSM-Objekts',
       title: 'Hinweise zu Attributen',
-      lead: 'Vorschläge für das zugeordnete OSM-Objekt, abgeleitet aus dem DtP-Datensatz. Sie ändern nichts an der Zuordnung oder an den Kennzahlen.',
+      osmGroupTitle: 'Vorschläge für OSM',
+      /** `data` is the dative plural of the source wording ("amtlichen Daten", "DtP-Daten"). */
+      osmGroupLead: (data: string) =>
+        `Vorschläge für das zugeordnete OSM-Objekt, abgeleitet aus den ${data}. Sie ändern nichts an der Zuordnung oder an den Kennzahlen.`,
+      referenceGroupTitle: 'Hinweise für die Referenzdaten',
+      referenceGroupLead: (data: string) =>
+        `Was OSM für dieses Gebiet schon führt und den ${data} fehlt. Zum Weitergeben an die Datenpflege, nicht zum Ändern in OSM.`,
       expected: 'Erwartet',
       actual: 'In OSM',
       actualNone: 'nicht gesetzt',
       suggestion: 'Vorschlag',
+      /** Reference hint: the reference data lack the WDPA id that OSM already has. */
+      referenceSentences: {
+        wdpa_missing_in_dtp: (data: string, wdpaId: string) =>
+          `Die ${data} sollten die WDPA-ID ${wdpaId} übernehmen; OSM führt sie für dieses Gebiet bereits.`,
+      },
       titles: {
         type_tags: (categoryName: string | null) =>
           categoryName
@@ -680,6 +712,8 @@ export const de = {
         wikidata_differs: 'wikidata weicht vom DtP-Wert ab',
         osm_ref_differs: 'DtP verweist auf ein anderes OSM-Objekt',
         natura2000_missing: 'Natura-2000-Code fehlt in OSM oder weicht ab',
+        wdpa_missing_in_osm: 'ref:WDPA fehlt in OSM, DtP kennt eine WDPA-ID',
+        wdpa_differs: 'ref:WDPA weicht von der WDPA-ID bei DtP ab',
       },
     },
 

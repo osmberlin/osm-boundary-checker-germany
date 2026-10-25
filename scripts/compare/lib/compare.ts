@@ -5,6 +5,7 @@ import type { BBox, Feature, Geometry, MultiPolygon, Polygon } from 'geojson'
 import type { AttributeHint } from '../../shared/comparisonPayload.ts'
 import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
+import type { MatchedBy } from '../../shared/matchRules.ts'
 import { matchesAnyCategoryScope } from '../../shared/protectedAreaCategories.ts'
 import {
   applyStaleOfficialKeyClassification,
@@ -45,6 +46,7 @@ import {
 import { projectGeometry } from './projectGeometry.ts'
 import { matchProtectedAreaCandidates } from './protectedAreaCandidates.ts'
 import { computeProtectedAreaAttributeHints } from './protectedAreaHints.ts'
+import { runMatchRules } from './runMatchRules.ts'
 import {
   calculateMetricsBatchWithRust,
   filterByOfficialCoverageWithRust,
@@ -62,6 +64,8 @@ export type CompareRow = {
   canonicalMatchKey: string
   nameLabel: string
   category: 'matched' | 'official_only'
+  /** Matched rows: the rule (position in `compare.matchRules`) that paired the row with its OSM object. */
+  matchedBy?: MatchedBy
   osmRelationId: string
   metrics: MetricResult | null
   officialGeometryWgs84: Geometry | null
@@ -330,10 +334,9 @@ export async function runCompare(
     )
   }
   const osmMatchProperty = config.osm.matchProperty
+  const relationIdRule = config.matchRules.find((rule) => rule.kind === 'relation_id')
   const relationIdCriteria =
-    config.osm.matchCriteria?.kind === 'relation_id'
-      ? new Set(config.osm.matchCriteria.relationIds)
-      : null
+    relationIdRule?.kind === 'relation_id' ? new Set(relationIdRule.relationIds) : null
   const preset = config.idNormalization.preset
   const isRsMode = !relationIdCriteria && osmMatchProperty === OSM_RS_TAG
   const metricsCrs = config.metricsCrs
@@ -520,6 +523,27 @@ export async function runCompare(
   }
 
   const officialKeys = Array.from(officialMap.keys()).sort()
+  // Ordered match rules: the key join and the rules that name an OSM object.
+  const ruleRun = runMatchRules({
+    rules: config.matchRules,
+    rows: officialKeys.map((key) => {
+      const o = officialMap.get(key)
+      return { key, properties: o?.properties ?? null, hasGeometry: Boolean(o?.geometry) }
+    }),
+    osmByKey: osmMap,
+    osmFeatures: osmFc.features,
+    osmKeyOf: (properties) => canonicalOsmMatchKey(properties, osmMatchKeyCtx),
+    officialKeySet,
+  })
+  const ruleMatchCounts = new Map<string, number>()
+  for (const { by } of ruleRun.matches.values()) {
+    const label = `${by.rule + 1}:${by.kind}`
+    ruleMatchCounts.set(label, (ruleMatchCounts.get(label) ?? 0) + 1)
+  }
+  console.log(
+    `[compare:${areaFolder}] match_rules ${config.matchRules.length} rules, matched by rule ${JSON.stringify(Object.fromEntries(ruleMatchCounts))}`,
+  )
+
   const rows: CompareRow[] = []
   const pendingMetrics: Array<{
     rowIndex: number
@@ -533,19 +557,26 @@ export async function runCompare(
   const projectProgressInterval = 1000
   for (const key of officialKeys) {
     const o = officialMap.get(key)
-    const s = osmMap.get(key)
     const officialGeom = o?.geometry ?? null
-    const osmGeom = s?.geometry ?? null
+    const ruleMatch = ruleRun.matches.get(key)
+    const osmGeom = ruleMatch?.osm.geometry ?? null
+    const osmProperties = ruleMatch?.osm.properties ?? null
+    const osmFeatureIds = ruleMatch?.osm.featureIds ?? []
+    const matchedBy = ruleMatch?.by
+    let osmName = osmNameByKey.get(key)
+    // A row paired through an object rule takes the name of the OSM object it got, not of its key.
+    if (ruleMatch && ruleMatch.osm.osmKey !== key) {
+      const hitName = ruleMatch.osm.properties?.name
+      osmName = typeof hitName === 'string' && hitName.trim() ? hitName.trim() : undefined
+    }
     const officialName = o?.properties?.name
     const nameLabel =
-      osmNameByKey.get(key) ??
+      osmName ??
       (typeof officialName === 'string' && officialName.trim() ? officialName.trim() : key)
 
     const category: CompareRow['category'] = officialGeom && osmGeom ? 'matched' : 'official_only'
 
-    const osmRelationId = osmGeom
-      ? pickOsmRelationId(s?.featureIds ?? [], s?.properties ?? null)
-      : ''
+    const osmRelationId = osmGeom ? pickOsmRelationId(osmFeatureIds, osmProperties) : ''
 
     let metrics: MetricResult | null = null
     if (category === 'matched' && officialGeom && osmGeom) {
@@ -562,12 +593,13 @@ export async function runCompare(
       canonicalMatchKey: key,
       nameLabel,
       category,
+      ...(matchedBy && category === 'matched' ? { matchedBy } : {}),
       osmRelationId,
       metrics,
       officialGeometryWgs84: officialGeom,
       osmGeometryWgs84: osmGeom,
       officialProperties: o?.properties ?? null,
-      osmProperties: s?.properties ?? null,
+      osmProperties,
     })
     if (rows.length % projectProgressInterval === 0 || rows.length === officialKeys.length) {
       instrumentation?.progress?.('project_rows', rows.length, officialKeys.length, {
@@ -629,7 +661,7 @@ export async function runCompare(
   const protectedAreaCategoryIds = config.osm.protectedAreaCategoryIds ?? null
   const tFilterUnmatchedAdminLevel = Date.now()
   for (const key of Array.from(osmMap.keys()).sort()) {
-    if (officialKeySet.has(key)) continue
+    if (officialKeySet.has(key) || ruleRun.consumedOsmKeys.has(key)) continue
     const s = osmMap.get(key)
     if (!s) continue
     const props = s.properties as Record<string, unknown> | null
@@ -748,6 +780,7 @@ export async function runCompare(
               })),
               officialKeySet,
               candidatePoints: eligible,
+              excludedOsmRefs: ruleRun.usedObjects,
               options: { shrinkFactor: config.compare.candidateShrinkFactor },
             })
           : matchCandidatesForOfficialOnly({

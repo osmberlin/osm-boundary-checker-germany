@@ -113,7 +113,7 @@ function FeatureDetailWithMapContext({
           overpassBoundaryTag={data.overpassBoundaryTag}
         />
 
-        <AttributeHintsSection row={row} hints={data.attributeHints} />
+        <AttributeHintsSection row={row} hints={data.attributeHints} sourceKind={data.sourceKind} />
 
         <UpdateMapInstructions
           areaId={areaKey}

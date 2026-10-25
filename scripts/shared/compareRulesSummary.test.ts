@@ -3,7 +3,7 @@ import { toCompareRulesSummary } from './compareRulesSummary.ts'
 import type { DatasetConfig } from './datasetConfig.ts'
 
 describe('toCompareRulesSummary', () => {
-  test('includes preset and relation_id criteria', () => {
+  test('derives a relation_id rule from osm.matchCriteria', () => {
     const cfg = {
       officialMode: 'direct' as const,
       displayName: 'Test',
@@ -24,11 +24,11 @@ describe('toCompareRulesSummary', () => {
     } satisfies DatasetConfig
     expect(toCompareRulesSummary(cfg)).toEqual({
       idNormalizationPreset: 'regional-12',
-      osmMatchCriteria: { kind: 'relation_id', relationIds: ['51477'] },
+      matchRules: [{ kind: 'relation_id', relationIds: ['51477'] }],
     })
   })
 
-  test('omits osmMatchCriteria when absent', () => {
+  test('derives one key rule when matchRules and matchCriteria are absent', () => {
     const cfg = {
       officialMode: 'direct' as const,
       displayName: 'Test',
@@ -46,6 +46,7 @@ describe('toCompareRulesSummary', () => {
     } satisfies DatasetConfig
     expect(toCompareRulesSummary(cfg)).toEqual({
       idNormalizationPreset: 'amtlicher-8',
+      matchRules: [{ kind: 'key', officialProperty: 'ARS', osmTag: 'de:regionalschluessel' }],
     })
   })
 })

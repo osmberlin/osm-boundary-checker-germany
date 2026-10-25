@@ -1,3 +1,4 @@
+import { DTP_KEYLESS_MATCH_KEY_PREFIX } from '../../shared/dtpOfficial.ts'
 import type { IdNormalizationPreset } from './config.ts'
 
 export type NormalizedGermanKey = {
@@ -136,8 +137,11 @@ export function normalizeOfficialValue(
     return normalizeTextKey(raw)
   }
   if (preset === 'wdpa') {
+    // Official side only: `dtp-<uuid>` (no ":" so file names and URLs stay plain) is the join key of DtP areas without a WDPA id (never on OSM).
     const trimmed = raw.trim()
-    return /^\d+$/.test(trimmed) ? trimmed : ''
+    if (/^\d+$/.test(trimmed)) return trimmed
+    const keyless = trimmed.toLowerCase()
+    return keyless.startsWith(DTP_KEYLESS_MATCH_KEY_PREFIX) && keyless.length > 4 ? keyless : ''
   }
   if (preset === 'regional-12' && digits.length > 0) {
     if (digits.length >= 12) return digits.slice(0, 12)

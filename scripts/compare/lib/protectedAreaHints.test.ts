@@ -44,4 +44,27 @@ describe('computeProtectedAreaAttributeHints', () => {
     expect(hints.map((h) => h.id)).toEqual(['wikidata_missing'])
     expect(hints[0]!.suggestedTags).toEqual({ wikidata: 'Q60' })
   })
+
+  test('ref:WDPA only on one side is reported, equal or contained values are not', () => {
+    const idsFor = (wdpa: string, osmWdpa: string) =>
+      computeProtectedAreaAttributeHints({
+        officialProperties: { category_id: 4, wdpa },
+        osmProperties: {
+          protection_title: 'Naturpark',
+          ...(osmWdpa ? { 'ref:WDPA': osmWdpa } : {}),
+        },
+      })
+    const missingInDtp = idsFor('', '555')
+    expect(missingInDtp.map((h) => h.id)).toEqual(['wdpa_missing_in_dtp'])
+    expect(missingInDtp[0]!.actual).toEqual(['ref:WDPA=555'])
+    // The reference data lacks the id: a note for the reference data, not a suggestion for OSM.
+    expect(missingInDtp[0]!.target).toBe('reference')
+    const missingInOsm = idsFor('555', '')
+    expect(missingInOsm.map((h) => h.id)).toEqual(['wdpa_missing_in_osm'])
+    expect(missingInOsm[0]!.suggestedTags).toEqual({ 'ref:WDPA': '555' })
+    expect(missingInOsm[0]!.target).toBe('osm')
+    expect(idsFor('555', '666').map((h) => h.id)).toEqual(['wdpa_differs'])
+    expect(idsFor('555', '555')).toEqual([])
+    expect(idsFor('555', '444; 555')).toEqual([])
+  })
 })

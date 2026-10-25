@@ -8,8 +8,6 @@
     "dtp": {
       // DtP category ids (.cache/dtp/protected-area-categories.json): 5 Landschaftsschutzgebiet.
       "categoryIds": [5],
-      // Only areas with a WDPA id; the dataset joins on ref:WDPA.
-      "requireWdpa": true,
     },
   },
   "idNormalization": {
@@ -18,7 +16,15 @@
   "metricsCrs": "EPSG:25832",
   "compare": {
     "minZoom": 5,
-    "officialMatchProperty": "wdpa",
+    // Rules run in order; each only handles rows the earlier ones left unmatched, and an OSM object is used once.
+    "matchRules": [
+      // 1. The WDPA id (DtP areas without one carry a dtp-<uuid> key and can only match by 2 or 3).
+      { "kind": "key", "officialProperty": "match_key", "osmTag": "ref:WDPA" },
+      // 2. The OSM object DtP itself names (dtp_osm_ref, e.g. relation/123).
+      { "kind": "osm_reference", "officialProperty": "dtp_osm_ref" },
+      // 3. The OSM object tagged dtp_id=<DtP uuid>.
+      { "kind": "osm_tag", "officialProperty": "dtp_uuid", "osmTag": "dtp_id" },
+    ],
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },

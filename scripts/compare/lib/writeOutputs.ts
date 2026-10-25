@@ -432,9 +432,7 @@ export function buildStaticPayloadBase(
   if (rowFlagDefinitions) out.rowFlags = rowFlagDefinitions
   if (compareRulesSummary != null) {
     out.idNormalizationPreset = compareRulesSummary.idNormalizationPreset
-    if (compareRulesSummary.osmMatchCriteria != null) {
-      out.osmMatchCriteria = compareRulesSummary.osmMatchCriteria
-    }
+    out.matchRules = compareRulesSummary.matchRules
   }
   return out
 }
@@ -454,6 +452,7 @@ export function comparisonRowToPayload(
     canonicalMatchKey: row.canonicalMatchKey,
     nameLabel: row.nameLabel,
     category: row.category,
+    ...(row.matchedBy ? { matchedBy: row.matchedBy } : {}),
     osmRelationId: row.osmRelationId,
     metrics: row.metrics,
     mapBbox: mapBboxForRow(row),
@@ -491,9 +490,19 @@ export function comparisonRowToTableRow(
   row: StaticReportRow,
   slimming: TableRowSlimming | null = null,
 ): StaticTableRow {
-  const { officialLicense: _officialLicense, officialProperties, osmProperties, ...rest } = row
+  const {
+    officialLicense: _officialLicense,
+    officialProperties,
+    osmProperties,
+    matchedBy,
+    ...rest
+  } = row
   return {
     ...rest,
+    // Rows paired by the key join are the norm; only the others are worth the table bytes.
+    ...(matchedBy && matchedBy.kind !== 'key' && matchedBy.kind !== 'relation_id'
+      ? { matchedBy }
+      : {}),
     officialProperties: slimming?.dropOfficialProperties ? null : officialProperties,
     osmProperties: slimming?.dropOsmProperties ? null : osmProperties,
   }

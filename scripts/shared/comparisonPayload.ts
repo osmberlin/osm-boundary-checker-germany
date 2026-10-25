@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { matchedBySchema, matchRuleSchema } from './matchRules.ts'
 import { ogcWfsInspectSourceSchema } from './ogcInspectSources.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
 import { rowFlagDefinitionSchema } from './rowFlags.ts'
@@ -91,6 +92,9 @@ export const ATTRIBUTE_HINT_IDS = [
   'wikidata_differs',
   'osm_ref_differs',
   'natura2000_missing',
+  'wdpa_missing_in_dtp',
+  'wdpa_missing_in_osm',
+  'wdpa_differs',
 ] as const
 
 /**
@@ -106,6 +110,12 @@ export const attributeHintSchema = z
     actual: z.array(z.string()),
     /** Tags to add or change, key → value. */
     suggestedTags: z.record(z.string(), z.string()).optional(),
+    /**
+     * Who should change something: `osm` (a tag suggestion for the OSM object) or `reference`
+     * (a note for the reference data, e.g. DtP, whose record lacks something OSM has).
+     * Hints written before this field existed are about OSM.
+     */
+    target: z.enum(['osm', 'reference']).default('osm'),
   })
   .strict()
 
@@ -113,6 +123,11 @@ const reportRowBaseShape = {
   canonicalMatchKey: z.string(),
   nameLabel: z.string(),
   category: z.enum(['matched', 'official_only']),
+  /**
+   * Matched rows: the rule (position in `compare.matchRules`, kind) that paired the row with its
+   * OSM object. The table keeps it only for rows not paired by the key join.
+   */
+  matchedBy: matchedBySchema.optional(),
   osmRelationId: z.string(),
   metrics: reportMetricsSchema.nullable(),
   mapBbox: bboxSchema.nullable(),
@@ -218,7 +233,9 @@ export const comparisonForReportSchema = z.object({
   filterConfigSummary: comparisonFilterConfigSummarySchema,
   /** From `idNormalization.preset` in area config; embedded once per file. */
   idNormalizationPreset: idNormalizationPresetSchema.optional(),
-  /** From optional `osm.matchCriteria` in area config. */
+  /** The ordered match rules of the dataset (`compare.matchRules`, or the one derived rule). */
+  matchRules: z.array(matchRuleSchema).optional(),
+  /** Written before `matchRules` existed (from `osm.matchCriteria`); the report still reads it. */
   osmMatchCriteria: osmMatchCriteriaSummarySchema.optional(),
   ogcInspectSources: z.array(ogcWfsInspectSourceSchema).optional(),
   /** From optional `rowFlags` in area config, with the number of flagged rows. */

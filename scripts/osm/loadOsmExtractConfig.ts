@@ -107,10 +107,9 @@ export function loadSharedAdminOsmExtractConfig(
     const usesSharedAdminFgb = boundary.osm.sharedFgbBasename === GERMANY_OSM_SHARED_FGB_BASENAME
     if (!usesSharedAdminFgb) continue
 
-    if (boundary.osm.matchCriteria?.kind !== 'relation_id') {
-      propertySet.add(boundary.osm.matchProperty)
-    } else {
-      addAll(relationIdSet, boundary.osm.matchCriteria.relationIds)
+    for (const rule of boundary.matchRules) {
+      if (rule.kind === 'relation_id') addAll(relationIdSet, rule.relationIds)
+      else if (rule.kind === 'key' || rule.kind === 'osm_tag') propertySet.add(rule.osmTag)
     }
 
     const override = parseAreaExtractOverride(area, rawDoc)

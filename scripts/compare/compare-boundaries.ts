@@ -15,6 +15,7 @@ import {
 import { sourceKindFromDatasetConfig, type DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
 import { loadLicenseCompatibilityTable } from '../shared/licenseCompatibility.ts'
+import { resolveOfficialMatchProperty } from '../shared/matchRules.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
 import { resolveOsmProfile } from '../shared/osmProfiles.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
@@ -77,7 +78,7 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
   const osmMatchProperties =
     configRaw.osmProfile === 'admin_rs' ? ['de:regionalschluessel'] : [osmProfile.matchProperty]
   return {
-    officialMatchProperty: configRaw.compare.officialMatchProperty,
+    officialMatchProperty: resolveOfficialMatchProperty(configRaw) ?? '',
     bboxFilter: configRaw.compare.bboxFilter,
     ...(configRaw.compare.bboxBufferDegrees !== undefined
       ? { bboxBufferDegrees: configRaw.compare.bboxBufferDegrees }

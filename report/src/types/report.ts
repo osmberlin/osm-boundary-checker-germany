@@ -4,6 +4,7 @@ import type {
   OfficialLicense,
   OsmMatchCriteriaSummary,
 } from '../../../scripts/shared/comparisonPayload.ts'
+import type { MatchedBy, MatchRule } from '../../../scripts/shared/matchRules.ts'
 import type { RowFlagDefinition } from '../../../scripts/shared/rowFlags.ts'
 import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import type {
@@ -110,6 +111,11 @@ export type ReportRow = {
   canonicalMatchKey: string
   nameLabel: string
   category: ReportCategory
+  /**
+   * Matched rows: the rule (position in `matchRules`) that paired the row with its OSM object.
+   * The feature shard has it for every matched row, the table only for rows not paired by key.
+   */
+  matchedBy?: MatchedBy
   osmRelationId: string
   metrics: ReportMetrics | null
   /** WGS84 bbox [west, south, east, north] for fitting the map; null if no geometry. */
@@ -191,7 +197,9 @@ export type ComparisonForReport = {
   filterConfigSummary: ComparisonFilterConfigSummary
   /** From `idNormalization.preset` in area config; one value per `comparison_table.json`. */
   idNormalizationPreset?: IdNormalizationPreset
-  /** From optional `osm.matchCriteria` in area config. */
+  /** The ordered match rules of the dataset; absent in tables written before the rules existed. */
+  matchRules?: MatchRule[]
+  /** Written before `matchRules` existed (from `osm.matchCriteria`). */
   osmMatchCriteria?: OsmMatchCriteriaSummary
   /** From optional `ogcInspectSources` in area config (compare embeds a copy). */
   ogcInspectSources?: OgcWfsInspectSource[]
@@ -265,6 +273,9 @@ export type AttributeHintId =
   | 'wikidata_differs'
   | 'osm_ref_differs'
   | 'natura2000_missing'
+  | 'wdpa_missing_in_dtp'
+  | 'wdpa_missing_in_osm'
+  | 'wdpa_differs'
 
 /** Tag suggestion for a matched protected-area row. Mirrors `attributeHintSchema`. */
 export type AttributeHint = {
@@ -274,6 +285,8 @@ export type AttributeHint = {
   /** Current OSM values for the same keys; empty = missing. */
   actual: string[]
   suggestedTags?: Record<string, string>
+  /** `osm`: a suggestion for the OSM object; `reference`: a note for the reference data (DtP). */
+  target: 'osm' | 'reference'
 }
 
 /** Slim per-feature shard at `output/features/<featureKey>.json`. */

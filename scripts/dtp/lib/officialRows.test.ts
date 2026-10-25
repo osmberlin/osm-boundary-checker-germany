@@ -92,13 +92,18 @@ describe('selectInventoryItems', () => {
     item('b', 1, [{ name: 'osm', id: 'relation/1' }]),
     item('c', 2, [{ name: 'wdpa', id: '2' }]),
   ]
-  test('filters by category and requireWdpa', () => {
-    expect(
-      selectInventoryItems(items, { categoryIds: [1], requireWdpa: true }).map((i) => i.uuid),
-    ).toEqual(['a'])
-    expect(
-      selectInventoryItems(items, { categoryIds: [1], requireWdpa: false }).map((i) => i.uuid),
-    ).toEqual(['a', 'b'])
+  test('filters by category and keeps areas without a WDPA id', () => {
+    expect(selectInventoryItems(items, { categoryIds: [1] }).map((i) => i.uuid)).toEqual(['a', 'b'])
+  })
+})
+
+describe('officialFeatureFromRecord match key', () => {
+  test('areas without a WDPA id get the dtp-<uuid> key and an empty wdpa', () => {
+    const keyless = item('ABCD-1234', 4, [{ name: 'osm', id: 'relation/5' }])
+    const feature = officialFeatureFromRecord(record(keyless), false, names)
+    expect(feature?.properties.match_key).toBe('dtp-abcd-1234')
+    expect(feature?.properties.wdpa).toBe('')
+    expect(feature?.properties.dtp_osm_ref).toBe('relation/5')
   })
 })
 
@@ -208,10 +213,11 @@ describe('buildOfficialFeatures', () => {
     const { features, stats } = buildOfficialFeatures(
       [a, b, c, d, e],
       records,
-      { categoryIds: [1], requireWdpa: true },
+      { categoryIds: [1] },
       names,
     )
     expect(features.map((f) => f.properties.dtp_uuid)).toEqual(['a', 'b'])
+    expect(features.map((f) => f.properties.match_key)).toEqual(['7', '7'])
     expect(features.map((f) => f.properties.dtp_managed)).toEqual([true, false])
     expect(features[0]?.properties.dtp_organizations).toBe('Landkreis Alpha')
     expect(stats).toMatchObject({

@@ -10,8 +10,6 @@ export const DTP_OFFICIAL_PROFILE_ID = 'dtp_protected_areas'
 export const dtpSelectionSchema = z
   .object({
     categoryIds: z.array(z.number().int().positive()).min(1),
-    /** Skip areas without `external_references` name=wdpa (the dataset joins on `wdpa`). */
-    requireWdpa: z.boolean().default(true),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -24,6 +22,18 @@ export const dtpSelectionSchema = z
     }
   })
 export type DtpSelection = z.infer<typeof dtpSelectionSchema>
+
+/**
+ * Join key (`match_key`) of an official DtP feature: the WDPA id, or `dtp-<uuid>` for areas without
+ * one. The `wdpa` id preset accepts both on the official side; OSM `ref:WDPA` never carries the
+ * second form, so keyless areas can only be paired through the OSM reference or tag rules of the dataset config.
+ */
+export const DTP_MATCH_KEY_PROPERTY = 'match_key'
+export const DTP_KEYLESS_MATCH_KEY_PREFIX = 'dtp-'
+
+export function dtpMatchKey(wdpa: string | null, uuid: string): string {
+  return wdpa ? wdpa : `${DTP_KEYLESS_MATCH_KEY_PREFIX}${uuid.toLowerCase()}`
+}
 
 /** Provider facts written to `source/metadata.json` `official` by `dtp/extract.ts`. */
 export const DTP_OFFICIAL_SOURCE = {

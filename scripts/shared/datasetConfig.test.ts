@@ -77,14 +77,14 @@ describe('parseDatasetConfig', () => {
     },
   }
 
-  test('parses DtP config branch and defaults requireWdpa', () => {
+  test('parses DtP config branch', () => {
     const parsed = parseDatasetConfig('area-dtp', {
       ...dtpBase,
       official: { dtp: { categoryIds: [1, 50] } },
     })
     expect(parsed.officialMode).toBe('dtp')
     if (parsed.officialMode !== 'dtp') throw new Error('Expected dtp config branch')
-    expect(parsed.official.dtp).toEqual({ categoryIds: [1, 50], requireWdpa: true })
+    expect(parsed.official.dtp).toEqual({ categoryIds: [1, 50] })
     expect(sourceKindFromDatasetConfig(parsed)).toBe('dtp')
   })
 

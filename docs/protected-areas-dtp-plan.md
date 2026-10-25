@@ -64,6 +64,8 @@ If the artifact is missing (expired, first run on a fork): fall back to a full h
 | `de-natura2000`         | 7 FFH-Gebiet, 8 Vogelschutzgebiet                 | ~5,220                                         |
 | `de-grossschutzgebiete` | 1 Nationalpark, 3 Biosphärenreservat, 4 Naturpark | ~40 (only 14 of 105 Naturparks have a WDPA id) |
 
+**Update (all reference data):** the datasets hold every DtP area of their categories, also those without a WDPA id (the "with WDPA" column above is the key-joinable part). Such areas get the join key `dtp-<uuid>` and are paired with OSM through the DtP `osm` reference or the OSM tag `dtp_id` (match rules 2 and 3, see `docs/processing-and-analysis.md`).
+
 Out of scope: Wald-Wild-Schongebiete, Wildschutzgebiete, Ruhezonen and other zones (~450, no WDPA id; possible later as a dataset keyed on the DtP OSM reference / OSM `dtp_id`).
 
 The reasoning below is the earlier discussion that led to this split.

@@ -153,4 +153,31 @@ describe('matchProtectedAreaCandidates', () => {
     })
     expect(capped.get('111')).toHaveLength(5)
   })
+
+  test('keyless rows suggest dtp_id instead of ref:WDPA; excluded OSM objects are skipped', () => {
+    const keyless = {
+      canonicalMatchKey: 'dtp-uuid-1',
+      officialGeometryWgs84: SQUARE,
+      officialProperties: {
+        wdpa: '',
+        dtp_uuid: 'uuid-1',
+        name: 'Hochwald',
+        category_id: 2,
+        wikidata: 'Q7',
+      },
+    }
+    const inside = point(10.05, 50.05, { osm_id: '-7', name: 'Hochwald', ...nsgTags })
+    const used = point(10.05, 50.06, { osm_id: '-8', name: 'Hochwald', ...nsgTags })
+    const out = matchProtectedAreaCandidates({
+      rows: [keyless],
+      officialKeySet: new Set(['dtp-uuid-1']),
+      candidatePoints: [inside, used],
+      excludedOsmRefs: new Set(['relation/8']),
+    })
+    const candidates = out.get('dtp-uuid-1')!
+    expect(candidates.map((c) => c.osmId)).toEqual(['7'])
+    expect(candidates[0]!.suggestedTags).toEqual({ dtp_id: 'uuid-1', wikidata: 'Q7' })
+    // wikidata is the documented link: it is suggested before the undocumented dtp_id.
+    expect(Object.keys(candidates[0]!.suggestedTags!)).toEqual(['wikidata', 'dtp_id'])
+  })
 })

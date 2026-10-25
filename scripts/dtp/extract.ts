@@ -195,7 +195,7 @@ function extractArea(
   mkdirSync(dirname(outFgb), { recursive: true })
   const tmp = join(dirname(outFgb), GEOJSONSEQ_TMP)
   console.log(
-    `${area}: categories [${selection.categoryIds.join(', ')}]${selection.requireWdpa ? ' with wdpa' : ''}: ` +
+    `${area}: categories [${selection.categoryIds.join(', ')}]: ` +
       `${stats.selectedInInventory} in inventory, ${stats.written} written, ` +
       `${stats.missingFromCache} not cached yet (skipped), ${stats.noGeometry} without geometry`,
   )

@@ -4,7 +4,7 @@
  */
 
 import type { DtpSelection } from '../../shared/dtpOfficial.ts'
-import { dtpAreaApiUrl } from '../../shared/dtpOfficial.ts'
+import { dtpAreaApiUrl, dtpMatchKey } from '../../shared/dtpOfficial.ts'
 import type { DtpCachedRecord, DtpExternalReference, DtpInventoryItem } from './schemas.ts'
 
 /** Natura 2000 site code, for example `DE5519304`. */
@@ -20,6 +20,9 @@ export type DtpOfficialNames = {
 }
 
 export type DtpOfficialProperties = {
+  /** Join key: `wdpa`, or `dtp-<uuid>` when the area has no WDPA id. */
+  match_key: string
+  /** Empty string when the area has no WDPA id. */
   wdpa: string
   dtp_uuid: string
   name: string | null
@@ -53,7 +56,7 @@ export type DtpOfficialFeature = {
 }
 
 export type DtpSelectionStats = {
-  /** Inventory areas that match the dataset selection (category, wdpa). */
+  /** Inventory areas that match the dataset selection (category). */
   selectedInInventory: number
   /** Selected areas without a cache record yet (harvest incomplete). */
   missingFromCache: number
@@ -102,17 +105,13 @@ export function organizationNamesText(
   return { text: names.size > 0 ? [...names].join('; ') : null, unknownIds }
 }
 
-/** Inventory areas selected by the dataset config (by category and, if required, `wdpa`). */
+/** Inventory areas selected by the dataset config (by category). */
 export function selectInventoryItems(
   items: DtpInventoryItem[],
   selection: DtpSelection,
 ): DtpInventoryItem[] {
   const categories = new Set(selection.categoryIds)
-  return items.filter((item) => {
-    if (!categories.has(item.category_id)) return false
-    if (selection.requireWdpa && wdpaFromReferences(item.external_references) === null) return false
-    return true
-  })
+  return items.filter((item) => categories.has(item.category_id))
 }
 
 /** One feature for a cached record; `managed` comes from the inventory item of the same uuid. */
@@ -131,9 +130,10 @@ export function officialFeatureFromRecord(
     detail.responsible_organization_ids,
     names.organizations,
   ).text
+  const wdpa = wdpaFromReferences(refs)
   const properties: DtpOfficialProperties = {
-    // Empty string when `requireWdpa` is off; compare drops rows without a key.
-    wdpa: wdpaFromReferences(refs) ?? '',
+    match_key: dtpMatchKey(wdpa, record.uuid),
+    wdpa: wdpa ?? '',
     dtp_uuid: record.uuid,
     name: detail.name,
     category_id: detail.category_id,

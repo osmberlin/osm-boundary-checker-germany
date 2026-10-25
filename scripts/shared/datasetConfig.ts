@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { officialHttpDownloadSchema } from './downloadOfficialConfig.ts'
 import { DTP_OFFICIAL_PROFILE_ID, DTP_OFFICIAL_SOURCE, dtpSelectionSchema } from './dtpOfficial.ts'
+import { matchRuleSchema, validateMatchRules } from './matchRules.ts'
 import { officialProfileIdSchema, resolveOfficialProfile } from './officialProfiles.ts'
 import { osmProfileIdSchema } from './osmProfiles.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
@@ -41,7 +42,18 @@ const officialDownloadSchema = officialHttpDownloadSchema
 
 const compareSchema = z
   .object({
-    officialMatchProperty: trimmedString,
+    /**
+     * Official property the rows are keyed by (and the `key` rule's official side). Required unless
+     * `matchRules` has a `key` rule, which then supplies it.
+     */
+    officialMatchProperty: trimmedString.optional(),
+    /**
+     * Ordered ways to find the OSM object of an official row (see `matchRules.ts`). Each rule only
+     * handles rows the earlier rules left unmatched; an OSM object is used for one row at most.
+     * Without it the config's one rule is derived from `officialMatchProperty`, the OSM profile and
+     * `osm.matchCriteria`.
+     */
+    matchRules: z.array(matchRuleSchema).min(1).optional(),
     bboxFilter: z.enum(['none', 'official_bbox_overlap']),
     bboxBufferDegrees: z.number().finite().nonnegative().optional(),
     osmScopeFilter: osmScopeFilterSchema,
@@ -223,6 +235,8 @@ export function parseDatasetConfig(area: string, rawConfig: unknown): DatasetCon
       .join('; ')
     throw new Error(`${area}: ${details}`)
   }
+  const ruleIssues = validateMatchRules(parsed.data)
+  if (ruleIssues.length > 0) throw new Error(`${area}: ${ruleIssues.join('; ')}`)
   return parsed.data
 }
 

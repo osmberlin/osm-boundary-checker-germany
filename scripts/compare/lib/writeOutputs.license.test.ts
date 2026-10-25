@@ -170,3 +170,46 @@ describe('row flags', () => {
     expect(base.rowFlags).toEqual([{ id: 'managed', label: 'L', hint: 'H', count: 1 }])
   })
 })
+
+describe('match rules', () => {
+  const matched: CompareRow = { ...row, category: 'matched' }
+
+  test('the shard row records the rule; the table row only when the key join did not pair the row', () => {
+    const byKey = comparisonRowToPayload({ ...matched, matchedBy: { rule: 0, kind: 'key' } }, null)
+    expect(reportRowSchema.parse(byKey).matchedBy).toEqual({ rule: 0, kind: 'key' })
+    expect(comparisonRowToTableRow(byKey)).not.toHaveProperty('matchedBy')
+
+    const byReference = comparisonRowToPayload(
+      { ...matched, matchedBy: { rule: 1, kind: 'osm_reference' } },
+      null,
+    )
+    expect(tableRowSchema.parse(comparisonRowToTableRow(byReference)).matchedBy).toEqual({
+      rule: 1,
+      kind: 'osm_reference',
+    })
+    expect(Object.keys(comparisonRowToPayload(matched, null))).not.toContain('matchedBy')
+  })
+
+  test('the payload base embeds the ordered rules', () => {
+    const matchRules = [
+      { kind: 'key' as const, officialProperty: 'ars', osmTag: 'de:regionalschluessel' },
+    ]
+    const base = buildStaticPayloadBase(
+      'area',
+      'Area',
+      'Gebiet',
+      '2026-01-01T00:00:00.000Z',
+      'EPSG:25832',
+      'administrative',
+      false,
+      false,
+      sourceMetadata,
+      { officialMatchProperty: 'ars', bboxFilter: 'none', osmScopeFilter: 'none', minZoom: 0 },
+      [],
+      { idNormalizationPreset: 'regional-12', matchRules },
+      null,
+    )
+    expect(base.matchRules).toEqual(matchRules)
+    expect(base.idNormalizationPreset).toBe('regional-12')
+  })
+})

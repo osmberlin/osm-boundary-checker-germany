@@ -1,10 +1,10 @@
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { Fragment } from 'react'
-import type { OsmMatchCriteriaSummary } from '../../../scripts/shared/comparisonPayload.ts'
+import type { MatchRule } from '../../../scripts/shared/matchRules.ts'
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import { areasIndex } from '../data/areasIndex'
 import { de } from '../i18n/de'
-import { SourceTerm } from '../i18n/sourceVocabulary'
+import { renderWithAbbr, SourceTerm, sourceText } from '../i18n/sourceVocabulary'
 import { EM_DASH } from '../lib/formatDe'
 import {
   formatFreshnessDisplayDe,
@@ -16,6 +16,11 @@ import {
 } from '../lib/germanKeyExplorer'
 import { overpassBoundaryValues } from '../lib/overpassBbox'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
+import {
+  matchedRuleOfRow,
+  osmObjectRefFromReference,
+  reportMatchRules,
+} from '../lib/reportMatchRules'
 import type { ComparisonFilterConfigSummary, ComparisonForReport, ReportRow } from '../types/report'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
@@ -110,25 +115,84 @@ function SourceLinksList({
   )
 }
 
-function FilterItem({ code, description }: { code: string; description: string }) {
+function FilterItem({
+  code,
+  description,
+  renderDescription,
+}: {
+  code: string
+  description: string
+  renderDescription?: (text: string) => ReactNode
+}) {
   return (
     <li>
       <span className="block">
         <code className="break-all text-slate-500">{code}</code>
       </span>
-      <span className="block">{description}</span>
+      <span className="block">
+        {renderDescription ? renderDescription(description) : description}
+      </span>
     </li>
   )
 }
 
-function matchCriteriaLine(mc: OsmMatchCriteriaSummary): { code: string; description: string } {
-  const p = de.provenance
-  return mc.kind === 'property'
-    ? { code: 'osmMatchCriteria=property', description: p.compareMatchCriteriaProperty }
-    : {
-        code: `osmMatchCriteria=relation_id`,
-        description: p.compareMatchCriteriaRelations(mc.relationIds.join(', ')),
+function matchRuleItem(
+  rule: MatchRule,
+  position: number,
+  data: ComparisonForReport,
+  officialMatchProperty: string | undefined,
+): { code: string; description: string } {
+  const d = de.provenance.matchRuleDescriptions
+  const number = position + 1
+  const sourceData = sourceText(data.sourceKind, 'dataLabelDative')
+  switch (rule.kind) {
+    case 'key':
+      return {
+        code: `${number}. key: ${rule.officialProperty} ↔ ${rule.osmTag}`,
+        description: d.key(rule.officialProperty, rule.osmTag, sourceData),
       }
+    case 'relation_id': {
+      const ids = rule.relationIds.join(', ')
+      return {
+        code: `${number}. relation_id: ${ids}`,
+        description: d.relation_id(ids, officialMatchProperty ?? ''),
+      }
+    }
+    case 'osm_reference':
+      return {
+        code: `${number}. osm_reference: ${rule.officialProperty}`,
+        description: d.osm_reference(rule.officialProperty, sourceData),
+      }
+    case 'osm_tag':
+      return {
+        code: `${number}. osm_tag: ${rule.officialProperty} ↔ ${rule.osmTag}`,
+        description: d.osm_tag(rule.officialProperty, rule.osmTag, sourceData),
+      }
+  }
+}
+
+/** "Zugeordnet über Regel 2 (OSM-Verweis der DtP-Daten: relation/123)" for a matched row. */
+function matchedRuleText(
+  row: ReportRow,
+  rule: MatchRule,
+  position: number,
+  data: ComparisonForReport,
+): string {
+  const how = de.provenance.matchedByHow
+  const sourceData = sourceText(data.sourceKind, 'dataLabelDative')
+  const officialValue = (property: string) => row.officialProperties?.[property]
+  const detail =
+    rule.kind === 'key'
+      ? how.key
+      : rule.kind === 'relation_id'
+        ? how.relation_id
+        : rule.kind === 'osm_reference'
+          ? how.osm_reference(
+              sourceData,
+              osmObjectRefFromReference(officialValue(rule.officialProperty)),
+            )
+          : how.osm_tag(rule.osmTag, String(officialValue(rule.officialProperty) ?? '').trim())
+  return de.provenance.matchedByRule(position + 1, detail)
 }
 
 function resolvedOsmMatchProperties(
@@ -149,7 +213,7 @@ function compareMappingItems(
   const p = de.provenance
   const osmMatchProps = resolvedOsmMatchProperties(data, filter)
   const preset = data.idNormalizationPreset
-  const mc = data.osmMatchCriteria
+  const rules = reportMatchRules(data, osmMatchProps)
 
   const presetLabels = {
     ...de.germanKeyExplorer.presets,
@@ -157,27 +221,22 @@ function compareMappingItems(
   }
   const items: ReactElement[] = []
 
-  if (filter?.officialMatchProperty?.trim()) {
-    const key = filter.officialMatchProperty.trim()
+  rules.forEach((rule, position) => {
+    const { code, description } = matchRuleItem(
+      rule,
+      position,
+      data,
+      filter?.officialMatchProperty?.trim(),
+    )
     items.push(
       <FilterItem
-        key="compare-official"
-        code={`officialMatchProperty=${key}`}
-        description={p.filterDescriptions.officialMatchProperty(key)}
+        key={`compare-rule-${position}`}
+        code={code}
+        description={description}
+        renderDescription={renderWithAbbr}
       />,
     )
-  }
-
-  for (let i = 0; i < osmMatchProps.length; i++) {
-    const osmMatchProp = osmMatchProps[i]!
-    items.push(
-      <FilterItem
-        key={`compare-osm-tag-${i}-${osmMatchProp}`}
-        code={`osmMatchTag[${i}]=${osmMatchProp}`}
-        description={p.compareOsmMatchTag(osmMatchProp)}
-      />,
-    )
-  }
+  })
 
   if (preset) {
     const labelDe =
@@ -189,11 +248,6 @@ function compareMappingItems(
         description={p.compareIdNormalization(preset, labelDe)}
       />,
     )
-  }
-
-  if (mc) {
-    const { code: mcCode, description: mcDesc } = matchCriteriaLine(mc)
-    items.push(<FilterItem key="compare-match-criteria" code={mcCode} description={mcDesc} />)
   }
 
   return items
@@ -305,6 +359,7 @@ function compareProvenanceDlRows(
 ) {
   const p = de.provenance
   const mappingItems = compareMappingItems(data, filter)
+  const rules = reportMatchRules(data, resolvedOsmMatchProperties(data, filter))
   const { osmItems, officialItems } = compareFilterItems(data, filter)
   // Only German Schlüssel (ARS/AGS) can be checked in the Schlüssel-Explorer, not PLZ or WDPA ids.
   const explorerKey =
@@ -335,6 +390,12 @@ function compareProvenanceDlRows(
           },
         ]
 
+  const matchedRule = row == null ? null : matchedRuleOfRow(row, rules)
+  const matchedRuleLine =
+    row == null || matchedRule == null
+      ? null
+      : matchedRuleText(row, matchedRule.rule, matchedRule.position, data)
+
   if (mappingItems.length === 0 && osmItems.length === 0 && officialItems.length === 0) {
     return (
       <ProvenanceGridRow asDl leftColumnClassName="sr-only" title={p.compareHeading}>
@@ -353,6 +414,9 @@ function compareProvenanceDlRows(
           title={<h3 className="text-sm/6 font-medium text-slate-200">{p.compareDataHeading}</h3>}
         >
           <p className="text-xs text-slate-400">{p.compareDataLead}</p>
+          {matchedRuleLine ? (
+            <p className="mt-2 text-sm text-slate-300">{renderWithAbbr(matchedRuleLine)}</p>
+          ) : null}
           <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
             {compareDataItems.map((item) => (
               <li key={item.key}>
@@ -389,6 +453,9 @@ function compareProvenanceDlRows(
         <p className="text-xs text-slate-400">
           {p.compareMappingLeadWithMetricsCrs(data.metricsCrs)}
         </p>
+        {rules.length > 1 ? (
+          <p className="mt-2 text-xs text-slate-400">{p.compareRulesOrderLead}</p>
+        ) : null}
         {mappingItems.length > 0 ? (
           <ul className="mt-3 list-disc space-y-3 pl-5 text-slate-300 marker:text-slate-500">
             {mappingItems}

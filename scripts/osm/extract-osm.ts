@@ -14,7 +14,7 @@ import { spawnSync } from 'node:child_process'
  * - admin_candidates:   `.cache/osm/germany-admin-candidates.fgb` (POINTS — point-on-surface
  *                       for `match_candidates` / OSM-Kandidaten UI)
  * - plz_candidates:     `.cache/osm/germany-postal-code-candidates.fgb` (POINTS)
- * - protected_areas:   `.cache/osm/germany-protected-areas-wdpa.fgb` (keyed polygons, `ref:WDPA`)
+ * - protected_areas:   `.cache/osm/germany-protected-areas-wdpa.fgb` (all protected-area polygons; the key join uses `ref:WDPA`)
  * - protected_areas_candidates: `.cache/osm/germany-protected-areas-candidates.fgb` (POINTS)
  *
  * Prerequisites: `osmium` and `ogr2ogr` on PATH; run `bun run download -- --yes --targets pbf` first
@@ -109,9 +109,20 @@ FROM multipolygons
 WHERE boundary = 'postal_code'
 `.trim()
 
+/** Tags that make a multipolygon a protected area (the union the tags-filter selects). */
+const PROTECTED_AREAS_WHERE_SQL = `
+WHERE boundary IN ('protected_area', 'national_park')
+  OR leisure = 'nature_reserve'
+  OR "protect_class" IS NOT NULL
+  OR "protection_title" IS NOT NULL
+  OR "ref:WDPA" IS NOT NULL
+`.trim()
+
 /**
- * Protected-area multipolygons with `ref:WDPA` set (keyed polygons). Same `osm_id` / `osm_way_id` /
- * `@id` handling as the admin extract. Feeds the `protected_area_wdpa` osmProfile.
+ * Every protected-area multipolygon, with or without `ref:WDPA`. Same `osm_id` / `osm_way_id` /
+ * `@id` handling as the admin extract. Feeds the `protected_area_wdpa` osmProfile: the key join
+ * only uses features with a valid `ref:WDPA`; the others are reachable by `@id` / `dtp_id` for the
+ * identity fallback (the DtP OSM reference).
  */
 const PROTECTED_AREAS_WDPA_OGR_SQL = `
 SELECT
@@ -132,14 +143,10 @@ SELECT
   "operator",
   "dtp_id"
 FROM multipolygons
-WHERE "ref:WDPA" IS NOT NULL
-  AND TRIM("ref:WDPA") <> ''
+${PROTECTED_AREAS_WHERE_SQL}
 `.trim()
 
-/**
- * Every protected-area multipolygon (no `ref:WDPA` requirement), collapsed to one inside point.
- * The predicate is the union of the tags the tags-filter selects for protected areas.
- */
+/** Every protected-area multipolygon (no `ref:WDPA` requirement), collapsed to one inside point. */
 const PROTECTED_AREAS_CANDIDATES_OGR_SQL = `
 SELECT
   ST_PointOnSurface(geometry) AS geometry,
@@ -158,11 +165,7 @@ SELECT
   "operator",
   "dtp_id"
 FROM multipolygons
-WHERE boundary IN ('protected_area', 'national_park')
-  OR leisure = 'nature_reserve'
-  OR "protect_class" IS NOT NULL
-  OR "protection_title" IS NOT NULL
-  OR "ref:WDPA" IS NOT NULL
+${PROTECTED_AREAS_WHERE_SQL}
 `.trim()
 
 type ExtractKind =
@@ -240,7 +243,7 @@ Outputs (basenames from shared constants in code):
   admin_candidates    Point-on-surface admin layer → ${GERMANY_OSM_ADMIN_CANDIDATES_FGB_BASENAME}
   plz                 Postal polygons → ${GERMANY_OSM_SHARED_PLZ_FGB_BASENAME}
   plz_candidates      Postal candidate points → ${GERMANY_OSM_PLZ_CANDIDATES_FGB_BASENAME}
-  protected_areas     Protected-area polygons with ref:WDPA → ${GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME}
+  protected_areas     Protected-area polygons (key join on ref:WDPA) → ${GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME}
   protected_areas_candidates
                       Protected-area candidate points → ${GERMANY_OSM_PROTECTED_AREAS_CANDIDATES_FGB_BASENAME}
 `)
@@ -278,8 +281,8 @@ async function resolveKindsWhenImplicit(nonInteractive: boolean): Promise<Extrac
       },
       {
         value: 'protected_areas',
-        label: 'protected_areas — Schutzgebiete mit ref:WDPA (Polygone)',
-        hint: `${GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME} · protected-area multipolygons with ref:WDPA`,
+        label: 'protected_areas — Schutzgebiete (Polygone)',
+        hint: `${GERMANY_OSM_PROTECTED_AREAS_WDPA_FGB_BASENAME} · protected-area multipolygons`,
       },
       {
         value: 'protected_areas_candidates',
