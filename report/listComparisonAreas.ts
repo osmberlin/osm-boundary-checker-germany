@@ -5,7 +5,7 @@ import { loadAreaConfig } from '../scripts/shared/areaConfig.ts'
 import { comparisonForReportSchema } from '../scripts/shared/comparisonPayload.ts'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
 import { isOsmCompatible } from '../scripts/shared/licenseCompatibility.ts'
-import { resolveOsmProfile } from '../scripts/shared/osmProfiles.ts'
+import { type OsmProfileId, resolveOsmProfile } from '../scripts/shared/osmProfiles.ts'
 import { sourceMetadataSideSchema } from '../scripts/shared/sourceMetadata.ts'
 import {
   areaHomeSummarySchema,
@@ -32,7 +32,7 @@ export function listComparisonAreas(runtimeRoot: string): string[] {
 function osmMatchRulesFromAreaConfig(
   workspaceRoot: string,
   area: string,
-): { osmMatchProperties?: string[]; osmAdminLevels?: string[] } {
+): { osmProfile?: OsmProfileId; osmMatchProperties?: string[]; osmAdminLevels?: string[] } {
   try {
     const cfg = loadAreaConfig(workspaceRoot, area)
     const matchProperty = resolveOsmProfile(cfg.osmProfile).matchProperty
@@ -43,6 +43,7 @@ function osmMatchRulesFromAreaConfig(
         ? [...cfg.osm.adminLevels]
         : undefined
     return {
+      osmProfile: cfg.osmProfile,
       osmMatchProperties,
       ...(adminLevels ? { osmAdminLevels: adminLevels } : {}),
     }
@@ -164,6 +165,7 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
     const officialOsmCompatibilitySourceUrlRaw = official?.osmCompatibilitySourceUrl ?? ''
     const officialOsmCompatibilityCommentRaw = official?.osmCompatibilityComment ?? ''
     const licenseBreakdown = parsedTable.sourceMetadata?.licenseBreakdown ?? []
+    const licenseLabels = new Set(licenseBreakdown.map((entry) => entry.licenseLabel))
     const officialLicenseMixed =
       licenseBreakdown.length > 0
         ? {
@@ -171,6 +173,7 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
               .filter((entry) => isOsmCompatible(entry.osmCompatibility))
               .reduce((sum, entry) => sum + entry.rowCount, 0),
             totalCount: licenseBreakdown.reduce((sum, entry) => sum + entry.rowCount, 0),
+            ...(licenseLabels.size === 1 ? { singleLicenseLabel: [...licenseLabels][0] } : {}),
           }
         : null
     let officialSourceGroupKeyValue: string
@@ -258,6 +261,7 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
           : {}),
         reviews,
         issues,
+        ...(fromConfig.osmProfile ? { osmProfile: fromConfig.osmProfile } : {}),
         ...(fromConfig.osmMatchProperties
           ? { osmMatchProperties: fromConfig.osmMatchProperties }
           : {}),

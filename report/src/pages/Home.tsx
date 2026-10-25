@@ -7,10 +7,12 @@ import { areasIndex, type AreaLicenseSummary } from '../data/areasIndex'
 import { categoryLabelDe, de } from '../i18n/de'
 import { sourceText } from '../i18n/sourceVocabulary'
 import { EM_DASH, formatDeInteger } from '../lib/formatDe'
+import { HOME_GROUPS, groupAreasByHomeTheme } from '../lib/homeDatasetGroups'
 import {
   OFFICIAL_SOURCE_GROUP_KEY_BKG_VG25,
   officialLicenseTableMergeKey,
 } from '../lib/officialSourceGroupKey'
+import { compatibleShareLabel } from '../lib/resolveRowLicense'
 import { withSiteBasePath } from '../lib/siteBasePath'
 
 /** Homepage Prüfung / Problem: bright when non-zero, subdued when zero (no ampel pink). */
@@ -21,6 +23,7 @@ const GITHUB_REPO_ROOT = 'https://github.com/osmberlin/osm-boundary-checker-germ
 const GITHUB_ISSUES_NEW_URL = `${GITHUB_REPO_ROOT}/issues/new`
 const LAUNCH_BLOGPOST_URL = 'https://www.osm-verkehrswende.org/grenzabgleich/posts/grenzabgleich/'
 
+/** Theme headings above the dataset cards; groups come from each dataset's `osmProfile`. */
 const homeLinkClass =
   'font-medium text-sky-400 underline decoration-sky-400/30 underline-offset-2 hover:text-sky-300 hover:decoration-sky-300/40'
 
@@ -44,6 +47,8 @@ export function Home() {
   const summariesByArea = Object.fromEntries(
     areasIndex.summaries.map((entry) => [entry.area, entry]),
   )
+
+  const homeGroups = groupAreasByHomeTheme(areas, (a) => summariesByArea[a]?.osmProfile)
 
   const logoSrc = withSiteBasePath('/osm-grenzabgleich-logo-2025.svg')
 
@@ -102,138 +107,161 @@ export function Home() {
         <p className="text-slate-400">{de.home.noAreas}</p>
       ) : (
         <>
-          <ul className="space-y-4">
-            {areas.map((a) => {
-              const entry = summariesByArea[a]
-              const displayName = entry?.displayName ?? a
-              const matched = entry ? formatDeInteger(entry.matched) : EM_DASH
-              const officialOnly = entry ? formatDeInteger(entry.officialOnly) : EM_DASH
-              const unmatched = entry ? formatDeInteger(entry.unmatchedOsm) : EM_DASH
-              const staleOfficialKeyCount = entry?.staleOfficialKey ?? 0
-              const staleOfficialKey = entry ? formatDeInteger(staleOfficialKeyCount) : EM_DASH
-              const reviewsCountRaw = entry?.reviews ?? 0
-              const issuesCountRaw = entry?.issues ?? 0
-              const reviews = entry ? formatDeInteger(reviewsCountRaw) : EM_DASH
-              const issues = entry ? formatDeInteger(issuesCountRaw) : EM_DASH
-              return (
-                <li key={a}>
-                  <Link
-                    className="group block overflow-hidden rounded-lg border border-slate-700 bg-slate-900 p-4 transition-colors hover:border-slate-500 hover:bg-slate-800/60"
-                    to="/$areaId"
-                    params={{ areaId: a }}
-                    title={a}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-medium text-sky-400 underline group-hover:text-sky-300">
-                        {displayName}
-                      </span>
-                      <span
-                        className="text-slate-500 transition-colors group-hover:text-sky-300"
-                        aria-hidden
-                      >
-                        →
-                      </span>
-                    </div>
-                    <KpiRow
-                      className="mt-4"
-                      narrowLayout="gridThreeTwoRows"
-                      aria-label={de.home.categoryStatsAria}
-                    >
-                      <KpiCell
-                        label={
-                          <ReportCategoryPill category="matched">
-                            {categoryLabelDe('matched')}
-                          </ReportCategoryPill>
-                        }
-                        value={matched}
-                      />
-                      <KpiCell
-                        label={
-                          <ReportCategoryPill category="official_only">
-                            <ReportCategoryLabel
-                              category="official_only"
-                              sourceKind={entry?.sourceKind}
-                            />
-                          </ReportCategoryPill>
-                        }
-                        value={officialOnly}
-                      />
-                      <KpiCell
-                        label={<UnmatchedOsmStatPill>{de.home.unmatchedStat}</UnmatchedOsmStatPill>}
-                        value={unmatched}
-                      />
-                      <KpiCell
-                        label={
-                          <span
-                            className={
-                              staleOfficialKeyCount > 0 ? 'text-amber-200' : homeAmpelKpiZeroClass
-                            }
+          <div className="space-y-10">
+            {homeGroups.map((group) => (
+              <section key={group.id} id={HOME_GROUPS[group.id].anchor} className="scroll-mt-4">
+                <h2 className="mb-1 text-base font-semibold text-slate-100">
+                  {HOME_GROUPS[group.id].heading}
+                </h2>
+                {HOME_GROUPS[group.id].lead ? (
+                  <p className="mb-3 text-sm text-slate-400">{HOME_GROUPS[group.id].lead}</p>
+                ) : null}
+                <ul className="space-y-4">
+                  {group.areas.map((a) => {
+                    const entry = summariesByArea[a]
+                    const displayName = entry?.displayName ?? a
+                    const matched = entry ? formatDeInteger(entry.matched) : EM_DASH
+                    const officialOnly = entry ? formatDeInteger(entry.officialOnly) : EM_DASH
+                    const unmatched = entry ? formatDeInteger(entry.unmatchedOsm) : EM_DASH
+                    const staleOfficialKeyCount = entry?.staleOfficialKey ?? 0
+                    const staleOfficialKey = entry
+                      ? formatDeInteger(staleOfficialKeyCount)
+                      : EM_DASH
+                    const reviewsCountRaw = entry?.reviews ?? 0
+                    const issuesCountRaw = entry?.issues ?? 0
+                    const reviews = entry ? formatDeInteger(reviewsCountRaw) : EM_DASH
+                    const issues = entry ? formatDeInteger(issuesCountRaw) : EM_DASH
+                    return (
+                      <li key={a}>
+                        <Link
+                          className="group block overflow-hidden rounded-lg border border-slate-700 bg-slate-900 p-4 transition-colors hover:border-slate-500 hover:bg-slate-800/60"
+                          to="/$areaId"
+                          params={{ areaId: a }}
+                          title={a}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-medium text-sky-400 underline group-hover:text-sky-300">
+                              {displayName}
+                            </span>
+                            <span
+                              className="text-slate-500 transition-colors group-hover:text-sky-300"
+                              aria-hidden
+                            >
+                              →
+                            </span>
+                          </div>
+                          <KpiRow
+                            className="mt-4"
+                            narrowLayout="gridThreeTwoRows"
+                            aria-label={de.home.categoryStatsAria}
                           >
-                            {de.home.staleOfficialKeyStat}
-                          </span>
-                        }
-                        value={staleOfficialKey}
-                      />
-                      <HomeReviewIssueKpiPair
-                        review={
-                          <KpiCell
-                            label={
-                              <span
-                                className={
-                                  reviewsCountRaw > 0
-                                    ? homeAmpelKpiActiveClass
-                                    : homeAmpelKpiZeroClass
+                            <KpiCell
+                              label={
+                                <ReportCategoryPill category="matched">
+                                  {categoryLabelDe('matched')}
+                                </ReportCategoryPill>
+                              }
+                              value={matched}
+                            />
+                            <KpiCell
+                              label={
+                                <ReportCategoryPill category="official_only">
+                                  <ReportCategoryLabel
+                                    category="official_only"
+                                    sourceKind={entry?.sourceKind}
+                                  />
+                                </ReportCategoryPill>
+                              }
+                              value={officialOnly}
+                            />
+                            <KpiCell
+                              label={
+                                <UnmatchedOsmStatPill>{de.home.unmatchedStat}</UnmatchedOsmStatPill>
+                              }
+                              value={unmatched}
+                            />
+                            {/* Outdated keys only exist for German Schlüssel; keep the slot so the grid stays aligned. */}
+                            {group.id === 'administrative' ? (
+                              <KpiCell
+                                label={
+                                  <span
+                                    className={
+                                      staleOfficialKeyCount > 0
+                                        ? 'text-amber-200'
+                                        : homeAmpelKpiZeroClass
+                                    }
+                                  >
+                                    {de.home.staleOfficialKeyStat}
+                                  </span>
                                 }
-                              >
-                                {de.home.reviewsStat}
-                              </span>
-                            }
-                            value={
-                              <span
-                                className={
-                                  reviewsCountRaw > 0
-                                    ? homeAmpelKpiActiveClass
-                                    : homeAmpelKpiZeroClass
-                                }
-                              >
-                                {reviews}
-                              </span>
-                            }
-                          />
-                        }
-                        issue={
-                          <KpiCell
-                            label={
-                              <span
-                                className={
-                                  issuesCountRaw > 0
-                                    ? homeAmpelKpiActiveClass
-                                    : homeAmpelKpiZeroClass
-                                }
-                              >
-                                {de.home.issuesStat}
-                              </span>
-                            }
-                            value={
-                              <span
-                                className={
-                                  issuesCountRaw > 0
-                                    ? homeAmpelKpiActiveClass
-                                    : homeAmpelKpiZeroClass
-                                }
-                              >
-                                {issues}
-                              </span>
-                            }
-                          />
-                        }
-                      />
-                    </KpiRow>
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
+                                value={staleOfficialKey}
+                              />
+                            ) : (
+                              <div aria-hidden="true" />
+                            )}
+                            <HomeReviewIssueKpiPair
+                              review={
+                                <KpiCell
+                                  label={
+                                    <span
+                                      className={
+                                        reviewsCountRaw > 0
+                                          ? homeAmpelKpiActiveClass
+                                          : homeAmpelKpiZeroClass
+                                      }
+                                    >
+                                      {de.home.reviewsStat}
+                                    </span>
+                                  }
+                                  value={
+                                    <span
+                                      className={
+                                        reviewsCountRaw > 0
+                                          ? homeAmpelKpiActiveClass
+                                          : homeAmpelKpiZeroClass
+                                      }
+                                    >
+                                      {reviews}
+                                    </span>
+                                  }
+                                />
+                              }
+                              issue={
+                                <KpiCell
+                                  label={
+                                    <span
+                                      className={
+                                        issuesCountRaw > 0
+                                          ? homeAmpelKpiActiveClass
+                                          : homeAmpelKpiZeroClass
+                                      }
+                                    >
+                                      {de.home.issuesStat}
+                                    </span>
+                                  }
+                                  value={
+                                    <span
+                                      className={
+                                        issuesCountRaw > 0
+                                          ? homeAmpelKpiActiveClass
+                                          : homeAmpelKpiZeroClass
+                                      }
+                                    >
+                                      {issues}
+                                    </span>
+                                  }
+                                />
+                              }
+                            />
+                          </KpiRow>
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
 
           <HomeLicenseSection licenseSummaries={areasIndex.licenseSummaries} areaOrder={areas} />
         </>
@@ -333,10 +361,8 @@ function HomeMixedLicenseCells({
   const g = de.provenance.licensePerGeometry
   return (
     <>
-      <td className="px-3 py-2">{g.mixedLabel}</td>
-      <td className="px-3 py-2">
-        {g.homePartial(formatDeInteger(mixed.compatibleCount), formatDeInteger(mixed.totalCount))}
-      </td>
+      <td className="px-3 py-2">{mixed.singleLicenseLabel ?? g.mixedLabel}</td>
+      <td className="px-3 py-2">{compatibleShareLabel(mixed.compatibleCount, mixed.totalCount)}</td>
       <td className="px-3 py-2">
         <Link
           to="/$areaId"

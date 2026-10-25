@@ -55,14 +55,19 @@ const DTP_ABBR_PATTERN = /(\bDtP\b)/
 /** Turns every standalone "DtP" in `text` into `<abbr title="Digitize the Planet e.V.">DtP</abbr>`. */
 export function renderWithAbbr(text: string): ReactNode {
   if (!text.includes('DtP')) return text
-  return text.split(DTP_ABBR_PATTERN).map((part, index) =>
-    part === 'DtP' ? (
-      <Abbr key={index} title={DTP_FULL_NAME}>
-        {part}
-      </Abbr>
-    ) : (
-      <Fragment key={index}>{part}</Fragment>
-    ),
+  // One inline wrapper: inside flex parents (pills) separate children would drop the space in "Nur DtP".
+  return (
+    <span>
+      {text.split(DTP_ABBR_PATTERN).map((part, index) =>
+        part === 'DtP' ? (
+          <Abbr key={index} title={DTP_FULL_NAME}>
+            {part}
+          </Abbr>
+        ) : (
+          <Fragment key={index}>{part}</Fragment>
+        ),
+      )}
+    </span>
   )
 }
 

@@ -3,7 +3,11 @@ import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { de } from '../i18n/de'
 import { SourceTerm, sourceText } from '../i18n/sourceVocabulary'
 import { formatDeInteger } from '../lib/formatDe'
-import { resolveRowLicense, type ResolvedLicense } from '../lib/resolveRowLicense'
+import {
+  compatibleShareLabel,
+  resolveRowLicense,
+  type ResolvedLicense,
+} from '../lib/resolveRowLicense'
 import type { ComparisonForReport, LicenseBreakdownEntry, ReportRow } from '../types/report'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
 import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
@@ -165,6 +169,8 @@ function LicenseBreakdownDisclosure({
   const total = breakdown.reduce((sum, entry) => sum + entry.rowCount, 0)
   const compatible = breakdown.filter(isCompatible).reduce((sum, entry) => sum + entry.rowCount, 0)
   const sorted = [...breakdown].sort((a, b) => b.rowCount - a.rowCount)
+  const licenseLabels = new Set(breakdown.map((entry) => entry.licenseLabel))
+  const singleLicenseLabel = licenseLabels.size === 1 ? [...licenseLabels][0] : undefined
 
   useEffect(
     function openAndScrollToHash() {
@@ -193,11 +199,11 @@ function LicenseBreakdownDisclosure({
       <ul className="space-y-1 text-slate-300">
         <li>
           <span className="text-slate-500">{de.provenance.licenseShortNameLabel}: </span>
-          {g.mixedLabel}
+          {singleLicenseLabel ?? g.mixedLabel}
         </li>
         <li>
           <span className="text-slate-500">{de.provenance.osmCompatibilityLabelTitle}: </span>
-          {g.homePartial(formatDeInteger(compatible), formatDeInteger(total))}
+          {compatibleShareLabel(compatible, total)}
         </li>
       </ul>
       <p className="text-xs text-slate-500">{g.summaryHint}</p>

@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { de } from '../i18n/de'
+import { HOME_GROUPS, HOME_GROUP_ORDER } from '../lib/homeDatasetGroups'
 import { withSiteBasePath } from '../lib/siteBasePath'
 
 export type AppBreadcrumbCrumb = { name: string; to: string } | { name: string; current: true }
@@ -94,6 +95,19 @@ export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
             </li>
           )
         })}
+        {homeCurrent ? (
+          <li className="ml-auto flex shrink-0 items-center gap-4 pl-4">
+            {HOME_GROUP_ORDER.map((id) => (
+              <a
+                key={id}
+                href={`#${HOME_GROUPS[id].anchor}`}
+                className="text-sm font-medium text-slate-400 hover:text-slate-200"
+              >
+                {HOME_GROUPS[id].heading}
+              </a>
+            ))}
+          </li>
+        ) : null}
       </ol>
     </nav>
   )

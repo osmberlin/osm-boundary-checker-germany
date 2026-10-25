@@ -128,8 +128,9 @@ export const de = {
       showOverview: (sourceCount: number) =>
         `Lizenzübersicht anzeigen (${sourceCount} Quellen und Lizenzen)`,
       homeOverviewLink: 'Lizenzübersicht',
-      homePartial: (compatible: string, total: string) =>
-        `Teilweise (${compatible} von ${total} Gebieten)`,
+      homeCompatibleAll: 'Ja',
+      homeCompatibleCount: (status: string, compatible: string, total: string) =>
+        `${status} (${compatible} von ${total} Gebieten)`,
     },
     osmHeading: 'OpenStreetMap Daten',
     osmSourceHeading: 'Datenquelle der OSM-Daten',
@@ -233,6 +234,11 @@ export const de = {
     reviewsStat: 'Prüfung',
     issuesStat: 'Problem',
     unmatchedLink: 'Liste: OSM ohne Treffer im amtlichen Export',
+    /** Home list: theme headings above the dataset cards. */
+    groupAdministrativeHeading: 'Verwaltungsgrenzen',
+    groupPostalCodeHeading: 'Postleitzahlen',
+    groupProtectedAreaHeading: 'Schutzgebiete',
+    groupProtectedAreaLead: 'Vergleich mit den Schutzgebietsdaten von Digitize the Planet e.V.',
   },
 
   status: {

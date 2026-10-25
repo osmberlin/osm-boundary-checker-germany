@@ -2,7 +2,9 @@ import type {
   DatasetLicenseId,
   OsmLicenseCompatibility,
 } from '../../../scripts/shared/sourceMetadata.ts'
+import { de } from '../i18n/de'
 import type { ComparisonForReport, ReportRow } from '../types/report'
+import { formatDeInteger } from './formatDe'
 
 export type ResolvedLicense = {
   licenseId?: DatasetLicenseId
@@ -58,4 +60,16 @@ export function resolveRowLicense(
     osmCompatibilityComment: nonEmpty(off?.osmCompatibilityComment),
     isRowLicense: false,
   }
+}
+
+/** "Nein / Teilweise / Ja (x von y Gebieten)" for a dataset with a licence per geometry. */
+export function compatibleShareLabel(compatible: number, total: number): string {
+  const g = de.provenance.licensePerGeometry
+  const status =
+    compatible === 0
+      ? de.provenance.osmCompatibilityLabel.no
+      : compatible === total
+        ? g.homeCompatibleAll
+        : de.provenance.osmCompatibilityLabel.partial
+  return g.homeCompatibleCount(status, formatDeInteger(compatible), formatDeInteger(total))
 }
