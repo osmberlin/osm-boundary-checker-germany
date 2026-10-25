@@ -4,6 +4,7 @@ import type {
   OfficialLicense,
   OsmMatchCriteriaSummary,
 } from '../../../scripts/shared/comparisonPayload.ts'
+import type { RowFlagDefinition } from '../../../scripts/shared/rowFlags.ts'
 import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import type {
   DatasetLicenseId,
@@ -129,6 +130,8 @@ export type ReportRow = {
     source: 'successor_table' | 'ags_candidate' | 'osm_map'
     pairedUnmatchedKey?: string
   }
+  /** Ids of the `rowFlags` (see `ComparisonForReport.rowFlags`) that apply to this row. */
+  flags?: string[]
   /** Same-area unmatched OSM row that is the successor of a stale official key. */
   staleOfficialPredecessor?: {
     fromArs: string
@@ -192,6 +195,8 @@ export type ComparisonForReport = {
   osmMatchCriteria?: OsmMatchCriteriaSummary
   /** From optional `ogcInspectSources` in area config (compare embeds a copy). */
   ogcInspectSources?: OgcWfsInspectSource[]
+  /** From optional `rowFlags` in area config: badge definitions with the number of flagged rows. */
+  rowFlags?: RowFlagDefinition[]
   rows: ReportRow[]
   unmatchedOsm: UnmatchedOsmReportRow[]
 }

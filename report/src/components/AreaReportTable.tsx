@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import type { RowFlagDefinition } from '../../../scripts/shared/rowFlags.ts'
 import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { isStaleKeyRow } from '../hooks/useAreaReportStaleKeysFilter'
 import type { AreaTableSortKey } from '../hooks/useAreaReportTableSort'
@@ -30,6 +31,7 @@ import {
 } from './MetricInfoModal'
 import { ReportCategoryLabel } from './ReportCategoryLabel'
 import { ReportCategoryPill } from './reportCategoryStyles'
+import { RowFlagBadges } from './RowFlagBadge'
 
 /** Typical height of a one-line row; rows are measured after they render. */
 const ESTIMATED_ROW_HEIGHT_PX = 53
@@ -44,6 +46,7 @@ export function AreaReportTable({
   areaKey,
   metricsCrs,
   sourceKind,
+  rowFlags,
   sortBy,
   sortDir,
   onSort,
@@ -52,6 +55,7 @@ export function AreaReportTable({
   areaKey: string
   metricsCrs: string
   sourceKind?: SourceKind | undefined
+  rowFlags?: RowFlagDefinition[] | undefined
   sortBy: AreaTableSortKey
   sortDir: 'asc' | 'desc'
   onSort: (column: AreaTableSortKey) => void
@@ -234,7 +238,9 @@ export function AreaReportTable({
                   }
                 }}
               >
-                <td className="px-3 py-2 text-slate-100">{row.nameLabel}</td>
+                <td className="px-3 py-2 text-slate-100">
+                  {row.nameLabel} <RowFlagBadges flagIds={row.flags} definitions={rowFlags} />
+                </td>
                 <td className="px-3 py-2">
                   <ReportCategoryPill category={row.category}>
                     <ReportCategoryLabel category={row.category} sourceKind={sourceKind} />

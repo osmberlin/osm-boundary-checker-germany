@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { KpiCell, KpiRow } from '../components/FeatureStatBlocks'
 import { ReportCategoryLabel } from '../components/ReportCategoryLabel'
 import { ReportCategoryPill, UnmatchedOsmStatPill } from '../components/reportCategoryStyles'
+import { Abbr } from '../components/ui/Abbr'
 import { areasIndex, type AreaLicenseSummary } from '../data/areasIndex'
 import { categoryLabelDe, de } from '../i18n/de'
 import { sourceText } from '../i18n/sourceVocabulary'
@@ -195,6 +196,15 @@ export function Home() {
                                   </span>
                                 }
                                 value={staleOfficialKey}
+                              />
+                            ) : entry?.rowFlags?.[0] ? (
+                              <KpiCell
+                                label={
+                                  <Abbr title={entry.rowFlags[0].hint}>
+                                    {de.home.rowFlagStat(entry.rowFlags[0].label)}
+                                  </Abbr>
+                                }
+                                value={formatDeInteger(entry.rowFlags[0].count)}
                               />
                             ) : (
                               <div aria-hidden="true" />

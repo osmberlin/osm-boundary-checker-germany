@@ -32,6 +32,41 @@ export const dtpListPageSchema = z.object({
   results: z.array(dtpListItemSchema),
 })
 
+/** One item of `GET /protected-areas?fields=uuid` (managed sweep). */
+export const dtpUuidListPageSchema = z.object({
+  count: z.number().int().nonnegative(),
+  next: z.string().nullable(),
+  previous: z.string().nullable(),
+  results: z.array(z.object({ uuid: z.string().min(1) })),
+})
+
+/** `GET /organizations` item (`DtpOrganizationLite`). */
+export const dtpOrganizationLiteSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  homepage: z.string().nullish(),
+})
+
+export const dtpOrganizationsPageSchema = z.object({
+  count: z.number().int().nonnegative(),
+  next: z.string().nullable(),
+  previous: z.string().nullable(),
+  results: z.array(dtpOrganizationLiteSchema),
+})
+
+/** `.cache/dtp/organizations.json`: one entry per DtP organization id, kept as `{ id, name, url }`. */
+export const dtpOrganizationsFileSchema = z.object({
+  fetchedAt: z.string().min(1),
+  count: z.number().int().nonnegative(),
+  organizations: z.array(
+    z.object({
+      id: z.number().int(),
+      name: z.string(),
+      url: z.string().nullable(),
+    }),
+  ),
+})
+
 /** Ring of a MultiPolygon: at least four positions (closed), each `[lon, lat]` or `[lon, lat, z]`. */
 const dtpPolygonRingSchema = z.array(z.array(z.number()).min(2)).min(4)
 
@@ -76,6 +111,11 @@ export const dtpDetailSchema = z.object({
   updated_at: z.string().min(1),
   area_in_km2: z.number(),
   geodata: dtpGeodataSchema.nullable(),
+  /**
+   * Organization ids of a managed area (`[]` for unmanaged). Optional because records fetched before this field
+   * was requested lack it; `plan.ts` backfills managed areas without it.
+   */
+  responsible_organization_ids: z.array(z.number().int()).nullish(),
 })
 
 /** `GET /protected-areas/deleted?deleted_after=YYYY-MM-DD`. */
@@ -104,6 +144,12 @@ export const dtpCachedRecordSchema = z.object({
   detail: dtpDetailSchema,
 })
 
+/** A list item plus `managed` from the managed sweep (`include_unmanaged=false`). */
+export const dtpInventoryItemSchema = dtpListItemSchema.extend({
+  /** True when the uuid is in the managed sweep. Carried over from the previous inventory if that sweep failed. */
+  managed: z.boolean(),
+})
+
 /** `.cache/dtp/inventory.json`: the list sweep, the source of truth for which uuids exist. */
 export const dtpInventorySchema = z.object({
   fetchedAt: z.string().min(1),
@@ -112,7 +158,7 @@ export const dtpInventorySchema = z.object({
   pageCount: z.number().int().nonnegative(),
   /** List items whose uuid was already seen on an earlier page of the same sweep. */
   duplicateCount: z.number().int().nonnegative(),
-  items: z.array(dtpListItemSchema),
+  items: z.array(dtpInventoryItemSchema),
 })
 
 /** `.cache/dtp/download-metadata.json`. */
@@ -128,11 +174,21 @@ export const dtpDownloadMetadataSchema = z.object({
   /** Candidates that were due in this run but not fetched successfully (cap, `--limit`, errors). */
   pendingDetailCount: z.number().int().nonnegative(),
   lastRunFetched: z.number().int().nonnegative(),
+  /** Inventory items with `managed: true`. */
+  managedCount: z.number().int().nonnegative(),
+  /** `count` of the managed sweep's first page. */
+  managedServerCount: z.number().int().nonnegative(),
+  /** False when the managed sweep was short or failed; `managed` values then come from the previous inventory. */
+  managedSweepComplete: z.boolean(),
 })
 
 export type DtpExternalReference = z.infer<typeof dtpExternalReferenceSchema>
 export type DtpListItem = z.infer<typeof dtpListItemSchema>
 export type DtpListPage = z.infer<typeof dtpListPageSchema>
+export type DtpUuidListPage = z.infer<typeof dtpUuidListPageSchema>
+export type DtpOrganizationLite = z.infer<typeof dtpOrganizationLiteSchema>
+export type DtpOrganizationsFile = z.infer<typeof dtpOrganizationsFileSchema>
+export type DtpInventoryItem = z.infer<typeof dtpInventoryItemSchema>
 export type DtpGeodata = z.infer<typeof dtpGeodataSchema>
 export type DtpDetail = z.infer<typeof dtpDetailSchema>
 export type DtpDeletedItem = z.infer<typeof dtpDeletedItemSchema>

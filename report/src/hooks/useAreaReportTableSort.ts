@@ -111,13 +111,25 @@ function compareNullableNum(a: number | null, b: number | null, inv: 1 | -1): nu
   return inv * (a - b)
 }
 
-export function useAreaReportTableSort(rows: AreaReportRow[]) {
+/**
+ * `sortFirstFlagIds`: rows with one of these flags come first, but only in the default order
+ * (Hausdorff, descending); a column the user picked sorts all rows the same way.
+ */
+export function useAreaReportTableSort(
+  rows: AreaReportRow[],
+  sortFirstFlagIds: readonly string[] = [],
+) {
   const navigate = useNavigate()
   const search = useSearch({ strict: false }) as Record<string, unknown>
   const sortBy = parseSortKey(search.sort)
   const sortDir = parseSortDir(search.dir)
 
-  const sortedRows = [...rows].sort((a, b) => compareRows(a, b, sortBy, sortDir))
+  const flagsFirst = sortFirstFlagIds.length > 0 && sortBy === 'haus' && sortDir === 'desc'
+  const flagRank = (row: AreaReportRow) =>
+    flagsFirst && row.flags?.some((id) => sortFirstFlagIds.includes(id)) ? 0 : 1
+  const sortedRows = [...rows].sort(
+    (a, b) => flagRank(a) - flagRank(b) || compareRows(a, b, sortBy, sortDir),
+  )
 
   const setColumn = (column: AreaTableSortKey) => {
     void navigate({

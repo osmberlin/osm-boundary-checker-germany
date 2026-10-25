@@ -327,6 +327,7 @@ async function main() {
       officialLicenses,
       configRaw.officialMode === 'dtp' ? DTP_TABLE_ROW_SLIMMING : null,
       sourceKindFromDatasetConfig(configRaw),
+      configRaw.rowFlags ?? [],
     )
     checkpoint('after_write_outputs')
     console.log(

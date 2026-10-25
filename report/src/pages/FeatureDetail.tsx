@@ -77,7 +77,7 @@ function FeatureDetailWithMapContext({
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
       <div className="flex flex-col gap-10">
-        <FeatureDetailHeader titlePrefix={data.titlePrefix} row={row} />
+        <FeatureDetailHeader titlePrefix={data.titlePrefix} row={row} rowFlags={data.rowFlags} />
         <StaleOfficialKeySection areaKey={areaKey} row={row} data={data} />
         <DatasetDiscussionAlerts />
         {showCompareFailedNotice ? (

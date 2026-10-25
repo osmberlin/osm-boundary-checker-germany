@@ -19,6 +19,7 @@ import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFo
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { RouteLoadingPane } from '../components/RouteLoadingPane'
 import { SummaryStatColumn } from '../components/SummaryStatColumn'
+import { Abbr } from '../components/ui/Abbr'
 import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
@@ -124,7 +125,10 @@ export function AreaReport() {
   )
   const visibleRows = [...visibleMainRows, ...visibleUnmatchedRows]
 
-  const { sortedRows, sortBy, sortDir, setColumn } = useAreaReportTableSort(visibleRows)
+  const { sortedRows, sortBy, sortDir, setColumn } = useAreaReportTableSort(
+    visibleRows,
+    data?.rowFlags?.filter((flag) => flag.sortFirst).map((flag) => flag.id),
+  )
 
   const catCounts = {
     matched: mainRows.filter((r) => r.category === 'matched').length,
@@ -326,7 +330,20 @@ export function AreaReport() {
                   </select>
                 </label>
               </div>
-            ) : null}
+            ) : (
+              data.rowFlags
+                ?.filter((flag) => flag.count > 0)
+                .map((flag) => (
+                  <div key={flag.id} className="flex min-w-0 flex-col gap-y-1">
+                    <dd className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums sm:text-3xl">
+                      {formatDeInteger(flag.count)}
+                    </dd>
+                    <dt className="text-sm font-medium text-slate-800">
+                      <Abbr title={flag.hint}>{st.rowFlagStat(flag.label)}</Abbr>
+                    </dt>
+                  </div>
+                ))
+            )}
           </KpiSectionRow>
 
           <div>
@@ -461,6 +478,7 @@ export function AreaReport() {
             areaKey={areaKey}
             metricsCrs={data.metricsCrs}
             sourceKind={data.sourceKind}
+            rowFlags={data.rowFlags}
             sortBy={sortBy}
             sortDir={sortDir}
             onSort={setColumn}

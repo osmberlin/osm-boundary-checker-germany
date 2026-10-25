@@ -124,4 +124,42 @@ describe('parseDatasetConfig', () => {
       }),
     ).toThrow()
   })
+
+  describe('rowFlags', () => {
+    const flag = {
+      id: 'managed',
+      officialProperty: 'some_property',
+      equals: true,
+      label: 'Label',
+      hint: 'Hint',
+    }
+    const withFlags = (rowFlags: unknown) =>
+      parseDatasetConfig('area-dtp', {
+        ...dtpBase,
+        official: { dtp: { categoryIds: [1] } },
+        rowFlags,
+      })
+
+    test('parses optional rowFlags and leaves them undefined otherwise', () => {
+      const parsed = withFlags([
+        { ...flag, sortFirst: true, detailProperty: 'p', detailLabel: 'L' },
+      ])
+      expect(parsed.rowFlags).toEqual([
+        { ...flag, sortFirst: true, detailProperty: 'p', detailLabel: 'L' },
+      ])
+      expect(withFlags(undefined).rowFlags).toBeUndefined()
+    })
+
+    test('rejects bad ids, duplicate ids, unknown keys and a lonely detail field', () => {
+      for (const rowFlags of [
+        [{ ...flag, id: 'Not Valid' }],
+        [flag, flag],
+        [{ ...flag, extra: 1 }],
+        [{ ...flag, detailProperty: 'p' }],
+        [{ ...flag, equals: null }],
+      ]) {
+        expect(() => withFlags(rowFlags)).toThrow()
+      }
+    })
+  })
 })

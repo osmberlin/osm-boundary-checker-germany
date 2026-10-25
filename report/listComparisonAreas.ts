@@ -259,6 +259,16 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
         ...(parsed.sourceKind != null && parsed.sourceKind !== 'official'
           ? { sourceKind: parsed.sourceKind }
           : {}),
+        ...(parsed.rowFlags?.length
+          ? {
+              rowFlags: parsed.rowFlags.map(({ id, label, hint, count }) => ({
+                id,
+                label,
+                hint,
+                count,
+              })),
+            }
+          : {}),
         reviews,
         issues,
         ...(fromConfig.osmProfile ? { osmProfile: fromConfig.osmProfile } : {}),

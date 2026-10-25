@@ -29,6 +29,12 @@ import {
   officialForEditGeojsonBasename,
 } from '../../shared/officialForEditGeojson.ts'
 import type { OgcWfsInspectSource } from '../../shared/ogcInspectSources.ts'
+import {
+  buildRowFlagDefinitions,
+  evaluateRowFlags,
+  type RowFlagConfig,
+  type RowFlagDefinition,
+} from '../../shared/rowFlags.ts'
 import type { SourceKind } from '../../shared/sourceKind.ts'
 import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/sourceMetadata.ts'
 import type {
@@ -400,6 +406,7 @@ export function buildStaticPayloadBase(
   compareRulesSummary: CompareRulesSummary | null,
   officialLicenses: OfficialLicenseOutputs | null = null,
   sourceKind: SourceKind = 'official',
+  rowFlagDefinitions?: RowFlagDefinition[],
 ): Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> {
   const out: Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> = {
     area: areaFolder,
@@ -422,6 +429,7 @@ export function buildStaticPayloadBase(
     filterConfigSummary,
   }
   if (ogcInspectSources.length > 0) out.ogcInspectSources = ogcInspectSources
+  if (rowFlagDefinitions) out.rowFlags = rowFlagDefinitions
   if (compareRulesSummary != null) {
     out.idNormalizationPreset = compareRulesSummary.idNormalizationPreset
     if (compareRulesSummary.osmMatchCriteria != null) {
@@ -435,6 +443,7 @@ export function comparisonRowToPayload(
   row: CompareRow,
   stemByKeyForOfficial: Map<string, string> | null,
   officialLicense?: OfficialLicense,
+  flags: readonly string[] = [],
 ): StaticReportRow {
   const editStem = stemByKeyForOfficial?.get(row.canonicalMatchKey)
   const officialForEditPath =
@@ -452,6 +461,7 @@ export function comparisonRowToPayload(
     officialProperties: row.officialProperties,
     osmProperties: row.osmProperties,
     ...(row.staleOfficialKey ? { staleOfficialKey: row.staleOfficialKey } : {}),
+    ...(flags.length > 0 ? { flags: [...flags] } : {}),
     ...(officialLicense ? { officialLicense } : {}),
   }
 }
@@ -579,6 +589,8 @@ export function writeOutputs(
   /** DtP: properties dropped from table rows (shards keep all); `null` keeps everything. */
   tableRowSlimming: TableRowSlimming | null = null,
   sourceKind: SourceKind = 'official',
+  /** `rowFlags` from the dataset config: flag ids per row plus definitions in the table payload. */
+  rowFlags: readonly RowFlagConfig[] = [],
 ): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
   const buildDir = join(outDir, BUILD_DIR)
@@ -763,6 +775,7 @@ export function writeOutputs(
     }
   }
 
+  const flagIdsPerRow = rows.map((row) => evaluateRowFlags(row.officialProperties, rowFlags))
   const base = buildStaticPayloadBase(
     areaFolder,
     displayName,
@@ -778,12 +791,14 @@ export function writeOutputs(
     compareRulesSummary,
     officialLicenses,
     sourceKind,
+    buildRowFlagDefinitions(rowFlags, flagIdsPerRow),
   )
-  const payloadRows = rows.map((row) =>
+  const payloadRows = rows.map((row, index) =>
     comparisonRowToPayload(
       row,
       stemByKeyForOfficial,
       officialLicenses?.byKey.get(row.canonicalMatchKey),
+      flagIdsPerRow[index],
     ),
   )
   const payloadUnmatched = unmatchedOsm.map(unmatchedRowToPayload)

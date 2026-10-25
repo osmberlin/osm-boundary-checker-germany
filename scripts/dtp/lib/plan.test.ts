@@ -1,11 +1,19 @@
 import { describe, expect, test } from 'bun:test'
 import detailFixture from '../fixtures/detail-sample.json'
 import listPageFixture from '../fixtures/list-page-sample.json'
-import { applyInventory, dedupeListItems, maxUpdatedAt, planDetailFetches } from './plan.ts'
+import {
+  applyInventory,
+  applyManagedFlags,
+  dedupeListItems,
+  maxUpdatedAt,
+  planDetailFetches,
+  previousManagedFromInventory,
+} from './plan.ts'
 import {
   dtpDetailSchema,
   dtpListPageSchema,
   type DtpCachedRecord,
+  type DtpInventoryItem,
   type DtpListItem,
 } from './schemas.ts'
 
@@ -13,8 +21,10 @@ const NOW = new Date('2026-10-25T12:00:00.000Z')
 const DAY = 24 * 60 * 60 * 1000
 const daysAgo = (days: number) => new Date(NOW.getTime() - days * DAY).toISOString()
 const detail = dtpDetailSchema.parse(detailFixture)
+/** Detail cached before `responsible_organization_ids` was requested. */
+const detailWithoutOrgs = { ...detail, responsible_organization_ids: undefined }
 
-function item(uuid: string, overrides: Partial<DtpListItem> = {}): DtpListItem {
+function item(uuid: string, overrides: Partial<DtpInventoryItem> = {}): DtpInventoryItem {
   return {
     uuid,
     name: `Area ${uuid}`,
@@ -23,6 +33,7 @@ function item(uuid: string, overrides: Partial<DtpListItem> = {}): DtpListItem {
     parent_uuid: null,
     updated_at: '2026-10-22T06:33:51.540897Z',
     area_in_km2: 1.5,
+    managed: false,
     ...overrides,
   }
 }
@@ -123,6 +134,117 @@ describe('planDetailFetches', () => {
   })
 })
 
+describe('planDetailFetches managed backfill', () => {
+  test('fetches a managed area whose cached detail has no responsible_organization_ids', () => {
+    const cached = record('m', { detail: detailWithoutOrgs })
+    const plan = planDetailFetches([item('m', { managed: true })], [cached], NOW)
+    expect(plan.uuids).toEqual(['m'])
+    expect(plan.reasons.organizations).toBe(1)
+  })
+
+  test('does not backfill an unmanaged area', () => {
+    const plan = planDetailFetches([item('u', { managed: false })], [record('u')], NOW)
+    expect(plan.uuids).toEqual([])
+  })
+
+  test('skips a managed area that already has responsible_organization_ids (empty array counts)', () => {
+    const withOrgs = record('m', { detail: { ...detail, responsible_organization_ids: [129] } })
+    const noOrgsUnmanaged = record('u', { detail: { ...detail, responsible_organization_ids: [] } })
+    const plan = planDetailFetches(
+      [item('m', { managed: true }), item('u')],
+      [withOrgs, noOrgsUnmanaged],
+      NOW,
+    )
+    expect(plan.uuids).toEqual([])
+  })
+
+  test('backfill counts as changed, so it goes before re-verify when the cap applies', () => {
+    const inv = [item('stale'), item('m', { managed: true })]
+    const cached = [
+      record('stale', { fetchedAt: daysAgo(60) }),
+      record('m', { detail: detailWithoutOrgs }),
+    ]
+    const plan = planDetailFetches(inv, cached, NOW, { maxDetails: 1 })
+    expect(plan.uuids).toEqual(['m'])
+    expect(plan.dueCount).toBe(2)
+  })
+})
+
+describe('applyManagedFlags', () => {
+  const plain: DtpListItem[] = ['a', 'b'].map((uuid) => ({
+    uuid,
+    name: uuid,
+    category_id: 2,
+    external_references: [],
+    parent_uuid: null,
+    updated_at: '2026-10-22T06:33:51.540897Z',
+    area_in_km2: 1.5,
+  }))
+
+  test('a complete managed sweep decides the flags', () => {
+    const {
+      items: out,
+      managedCount,
+      unknownCount,
+    } = applyManagedFlags(plain, new Set(['b', 'not-in-inventory']), new Map([['a', true]]))
+    expect(out.map((i) => [i.uuid, i.managed])).toEqual([
+      ['a', false],
+      ['b', true],
+    ])
+    expect(managedCount).toBe(1)
+    expect(unknownCount).toBe(0)
+  })
+
+  test('an incomplete sweep (null) keeps previous values and counts unknown areas as unmanaged', () => {
+    const {
+      items: out,
+      managedCount,
+      unknownCount,
+    } = applyManagedFlags(
+      plain,
+      null,
+      new Map([
+        ['a', true],
+        ['b', false],
+      ]),
+    )
+    expect(out.map((i) => [i.uuid, i.managed])).toEqual([
+      ['a', true],
+      ['b', false],
+    ])
+    expect(managedCount).toBe(1)
+    expect(unknownCount).toBe(0)
+
+    const fresh = applyManagedFlags(plain, null, new Map([['a', true]]))
+    expect(fresh.items.map((i) => [i.uuid, i.managed])).toEqual([
+      ['a', true],
+      ['b', false],
+    ])
+    expect(fresh.unknownCount).toBe(1)
+  })
+})
+
+describe('previousManagedFromInventory', () => {
+  test('reads managed flags and skips items without one', () => {
+    const map = previousManagedFromInventory({
+      items: [
+        { uuid: 'a', managed: true, name: 'x' },
+        { uuid: 'b', managed: false },
+        { uuid: 'c' },
+      ],
+    })
+    expect([...map]).toEqual([
+      ['a', true],
+      ['b', false],
+    ])
+  })
+
+  test('returns an empty map for unreadable JSON shapes', () => {
+    expect(previousManagedFromInventory(null).size).toBe(0)
+    expect(previousManagedFromInventory({ items: 'nope' }).size).toBe(0)
+  })
+})
+
 describe('applyInventory', () => {
   test('drops cached records whose uuid left the inventory', () => {
     const { kept, removedCount } = applyInventory(
@@ -160,7 +282,9 @@ describe('maxUpdatedAt', () => {
 
 describe('list fixture as inventory', () => {
   test('plans all three fixture items as new when the cache is empty', () => {
-    const inv = dtpListPageSchema.parse(listPageFixture).results
+    const inv = dtpListPageSchema
+      .parse(listPageFixture)
+      .results.map((listItem) => ({ ...listItem, managed: false }))
     expect(planDetailFetches(inv, [], NOW).uuids).toHaveLength(3)
   })
 })

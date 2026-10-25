@@ -46,15 +46,17 @@ import {
   DTP_CATEGORIES_FILE,
   DTP_DOWNLOAD_METADATA,
   DTP_INVENTORY_FILE,
+  DTP_ORGANIZATIONS_FILE,
 } from './lib/constants.ts'
 import {
   buildOfficialFeatures,
   selectInventoryItems,
-  type DtpCategoryNames,
+  type DtpOfficialNames,
 } from './lib/officialRows.ts'
 import {
   dtpDownloadMetadataSchema,
   dtpInventorySchema,
+  dtpOrganizationsFileSchema,
   type DtpCachedRecord,
   type DtpDownloadMetadata,
   type DtpInventory,
@@ -173,7 +175,7 @@ function extractArea(
     runtimeRoot: string
     inventory: DtpInventory
     downloadMeta: DtpDownloadMetadata
-    categoryNames: DtpCategoryNames
+    names: DtpOfficialNames
     areasPath: string
   },
 ): void {
@@ -185,7 +187,7 @@ function extractArea(
     ctx.inventory.items,
     records,
     selection,
-    ctx.categoryNames,
+    ctx.names,
   )
 
   const areaPath = datasetFolderPath(ctx.runtimeRoot, area)
@@ -197,6 +199,11 @@ function extractArea(
       `${stats.selectedInInventory} in inventory, ${stats.written} written, ` +
       `${stats.missingFromCache} not cached yet (skipped), ${stats.noGeometry} without geometry`,
   )
+  if (stats.unknownOrganizationIds > 0) {
+    console.warn(
+      `${area}: ${stats.unknownOrganizationIds} responsible organization id(s) without a name in ${DTP_ORGANIZATIONS_FILE} (left out of dtp_organizations; run bun run download:dtp).`,
+    )
+  }
   if (stats.duplicateWdpa.size > 0) {
     console.log(
       `${area}: ${stats.duplicateWdpa.size} wdpa id(s) on more than one area (kept; compare unions same keys):\n` +
@@ -275,7 +282,15 @@ function main() {
     hint,
   )
   const categories = readCacheJson(join(cacheDir, DTP_CATEGORIES_FILE), categoriesFileSchema, hint)
-  const categoryNames: DtpCategoryNames = new Map(categories.map((c) => [c.id, c.name_de]))
+  const organizations = readCacheJson(
+    join(cacheDir, DTP_ORGANIZATIONS_FILE),
+    dtpOrganizationsFileSchema,
+    hint,
+  )
+  const names: DtpOfficialNames = {
+    categories: new Map(categories.map((c) => [c.id, c.name_de])),
+    organizations: new Map(organizations.organizations.map((o) => [o.id, o.name])),
+  }
   const areasPath = join(cacheDir, DTP_AREAS_FILE)
 
   console.log(
@@ -285,7 +300,7 @@ function main() {
         : ''),
   )
   for (const spec of selected) {
-    extractArea(spec, { runtimeRoot, inventory, downloadMeta, categoryNames, areasPath })
+    extractArea(spec, { runtimeRoot, inventory, downloadMeta, names, areasPath })
   }
   console.log('Done.')
 }

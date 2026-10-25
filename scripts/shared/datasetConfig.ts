@@ -4,6 +4,7 @@ import { DTP_OFFICIAL_PROFILE_ID, DTP_OFFICIAL_SOURCE, dtpSelectionSchema } from
 import { officialProfileIdSchema, resolveOfficialProfile } from './officialProfiles.ts'
 import { osmProfileIdSchema } from './osmProfiles.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
+import { rowFlagsConfigSchema } from './rowFlags.ts'
 import type { SourceKind } from './sourceKind.ts'
 import { datasetLicenseIdSchema, osmLicenseCompatibilitySchema } from './sourceMetadata.ts'
 
@@ -146,6 +147,8 @@ const directAreaConfigSchema = z
     metricsCrs: trimmedString,
     compare: compareSchema,
     ogcInspectSources: z.array(ogcInspectSourceSchema).optional(),
+    /** Badges for rows of the official data that match a property value (see `rowFlags.ts`). */
+    rowFlags: rowFlagsConfigSchema.optional(),
   })
   .strict()
 
@@ -161,6 +164,8 @@ const profileAreaConfigSchema = z
     metricsCrs: trimmedString,
     compare: compareSchema,
     ogcInspectSources: z.array(ogcInspectSourceSchema).optional(),
+    /** Badges for rows of the official data that match a property value (see `rowFlags.ts`). */
+    rowFlags: rowFlagsConfigSchema.optional(),
   })
   .strict()
 
@@ -178,6 +183,8 @@ const dtpAreaConfigSchema = z
     metricsCrs: trimmedString,
     compare: compareSchema,
     ogcInspectSources: z.array(ogcInspectSourceSchema).optional(),
+    /** Badges for rows of the official data that match a property value (see `rowFlags.ts`). */
+    rowFlags: rowFlagsConfigSchema.optional(),
   })
   .strict()
 

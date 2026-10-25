@@ -1,14 +1,15 @@
 /**
- * Pure planning helpers for the DtP sync: which list items need a detail fetch, and which cached records to keep.
- * No I/O here, so the rules stay testable (see `plan.test.ts`).
+ * Pure planning helpers for the DtP sync: which list items need a detail fetch, which cached records to keep,
+ * and which inventory items are managed. No I/O here, so the rules stay testable (see `plan.test.ts`).
  */
 
+import { z } from 'zod'
 import {
   DTP_DEFAULT_MAX_DETAILS,
   DTP_DEFAULT_REVERIFY_DAYS,
   DTP_DEFAULT_REVERIFY_MAX,
 } from './constants.ts'
-import type { DtpCachedRecord, DtpListItem } from './schemas.ts'
+import type { DtpCachedRecord, DtpInventoryItem, DtpListItem } from './schemas.ts'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -22,30 +23,80 @@ export type DtpPlanOptions = {
 }
 
 export type DtpDetailPlan = {
-  /** uuids to fetch in this run, in priority order (new/changed first, then re-verify oldest first). */
+  /** uuids to fetch in this run, in priority order (new/changed/backfill first, then re-verify oldest first). */
   uuids: string[]
-  /** Every due uuid (new, changed, or re-verify within `reverifyMax`), including those beyond `maxDetails`. */
+  /** Every due uuid (new, changed, backfill, or re-verify within `reverifyMax`), including those beyond `maxDetails`. */
   dueCount: number
   /** Breakdown of the due uuids by reason (a uuid counts once, under its first matching reason). */
-  reasons: { new: number; updatedAt: number; areaKm2: number; reverify: number }
+  reasons: {
+    new: number
+    updatedAt: number
+    areaKm2: number
+    organizations: number
+    reverify: number
+  }
 }
 
 /**
- * Drop list items with a uuid that was already seen (the list can shift between pages while the sweep runs).
+ * Drop items with a uuid that was already seen (the list can shift between pages while the sweep runs).
  * The first occurrence wins.
  */
-export function dedupeListItems(items: DtpListItem[]): {
-  items: DtpListItem[]
+export function dedupeListItems<T extends { uuid: string }>(
+  items: T[],
+): {
+  items: T[]
   duplicateCount: number
 } {
   const seen = new Set<string>()
-  const out: DtpListItem[] = []
+  const out: T[] = []
   for (const item of items) {
     if (seen.has(item.uuid)) continue
     seen.add(item.uuid)
     out.push(item)
   }
   return { items: out, duplicateCount: items.length - out.length }
+}
+
+/**
+ * Set `managed` on every inventory item.
+ * With `managedUuids` (a complete managed sweep) the sweep decides. Otherwise (`null`, the sweep was short or failed)
+ * the previous value is kept. An item without a previous value counts as unmanaged and is reported in `unknownCount`.
+ * Uuids that only the managed sweep knows are ignored: the main sweep is the inventory.
+ */
+export function applyManagedFlags(
+  items: DtpListItem[],
+  managedUuids: ReadonlySet<string> | null,
+  previousManaged: ReadonlyMap<string, boolean>,
+): { items: DtpInventoryItem[]; managedCount: number; unknownCount: number } {
+  let unknownCount = 0
+  const out = items.map((item) => {
+    let managed: boolean
+    if (managedUuids !== null) {
+      managed = managedUuids.has(item.uuid)
+    } else {
+      const previous = previousManaged.get(item.uuid)
+      if (previous === undefined) unknownCount++
+      managed = previous ?? false
+    }
+    return { ...item, managed }
+  })
+  const managedCount = out.filter((item) => item.managed).length
+  return { items: out, managedCount, unknownCount }
+}
+
+const previousInventorySchema = z.object({
+  items: z.array(z.object({ uuid: z.string().min(1), managed: z.boolean().optional() })),
+})
+
+/** `uuid` -> `managed` from a previous `inventory.json` (unknown or unreadable JSON gives an empty map). */
+export function previousManagedFromInventory(json: unknown): Map<string, boolean> {
+  const parsed = previousInventorySchema.safeParse(json)
+  const out = new Map<string, boolean>()
+  if (!parsed.success) return out
+  for (const item of parsed.data.items) {
+    if (item.managed !== undefined) out.set(item.uuid, item.managed)
+  }
+  return out
 }
 
 /** Max `updated_at` over the inventory as ISO instant, or `null` for an empty inventory. */
@@ -73,14 +124,16 @@ export function applyInventory(
 }
 
 /**
- * Decide which list items need a detail fetch in this run.
+ * Decide which inventory items need a detail fetch in this run.
  *
  * Due when: the uuid is not cached (new), the list `updated_at` differs from `listUpdatedAt`,
- * the list `area_in_km2` differs from `listAreaKm2`, or `fetchedAt` is older than `reverifyDays`.
+ * the list `area_in_km2` differs from `listAreaKm2`, the area is managed and its cached detail has no
+ * `responsible_organization_ids` (one-time backfill; unmanaged areas do not need it), or `fetchedAt` is older
+ * than `reverifyDays`.
  * Re-verify candidates are capped at `reverifyMax` (oldest `fetchedAt` first), then the total at `maxDetails`.
  */
 export function planDetailFetches(
-  inventory: DtpListItem[],
+  inventory: DtpInventoryItem[],
   cachedRecords: DtpCachedRecord[],
   now: Date,
   opts: DtpPlanOptions = {},
@@ -90,7 +143,7 @@ export function planDetailFetches(
   const maxDetails = opts.maxDetails ?? DTP_DEFAULT_MAX_DETAILS
 
   const cachedByUuid = new Map(cachedRecords.map((record) => [record.uuid, record]))
-  const reasons = { new: 0, updatedAt: 0, areaKm2: 0, reverify: 0 }
+  const reasons = { new: 0, updatedAt: 0, areaKm2: 0, organizations: 0, reverify: 0 }
   const changed: string[] = []
   const reverifyDue: { uuid: string; fetchedMs: number }[] = []
   const reverifyCutoffMs = now.getTime() - reverifyDays * DAY_MS
@@ -109,6 +162,11 @@ export function planDetailFetches(
     }
     if (cached.listAreaKm2 !== item.area_in_km2) {
       reasons.areaKm2++
+      changed.push(item.uuid)
+      continue
+    }
+    if (item.managed && cached.detail.responsible_organization_ids === undefined) {
+      reasons.organizations++
       changed.push(item.uuid)
       continue
     }

@@ -22,8 +22,15 @@ export const DTP_LIST_ORDERING = 'area_in_km2'
 export const DTP_LIST_ORDERING_DESC = '-area_in_km2'
 
 /**
+ * Only the managed sweep (`include_unmanaged=false`) reads this: a list item carries no managed flag, so the
+ * sweep returns just the uuids of the managed areas.
+ */
+export const DTP_MANAGED_SWEEP_FIELDS = 'uuid'
+
+/**
  * Detail fields we need. Every name is listed in `schema.yaml` for `/protected-areas/{uuid}`.
  * `uuid` is not a detail field; the list item and the cache line carry it.
+ * `responsible_organization_ids` is `[]` for unmanaged areas; managed areas get the organization ids.
  */
 export const DTP_DETAIL_FIELDS = [
   'name',
@@ -34,12 +41,14 @@ export const DTP_DETAIL_FIELDS = [
   'updated_at',
   'area_in_km2',
   'geodata',
+  'responsible_organization_ids',
 ].join(',')
 
 export const DTP_CACHE_DIR = '.cache/dtp'
 export const DTP_INVENTORY_FILE = 'inventory.json'
 export const DTP_AREAS_FILE = 'areas.ndjson.gz'
 export const DTP_DOWNLOAD_METADATA = 'download-metadata.json'
+export const DTP_ORGANIZATIONS_FILE = 'organizations.json'
 export const DTP_LICENSES_FILE = 'licenses.json'
 export const DTP_GEOMETRY_SOURCES_FILE = 'geometry-sources.json'
 export const DTP_CATEGORIES_FILE = 'protected-area-categories.json'

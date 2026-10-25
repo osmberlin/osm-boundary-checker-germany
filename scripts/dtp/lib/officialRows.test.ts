@@ -4,15 +4,28 @@ import {
   buildOfficialFeatures,
   natura2000CodeFromReferences,
   officialFeatureFromRecord,
+  organizationNamesText,
   selectInventoryItems,
+  type DtpOfficialNames,
 } from './officialRows.ts'
-import { dtpDetailSchema, type DtpCachedRecord, type DtpListItem } from './schemas.ts'
+import {
+  dtpDetailSchema,
+  type DtpCachedRecord,
+  type DtpExternalReference,
+  type DtpInventoryItem,
+} from './schemas.ts'
 
 const baseDetail = dtpDetailSchema.parse(detailFixture)
-const categories = new Map([
-  [1, 'Nationalpark'],
-  [2, 'Naturschutzgebiet'],
-])
+const names: DtpOfficialNames = {
+  categories: new Map([
+    [1, 'Nationalpark'],
+    [2, 'Naturschutzgebiet'],
+  ]),
+  organizations: new Map([
+    [42, 'Landkreis Alpha'],
+    [43, 'Verband Beta'],
+  ]),
+}
 const geodata = {
   geometry: {
     type: 'MultiPolygon' as const,
@@ -32,7 +45,12 @@ const geodata = {
   license: { name: 'CC0 1.0', uri: 'https://example.test/cc0' },
 }
 
-function item(uuid: string, categoryId: number, refs: { name: string; id: string }[]): DtpListItem {
+function item(
+  uuid: string,
+  categoryId: number,
+  refs: DtpExternalReference[],
+  managed = false,
+): DtpInventoryItem {
   return {
     uuid,
     name: uuid,
@@ -41,10 +59,15 @@ function item(uuid: string, categoryId: number, refs: { name: string; id: string
     parent_uuid: null,
     updated_at: '2026-10-01T00:00:00Z',
     area_in_km2: 1,
+    managed,
   }
 }
 
-function record(listItem: DtpListItem, geo: typeof geodata | null = geodata): DtpCachedRecord {
+function record(
+  listItem: DtpInventoryItem,
+  opts: { geo?: typeof geodata | null; organizationIds?: number[] | null | undefined } = {},
+): DtpCachedRecord {
+  const geo = opts.geo === undefined ? geodata : opts.geo
   return {
     uuid: listItem.uuid,
     fetchedAt: '2026-10-25T00:00:00Z',
@@ -58,6 +81,7 @@ function record(listItem: DtpListItem, geo: typeof geodata | null = geodata): Dt
       state_ids: [3, 9],
       parent_uuid: null,
       geodata: geo,
+      responsible_organization_ids: opts.organizationIds === undefined ? [] : opts.organizationIds,
     },
   }
 }
@@ -78,6 +102,27 @@ describe('selectInventoryItems', () => {
   })
 })
 
+describe('organizationNamesText', () => {
+  test('joins names in API order and drops duplicate names', () => {
+    expect(organizationNamesText([43, 42, 43], names.organizations)).toEqual({
+      text: 'Verband Beta; Landkreis Alpha',
+      unknownIds: 0,
+    })
+  })
+
+  test('null for no ids, counts ids without a name', () => {
+    expect(organizationNamesText([], names.organizations)).toEqual({ text: null, unknownIds: 0 })
+    expect(organizationNamesText(undefined, names.organizations)).toEqual({
+      text: null,
+      unknownIds: 0,
+    })
+    expect(organizationNamesText([42, 999], names.organizations)).toEqual({
+      text: 'Landkreis Alpha',
+      unknownIds: 1,
+    })
+  })
+})
+
 describe('officialFeatureFromRecord', () => {
   test('maps references, source and license into flat properties', () => {
     const it = item('u1', 1, [
@@ -86,7 +131,7 @@ describe('officialFeatureFromRecord', () => {
       { name: 'osm', id: 'relation/123' },
       { name: 'source_id', id: 'DE5519304' },
     ])
-    const feature = officialFeatureFromRecord(record(it), categories)
+    const feature = officialFeatureFromRecord(record(it), false, names)
     expect(feature?.properties).toMatchObject({
       wdpa: '555',
       dtp_uuid: 'u1',
@@ -104,8 +149,40 @@ describe('officialFeatureFromRecord', () => {
     })
   })
 
+  test('dtp_managed is always a boolean; dtp_organizations is set for managed areas with names', () => {
+    const managed = officialFeatureFromRecord(
+      record(item('m', 1, []), { organizationIds: [43, 42] }),
+      true,
+      names,
+    )
+    expect(managed?.properties.dtp_managed).toBe(true)
+    expect(managed?.properties.dtp_organizations).toBe('Verband Beta; Landkreis Alpha')
+  })
+
+  test('unmanaged areas have dtp_managed false and no dtp_organizations key', () => {
+    const feature = officialFeatureFromRecord(
+      record(item('u', 1, []), { organizationIds: [] }),
+      false,
+      names,
+    )
+    expect(feature?.properties.dtp_managed).toBe(false)
+    expect(feature?.properties).not.toHaveProperty('dtp_organizations')
+  })
+
+  test('a managed area whose ids have no names gets no dtp_organizations key', () => {
+    const feature = officialFeatureFromRecord(
+      record(item('m', 1, []), { organizationIds: [999] }),
+      true,
+      names,
+    )
+    expect(feature?.properties.dtp_managed).toBe(true)
+    expect(feature?.properties).not.toHaveProperty('dtp_organizations')
+  })
+
   test('returns null without geometry', () => {
-    expect(officialFeatureFromRecord(record(item('u', 1, []), null), categories)).toBeNull()
+    expect(
+      officialFeatureFromRecord(record(item('u', 1, []), { geo: null }), false, names),
+    ).toBeNull()
   })
 
   test('natura2000_code only for DE + 7 digits', () => {
@@ -117,29 +194,32 @@ describe('officialFeatureFromRecord', () => {
 
 describe('buildOfficialFeatures', () => {
   test('counts missing cache records and no-geometry, reports duplicate wdpa', () => {
-    const a = item('a', 1, [{ name: 'wdpa', id: '7' }])
+    const a = item('a', 1, [{ name: 'wdpa', id: '7' }], true)
     const b = item('b', 1, [{ name: 'wdpa', id: '7' }])
     const c = item('c', 1, [{ name: 'wdpa', id: '8' }])
     const d = item('d', 1, [{ name: 'wdpa', id: '9' }])
     const e = item('e', 2, [{ name: 'wdpa', id: '10' }])
     const records = new Map([
-      ['a', record(a)],
+      ['a', record(a, { organizationIds: [42, 999] })],
       ['b', record(b)],
-      ['c', record(c, null)],
+      ['c', record(c, { geo: null })],
       ['e', record(e)],
     ])
     const { features, stats } = buildOfficialFeatures(
       [a, b, c, d, e],
       records,
       { categoryIds: [1], requireWdpa: true },
-      categories,
+      names,
     )
     expect(features.map((f) => f.properties.dtp_uuid)).toEqual(['a', 'b'])
+    expect(features.map((f) => f.properties.dtp_managed)).toEqual([true, false])
+    expect(features[0]?.properties.dtp_organizations).toBe('Landkreis Alpha')
     expect(stats).toMatchObject({
       selectedInInventory: 4,
       missingFromCache: 1,
       noGeometry: 1,
       written: 2,
+      unknownOrganizationIds: 1,
     })
     expect([...stats.duplicateWdpa]).toEqual([['7', ['a', 'b']]])
   })

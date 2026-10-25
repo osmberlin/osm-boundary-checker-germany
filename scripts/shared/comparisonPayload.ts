@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { ogcWfsInspectSourceSchema } from './ogcInspectSources.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
+import { rowFlagDefinitionSchema } from './rowFlags.ts'
 import { sourceKindSchema } from './sourceKind.ts'
 import {
   datasetLicenseIdSchema,
@@ -119,6 +120,8 @@ const reportRowBaseShape = {
   officialProperties: z.record(z.string(), z.unknown()).nullable(),
   osmProperties: z.record(z.string(), z.unknown()).nullable(),
   staleOfficialKey: staleOfficialKeySchema.optional(),
+  /** Ids of the `rowFlags` that apply to this official row; absent when none. */
+  flags: z.array(z.string()).optional(),
 }
 
 /** Full row as stored in the feature shard (`output/features/<key>.json`), incl. the resolved licence. */
@@ -218,6 +221,8 @@ export const comparisonForReportSchema = z.object({
   /** From optional `osm.matchCriteria` in area config. */
   osmMatchCriteria: osmMatchCriteriaSummarySchema.optional(),
   ogcInspectSources: z.array(ogcWfsInspectSourceSchema).optional(),
+  /** From optional `rowFlags` in area config, with the number of flagged rows. */
+  rowFlags: z.array(rowFlagDefinitionSchema).optional(),
   rows: z.array(tableRowSchema),
   unmatchedOsm: z.array(unmatchedOsmRowSchema),
 })

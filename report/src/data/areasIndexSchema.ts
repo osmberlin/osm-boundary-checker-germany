@@ -23,6 +23,10 @@ export const areaHomeSummarySchema = z.object({
   osmAdminLevels: z.array(z.string().min(1)).optional(),
   /** Wording of the official side on the home card; absent means `official`. */
   sourceKind: sourceKindSchema.optional(),
+  /** Row flags with counts, shown in the card slot that admin datasets use for outdated keys. */
+  rowFlags: z
+    .array(z.object({ id: z.string(), label: z.string(), hint: z.string(), count: z.number() }))
+    .optional(),
 })
 export type AreaHomeSummary = z.infer<typeof areaHomeSummarySchema>
 export type AreaSummary = AreaHomeSummary

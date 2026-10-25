@@ -231,6 +231,7 @@ export const de = {
       'Zugeordnet, nur amtlich, OSM ohne Treffer in offiziellen Daten, amtlicher Schlüssel veraltet, Prüfung, Problem — Anzahl',
     unmatchedStat: 'Nur OSM',
     staleOfficialKeyStat: 'Schlüssel veraltet',
+    rowFlagStat: (label: string) => `davon ${label}`,
     reviewsStat: 'Prüfung',
     issuesStat: 'Problem',
     unmatchedLink: 'Liste: OSM ohne Treffer im amtlichen Export',
@@ -388,6 +389,7 @@ export const de = {
       staleKeysOnly: 'Nur veraltet',
       staleKeysHide: 'Ohne veraltet',
       staleKeyBadge: 'amtlicher Schlüssel veraltet',
+      rowFlagStat: (label: string) => `davon ${label}`,
       pairLinkToSuccessor: 'Zum aktuellen OSM-Schlüssel',
       pairLinkToPredecessor: 'Zum amtlichen Vorläufer-Schlüssel',
       categoryToggleRowAria: 'Kategorien für Tabelle und Karte',
@@ -415,6 +417,7 @@ export const de = {
     osmRelation: 'OSM-Relation',
     /** Deep link to Schlüssel-Explorer from property rows and provenance. */
     germanKeyVerifyLink: 'Schlüssel-Explorer',
+    rowFlagDetail: (label: string, value: string) => `${label}: ${value}`,
     regionalHubLink: 'Einwohner und Wikidata',
     stats: {
       /** Matches JSON field name; shown next to key value on the feature header row. */

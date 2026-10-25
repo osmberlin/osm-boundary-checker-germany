@@ -17,7 +17,7 @@ const OSM_PAIRED_LINE_BORDER_UI = hexToRgba(osmPaired.line, 0.7)
 const swatchBox = 'h-5 w-10 shrink-0 rounded-sm border-2 border-solid'
 
 const pillBase =
-  'inline-flex max-w-full items-center rounded-md border-2 border-solid px-2 py-0.5 text-sm font-medium leading-snug tracking-tight'
+  'inline-flex max-w-full items-center rounded-md border-2 border-solid px-2 py-0.5 text-sm font-medium leading-snug tracking-tight whitespace-nowrap'
 
 /**
  * Category legend swatches — same fills, strokes and split as comparison map layer toggles.

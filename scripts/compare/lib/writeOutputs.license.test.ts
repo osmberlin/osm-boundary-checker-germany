@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { reportRowSchema, tableRowSchema } from '../../shared/comparisonPayload.ts'
+import { buildRowFlagDefinitions, evaluateRowFlags } from '../../shared/rowFlags.ts'
 import type { ComparisonSourceMetadata } from '../../shared/sourceMetadata.ts'
 import type { CompareRow } from './compare.ts'
 import { buildOfficialLicenseOutputs } from './officialLicenses.ts'
@@ -114,5 +115,58 @@ describe('datasets with per-geometry licences', () => {
     const base = payloadBase(outputs)
     expect(base.sourceMetadata.official.osmCompatibility).toBe('yes_licence')
     expect(base.sourceMetadata.licenseBreakdown).toHaveLength(1)
+  })
+})
+
+describe('row flags', () => {
+  const flags = [
+    { id: 'managed', officialProperty: 'dtp_managed', equals: true, label: 'L', hint: 'H' },
+  ]
+
+  test('datasets without rowFlags keep rows and payload base unchanged', () => {
+    expect(
+      Object.keys(
+        comparisonRowToPayload(row, null, undefined, evaluateRowFlags(row.officialProperties, [])),
+      ),
+    ).not.toContain('flags')
+    expect(Object.keys(payloadBase(null))).not.toContain('rowFlags')
+  })
+
+  test('flagged rows carry flag ids in table row and shard row; definitions carry counts', () => {
+    const flagged: CompareRow = { ...row, officialProperties: { name: 'X', dtp_managed: 'true' } }
+    const ids = evaluateRowFlags(flagged.officialProperties, flags)
+    const payloadRow = comparisonRowToPayload(flagged, null, undefined, ids)
+    expect(reportRowSchema.parse(payloadRow).flags).toEqual(['managed'])
+    expect(
+      tableRowSchema.parse(comparisonRowToTableRow(payloadRow, DTP_TABLE_ROW_SLIMMING)).flags,
+    ).toEqual(['managed'])
+    expect(
+      Object.keys(
+        comparisonRowToPayload(
+          row,
+          null,
+          undefined,
+          evaluateRowFlags(row.officialProperties, flags),
+        ),
+      ),
+    ).not.toContain('flags')
+    const base = buildStaticPayloadBase(
+      'area',
+      'Area',
+      'Gebiet',
+      '2026-01-01T00:00:00.000Z',
+      'EPSG:25832',
+      'administrative',
+      false,
+      false,
+      sourceMetadata,
+      { officialMatchProperty: 'ars', bboxFilter: 'none', osmScopeFilter: 'none', minZoom: 0 },
+      [],
+      null,
+      null,
+      'official',
+      buildRowFlagDefinitions(flags, [ids, []]),
+    )
+    expect(base.rowFlags).toEqual([{ id: 'managed', label: 'L', hint: 'H', count: 1 }])
   })
 })

@@ -22,4 +22,17 @@
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },
+  // Badge for areas that a protected-area authority maintains in DtP (property dtp_managed, written by the DtP extract).
+  "rowFlags": [
+    {
+      "id": "managed",
+      "officialProperty": "dtp_managed",
+      "equals": true,
+      "label": "Verwaltet",
+      "hint": "Eine Schutzgebietsverwaltung pflegt dieses Gebiet bei Digitize the Planet; seine Regeln erscheinen in Outdoor-Apps.",
+      "sortFirst": true,
+      "detailProperty": "dtp_organizations",
+      "detailLabel": "Zuständig",
+    },
+  ],
 }
