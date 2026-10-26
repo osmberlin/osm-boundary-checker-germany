@@ -421,7 +421,7 @@ entries:
       Zugeordnete Flächen, die sich gar nicht überlappen, erhalten auf der Detailseite einen Hinweis, und die Karte zeigt beide Flächen.
   - refs:
       - '9110a9c'
-      - '5369877'
+      - '3caf4bf'
     descriptionMd: |
       Die Startseite gruppiert die Datensätze nach Thema (Verwaltungsgrenzen, Postleitzahlen, Schutzgebiete) mit Sprunglinks.
   - refs:

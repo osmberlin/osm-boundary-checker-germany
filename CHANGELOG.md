@@ -20,7 +20,7 @@ Neu: Schutzgebiete aus [Digitize the Planet](https://platform.digitizetheplanet.
 
 Für jedes Gebiet gilt die Lizenz seiner Geometriequelle; die Lizenzübersicht zeigt, wie viele Gebiete in OSM übernommen werden dürfen. Eine GeoJSON-Datei zum Bearbeiten gibt es nur für Gebiete, deren Lizenz das erlaubt. Gebiete, die eine Verwaltung pflegt, tragen das Kennzeichen „Verwaltet“. Die Daten werden mit dem nächtlichen Lauf aktualisiert; beim ersten Lauf füllt sich der DtP-Bestand über zwei bis drei Nächte.
 
-### `9110a9c`
+### `9110a9c`, `3caf4bf`
 
 Die Startseite gruppiert die Datensätze nach Thema (Verwaltungsgrenzen, Postleitzahlen, Schutzgebiete) mit Sprunglinks.
 
