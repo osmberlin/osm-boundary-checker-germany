@@ -324,22 +324,22 @@ async function main() {
         )
       }
     }
-    writeOutputs(
+    writeOutputs({
       areaPath,
-      area,
+      areaFolder: area,
       displayName,
-      config.titlePrefix,
+      titlePrefix: config.titlePrefix,
       rows,
       unmatchedOsm,
       metricsCrs,
       overpassBoundaryTag,
-      meta,
+      sourceMetadata: meta,
       filterConfigSummary,
       ogcInspectSources,
       compareRulesSummary,
-      config.compare.minZoom,
+      mapMinZoom: config.compare.minZoom,
       phaseLogger,
-      {
+      instrumentation: {
         checkpoint: (name, cpMeta) => checkpoint(name, cpMeta),
         progress: (scope, current, total, pMeta) =>
           progressLogger(scope, current, total, {
@@ -351,12 +351,12 @@ async function main() {
         },
       },
       officialLicenses,
-      configRaw.officialMode === 'dtp' ? DTP_TABLE_ROW_SLIMMING : null,
-      sourceKindFromDatasetConfig(configRaw),
-      configRaw.rowFlags ?? [],
-      configRaw.compare.attributeChecks ?? [],
+      tableRowSlimming: configRaw.officialMode === 'dtp' ? DTP_TABLE_ROW_SLIMMING : null,
+      sourceKind: sourceKindFromDatasetConfig(configRaw),
+      rowFlags: configRaw.rowFlags ?? [],
+      attributeChecks: configRaw.compare.attributeChecks ?? [],
       wikidataByQid,
-    )
+    })
     checkpoint('after_write_outputs')
     console.log(
       cliOk(`Wrote output PMTiles + static report payloads under ${DATASETS_DIRECTORY}/${area}`),

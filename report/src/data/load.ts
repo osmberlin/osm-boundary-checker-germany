@@ -188,9 +188,12 @@ export async function loadFeatureOrFallback(
   area: string,
   featureKey: string,
 ): Promise<FeatureDetailComparison> {
+  // Both requests at once: the table is large for some datasets, the shard is tiny.
+  const shardRequest = loadFeatureShard(area, featureKey)
+  shardRequest.catch(() => {})
   const comparison = await loadComparison(area)
   try {
-    const shard = await loadFeatureShard(area, featureKey)
+    const shard = await shardRequest
     return {
       ...comparison,
       rows: [shard.row],

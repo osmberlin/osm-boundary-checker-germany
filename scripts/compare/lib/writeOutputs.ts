@@ -582,34 +582,58 @@ function updateSnapshotsFile(
   writePrettyJson(snapshotsPath, snapshots)
 }
 
-export function writeOutputs(
-  areaPath: string,
-  areaFolder: string,
-  displayName: string,
-  titlePrefix: string,
-  rows: CompareRow[],
-  unmatchedOsm: UnmatchedOsmRow[],
-  metricsCrs: string,
-  overpassBoundaryTag: OverpassBoundaryTag,
-  sourceMetadata: ComparisonSourceMetadata,
-  filterConfigSummary: ComparisonFilterConfigSummary,
-  ogcInspectSources: OgcWfsInspectSource[] = [],
-  compareRulesSummary: CompareRulesSummary | null = null,
-  mapMinZoom: number,
-  phaseLogger?: ComparePhaseLogger,
-  instrumentation?: CompareInstrumentation,
+export type WriteOutputsOptions = {
+  areaPath: string
+  areaFolder: string
+  displayName: string
+  titlePrefix: string
+  rows: CompareRow[]
+  unmatchedOsm: UnmatchedOsmRow[]
+  metricsCrs: string
+  overpassBoundaryTag: OverpassBoundaryTag
+  sourceMetadata: ComparisonSourceMetadata
+  filterConfigSummary: ComparisonFilterConfigSummary
+  ogcInspectSources?: OgcWfsInspectSource[]
+  compareRulesSummary?: CompareRulesSummary | null
+  mapMinZoom: number
+  phaseLogger?: ComparePhaseLogger
+  instrumentation?: CompareInstrumentation
   /** Per-geometry licences (DtP); `null` keeps the single dataset licence. */
-  officialLicenses: OfficialLicenseOutputs | null = null,
+  officialLicenses?: OfficialLicenseOutputs | null
   /** DtP: properties dropped from table rows (shards keep all); `null` keeps everything. */
-  tableRowSlimming: TableRowSlimming | null = null,
-  sourceKind: SourceKind = 'official',
+  tableRowSlimming?: TableRowSlimming | null
+  sourceKind?: SourceKind
   /** `rowFlags` from the dataset config: flag ids per row plus definitions in the table payload. */
-  rowFlags: readonly RowFlagConfig[] = [],
+  rowFlags?: readonly RowFlagConfig[]
   /** `compare.attributeChecks` from the dataset config, embedded once in the table payload. */
-  attributeChecks: readonly AttributeCheckConfig[] = [],
+  attributeChecks?: readonly AttributeCheckConfig[]
   /** `compare.wikidata` with a dump: Wikidata items by id, embedded in the feature shards; `null` = none. */
-  wikidataByQid: Readonly<Record<string, WikidataProtectedAreaItem>> | null = null,
-): { snapshotId: string } {
+  wikidataByQid?: Readonly<Record<string, WikidataProtectedAreaItem>> | null
+}
+
+export function writeOutputs({
+  areaPath,
+  areaFolder,
+  displayName,
+  titlePrefix,
+  rows,
+  unmatchedOsm,
+  metricsCrs,
+  overpassBoundaryTag,
+  sourceMetadata,
+  filterConfigSummary,
+  ogcInspectSources = [],
+  compareRulesSummary = null,
+  mapMinZoom,
+  phaseLogger,
+  instrumentation,
+  officialLicenses = null,
+  tableRowSlimming = null,
+  sourceKind = 'official',
+  rowFlags = [],
+  attributeChecks = [],
+  wikidataByQid = null,
+}: WriteOutputsOptions): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
   const buildDir = join(outDir, BUILD_DIR)
   mkdirSync(outDir, { recursive: true })
