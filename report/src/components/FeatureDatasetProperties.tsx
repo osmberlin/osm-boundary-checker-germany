@@ -27,6 +27,7 @@ import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
 import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 import { sharedButtonClass } from './sharedButtonStyles'
+import { Tooltip } from './ui/Tooltip'
 
 function formatPropertyValue(value: unknown): string {
   if (value === null || value === undefined) return de.feature.datasetPropertiesEmpty
@@ -220,17 +221,18 @@ function AttributeCheckMarker({ result }: { result: AttributeCheckResult }) {
   const tooltip = attributeCheckTooltip(result)
   const equal = result.status === 'equal'
   return (
-    <span
-      title={tooltip}
+    <Tooltip
+      text={tooltip}
+      as="span"
       aria-label={tooltip}
-      className={`inline-flex shrink-0 cursor-help items-center rounded-sm px-1 text-xs leading-5 font-semibold ${
+      className={`shrink-0 cursor-help items-center rounded-sm px-1 text-xs leading-5 font-semibold ${
         equal
           ? 'bg-emerald-900/45 text-emerald-300 ring-1 ring-emerald-700/60'
           : 'bg-amber-900/35 text-amber-300 ring-1 ring-amber-700/60'
       }`}
     >
       {equal ? '✓' : '≠'}
-    </span>
+    </Tooltip>
   )
 }
 
@@ -250,15 +252,16 @@ function AttributeCheckSummary({ results }: { results: readonly AttributeCheckRe
         return (
           <li
             key={`${result.official}-${result.label}`}
-            title={attributeCheckTooltip(result)}
-            className={`cursor-help rounded-full px-2 py-0.5 text-xs ring-1 ring-inset ${
+            className={`rounded-full px-2 py-0.5 text-xs ring-1 ring-inset ${
               equal
                 ? 'bg-emerald-900/30 text-emerald-200 ring-emerald-700/60'
                 : 'bg-amber-900/30 text-amber-200 ring-amber-700/60'
             }`}
           >
-            {equal ? '✓' : '≠'} {text}
-            {combinedName ? ` (${de.feature.datasetAttributeCheckCombinedNameRule})` : ''}
+            <Tooltip text={attributeCheckTooltip(result)} as="span" className="cursor-help">
+              {equal ? '✓' : '≠'} {text}
+              {combinedName ? ` (${de.feature.datasetAttributeCheckCombinedNameRule})` : ''}
+            </Tooltip>
           </li>
         )
       })}

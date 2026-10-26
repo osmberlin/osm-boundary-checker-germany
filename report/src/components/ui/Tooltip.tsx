@@ -1,0 +1,106 @@
+import {
+  autoUpdate,
+  flip,
+  FloatingPortal,
+  offset,
+  safePolygon,
+  shift,
+  useDismiss,
+  useFloating,
+  useFocus,
+  useHover,
+  useInteractions,
+  useRole,
+} from '@floating-ui/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import type React from 'react'
+import { useState } from 'react'
+import { cn } from '../../lib/cn'
+import { UI_SPRING } from './motion'
+
+type Props = {
+  text: string
+  className?: string
+  /** Floating UI placement; defaults to top. */
+  placement?: 'top' | 'bottom' | 'left' | 'right'
+  /** `span` when the trigger sits inside a `<button>` (phrasing content only). */
+  as?: 'div' | 'span'
+  children: React.ReactNode
+  'aria-label'?: string
+}
+
+export const Tooltip = ({
+  text,
+  children,
+  className,
+  placement: preferredPlacement = 'top',
+  as: Wrapper = 'div',
+  'aria-label': ariaLabel,
+}: Props) => {
+  const [open, setOpen] = useState(false)
+  const reducedMotion = useReducedMotion()
+
+  // `transform: false` keeps position on top/left so Motion can own transform (scale/offset).
+  const { refs, floatingStyles, context, placement, isPositioned } = useFloating({
+    open,
+    onOpenChange: setOpen,
+    placement: preferredPlacement,
+    transform: false,
+    whileElementsMounted: autoUpdate,
+    middleware: [offset(8), flip({ padding: 8 }), shift({ padding: 8 })],
+  })
+
+  // safePolygon keeps the tooltip open while the pointer crosses the gap to the panel
+  // (needed for multi-line copy users may want to read).
+  const hover = useHover(context, {
+    move: false,
+    delay: { open: 50, close: 0 },
+    handleClose: safePolygon(),
+  })
+  // React `onFocus` uses focusin, so focusing a wrapped button still opens the tooltip.
+  const focus = useFocus(context)
+  const dismiss = useDismiss(context)
+  const role = useRole(context, { role: 'tooltip' })
+  const { getReferenceProps, getFloatingProps } = useInteractions([hover, focus, dismiss, role])
+
+  const side = placement.split('-')[0]
+  const enterOffset =
+    side === 'bottom'
+      ? { y: -4 }
+      : side === 'left'
+        ? { x: 4 }
+        : side === 'right'
+          ? { x: -4 }
+          : { y: 4 }
+
+  return (
+    <Wrapper
+      className={cn('relative', Wrapper === 'span' && 'inline-flex', className)}
+      {...getReferenceProps({ ref: refs.setReference, 'aria-label': ariaLabel })}
+    >
+      {children}
+      <FloatingPortal>
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              // Mount while open so Floating UI can measure; animate only after
+              // `isPositioned` so Motion does not play from (0, 0).
+              initial={reducedMotion ? false : { opacity: 0, scale: 0.96, ...enterOffset }}
+              animate={
+                isPositioned
+                  ? { opacity: 1, scale: 1, x: 0, y: 0 }
+                  : { opacity: 0, scale: 0.96, ...enterOffset }
+              }
+              exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96, ...enterOffset }}
+              transition={reducedMotion ? { duration: 0 } : UI_SPRING}
+              className="z-50 w-max max-w-82 rounded bg-slate-800 p-2 text-xs whitespace-pre-line text-slate-100 shadow-md ring-1 ring-slate-600 select-none"
+              {...getFloatingProps({ ref: refs.setFloating, style: floatingStyles })}
+            >
+              {text}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </FloatingPortal>
+    </Wrapper>
+  )
+}

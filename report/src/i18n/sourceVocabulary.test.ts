@@ -22,8 +22,9 @@ describe('sourceVocabulary', () => {
     const html = renderToStaticMarkup(
       createElement(SourceTerm, { kind: 'dtp', term: 'dataHeading' }),
     )
-    expect(html).toContain('<abbr title="Digitize the Planet e.V."')
-    expect(html).toContain('>DtP</abbr>-Daten')
+    expect(html).toContain('<abbr class="')
+    expect(html).toContain('aria-label="Digitize the Planet e.V."')
+    expect(html).toContain('>DtP</abbr></span>-Daten')
     expect(
       renderToStaticMarkup(createElement(SourceTerm, { kind: 'official', term: 'dataHeading' })),
     ).toBe('Amtliche Daten')
