@@ -14,6 +14,7 @@ import {
 } from '../../lib/wikidataFields'
 import { ProvenanceGridRow } from '../ProvenanceGridRow'
 import { CompareMarker } from '../ui/CompareMarker'
+import { MarkedValue } from '../ui/MarkedValue'
 
 const t = de.feature.wikidata
 const LINK_CLASS =
@@ -67,9 +68,9 @@ function FieldValue({ field, item }: { field: WikidataFieldId; item: WikidataSha
 
 function markerTooltip(row: WikidataFieldRow, dataHeading: string) {
   const pairs = row.compared
-    .map(({ source, key, value }) => {
+    .map(({ source, key, value, label }) => {
       const pair = key === '' ? value : `${key}=${value}`
-      return `${source === 'official' ? dataHeading : 'OSM'}: ${pair}`
+      return `${label ?? (source === 'official' ? dataHeading : 'OSM')}: ${pair}`
     })
     .join(' · ')
   return `${row.status === 'equal' ? t.equalTooltip : t.differentTooltip}: ${pairs}`
@@ -96,7 +97,7 @@ function ItemFields({
               ) : null}
               {t.fields[row.id]}
             </dt>
-            <dd className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 break-words text-slate-100">
+            <dd className="min-w-0 break-words text-slate-100">
               {empty ? (
                 row.suggestion ? (
                   <span className="flex items-start gap-1.5 text-xs text-slate-300">
@@ -112,17 +113,20 @@ function ItemFields({
                   <span className="text-slate-500 italic">{t.missing}</span>
                 )
               ) : (
-                <>
+                <MarkedValue
+                  markers={
+                    row.status !== 'none' ? (
+                      <CompareMarker
+                        equal={row.status === 'equal'}
+                        tooltip={markerTooltip(row, dataHeading)}
+                      />
+                    ) : null
+                  }
+                >
                   <span className="flex min-w-0 flex-wrap gap-x-2">
                     <FieldValue field={row.id} item={item} />
                   </span>
-                  {row.status !== 'none' ? (
-                    <CompareMarker
-                      equal={row.status === 'equal'}
-                      tooltip={markerTooltip(row, dataHeading)}
-                    />
-                  ) : null}
-                </>
+                </MarkedValue>
               )}
             </dd>
           </div>
@@ -170,12 +174,15 @@ export function WikidataAttributesRow({
   official,
   osm,
   osmRelationId,
+  areaM2,
   sourceKind,
 }: {
   wikidata: WikidataShard
   official: Record<string, unknown>
   osm: Record<string, unknown>
   osmRelationId: string
+  /** Areas of the official and the matched OSM geometry (matched rows); `null` when unknown. */
+  areaM2: { official: number; osm: number } | null
   sourceKind: SourceKind | undefined
 }) {
   const dataHeading = sourceText(sourceKind, 'dataHeading')
@@ -183,7 +190,13 @@ export function WikidataAttributesRow({
     { item: wikidata.official, caption: t.viaOfficial(dataHeading) },
     { item: wikidata.osm, caption: t.viaOsm },
   ].flatMap(({ item, caption }) => (item ? [{ item, caption }] : []))
-  const context = { official, osm, osmRelationId }
+  const context = {
+    official,
+    osm,
+    osmRelationId,
+    areaHa: areaM2 ? { official: areaM2.official / 10_000, osm: areaM2.osm / 10_000 } : undefined,
+    officialGeometryLabel: sourceText(sourceKind, 'geometryLabel'),
+  }
   return (
     <ProvenanceGridRow
       asDl

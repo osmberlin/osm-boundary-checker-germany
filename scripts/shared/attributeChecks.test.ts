@@ -58,9 +58,19 @@ describe('evaluateAttributeChecks exact', () => {
       status: 'different',
       osm: [{ key: 'wikidata', value: 'Q2' }],
     })
-    expect(one(wikidata, { wikidata: 'Q1' }, {}).status).toBe('missing')
-    expect(one(wikidata, { wikidata: '' }, { wikidata: 'Q1' }).status).toBe('missing')
-    expect(one(wikidata, {}, { wikidata: 'Q1' }).status).toBe('missing')
+    expect(one(wikidata, { wikidata: 'Q1' }, { name: 'x' })).toMatchObject({
+      status: 'missing_osm',
+      osm: [],
+      officialValue: 'Q1',
+      suggestedTags: { wikidata: 'Q1' },
+    })
+    expect(one(wikidata, { wikidata: '' }, { wikidata: 'Q1' })).toMatchObject({
+      status: 'missing_reference',
+      osm: [{ key: 'wikidata', value: 'Q1' }],
+    })
+    expect(one(wikidata, {}, { wikidata: 'Q1' }).status).toBe('missing_reference')
+    expect(one(wikidata, {}, { name: 'x' }).status).toBe('missing')
+    expect(one(wikidata, { wikidata: '' }, { name: 'x' }).status).toBe('missing')
   })
 
   test('is case-sensitive', () => {
@@ -104,8 +114,10 @@ describe('evaluateAttributeChecks name', () => {
     expect(result.osm.map((pair) => pair.key)).toEqual(['name', 'official_name'])
   })
 
-  test('missing without a listed key', () => {
-    expect(one(name, { name: 'Federsee' }, { ref: '1' }).status).toBe('missing')
+  test('missing in OSM without a listed key, suggesting the first key', () => {
+    const result = one(name, { name: 'Federsee' }, { ref: '1' })
+    expect(result.status).toBe('missing_osm')
+    expect(result.suggestedTags).toEqual({ name: 'Federsee' })
   })
 })
 
@@ -133,8 +145,13 @@ describe('evaluateAttributeChecks natura2000', () => {
     expect(one(natura, { natura2000_code: 'DE5526471' }, { 'ref:DE': '5526-472' }).status).toBe(
       'different',
     )
-    expect(one(natura, { natura2000_code: 'DE5526471' }, { name: 'x' }).status).toBe('missing')
-    expect(one(natura, {}, { 'ref:DE': '5526-471' }).status).toBe('missing')
+    const missingInOsm = one(natura, { natura2000_code: 'DE5526471' }, { name: 'x' })
+    expect(missingInOsm.status).toBe('missing_osm')
+    expect(missingInOsm.suggestedTags).toEqual({ 'ref:DE': '5526-471' })
+    expect(one(natura, {}, { 'ref:DE': '5526-471' }).status).toBe('missing_reference')
+    expect(
+      one(natura, { natura2000_code: 'AT3438000' }, { name: 'x' }).suggestedTags,
+    ).toBeUndefined()
   })
 })
 
@@ -166,23 +183,55 @@ describe('evaluateAttributeChecks protectedCategory', () => {
     ).toBe('different')
   })
 
-  test('missing without OSM type tags or without a known category', () => {
-    expect(one(category, { category_id: 2 }, { name: 'x' }).status).toBe('missing')
+  test('different lists the expected tags and suggests the missing ones', () => {
+    const result = one(
+      category,
+      { category_id: 2 },
+      { protection_title: 'Landschaftsschutzgebiet', protect_class: '5' },
+    )
+    expect(result.expectedTags).toContain('protect_class=4')
+    expect(result.suggestedTags).toMatchObject({
+      protect_class: '4',
+      protection_title: 'Naturschutzgebiet',
+    })
+  })
+
+  test('missing in OSM without type tags', () => {
+    const result = one(category, { category_id: 2 }, { name: 'x' })
+    expect(result.status).toBe('missing_osm')
+    expect(result.suggestedTags).toMatchObject({
+      protect_class: '4',
+      protection_title: 'Naturschutzgebiet',
+    })
+  })
+
+  test('unknown category is missing, an empty one is missing at the reference', () => {
     expect(one(category, { category_id: 999 }, { protect_class: '4' }).status).toBe('missing')
-    expect(one(category, { category_id: '' }, { protect_class: '4' }).status).toBe('missing')
+    expect(one(category, { category_id: '' }, { protect_class: '4' }).status).toBe(
+      'missing_reference',
+    )
+    expect(one(category, { category_id: '' }, { name: 'x' }).status).toBe('missing')
   })
 })
 
 describe('evaluateAttributeChecks input', () => {
-  test('no checks or no tags', () => {
+  const checks: AttributeCheckConfig[] = [{ label: 'W', official: 'wikidata', osm: ['wikidata'] }]
+
+  test('no checks', () => {
     expect(evaluateAttributeChecks(undefined, {}, {})).toEqual([])
-    expect(
-      evaluateAttributeChecks(
-        [{ label: 'W', official: 'wikidata', osm: ['wikidata'] }],
-        { wikidata: 'Q1' },
-        null,
-      )[0]!.status,
-    ).toBe('missing')
+  })
+
+  test('no OSM side: no results, not even "missing in OSM"', () => {
+    expect(evaluateAttributeChecks(checks, { wikidata: 'Q1' }, null)).toEqual([])
+    expect(evaluateAttributeChecks(checks, { wikidata: 'Q1' }, undefined)).toEqual([])
+    expect(evaluateAttributeChecks(checks, { wikidata: 'Q1' }, {})).toEqual([])
+    expect(evaluateAttributeChecks(checks, { wikidata: 'Q1' }, { '@id': 'relation/1' })).toEqual([])
+  })
+
+  test('an OSM object with other tags compares', () => {
+    expect(evaluateAttributeChecks(checks, { wikidata: 'Q1' }, { name: 'x' })[0]!.status).toBe(
+      'missing_osm',
+    )
   })
 })
 

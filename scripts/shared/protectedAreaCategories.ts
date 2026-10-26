@@ -24,6 +24,25 @@
 
 export type TagBag = Readonly<Record<string, unknown>>
 
+/**
+ * OSM tags the protected-area extract (`extract-osm.ts`) carries onto each object. Other tags are
+ * not in the extract, so comparing the extract with the live object is only meaningful for these.
+ */
+export const PROTECTED_AREA_EXTRACT_TAG_KEYS = [
+  'name',
+  'ref:WDPA',
+  'wikidata',
+  'boundary',
+  'leisure',
+  'protect_class',
+  'protection_title',
+  'ref:SCI',
+  'ref:natura2000',
+  'ref:DE',
+  'operator',
+  'dtp_id',
+] as const
+
 export type ProtectedAreaCategoryRule = {
   id: number
   /** German DtP name, for logs and docs. */

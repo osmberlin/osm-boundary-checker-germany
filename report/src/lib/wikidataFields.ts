@@ -1,6 +1,10 @@
 import { normalizeAreaNameForCompare } from '../../../scripts/shared/attributeChecks.ts'
 import type { WikidataShardItem } from '../../../scripts/shared/wikidataProtectedAreasPayload.ts'
+import { formatDeFixed } from './formatDe'
 import { parseReportRowOsmRef } from './osmObjectRef'
+
+/** Wikidata area (P2046) and geometry area count as equal within this relative difference. */
+const WIKIDATA_AREA_TOLERANCE = 0.05
 
 export type WikidataFieldId =
   | 'label'
@@ -12,7 +16,13 @@ export type WikidataFieldId =
   | 'commons'
 
 /** A value of the official record or the OSM object that a Wikidata value is compared with. */
-export type WikidataComparedValue = { source: 'official' | 'osm'; key: string; value: string }
+export type WikidataComparedValue = {
+  source: 'official' | 'osm'
+  key: string
+  value: string
+  /** Shown in the marker tooltip instead of the source name (e.g. "DtP-Geometrie"). */
+  label?: string
+}
 
 export type WikidataFieldRow = {
   id: WikidataFieldId
@@ -81,7 +91,15 @@ function compared(
  */
 export function wikidataFieldRows(
   item: WikidataShardItem,
-  context: { official: Props; osm: Props; osmRelationId: string },
+  context: {
+    official: Props
+    osm: Props
+    osmRelationId: string
+    /** Area of the official geometry and of the matched OSM geometry in hectares, when known. */
+    areaHa?: { official: number | null; osm: number | null }
+    /** Name of the official geometry for the area tooltip ("DtP-Geometrie"). */
+    officialGeometryLabel?: string
+  },
 ): WikidataFieldRow[] {
   const { official, osm } = context
   const rows: WikidataFieldRow[] = []
@@ -146,11 +164,36 @@ export function wikidataFieldRows(
     ...(operators.length === 0 && operatorHint ? { suggestion: operatorHint } : {}),
   })
 
+  const officialAreaHa = context.areaHa?.official ?? null
+  const osmAreaHa = context.areaHa?.osm ?? null
+  const areaText = (ha: number) => `${formatDeFixed(ha, 2)} ha`
+  const areaCompared: WikidataComparedValue[] =
+    officialAreaHa === null
+      ? []
+      : [
+          {
+            source: 'official',
+            key: '',
+            value: areaText(officialAreaHa),
+            ...(context.officialGeometryLabel ? { label: context.officialGeometryLabel } : {}),
+          },
+          ...(osmAreaHa === null
+            ? []
+            : [{ source: 'osm' as const, key: '', value: areaText(osmAreaHa) }]),
+        ]
   rows.push({
     id: 'area',
     values: item.areaHa === undefined ? [] : [String(item.areaHa)],
-    status: 'none',
-    compared: [],
+    status:
+      item.areaHa === undefined || officialAreaHa === null || officialAreaHa <= 0
+        ? 'none'
+        : Math.abs(item.areaHa - officialAreaHa) / officialAreaHa <= WIKIDATA_AREA_TOLERANCE
+          ? 'equal'
+          : 'different',
+    compared: areaCompared,
+    ...(item.areaHa === undefined && officialAreaHa !== null
+      ? { suggestion: areaText(officialAreaHa) }
+      : {}),
   })
   rows.push({
     id: 'commons',

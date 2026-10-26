@@ -3,8 +3,10 @@ import { useLiveOsmObjects } from '../../hooks/useLiveOsmObjects'
 import { de } from '../../i18n/de'
 import { formatOverpassRunError } from '../../lib/formatOverpassRunError'
 import {
+  describeLiveOsmTagChange,
   liveOsmCheckResults,
   liveOsmResultMarker,
+  liveOsmTagChanges,
   liveOsmTagMarkers,
 } from '../../lib/liveOsmChecks'
 import { overpassLiveRowKey } from '../../lib/liveRowKey'
@@ -13,6 +15,7 @@ import { useIsLiveRowHidden, useLiveOverlayActions } from '../../stores/liveOver
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { sharedButtonClass } from '../sharedButtonStyles'
 import { CompareMarker } from '../ui/CompareMarker'
+import { MarkedValue } from '../ui/MarkedValue'
 
 /** What a live OSM object is compared against: the feature's row and the dataset's attribute checks. */
 export type LiveOsmContext = {
@@ -63,7 +66,7 @@ function LiveOsmTagList({
 }) {
   const { row, data } = context
   const results = liveOsmCheckResults(data.attributeChecks, row.officialProperties, tags)
-  const markers = liveOsmTagMarkers(results, row.officialProperties)
+  const markers = liveOsmTagMarkers(results, row.officialProperties, data.sourceKind)
   const entries = listedTags(tags)
   if (entries.length === 0) {
     return <p className="text-sm text-slate-400">{de.feature.liveOsmHitNoTags}</p>
@@ -73,15 +76,42 @@ function LiveOsmTagList({
       {entries.map(([key, value]) => (
         <div key={key} className="contents">
           <dt className="font-mono text-xs break-words text-slate-400">{key}</dt>
-          <dd className="flex min-w-0 flex-wrap items-baseline gap-x-2 break-words text-slate-100">
-            {value}
-            {(markers.get(key) ?? []).map((marker) => (
-              <CompareMarker key={marker.tooltip} equal={marker.equal} tooltip={marker.tooltip} />
-            ))}
+          <dd className="min-w-0 text-slate-100">
+            <MarkedValue
+              markers={(markers.get(key) ?? []).map((marker) => (
+                <CompareMarker
+                  key={marker.tooltip}
+                  equal={marker.equal}
+                  missing={marker.missing}
+                  tooltip={marker.tooltip}
+                />
+              ))}
+            >
+              {value}
+            </MarkedValue>
           </dd>
         </div>
       ))}
     </dl>
+  )
+}
+
+/** "Seit dem Extrakt geändert: …" or "Unverändert seit dem Extrakt". */
+function LiveOsmChangeNote({
+  snapshotTags,
+  liveTags,
+}: {
+  snapshotTags: Record<string, unknown> | null
+  liveTags: Record<string, string>
+}) {
+  const changes = liveOsmTagChanges(snapshotTags, liveTags)
+  if (changes.length === 0) {
+    return <p className="text-xs text-slate-400">{de.feature.liveOsmUnchangedSinceExtract}</p>
+  }
+  return (
+    <p className="text-xs text-amber-300/90">
+      {de.feature.liveOsmChangedSinceExtract(changes.map(describeLiveOsmTagChange).join('; '))}
+    </p>
   )
 }
 
@@ -99,13 +129,13 @@ function LiveOsmCheckBadges({
   return (
     <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
       {results.map((result) => {
-        const marker = liveOsmResultMarker(result, row.officialProperties)
+        const marker = liveOsmResultMarker(result, row.officialProperties, data.sourceKind)
         return (
           <span
             key={result.label}
             className="inline-flex items-center gap-1 text-xs text-slate-300"
           >
-            <CompareMarker equal={marker.equal} tooltip={marker.tooltip} />
+            <CompareMarker equal={marker.equal} missing={marker.missing} tooltip={marker.tooltip} />
             {result.label}
           </span>
         )
@@ -150,10 +180,13 @@ export function LiveOsmObjectLoadButton({
   context,
   object,
   className = sharedButtonClass,
+  idleLabel = de.feature.liveOsmObjectLoad,
 }: {
   context: LiveOsmContext
   object: LiveOsmObjectRef
   className?: string
+  /** Button text before the first load. */
+  idleLabel?: string
 }) {
   const { getState, load } = useLiveOsmObjects(context.featureKey)
   const status = getState(object)?.status
@@ -168,7 +201,7 @@ export function LiveOsmObjectLoadButton({
         ? de.feature.liveOsmObjectLoading
         : status === 'done'
           ? de.feature.liveOsmObjectReload
-          : de.feature.liveOsmObjectLoad}
+          : idleLabel}
     </button>
   )
 }
@@ -177,9 +210,12 @@ export function LiveOsmObjectLoadButton({
 export function LiveOsmObjectResult({
   context,
   object,
+  snapshotTags,
 }: {
   context: LiveOsmContext
   object: LiveOsmObjectRef
+  /** Tags of the extract row: when given, a note says whether the live tags changed since. */
+  snapshotTags?: Record<string, unknown> | null
 }) {
   const { getState } = useLiveOsmObjects(context.featureKey)
   const state = getState(object)
@@ -208,6 +244,9 @@ export function LiveOsmObjectResult({
       <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
         {de.feature.liveOsmObjectTagsHeading}
       </p>
+      {snapshotTags !== undefined ? (
+        <LiveOsmChangeNote snapshotTags={snapshotTags} liveTags={state.tags} />
+      ) : null}
       <LiveOsmTagList tags={state.tags} context={context} />
       {state.features.length > 0 ? (
         <LiveRowMapToggle featureKey={context.featureKey} type={object.type} id={object.id} />

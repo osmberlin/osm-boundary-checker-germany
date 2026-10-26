@@ -21,8 +21,19 @@ import {
   germanKeyExplorerLinkValueOrNull,
   isGermanKeyExplorerDisplayKey,
 } from '../lib/germanKeyExplorer'
-import { parseReportRowOsmRef, type ParsedReportRowOsmRef } from '../lib/osmObjectRef'
-import type { CandidateMatch, ComparisonForReport, ReportRow } from '../types/report'
+import { liveOsmTagMarkers, type LiveOsmTagMarker } from '../lib/liveOsmChecks'
+import {
+  parseLiveOsmObjectRef,
+  parseReportRowOsmRef,
+  type ParsedReportRowOsmRef,
+} from '../lib/osmObjectRef'
+import type { AttributeHint, CandidateMatch, ComparisonForReport, ReportRow } from '../types/report'
+import { CopyTagsButton } from './featureDetail/CopyTagsButton'
+import {
+  LiveOsmObjectLoadButton,
+  LiveOsmObjectResult,
+  type LiveOsmContext,
+} from './featureDetail/LiveOsmObject'
 import { WikidataAttributesRow } from './featureDetail/WikidataAttributesRow'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
@@ -30,6 +41,7 @@ import { ProvenanceGridRow } from './ProvenanceGridRow'
 import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 import { sharedButtonClass } from './sharedButtonStyles'
 import { CompareMarker } from './ui/CompareMarker'
+import { MarkedValue } from './ui/MarkedValue'
 import { Tooltip } from './ui/Tooltip'
 
 function formatPropertyValue(value: unknown): string {
@@ -211,48 +223,179 @@ function attributeCheckOsmPairs(result: AttributeCheckResult): string {
   return result.osm.map(({ key, value }) => `${key}=${value}`).join(', ')
 }
 
-function attributeCheckTooltip(result: AttributeCheckResult): string {
+function attributeCheckTooltip(
+  result: AttributeCheckResult,
+  sourceKind: SourceKind | undefined,
+): string {
   const pairs = attributeCheckOsmPairs(result)
-  return result.status === 'equal'
-    ? de.feature.datasetAttributeCheckEqualTooltip(pairs)
-    : de.feature.datasetAttributeCheckDifferentTooltip(pairs)
+  switch (result.status) {
+    case 'equal':
+      return pairs === ''
+        ? de.feature.datasetAttributeCheckEqualTooltipNoPairs
+        : de.feature.datasetAttributeCheckEqualTooltip(pairs)
+    case 'missing_osm':
+      return de.feature.datasetAttributeCheckMissingOsmTooltip
+    case 'missing_reference':
+      return de.feature.datasetAttributeCheckMissingReferenceTooltip(
+        sourceText(sourceKind, 'dataAtLabel'),
+      )
+    case 'different':
+    case 'missing':
+      return result.expectedTags
+        ? `${de.feature.datasetAttributeCheckDifferentTooltip(pairs)} · ${de.feature.datasetAttributeCheckExpectedTooltip(result.expectedTags.join(', '))}`
+        : de.feature.datasetAttributeCheckDifferentTooltip(pairs)
+  }
 }
 
-/** Small marker next to an official property: green check for equal in OSM, amber ≠ for different. */
-function AttributeCheckMarker({ result }: { result: AttributeCheckResult }) {
-  if (result.status === 'missing') return null
-  return <CompareMarker equal={result.status === 'equal'} tooltip={attributeCheckTooltip(result)} />
+function tagPairs(tags: Record<string, string>): string {
+  return Object.entries(tags)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(', ')
 }
 
-/** One line of small chips above the two lists: the checks that are equal or different. */
-function AttributeCheckSummary({ results }: { results: readonly AttributeCheckResult[] }) {
+/**
+ * Markers of the check results next to the official property they belong to: ✓ equal, ≠ different,
+ * ∅ missing in OSM. (The OSM list gets its markers from `liveOsmTagMarkers`.)
+ */
+function OfficialCheckMarkers({
+  results,
+  propertyKey,
+  sourceKind,
+}: {
+  results: readonly AttributeCheckResult[]
+  propertyKey: string
+  sourceKind: SourceKind | undefined
+}) {
+  return results
+    .filter((result) => result.official === propertyKey && result.status !== 'missing_reference')
+    .map((result) => (
+      <CompareMarker
+        key={result.label}
+        equal={result.status === 'equal'}
+        missing={result.status === 'missing_osm'}
+        tooltip={attributeCheckTooltip(result, sourceKind)}
+      />
+    ))
+}
+
+const CHIP_CLASS =
+  'inline-flex flex-wrap items-center gap-x-1.5 gap-y-1 rounded-full px-2 py-0.5 text-xs ring-1 ring-inset'
+const CHIP_EQUAL_CLASS = 'bg-emerald-900/30 text-emerald-200 ring-emerald-700/60'
+const CHIP_WARN_CLASS = 'bg-amber-900/30 text-amber-200 ring-amber-700/60'
+const CHIP_NEUTRAL_CLASS = 'bg-slate-800/60 text-slate-200 ring-slate-600/70'
+const CHIP_CODE_CLASS = 'rounded bg-slate-950/60 px-1 font-mono text-[11px] break-all'
+
+function AttributeCheckChip({
+  result,
+  sourceKind,
+}: {
+  result: AttributeCheckResult
+  sourceKind: SourceKind | undefined
+}) {
+  const tooltip = attributeCheckTooltip(result, sourceKind)
+  const suggested = result.suggestedTags ?? {}
+  const hasSuggestion = Object.keys(suggested).length > 0
+  switch (result.status) {
+    case 'equal':
+    case 'different': {
+      const equal = result.status === 'equal'
+      const combinedName = result.compare === 'name' && result.osmKeys.length > 1 && equal
+      return (
+        <li className={`${CHIP_CLASS} ${equal ? CHIP_EQUAL_CLASS : CHIP_WARN_CLASS}`}>
+          <Tooltip text={tooltip} as="span" className="cursor-help">
+            {equal ? '✓' : '≠'}{' '}
+            {equal ? de.feature.datasetAttributeCheckEqualChip(result.label) : result.label}
+            {combinedName ? ` (${de.feature.datasetAttributeCheckCombinedNameRule})` : ''}
+          </Tooltip>
+          {!equal && hasSuggestion ? (
+            <CopyTagsButton
+              tags={suggested}
+              ariaLabel={de.feature.datasetAttributeCheckCopyAria(result.label)}
+            />
+          ) : null}
+        </li>
+      )
+    }
+    case 'missing_osm':
+      return (
+        <li className={`${CHIP_CLASS} ${CHIP_WARN_CLASS}`}>
+          <Tooltip text={tooltip} as="span" className="cursor-help">
+            + {de.feature.datasetAttributeCheckMissingOsmChip(result.label)}
+            {hasSuggestion ? ':' : ''}
+          </Tooltip>
+          {hasSuggestion ? (
+            <>
+              <code className={CHIP_CODE_CLASS}>{tagPairs(suggested)}</code>
+              <CopyTagsButton
+                tags={suggested}
+                ariaLabel={de.feature.datasetAttributeCheckCopyAria(result.label)}
+              />
+            </>
+          ) : null}
+        </li>
+      )
+    case 'missing_reference':
+      return (
+        <li className={`${CHIP_CLASS} ${CHIP_WARN_CLASS}`}>
+          <Tooltip text={tooltip} as="span" className="cursor-help">
+            {renderWithAbbr(
+              de.feature.datasetAttributeCheckMissingReferenceChip(
+                result.label,
+                sourceText(sourceKind, 'dataAtLabel'),
+                result.osm.map((pair) => pair.value).join(', '),
+              ),
+            )}
+          </Tooltip>
+        </li>
+      )
+    case 'missing':
+      return null
+  }
+}
+
+/** Hints without an attribute check counterpart (today: DtP names another OSM object). */
+function AttributeHintChip({ hint }: { hint: AttributeHint }) {
+  const t = de.feature.attributeHints
+  return (
+    <li className={`${CHIP_CLASS} ${CHIP_NEUTRAL_CLASS}`}>
+      <Tooltip
+        text={t.osmRefDiffersTooltip(hint.expected.join(', '), hint.actual.join(', '))}
+        as="span"
+        className="cursor-help"
+      >
+        {renderWithAbbr(t.osmRefDiffers)}
+      </Tooltip>
+    </li>
+  )
+}
+
+/** One line of small chips above the two lists: check results (equal, different, missing) and hints. */
+function AttributeCheckSummary({
+  results,
+  hints,
+  sourceKind,
+}: {
+  results: readonly AttributeCheckResult[]
+  hints: readonly AttributeHint[]
+  sourceKind: SourceKind | undefined
+}) {
   const shown = results.filter((result) => result.status !== 'missing')
-  if (shown.length === 0) return null
+  if (shown.length === 0 && hints.length === 0) return null
   return (
     <ul
       aria-label={de.feature.datasetAttributeChecksAria}
       className="flex flex-wrap gap-x-2 gap-y-1 border-b border-slate-700/80 px-4 py-3 sm:px-6"
     >
-      {shown.map((result) => {
-        const equal = result.status === 'equal'
-        const combinedName = result.compare === 'name' && result.osmKeys.length > 1 && equal
-        const text = equal ? de.feature.datasetAttributeCheckEqualChip(result.label) : result.label
-        return (
-          <li
-            key={`${result.official}-${result.label}`}
-            className={`rounded-full px-2 py-0.5 text-xs ring-1 ring-inset ${
-              equal
-                ? 'bg-emerald-900/30 text-emerald-200 ring-emerald-700/60'
-                : 'bg-amber-900/30 text-amber-200 ring-amber-700/60'
-            }`}
-          >
-            <Tooltip text={attributeCheckTooltip(result)} as="span" className="cursor-help">
-              {equal ? '✓' : '≠'} {text}
-              {combinedName ? ` (${de.feature.datasetAttributeCheckCombinedNameRule})` : ''}
-            </Tooltip>
-          </li>
-        )
-      })}
+      {shown.map((result) => (
+        <AttributeCheckChip
+          key={`${result.official}-${result.label}`}
+          result={result}
+          sourceKind={sourceKind}
+        />
+      ))}
+      {hints.map((hint) => (
+        <AttributeHintChip key={hint.id} hint={hint} />
+      ))}
     </ul>
   )
 }
@@ -260,17 +403,25 @@ function AttributeCheckSummary({ results }: { results: readonly AttributeCheckRe
 function DatasetPropertyCard({
   properties,
   checkResults,
+  osmTagMarkers,
+  sourceKind,
+  emptyText = de.feature.datasetPropertiesEmpty,
 }: {
   properties: Record<string, unknown>
-  /** Attribute check results; markers show next to the property they belong to. */
+  /** Official list: attribute check results; markers show next to the property they belong to. */
   checkResults?: readonly AttributeCheckResult[]
+  /** OSM list: markers per OSM tag key (the keys the attribute checks read). */
+  osmTagMarkers?: ReadonlyMap<string, LiveOsmTagMarker[]>
+  sourceKind?: SourceKind | undefined
+  /** Shown instead of the list when there are no properties. */
+  emptyText?: string
 }) {
   const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
   const verifyLinkClass =
     'shrink-0 text-xs font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 
   if (entries.length === 0) {
-    return <p className="text-sm text-slate-400">{de.feature.datasetPropertiesEmpty}</p>
+    return <p className="text-sm text-slate-400">{emptyText}</p>
   }
 
   return (
@@ -284,30 +435,43 @@ function DatasetPropertyCard({
           <div key={k} className="contents">
             <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
             <dd className="min-w-0 break-words text-slate-100">
-              <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <span className="min-w-0">
-                  {typeof v === 'string' && HTTP_URL_PATTERN.test(v) ? (
-                    <a
-                      href={v}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="break-all text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
-                    >
-                      {v}
-                    </a>
-                  ) : (
-                    formatPropertyValue(v)
-                  )}
-                </span>
-                {linkVal ? (
-                  <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />
-                ) : null}
-                {checkResults
-                  ?.filter((result) => result.official === k)
-                  .map((result) => (
-                    <AttributeCheckMarker key={result.label} result={result} />
-                  ))}
-              </span>
+              <MarkedValue
+                markers={
+                  <>
+                    {linkVal ? (
+                      <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />
+                    ) : null}
+                    {checkResults ? (
+                      <OfficialCheckMarkers
+                        results={checkResults}
+                        propertyKey={k}
+                        sourceKind={sourceKind}
+                      />
+                    ) : null}
+                    {(osmTagMarkers?.get(k) ?? []).map((marker) => (
+                      <CompareMarker
+                        key={marker.tooltip}
+                        equal={marker.equal}
+                        missing={marker.missing}
+                        tooltip={marker.tooltip}
+                      />
+                    ))}
+                  </>
+                }
+              >
+                {typeof v === 'string' && HTTP_URL_PATTERN.test(v) ? (
+                  <a
+                    href={v}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all text-sky-400 underline decoration-sky-400/40 underline-offset-2 hover:text-sky-300"
+                  >
+                    {v}
+                  </a>
+                ) : (
+                  formatPropertyValue(v)
+                )}
+              </MarkedValue>
             </dd>
           </div>
         )
@@ -644,13 +808,19 @@ const candidateKeyOf = (candidate: CandidateMatch) => `${candidate.osmType}/${ca
 export function FeatureDatasetProperties({
   row,
   data,
+  featureKey,
   candidates,
+  hints,
   wikidata,
 }: {
   row: ReportRow
   data: ComparisonForReport
+  /** Key of the detail page (shared by the live OSM loads of the page). */
+  featureKey: string
   /** Protected-area candidates (shard); only candidates with `tags` can be shown. */
   candidates?: CandidateMatch[]
+  /** Matched rows: shard `attributeHints`; the ones no attribute check covers show as chips. */
+  hints?: AttributeHint[]
   /** Wikidata items of the record (shard); the "Wikidata" block shows only when present. */
   wikidata?: WikidataShard
 }) {
@@ -661,7 +831,8 @@ export function FeatureDatasetProperties({
   const official = forDisplayOfficial(row.officialProperties)
   const osm = forDisplay(row.osmProperties)
   const shownOsmTags = selectedCandidate?.tags ?? osm
-  // No markers for OSM-only rows; official-only rows have markers once a candidate is selected.
+  // Checks need an OSM side: none for OSM-only rows, and official-only rows get one by selecting a
+  // candidate (`evaluateAttributeChecks` returns nothing without OSM tags).
   const attributeCheckResults =
     row.category === 'unmatched_osm'
       ? []
@@ -673,7 +844,21 @@ export function FeatureDatasetProperties({
     osmPick.checkedAtRaw && !osmPick.snapshotFromPbfHeader
       ? de.feature.datasetExtractOsmUncertainNote
       : null
+  const osmTagMarkers = liveOsmTagMarkers(attributeCheckResults, official, data.sourceKind)
+  const chipHints =
+    row.category === 'matched' ? (hints ?? []).filter((hint) => hint.id === 'osm_ref_differs') : []
   const osmRef = parseReportRowOsmRef(row.osmRelationId)
+  // Protected-area datasets (with attribute checks) load the matched object by id; admin datasets
+  // keep the relation tag lookup below.
+  const liveObject =
+    row.category === 'matched' && (data.attributeChecks?.length ?? 0) > 0
+      ? parseLiveOsmObjectRef(row.osmRelationId)
+      : null
+  const liveContext: LiveOsmContext = { featureKey, row, data }
+  const officialAreaM2 =
+    row.metrics && row.metrics.officialAreaM2 > 0
+      ? { official: row.metrics.officialAreaM2, osm: row.metrics.osmAreaM2 }
+      : null
   const osmHistoryUrl =
     osmRef == null ? null : `https://www.openstreetmap.org/relation/${osmRef.numericId}/history`
   const compactButtonClass =
@@ -686,7 +871,11 @@ export function FeatureDatasetProperties({
     >
       <ProvenanceGridSectionHeader title={de.feature.datasetPropertiesSectionTitle} />
       <div className="border-t border-slate-700">
-        <AttributeCheckSummary results={attributeCheckResults} />
+        <AttributeCheckSummary
+          results={attributeCheckResults}
+          hints={chipHints}
+          sourceKind={data.sourceKind}
+        />
         <dl className="divide-y divide-slate-700/80">
           <ProvenanceGridRow
             asDl
@@ -700,7 +889,11 @@ export function FeatureDatasetProperties({
             }
             titleAside={<OfficialDatasetAgeInfoLink side={data.sourceMetadata?.official} />}
           >
-            <DatasetPropertyCard properties={official} checkResults={attributeCheckResults} />
+            <DatasetPropertyCard
+              properties={official}
+              checkResults={attributeCheckResults}
+              sourceKind={data.sourceKind}
+            />
           </ProvenanceGridRow>
           <ProvenanceGridRow
             asDl
@@ -734,6 +927,14 @@ export function FeatureDatasetProperties({
                     {de.feature.datasetOsmOpenHistory}
                   </a>
                 ) : null}
+                {liveObject ? (
+                  <LiveOsmObjectLoadButton
+                    context={liveContext}
+                    object={liveObject}
+                    idleLabel={de.feature.liveOsmMatchedLoad}
+                    className={`${compactButtonClass} self-start disabled:pointer-events-none disabled:opacity-50`}
+                  />
+                ) : null}
               </>
             }
           >
@@ -760,7 +961,17 @@ export function FeatureDatasetProperties({
             {selectedCandidate ? (
               <p className="text-xs text-slate-400">{de.feature.datasetOsmCandidateTagsLabel}</p>
             ) : null}
-            <DatasetPropertyCard properties={shownOsmTags} />
+            <DatasetPropertyCard
+              properties={shownOsmTags}
+              osmTagMarkers={osmTagMarkers}
+              sourceKind={data.sourceKind}
+              emptyText={de.feature.datasetOsmNone}
+            />
+            {liveObject ? (
+              <div className="mt-4 border-t border-slate-700/80 pt-3 empty:hidden">
+                <LiveOsmObjectResult context={liveContext} object={liveObject} snapshotTags={osm} />
+              </div>
+            ) : null}
           </ProvenanceGridRow>
           {wikidata ? (
             <WikidataAttributesRow
@@ -768,10 +979,11 @@ export function FeatureDatasetProperties({
               official={official}
               osm={osm}
               osmRelationId={row.osmRelationId}
+              areaM2={officialAreaM2}
               sourceKind={data.sourceKind}
             />
           ) : null}
-          {osmRef != null && (
+          {osmRef != null && liveObject == null && (
             <OsmLiveRelationTagsRow
               osmRef={osmRef}
               officialProperties={official}

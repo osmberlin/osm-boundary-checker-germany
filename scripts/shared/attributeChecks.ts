@@ -1,7 +1,9 @@
 import { z } from 'zod'
 import {
   matchesCategoryScope,
+  natura2000CodeToRefDe,
   normalizeNatura2000Code,
+  presentTypeTags,
   protectedAreaCategoryRule,
   type TagBag,
 } from './protectedAreaCategories.ts'
@@ -43,7 +45,18 @@ export const attributeChecksConfigSchema = z.array(attributeCheckConfigSchema).m
 
 export type AttributeCheckConfig = z.infer<typeof attributeCheckConfigSchema>
 export type AttributeCheckCompareMode = (typeof ATTRIBUTE_CHECK_COMPARE_MODES)[number]
-export type AttributeCheckStatus = 'equal' | 'different' | 'missing'
+/**
+ * - `equal` / `different`: both sides have a value.
+ * - `missing_osm`: the official record has a value, OSM none of the keys.
+ * - `missing_reference`: OSM has a value, the official record not.
+ * - `missing`: neither has one (nothing to show).
+ */
+export type AttributeCheckStatus =
+  | 'equal'
+  | 'different'
+  | 'missing_osm'
+  | 'missing_reference'
+  | 'missing'
 
 export type AttributeCheckResult = {
   label: string
@@ -55,9 +68,18 @@ export type AttributeCheckResult = {
   status: AttributeCheckStatus
   /**
    * OSM key/value pairs used: the matching one when equal, otherwise every listed key that has a value.
-   * Empty when `missing` because OSM has none of the keys.
+   * Empty when OSM has none of the keys (`missing_osm`, `missing`).
    */
   osm: Array<{ key: string; value: string }>
+  /** Official value as text; empty when the official record has none. */
+  officialValue: string
+  /**
+   * Tags that would fix the OSM side: set on `missing_osm`, and on a `protectedCategory` check that
+   * is `different`. Never applied automatically.
+   */
+  suggestedTags?: Record<string, string>
+  /** `protectedCategory` only: the tags the category expects as `key=value`. */
+  expectedTags?: string[]
 }
 
 function stringValue(raw: unknown): string {
@@ -127,6 +149,57 @@ function firstMatchingPair(
   return pairs.find((pair) => matches(pair.value)) ?? null
 }
 
+/** Tags to set on OSM so that a check can be `equal`, from the official value. */
+function suggestedTagsFor(
+  check: AttributeCheckConfig,
+  compare: AttributeCheckCompareMode,
+  officialValue: string,
+): Record<string, string> {
+  const key = check.osm[0]!
+  switch (compare) {
+    case 'natura2000': {
+      const code = normalizeNatura2000Code(officialValue)
+      return /^\d{7}$/.test(code) ? { [key]: natura2000CodeToRefDe(`DE${code}`) } : {}
+    }
+    case 'protectedCategory':
+      return {}
+    case 'exact':
+    case 'name':
+      return { [key]: officialValue }
+  }
+}
+
+function evaluateProtectedCategory(
+  base: Pick<AttributeCheckResult, 'label' | 'official' | 'compare' | 'osmKeys'>,
+  officialValue: string,
+  pairs: Array<{ key: string; value: string }>,
+  osmTags: TagBag,
+): AttributeCheckResult {
+  const categoryId = Number(officialValue)
+  const rule = Number.isInteger(categoryId) ? protectedAreaCategoryRule(categoryId) : null
+  if (rule == null) {
+    return officialValue === '' && pairs.length > 0
+      ? { ...base, status: 'missing_reference', osm: pairs, officialValue }
+      : { ...base, status: 'missing', osm: pairs, officialValue }
+  }
+  if (matchesCategoryScope(osmTags, categoryId)) {
+    return { ...base, status: 'equal', osm: pairs, officialValue }
+  }
+  const present = new Set(presentTypeTags(osmTags))
+  const expectedTags = Object.entries(rule.expectedTags).map(([key, value]) => `${key}=${value}`)
+  const suggestedTags = Object.fromEntries(
+    Object.entries(rule.expectedTags).filter(([key, value]) => !present.has(`${key}=${value}`)),
+  )
+  return {
+    ...base,
+    status: pairs.length === 0 ? 'missing_osm' : 'different',
+    osm: pairs,
+    officialValue,
+    expectedTags,
+    suggestedTags,
+  }
+}
+
 function evaluateOne(
   check: AttributeCheckConfig,
   officialProperties: Record<string, unknown>,
@@ -134,10 +207,26 @@ function evaluateOne(
 ): AttributeCheckResult {
   const compare = check.compare ?? 'exact'
   const base = { label: check.label, official: check.official, compare, osmKeys: check.osm }
-  const officialRaw = officialProperties[check.official]
-  const officialValue = stringValue(officialRaw)
+  const officialValue = stringValue(officialProperties[check.official])
   const pairs = presentOsmPairs(check.osm, osmTags)
-  if (officialValue === '' || pairs.length === 0) return { ...base, status: 'missing', osm: pairs }
+  if (compare === 'protectedCategory') {
+    return evaluateProtectedCategory(base, officialValue, pairs, osmTags)
+  }
+  if (officialValue === '') {
+    return pairs.length === 0
+      ? { ...base, status: 'missing', osm: pairs, officialValue }
+      : { ...base, status: 'missing_reference', osm: pairs, officialValue }
+  }
+  if (pairs.length === 0) {
+    const suggestedTags = suggestedTagsFor(check, compare, officialValue)
+    return {
+      ...base,
+      status: 'missing_osm',
+      osm: pairs,
+      officialValue,
+      ...(Object.keys(suggestedTags).length > 0 ? { suggestedTags } : {}),
+    }
+  }
 
   let matched: { key: string; value: string } | null = null
   switch (compare) {
@@ -165,27 +254,26 @@ function evaluateOne(
             )
       break
     }
-    case 'protectedCategory': {
-      const categoryId = Number(officialValue)
-      if (!Number.isInteger(categoryId) || protectedAreaCategoryRule(categoryId) == null) {
-        return { ...base, status: 'missing', osm: pairs }
-      }
-      return matchesCategoryScope(osmTags, categoryId)
-        ? { ...base, status: 'equal', osm: pairs }
-        : { ...base, status: 'different', osm: pairs }
-    }
   }
   return matched
-    ? { ...base, status: 'equal', osm: [matched] }
-    : { ...base, status: 'different', osm: pairs }
+    ? { ...base, status: 'equal', osm: [matched], officialValue }
+    : { ...base, status: 'different', osm: pairs, officialValue }
 }
 
-/** Result of every configured check for one official row and the tags of an OSM object. */
+/** Keys the pipeline adds to an OSM extract row; they are not OSM tags. */
+const SYNTHETIC_OSM_KEYS: ReadonlySet<string> = new Set(['@id', 'osm_id', 'osm_way_id'])
+
+/**
+ * Result of every configured check for one official row and the tags of an OSM object.
+ * Without an OSM side (no tags, e.g. an official-only row without a chosen candidate) there is
+ * nothing to compare with, so there are no results — not even "missing in OSM".
+ */
 export function evaluateAttributeChecks(
   checks: readonly AttributeCheckConfig[] | undefined,
   officialProperties: Record<string, unknown> | null | undefined,
   osmTags: TagBag | null | undefined,
 ): AttributeCheckResult[] {
   if (!checks || checks.length === 0) return []
+  if (!osmTags || Object.keys(osmTags).every((key) => SYNTHETIC_OSM_KEYS.has(key))) return []
   return checks.map((check) => evaluateOne(check, officialProperties ?? {}, osmTags ?? {}))
 }

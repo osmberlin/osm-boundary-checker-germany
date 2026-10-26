@@ -280,6 +280,7 @@ export function parseOverpassBoundaryElements(jsonText: string): OverpassBoundar
 export async function fetchOverpassQuery(
   query: string,
   interpreterUrl: string = DEFAULT_OVERPASS_INTERPRETER_URL,
+  signal?: AbortSignal,
 ): Promise<Response> {
   if (!ALLOWED_OVERPASS_INTERPRETER_URLS.has(interpreterUrl)) {
     throw new Error('Interpreter not allowlisted')
@@ -302,6 +303,7 @@ export async function fetchOverpassQuery(
   }
   return fetch(interpreterUrl, {
     ...requestInit,
+    ...(signal ? { signal } : {}),
   })
 }
 

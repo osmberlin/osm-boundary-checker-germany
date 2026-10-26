@@ -477,11 +477,21 @@ export const de = {
     liveOsmObjectReload: 'Neu laden',
     liveOsmObjectGone: 'Dieses Objekt gibt es in OSM nicht mehr (gelöscht?).',
     liveOsmObjectTagsHeading: 'Aktuell in OSM',
+    /** Matched row: button next to the OSM attribute list. */
+    liveOsmMatchedLoad: 'Aktuellen OSM-Stand laden',
+    liveOsmChangedSinceExtract: (changes: string) => `Seit dem Extrakt geändert: ${changes}`,
+    liveOsmUnchangedSinceExtract: 'Unverändert seit dem Extrakt',
+    liveOsmChangeAdded: (key: string, after: string) => `${key} neu (${after})`,
+    liveOsmChangeRemoved: (key: string, before: string) => `${key} entfernt (war ${before})`,
+    liveOsmChangeChanged: (key: string, before: string, after: string) =>
+      `${key}: ${before} → ${after}`,
+    /** ∅ marker on a live OSM value that the official record lacks. */
+    liveOsmCheckMissingReferenceTooltip: (source: string) => `fehlt bei ${source}`,
     /** ✓/≠ tooltips on live OSM tags: result of an attribute check against the official property. */
-    liveOsmCheckEqualTooltip: (officialKey: string, officialValue: string) =>
-      `gleich wie amtlich (${officialKey}: ${officialValue})`,
-    liveOsmCheckDifferentTooltip: (officialKey: string, officialValue: string) =>
-      `weicht von amtlich ab (${officialKey}: ${officialValue})`,
+    liveOsmCheckEqualTooltip: (source: string, officialKey: string, officialValue: string) =>
+      `gleich wie bei ${source} (${officialKey}: ${officialValue})`,
+    liveOsmCheckDifferentTooltip: (source: string, officialKey: string, officialValue: string) =>
+      `weicht von ${source} ab (${officialKey}: ${officialValue})`,
     liveOsmNearbySearch: 'Weitere OSM-Objekte in der Umgebung suchen',
     liveOsmNearbyBadge: 'aus der Umgebung',
     liveOsmNearbyAgain: 'Umgebungssuche zurücksetzen',
@@ -516,6 +526,8 @@ export const de = {
     liveOsmHitNoTags: '(keine Tags)',
     liveOsmInvalidJson: 'Unerwartete Overpass-Antwort.',
     liveOsmHttp: 'Overpass-Anfrage fehlgeschlagen:',
+    liveOsmTimeout:
+      'Overpass hat nicht innerhalb von 60 Sekunden geantwortet. Bitte später erneut versuchen.',
     liveOsmHitTitle: (osmType: string, id: number) => `${osmType} ${id}`,
     liveRowShowOnMap: 'Auf der Karte einblenden',
     liveRowHideOnMap: 'Auf der Karte ausblenden',
@@ -558,6 +570,7 @@ export const de = {
     },
     datasetOsmOpenHistory: 'Auf osm.org anzeigen',
     datasetPropertiesEmpty: '—',
+    datasetOsmNone: 'Kein OSM-Objekt zugeordnet',
     datasetOsmCandidateSelectLabel: 'Kandidat anzeigen',
     datasetOsmCandidateTagsLabel: 'OSM-Kandidat (Auszug aus dem Vergleichsextrakt)',
     /** Attribute checks (config `compare.attributeChecks`): marker tooltips and summary chips. */
@@ -565,6 +578,16 @@ export const de = {
     datasetAttributeCheckDifferentTooltip: (osmPairs: string) => `OSM: ${osmPairs}`,
     datasetAttributeCheckEqualChip: (label: string) => `${label} gleich`,
     datasetAttributeCheckCombinedNameRule: 'kombinierte Namensregel',
+    datasetAttributeCheckEqualTooltipNoPairs: 'gleich in OSM',
+    datasetAttributeCheckExpectedTooltip: (tags: string) => `erwartet: ${tags}`,
+    /** Chip "+ <label> fehlt in OSM: key=value" (the tag follows as code with a copy button). */
+    datasetAttributeCheckMissingOsmChip: (label: string) => `${label} fehlt in OSM`,
+    /** `source` is the dative source wording ("DtP", "den amtlichen Daten"); `osmValues` what OSM has. */
+    datasetAttributeCheckMissingReferenceChip: (label: string, source: string, osmValues: string) =>
+      `${label} fehlt bei ${source} (OSM: ${osmValues})`,
+    datasetAttributeCheckMissingOsmTooltip: 'fehlt in OSM',
+    datasetAttributeCheckMissingReferenceTooltip: (source: string) => `fehlt bei ${source}`,
+    datasetAttributeCheckCopyAria: (label: string) => `Vorgeschlagene Tags für ${label} kopieren`,
     datasetAttributeChecksAria: 'Ergebnis der Attributprüfung',
 
     /** Wikidata row inside "Attribute zum Zeitpunkt des Vergleichs" (dataset option `compare.wikidata`). */
@@ -729,37 +752,11 @@ export const de = {
     copyTagsDone: 'Kopiert',
     copyTagsAria: (osmObject: string) => `Vorgeschlagene Tags für ${osmObject} kopieren`,
 
+    /** Hints without an attribute check (shard `attributeHints`), shown as chips in the attribute block. */
     attributeHints: {
-      aria: 'Hinweise zu Attributen des zugeordneten OSM-Objekts',
-      title: 'Hinweise zu Attributen',
-      osmGroupTitle: 'Vorschläge für OSM',
-      /** `data` is the dative plural of the source wording ("amtlichen Daten", "DtP-Daten"). */
-      osmGroupLead: (data: string) =>
-        `Vorschläge für das zugeordnete OSM-Objekt, abgeleitet aus den ${data}. Sie ändern nichts an der Zuordnung oder an den Kennzahlen.`,
-      referenceGroupTitle: 'Hinweise für die Referenzdaten',
-      referenceGroupLead: (data: string) =>
-        `Was OSM für dieses Gebiet schon führt und den ${data} fehlt. Zum Weitergeben an die Datenpflege, nicht zum Ändern in OSM.`,
-      expected: 'Erwartet',
-      actual: 'In OSM',
-      actualNone: 'nicht gesetzt',
-      suggestion: 'Vorschlag',
-      /** Reference hint: the reference data lack the WDPA id that OSM already has. */
-      referenceSentences: {
-        wdpa_missing_in_dtp: (data: string, wdpaId: string) =>
-          `Die ${data} sollten die WDPA-ID ${wdpaId} übernehmen; OSM führt sie für dieses Gebiet bereits.`,
-      },
-      titles: {
-        type_tags: (categoryName: string | null) =>
-          categoryName
-            ? `Typ-Tags passen nicht zur Kategorie „${categoryName}“`
-            : 'Typ-Tags passen nicht zur Kategorie',
-        wikidata_missing: 'wikidata fehlt in OSM, DtP kennt einen Wert',
-        wikidata_differs: 'wikidata weicht vom DtP-Wert ab',
-        osm_ref_differs: 'DtP verweist auf ein anderes OSM-Objekt',
-        natura2000_missing: 'Natura-2000-Code fehlt in OSM oder weicht ab',
-        wdpa_missing_in_osm: 'ref:WDPA fehlt in OSM, DtP kennt eine WDPA-ID',
-        wdpa_differs: 'ref:WDPA weicht von der WDPA-ID bei DtP ab',
-      },
+      osmRefDiffers: 'DtP verweist auf ein anderes OSM-Objekt',
+      osmRefDiffersTooltip: (expected: string, actual: string) =>
+        `DtP nennt ${expected}, zugeordnet ist ${actual}`,
     },
 
     updateMap: {

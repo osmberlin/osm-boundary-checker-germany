@@ -88,6 +88,10 @@ export const licenseBreakdownEntrySchema = officialLicenseSchema
   })
   .strict()
 
+/**
+ * Only `osm_ref_differs` is written today; the other ids are in shards of earlier runs (their
+ * content is now covered by `compare.attributeChecks`), so the schema keeps accepting them.
+ */
 export const ATTRIBUTE_HINT_IDS = [
   'type_tags',
   'wikidata_missing',
@@ -100,8 +104,8 @@ export const ATTRIBUTE_HINT_IDS = [
 ] as const
 
 /**
- * Suggestion for a matched row (protected areas): OSM tags that do not fit the DtP record.
- * Stored in the feature shard only.
+ * Note on a matched row (protected areas) that no attribute check shows: the DtP record points at
+ * another OSM object than the matched one. Stored in the feature shard only.
  */
 export const attributeHintSchema = z
   .object({

@@ -63,3 +63,37 @@ describe('normalizeWebsite', () => {
     expect(normalizeWebsite('HTTPS://www.Example.org/path/?a=1#x')).toBe('example.org/path')
   })
 })
+
+describe('wikidataFieldRows area', () => {
+  const base = { official: null, osm: null, osmRelationId: '' }
+  const areaRow = (areaHa: number | undefined, official: number | null, osm: number | null) =>
+    byId(
+      wikidataFieldRows(
+        { qid: 'Q1', ...(areaHa === undefined ? {} : { areaHa }) },
+        { ...base, areaHa: { official, osm }, officialGeometryLabel: 'DtP-Geometrie' },
+      ),
+    ).area!
+
+  test('equal within 5 percent, different beyond', () => {
+    expect(areaRow(81706, 81665.77, 81665.21).status).toBe('equal')
+    expect(areaRow(104, 100, null).status).toBe('equal')
+    expect(areaRow(106, 100, null).status).toBe('different')
+    expect(areaRow(90, 100, null).status).toBe('different')
+  })
+
+  test('tooltip values name the geometry and OSM', () => {
+    expect(areaRow(100, 100, 99.5).compared).toEqual([
+      { source: 'official', key: '', value: '100 ha', label: 'DtP-Geometrie' },
+      { source: 'osm', key: '', value: '99,5 ha' },
+    ])
+  })
+
+  test('no marker without an official area, a suggestion when Wikidata has none', () => {
+    expect(areaRow(100, null, null)).toMatchObject({ status: 'none', compared: [] })
+    expect(areaRow(undefined, 1234.5, null)).toMatchObject({
+      status: 'none',
+      suggestion: '1.234,5 ha',
+    })
+    expect(areaRow(undefined, null, null).suggestion).toBeUndefined()
+  })
+})

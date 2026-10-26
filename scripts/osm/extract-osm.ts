@@ -45,6 +45,7 @@ import {
   PROTECTED_AREAS_OSM_TAGS_FILTER_EXPRESSIONS,
 } from '../shared/germanyOsmPbf.ts'
 import { checkOsmPbfIntegrity } from '../shared/osmPbfIntegrity.ts'
+import { PROTECTED_AREA_EXTRACT_TAG_KEYS } from '../shared/protectedAreaCategories.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { type AreaSourceMetadataFile, mergeAreaSourceMetadata } from '../shared/sourceMetadata.ts'
 import {
@@ -130,18 +131,7 @@ SELECT
   osm_id,
   osm_way_id,
   ${OSM_MULTIPOLYGON_AT_ID_SQL},
-  "name",
-  "ref:WDPA",
-  "wikidata",
-  "boundary",
-  "leisure",
-  "protect_class",
-  "protection_title",
-  "ref:SCI",
-  "ref:natura2000",
-  "ref:DE",
-  "operator",
-  "dtp_id"
+  ${PROTECTED_AREA_EXTRACT_TAG_KEYS.map((key) => `"${key}"`).join(',\n  ')}
 FROM multipolygons
 ${PROTECTED_AREAS_WHERE_SQL}
 `.trim()
@@ -152,18 +142,7 @@ SELECT
   ST_PointOnSurface(geometry) AS geometry,
   osm_id,
   osm_way_id,
-  "name",
-  "ref:WDPA",
-  "wikidata",
-  "boundary",
-  "leisure",
-  "protect_class",
-  "protection_title",
-  "ref:SCI",
-  "ref:natura2000",
-  "ref:DE",
-  "operator",
-  "dtp_id"
+  ${PROTECTED_AREA_EXTRACT_TAG_KEYS.map((key) => `"${key}"`).join(',\n  ')}
 FROM multipolygons
 ${PROTECTED_AREAS_WHERE_SQL}
 `.trim()

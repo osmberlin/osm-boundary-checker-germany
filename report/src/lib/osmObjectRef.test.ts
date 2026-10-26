@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseReportRowOsmRef } from './osmObjectRef'
+import { parseLiveOsmObjectRef, parseReportRowOsmRef } from './osmObjectRef'
 
 describe('parseReportRowOsmRef', () => {
   it('parses bare numeric id as relation', () => {
@@ -27,5 +27,20 @@ describe('parseReportRowOsmRef', () => {
 
   it('trims whitespace', () => {
     expect(parseReportRowOsmRef('  42  ')).toEqual({ numericId: 42 })
+  })
+})
+
+describe('parseLiveOsmObjectRef', () => {
+  it('parses ways, relations and bare ids', () => {
+    expect(parseLiveOsmObjectRef('way/123')).toEqual({ type: 'way', id: 123 })
+    expect(parseLiveOsmObjectRef(' WAY/5 ')).toEqual({ type: 'way', id: 5 })
+    expect(parseLiveOsmObjectRef('relation/9')).toEqual({ type: 'relation', id: 9 })
+    expect(parseLiveOsmObjectRef('3892267')).toEqual({ type: 'relation', id: 3892267 })
+  })
+
+  it('returns null for nodes, zero and empty', () => {
+    expect(parseLiveOsmObjectRef('node/1')).toBeNull()
+    expect(parseLiveOsmObjectRef('way/0')).toBeNull()
+    expect(parseLiveOsmObjectRef('')).toBeNull()
   })
 })

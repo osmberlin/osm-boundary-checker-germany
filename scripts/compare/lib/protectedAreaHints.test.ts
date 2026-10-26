@@ -2,69 +2,48 @@ import { describe, expect, test } from 'bun:test'
 import { computeProtectedAreaAttributeHints } from './protectedAreaHints.ts'
 
 describe('computeProtectedAreaAttributeHints', () => {
-  test('well-tagged NSG has no hints', () => {
+  test('same object has no hints', () => {
     expect(
       computeProtectedAreaAttributeHints({
         officialProperties: { category_id: 2, wikidata: 'Q1', dtp_osm_ref: 'relation/5' },
-        osmProperties: {
-          '@id': 'relation/5',
-          protect_class: '4',
-          protection_title: 'Naturschutzgebiet',
-          wikidata: 'Q1',
-        },
+        osmProperties: { '@id': 'relation/5', wikidata: 'Q1' },
       }),
     ).toEqual([])
   })
 
-  test('reports type tags, wikidata, osm ref and natura 2000 code', () => {
+  test('reports a DtP reference to another OSM object', () => {
     const hints = computeProtectedAreaAttributeHints({
-      officialProperties: {
-        category_id: 7,
-        wikidata: 'Q60',
-        dtp_osm_ref: 'relation/9',
-        natura2000_code: 'DE7148371',
-      },
-      osmProperties: { '@id': 'relation/5', protect_class: '4', wikidata: 'Q1' },
+      officialProperties: { dtp_osm_ref: 'relation/9' },
+      osmProperties: { '@id': 'relation/5' },
     })
-    expect(hints.map((h) => h.id)).toEqual([
-      'type_tags',
-      'wikidata_differs',
-      'osm_ref_differs',
-      'natura2000_missing',
+    expect(hints).toEqual([
+      { id: 'osm_ref_differs', target: 'osm', expected: ['relation/9'], actual: ['relation/5'] },
     ])
-    expect(hints[0]!.actual).toEqual(['protect_class=4'])
-    expect(hints[3]!.suggestedTags).toEqual({ 'ref:DE': '7148-371' })
   })
 
-  test('missing wikidata suggests the DtP value, matching ref:SCI satisfies natura check', () => {
-    const hints = computeProtectedAreaAttributeHints({
-      officialProperties: { category_id: 7, wikidata: 'Q60', natura2000_code: 'DE7148371' },
-      osmProperties: { protect_class: '97', 'ref:SCI': 'DE 7148-371' },
-    })
-    expect(hints.map((h) => h.id)).toEqual(['wikidata_missing'])
-    expect(hints[0]!.suggestedTags).toEqual({ wikidata: 'Q60' })
-  })
-
-  test('ref:WDPA only on one side is reported, equal or contained values are not', () => {
-    const idsFor = (wdpa: string, osmWdpa: string) =>
+  test('tag differences are left to the attribute checks', () => {
+    expect(
       computeProtectedAreaAttributeHints({
-        officialProperties: { category_id: 4, wdpa },
-        osmProperties: {
-          protection_title: 'Naturpark',
-          ...(osmWdpa ? { 'ref:WDPA': osmWdpa } : {}),
+        officialProperties: {
+          category_id: 7,
+          wikidata: 'Q60',
+          wdpa: '555',
+          natura2000_code: 'DE7148371',
         },
-      })
-    const missingInDtp = idsFor('', '555')
-    expect(missingInDtp.map((h) => h.id)).toEqual(['wdpa_missing_in_dtp'])
-    expect(missingInDtp[0]!.actual).toEqual(['ref:WDPA=555'])
-    // The reference data lacks the id: a note for the reference data, not a suggestion for OSM.
-    expect(missingInDtp[0]!.target).toBe('reference')
-    const missingInOsm = idsFor('555', '')
-    expect(missingInOsm.map((h) => h.id)).toEqual(['wdpa_missing_in_osm'])
-    expect(missingInOsm[0]!.suggestedTags).toEqual({ 'ref:WDPA': '555' })
-    expect(missingInOsm[0]!.target).toBe('osm')
-    expect(idsFor('555', '666').map((h) => h.id)).toEqual(['wdpa_differs'])
-    expect(idsFor('555', '555')).toEqual([])
-    expect(idsFor('555', '444; 555')).toEqual([])
+        osmProperties: { protect_class: '4', wikidata: 'Q1', 'ref:WDPA': '666' },
+      }),
+    ).toEqual([])
+  })
+
+  test('no hints without a DtP reference or an OSM id', () => {
+    expect(
+      computeProtectedAreaAttributeHints({
+        officialProperties: { dtp_osm_ref: 'relation/9' },
+        osmProperties: {},
+      }),
+    ).toEqual([])
+    expect(
+      computeProtectedAreaAttributeHints({ officialProperties: null, osmProperties: {} }),
+    ).toEqual([])
   })
 })

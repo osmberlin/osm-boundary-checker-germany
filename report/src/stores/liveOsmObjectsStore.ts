@@ -32,14 +32,25 @@ type LiveOsmObjectsState = {
   }
 }
 
+/** Client-side limit for the by-id request, so the load button cannot wait forever. */
+const LIVE_OSM_OBJECT_TIMEOUT_MS = 60_000
+
 async function fetchLiveOsmObject(
   ref: LiveOsmObjectRef,
   interpreterUrl: string,
 ): Promise<ParsedOverpassObject> {
-  const res = await fetchOverpassQuery(buildOverpassObjectQuery(ref), interpreterUrl)
-  const text = await res.text()
-  if (!res.ok) throw new Error(`Overpass request failed: ${res.status}`)
-  return parseOverpassObjectData(text, ref)
+  try {
+    const signal = AbortSignal.timeout(LIVE_OSM_OBJECT_TIMEOUT_MS)
+    const res = await fetchOverpassQuery(buildOverpassObjectQuery(ref), interpreterUrl, signal)
+    const text = await res.text()
+    if (!res.ok) throw new Error(`Overpass request failed: ${res.status}`)
+    return parseOverpassObjectData(text, ref)
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      throw new Error('OVERPASS_TIMEOUT')
+    }
+    throw error
+  }
 }
 
 const useLiveOsmObjectsStore = create<LiveOsmObjectsState>((set, get) => {

@@ -1,3 +1,5 @@
+import type { LiveOsmObjectRef } from './overpassOsmObject'
+
 export type ParsedReportRowOsmRef = {
   /** Numeric OSM relation id (this product treats matched rows as relations only). */
   numericId: number
@@ -34,4 +36,15 @@ export function overpassRelationTagsInputFromOsmRelationId(raw: string): string 
   const parsed = parseReportRowOsmRef(raw)
   if (!parsed) return null
   return String(parsed.numericId)
+}
+
+/**
+ * OSM object (`way` or `relation`) of a matched row's `osmRelationId` for a live lookup by id:
+ * `way/123`, `relation/123` or a bare relation id. `null` for anything else (`node/…`, empty).
+ */
+export function parseLiveOsmObjectRef(raw: string): LiveOsmObjectRef | null {
+  const way = /^way\/(\d+)$/i.exec(raw.trim())
+  if (way?.[1] && Number(way[1]) > 0) return { type: 'way', id: Number(way[1]) }
+  const relation = parseReportRowOsmRef(raw)
+  return relation ? { type: 'relation', id: relation.numericId } : null
 }

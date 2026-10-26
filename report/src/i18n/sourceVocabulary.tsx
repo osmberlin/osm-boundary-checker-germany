@@ -33,6 +33,10 @@ const vocabulary = {
     areaLabelDative: 'amtlichen Fläche',
     /** Disjoint-geometry notice: "in den …" (dative plural). */
     dataLabelDative: 'amtlichen Daten',
+    /** "fehlt bei …" (dative): where a value is missing. */
+    dataAtLabel: 'den amtlichen Daten',
+    /** Geometry of the official side, e.g. in the area tooltip. */
+    geometryLabel: 'Amtliche Geometrie',
   },
   dtp: {
     dataHeading: 'DtP-Daten',
@@ -49,6 +53,8 @@ const vocabulary = {
     areaLabelNominative: 'DtP-Fläche',
     areaLabelDative: 'DtP-Fläche',
     dataLabelDative: 'DtP-Daten',
+    dataAtLabel: 'DtP',
+    geometryLabel: 'DtP-Geometrie',
   },
 } as const satisfies Record<SourceKind, Record<string, string>>
 
