@@ -4,6 +4,30 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-10
 
+### `4cbf94d`, `60c2f3e`, `a9d6bf8`, `5019432`, `0ab38ca`
+
+Auf der Detailseite eines Schutzgebiets zeigen Häkchen und ≠ neben den DtP-Attributen und den OSM-Tags, was übereinstimmt und was abweicht (Name, WDPA-ID, Wikidata, Schutzkategorie). Darüber fasst eine Zeile zusammen, was in OSM oder bei DtP fehlt, mit Tags zum Kopieren. Das verknüpfte Wikidata-Objekt erscheint mit seinen Angaben, auch der Fläche im Vergleich zur DtP-Geometrie.
+
+Bei Gebieten ohne Zuordnung lassen sich OSM-Kandidaten in der Nähe live laden, und „Aktuellen OSM-Stand laden“ zeigt, was sich seit dem nächtlichen Extrakt am zugeordneten Objekt geändert hat.
+
+### `e11018b`
+
+Zugeordnete Flächen, die sich gar nicht überlappen, erhalten auf der Detailseite einen Hinweis, und die Karte zeigt beide Flächen.
+
+### `25e3af5`, `c0bc2a4`, `c000e39`, `8ebcc01`, `0895af6`, `d3495a9`, `a0aa1c5`, `14d3a47`, `eb239b4`
+
+Neu: Schutzgebiete aus [Digitize the Planet](https://platform.digitizetheplanet.org/) (DtP) im Abgleich mit OSM, in vier Datensätzen: Naturschutzgebiete, Landschaftsschutzgebiete, Natura 2000 (FFH- und Vogelschutzgebiete) und Großschutzgebiete (Nationalparks, Biosphärenreservate, Naturparks). Zugeordnet wird über die WDPA-ID, über das OSM-Objekt, das DtP selbst nennt, oder über `dtp_id`. Auch Gebiete ohne WDPA-ID sind enthalten.
+
+Für jedes Gebiet gilt die Lizenz seiner Geometriequelle; die Lizenzübersicht zeigt, wie viele Gebiete in OSM übernommen werden dürfen. Eine GeoJSON-Datei zum Bearbeiten gibt es nur für Gebiete, deren Lizenz das erlaubt. Gebiete, die eine Verwaltung pflegt, tragen das Kennzeichen „Verwaltet“. Die Daten werden mit dem nächtlichen Lauf aktualisiert; beim ersten Lauf füllt sich der DtP-Bestand über zwei bis drei Nächte.
+
+### `9110a9c`
+
+Die Startseite gruppiert die Datensätze nach Thema (Verwaltungsgrenzen, Postleitzahlen, Schutzgebiete) mit Sprunglinks.
+
+### `1cd6b70`
+
+Behoben: Beim Ein- und Ausblenden von Kategorien in der Datensatz-Übersicht wurde die Karte neu geladen und sprang zurück.
+
 ### `0fefe9b`
 
 In der Lizenzübersicht und im Quellen-Link heißt das BKG-Produkt jetzt richtig VG25 statt VG250.
