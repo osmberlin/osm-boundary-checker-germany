@@ -556,7 +556,9 @@ async function main() {
               case 'extract:osm:protected_areas_candidates':
                 stepStatus = 'fail'
                 break
-              case "download:dtp": { throw new Error('Not implemented yet: "download:dtp" case') }
+              // Handled before this switch: a failed DtP sync is never fatal.
+              case 'download:dtp':
+                break
             }
           }
         }
