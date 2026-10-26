@@ -37,7 +37,7 @@ describe('DtP pipeline', () => {
   })
 
   test('the pipeline sync is bounded by time, not by count', () => {
-    expect(dtpPipelineDownloadArgs()).toEqual(['--full', '--max-minutes', '60'])
+    expect(dtpPipelineDownloadArgs()).toEqual(['--full', '--max-minutes', '90'])
   })
 
   test('a sync of this job counts as done for the repeated download phase, older ones do not', () => {

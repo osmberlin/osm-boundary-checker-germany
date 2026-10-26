@@ -37,10 +37,10 @@ export const DTP_CACHE_ARTIFACT_FILES = [
 ] as const
 
 /**
- * Detail fetch budget per nightly run. A routine run needs 1–3 minutes; filling an empty cache
- * (~25,000 areas at ~0.3 s each) takes about three runs.
+ * Detail fetch budget per nightly run. A routine run needs 1–3 minutes. GitHub runners fetch
+ * ~190 details per minute, so filling an empty cache (~25,000 areas) takes two runs.
  */
-export const DTP_PIPELINE_DETAIL_BUDGET_MINUTES = 60
+export const DTP_PIPELINE_DETAIL_BUDGET_MINUTES = 90
 
 /** Arguments for `download:dtp` in the pipeline: no count cap, bounded by time instead. */
 export function dtpPipelineDownloadArgs(): string[] {
