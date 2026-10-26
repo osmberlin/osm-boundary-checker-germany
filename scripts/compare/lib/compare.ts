@@ -7,6 +7,7 @@ import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { datasetFolderPath } from '../../shared/datasetPaths.ts'
 import type { MatchedBy } from '../../shared/matchRules.ts'
 import { matchesAnyCategoryScope } from '../../shared/protectedAreaCategories.ts'
+import { roundTableMetrics } from '../../shared/tableMetricPrecision.ts'
 import {
   applyStaleOfficialKeyClassification,
   loadDestatisArsPresence,
@@ -159,7 +160,15 @@ function assignRustMetricsToRows(
         : metric
     row.metrics = withRobust
     const previous = previousMetricsByKey?.get(row.canonicalMatchKey)
-    if (previous) baselineRows.push({ key: row.canonicalMatchKey, current: withRobust, previous })
+    // The previous metrics come from the table, which is rounded (older tables are not): compare
+    // both at table precision so unchanged geometries give a delta of exactly 0.
+    if (previous) {
+      baselineRows.push({
+        key: row.canonicalMatchKey,
+        current: roundTableMetrics(withRobust),
+        previous: roundTableMetrics(previous),
+      })
+    }
   }
   const baselineByKey = computeBaselineAnomalies(baselineRows)
   for (const pending of pendingMetrics) {

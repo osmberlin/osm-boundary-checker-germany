@@ -72,6 +72,18 @@ const compareSchema = z
      */
     minZoom: z.number().int().min(0).max(15),
     /**
+     * Highest PMTiles zoom (Tippecanoe `--maximum-zoom`); the map overzooms above it. Default is
+     * Tippecanoe's own (14). Lower values shrink the archives a lot (DtP LSG: z13 is ~40 % of z14).
+     * At least 12, the fixed minimum of `comparison-diff.pmtiles`.
+     */
+    tileMaxZoom: z.number().int().min(12).max(15).optional(),
+    /**
+     * Which rows get a prebuilt `official_for_edit/<key>.geojson` (the editor import file).
+     * `all` (default) or `osm_compatible`: only rows whose licence allows OSM (`yes_licence` /
+     * `yes_waiver`), so the site does not carry files nobody may import.
+     */
+    officialForEdit: z.enum(['all', 'osm_compatible']).optional(),
+    /**
      * Checks of an official property against OSM keys, shown on the feature detail page as markers
      * and a summary line (see `attributeChecks.ts`).
      */

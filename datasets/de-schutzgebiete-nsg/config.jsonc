@@ -16,6 +16,10 @@
   "metricsCrs": "EPSG:25832",
   "compare": {
     "minZoom": 5,
+    // Tiles up to z13 (the map overzooms); z14 would more than double the archives for the Pages size limit.
+    "tileMaxZoom": 13,
+    // Edit GeoJSON only for areas whose licence allows OSM; the others may not be imported anyway.
+    "officialForEdit": "osm_compatible",
     // Embed the Wikidata item that DtP and OSM name into the feature shard (bun run wikidata:protected-areas).
     "wikidata": true,
     // Rules run in order; each only handles rows the earlier ones left unmatched, and an OSM object is used once.

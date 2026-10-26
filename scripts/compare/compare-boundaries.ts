@@ -338,6 +338,8 @@ async function main() {
       ogcInspectSources,
       compareRulesSummary,
       mapMinZoom: config.compare.minZoom,
+      tileMaxZoom: configRaw.compare.tileMaxZoom,
+      officialForEdit: configRaw.compare.officialForEdit,
       phaseLogger,
       instrumentation: {
         checkpoint: (name, cpMeta) => checkpoint(name, cpMeta),

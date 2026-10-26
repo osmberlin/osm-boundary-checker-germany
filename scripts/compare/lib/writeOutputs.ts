@@ -37,7 +37,12 @@ import {
   type RowFlagDefinition,
 } from '../../shared/rowFlags.ts'
 import type { SourceKind } from '../../shared/sourceKind.ts'
-import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/sourceMetadata.ts'
+import {
+  isOsmCompatible,
+  type ComparisonSourceMetadata,
+  type SourceMetadataSide,
+} from '../../shared/sourceMetadata.ts'
+import { roundTableMetrics } from '../../shared/tableMetricPrecision.ts'
 import type { WikidataProtectedAreaItem } from '../../shared/wikidataProtectedAreasPayload.ts'
 import type {
   CompareInstrumentation,
@@ -504,6 +509,7 @@ export function comparisonRowToTableRow(
   } = row
   return {
     ...rest,
+    metrics: roundTableMetrics(rest.metrics),
     // Rows paired by the key join are the norm; only the others are worth the table bytes.
     ...(matchedBy && matchedBy.kind !== 'key' && matchedBy.kind !== 'relation_id'
       ? { matchedBy }
@@ -596,6 +602,10 @@ export type WriteOutputsOptions = {
   ogcInspectSources?: OgcWfsInspectSource[]
   compareRulesSummary?: CompareRulesSummary | null
   mapMinZoom: number
+  /** `compare.tileMaxZoom`: highest PMTiles zoom of every archive; Tippecanoe's default when unset. */
+  tileMaxZoom?: number | undefined
+  /** `compare.officialForEdit`: `osm_compatible` writes edit GeoJSON only for rows OSM may use. */
+  officialForEdit?: 'all' | 'osm_compatible'
   phaseLogger?: ComparePhaseLogger
   instrumentation?: CompareInstrumentation
   /** Per-geometry licences (DtP); `null` keeps the single dataset licence. */
@@ -625,6 +635,8 @@ export function writeOutputs({
   ogcInspectSources = [],
   compareRulesSummary = null,
   mapMinZoom,
+  tileMaxZoom,
+  officialForEdit = 'all',
   phaseLogger,
   instrumentation,
   officialLicenses = null,
@@ -660,7 +672,15 @@ export function writeOutputs({
 
   removeObsoleteOutputFiles(outDir)
 
-  const withOfficialRows = rows.filter((r) => r.officialGeometryWgs84 != null)
+  const withOfficialRows = rows.filter(
+    (r) =>
+      r.officialGeometryWgs84 != null &&
+      (officialForEdit === 'all' ||
+        isOsmCompatible(
+          officialLicenses?.byKey.get(r.canonicalMatchKey)?.osmCompatibility ??
+            sourceMetadata.official.osmCompatibility,
+        )),
+  )
   const stemByKeyForOfficial =
     withOfficialRows.length > 0
       ? assignOfficialForEditStems(withOfficialRows.map((r) => r.canonicalMatchKey))
@@ -689,6 +709,7 @@ export function writeOutputs({
       // `--minimum-zoom` = area `compare.minZoom` (also in `filterConfigSummary.minZoom` for the report).
       runTippecanoe(overlayFgbPath, pmtilesPath, {
         minZoom: mapMinZoom,
+        maxZoom: tileMaxZoom,
       })
       const tippecanoeMs = Date.now() - tTippecanoeMain
       phaseLogger?.('tippecanoe_main', tippecanoeMs, {
@@ -742,6 +763,7 @@ export function writeOutputs({
       // Same shared argv as main; only minimum zoom differs (fixed z12+ — see `TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM`).
       runTippecanoe(diffFgbPath, pmtilesDiffPath, {
         minZoom: TIPPECANOE_DIFF_ARCHIVE_MIN_ZOOM,
+        maxZoom: tileMaxZoom,
       })
       const tippecanoeDiffMs = Date.now() - tTippecanoeDiff
       phaseLogger?.('tippecanoe_diff', tippecanoeDiffMs, diffEncodeNote)
@@ -781,6 +803,7 @@ export function writeOutputs({
       // Same shared argv as main overlay; same `minZoom` as overlay (`compare.minZoom`).
       runTippecanoe(unmatchedFgbPath, unmatchedPmtilesPath, {
         minZoom: mapMinZoom,
+        maxZoom: tileMaxZoom,
       })
       phaseLogger?.('tippecanoe_unmatched', Date.now() - tTippecanoeUnmatched, {
         features: unmatchedFc.features.length,

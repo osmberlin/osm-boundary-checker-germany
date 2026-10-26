@@ -176,7 +176,3 @@ export function deriveDatasetOsmCompatibility(counts: {
   if (counts.compatible === 0) return 'no'
   return 'partial'
 }
-
-export function isOsmCompatible(value: string | null | undefined): boolean {
-  return value === 'yes_licence' || value === 'yes_waiver'
-}

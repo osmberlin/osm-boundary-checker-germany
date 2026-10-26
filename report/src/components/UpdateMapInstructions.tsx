@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
+import { isOsmCompatible } from '../../../scripts/shared/sourceMetadata.ts'
 import { officialForEditGeojsonHref } from '../data/paths'
 import { de } from '../i18n/de'
 import { SourceTerm, sourceText } from '../i18n/sourceVocabulary'
@@ -93,6 +94,11 @@ export function UpdateMapInstructions({
   const osmBrowseUrl = buildOpenStreetMapBrowseRelationUrl(row)
   const josm = buildJosmEditorLinks(row, officialAbsolute)
   const canDownloadOfficial = officialHref != null
+  // Rows with an official geometry lack the file only when the licence rules out OSM.
+  const downloadDisabledHint =
+    row.category !== 'unmatched_osm' && !isOsmCompatible(osmCompatibility)
+      ? u.downloadOfficialLicenceHint
+      : u.downloadOfficialDisabledHint
   const idLinkTerm = officialAbsolute != null ? 'openIdWithGeojson' : 'openIdWithoutGeojson'
   const idLinkLabel = sourceText(sourceKind, idLinkTerm)
   // OSM-only rows have no official geometry, so its licence is irrelevant for them.
@@ -167,12 +173,12 @@ export function UpdateMapInstructions({
                   <button
                     type="button"
                     disabled
-                    title={u.downloadOfficialDisabledHint}
+                    title={downloadDisabledHint}
                     className={sharedButtonClass}
                   >
                     {u.downloadOfficial}
                   </button>
-                  <p className="text-xs text-slate-500">{u.downloadOfficialDisabledHint}</p>
+                  <p className="text-xs text-slate-500">{downloadDisabledHint}</p>
                 </div>
               )}
             </div>

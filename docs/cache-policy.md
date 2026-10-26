@@ -40,6 +40,10 @@ Protected-area Wikidata (`data/wikidata/protected-areas.json`, from `wikidata:pr
 - `.cache/bkg/**/*.gpkg`
 - any raw/intermediate source archives that are not direct compare inputs
 
+## Site size budget
+
+GitHub Pages allows 1 GB per site. `bun run site-size` (part of `bun run check`, run on `report/public` after `sync-runtime-assets` in the refresh and on `report/dist` before the Pages upload) fails above 1 GB and warns above 90 %, with a table of the largest datasets in the log and the step summary. Levers per dataset config: `compare.tileMaxZoom` (z13 is ~40 % of the default z14 archive) and `compare.officialForEdit: "osm_compatible"` (edit GeoJSON only for areas whose licence allows OSM). Table metrics are rounded to four significant digits (`scripts/shared/tableMetricPrecision.ts`); feature shards keep full precision.
+
 ## Visibility
 
 Each refresh run writes:

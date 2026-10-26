@@ -1,5 +1,6 @@
 import { type RefObject, useEffect, useRef, useState } from 'react'
 import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
+import { isOsmCompatible } from '../../../scripts/shared/sourceMetadata.ts'
 import { de } from '../i18n/de'
 import { SourceTerm, sourceText } from '../i18n/sourceVocabulary'
 import { formatDeInteger } from '../lib/formatDe'
@@ -148,10 +149,6 @@ function BreakdownRow({ entry }: { entry: LicenseBreakdownEntry }) {
 
 const LICENSE_SECTION_HASH = '#report-licence-section'
 
-function isCompatible(entry: LicenseBreakdownEntry): boolean {
-  return entry.osmCompatibility === 'yes_licence' || entry.osmCompatibility === 'yes_waiver'
-}
-
 /**
  * Area report for datasets with a licence per geometry: short summary (like the home page) and the
  * full source × licence table behind a disclosure. The disclosure opens (and the section scrolls
@@ -167,7 +164,9 @@ function LicenseBreakdownDisclosure({
   const g = de.provenance.licensePerGeometry
   const [open, setOpen] = useState(false)
   const total = breakdown.reduce((sum, entry) => sum + entry.rowCount, 0)
-  const compatible = breakdown.filter(isCompatible).reduce((sum, entry) => sum + entry.rowCount, 0)
+  const compatible = breakdown
+    .filter((entry) => isOsmCompatible(entry.osmCompatibility))
+    .reduce((sum, entry) => sum + entry.rowCount, 0)
   const sorted = [...breakdown].sort((a, b) => b.rowCount - a.rowCount)
   const licenseLabels = new Set(breakdown.map((entry) => entry.licenseLabel))
   const singleLicenseLabel = licenseLabels.size === 1 ? [...licenseLabels][0] : undefined

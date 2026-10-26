@@ -7,10 +7,10 @@
 import type { LicenseBreakdownEntry, OfficialLicense } from '../../shared/comparisonPayload.ts'
 import {
   deriveDatasetOsmCompatibility,
-  isOsmCompatible,
   resolveGeometryLicense,
   type LicenseCompatibilityTable,
 } from '../../shared/licenseCompatibility.ts'
+import { isOsmCompatible } from '../../shared/sourceMetadata.ts'
 
 export const UNKNOWN_LICENSE_LABEL = 'unknown'
 const UNKNOWN_SOURCE_KEY = 'unknown'

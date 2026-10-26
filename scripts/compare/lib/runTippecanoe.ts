@@ -34,6 +34,8 @@ const TIPPECANOE_SHARED_TAIL: readonly string[] = [
 export type TippecanoeRunOptions = {
   /** Passed as `--minimum-zoom` when greater than 0; see module docstring for per-archive rules. */
   minZoom: number
+  /** Passed as `--maximum-zoom` when set (area `compare.tileMaxZoom`); Tippecanoe's default otherwise. */
+  maxZoom?: number | undefined
 }
 
 /** FlatGeobuf (`.fgb`) or GeoJSON; Felt tippecanoe infers format from the extension. */
@@ -42,7 +44,7 @@ export function tippecanoeArgs(
   outputPmtilesPath: string,
   options: TippecanoeRunOptions,
 ): string[] {
-  const { minZoom } = options
+  const { minZoom, maxZoom } = options
   return [
     '--output',
     outputPmtilesPath,
@@ -50,6 +52,7 @@ export function tippecanoeArgs(
     '--layer',
     TIPPECANOE_LAYER,
     ...(minZoom > 0 ? [`--minimum-zoom=${String(minZoom)}`] : []),
+    ...(maxZoom !== undefined ? [`--maximum-zoom=${String(maxZoom)}`] : []),
     ...TIPPECANOE_SHARED_TAIL,
     inputVectorPath,
   ]

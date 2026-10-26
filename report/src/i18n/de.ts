@@ -774,6 +774,9 @@ export const de = {
       josmHeading: 'JOSM (Remote Control)',
       downloadOfficial: 'GeoJSON herunterladen',
       downloadOfficialDisabledHint: 'Für diese Detailansicht gibt es keine amtliche Geometrie.',
+      /** No edit GeoJSON was built because the licence rules out OSM (`compare.officialForEdit`). */
+      downloadOfficialLicenceHint:
+        'Keine Datei: Die Lizenz dieses Gebiets erlaubt keine Übernahme in OSM.',
       downloadOfficialHint:
         'Datei enthält u. a. Namen, Schlüssel und Felder wie `officialSource.provider`, `officialSource.dataset`, `officialSource.sourcePublicUrl` usw., sofern beim Vergleich hinterlegt.',
       downloadOfficialPipelineHint:

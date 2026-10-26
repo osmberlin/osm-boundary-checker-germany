@@ -103,6 +103,11 @@ export const osmLicenseCompatibilitySchema = z.enum([
 ])
 export type OsmLicenseCompatibility = z.infer<typeof osmLicenseCompatibilitySchema>
 
+/** Data under this compatibility may go into OSM (licence or waiver). Browser-safe. */
+export function isOsmCompatible(value: string | null | undefined): boolean {
+  return value === 'yes_licence' || value === 'yes_waiver'
+}
+
 const sourceMetadataCommonSideSchema = z.object({
   downloadedAt: optionalIsoInstantStringSchema,
   sourcePublishedAt: optionalIsoInstantStringSchema,

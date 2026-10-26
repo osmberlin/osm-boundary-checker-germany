@@ -4,9 +4,8 @@ import { z } from 'zod'
 import { loadAreaConfig } from '../scripts/shared/areaConfig.ts'
 import { comparisonForReportSchema } from '../scripts/shared/comparisonPayload.ts'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
-import { isOsmCompatible } from '../scripts/shared/licenseCompatibility.ts'
 import { type OsmProfileId, resolveOsmProfile } from '../scripts/shared/osmProfiles.ts'
-import { sourceMetadataSideSchema } from '../scripts/shared/sourceMetadata.ts'
+import { isOsmCompatible, sourceMetadataSideSchema } from '../scripts/shared/sourceMetadata.ts'
 import {
   areaHomeSummarySchema,
   areaLicenseSummarySchema,
