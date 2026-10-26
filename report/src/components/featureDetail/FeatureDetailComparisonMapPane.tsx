@@ -63,7 +63,7 @@ export function FeatureDetailComparisonMapPane({
       <div
         className={cn(
           'w-full overflow-hidden rounded-b-md border-x border-t border-b border-slate-500',
-          hasMetrics && 'rounded-t-none',
+          hasMetrics ? 'rounded-t-none' : 'rounded-t-md',
         )}
       >
         <div className="h-[480px] w-full">
