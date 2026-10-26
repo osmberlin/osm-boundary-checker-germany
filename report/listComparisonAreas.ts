@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 import { loadAreaConfig } from '../scripts/shared/areaConfig.ts'
 import { comparisonForReportSchema } from '../scripts/shared/comparisonPayload.ts'
@@ -22,18 +23,25 @@ import {
 export type { AreaHomeSummary, AreaLicenseSummary, GeoDataSource }
 
 /** Dataset slugs under `datasets/` that contain `output/comparison_table.json`. */
+/**
+ * Dataset configs live in the repository checkout, not under DATA_ROOT: in the Pages deploy the
+ * runtime root is the restored artifact, which carries outputs and metadata but no configs.
+ */
+const CONFIG_ROOT = fileURLToPath(new URL('..', import.meta.url))
+
 export function listComparisonAreas(runtimeRoot: string): string[] {
   return listComparisonAreaSummaries(runtimeRoot)
     .map((s) => s.area)
     .sort((a, b) => a.localeCompare(b))
 }
 
-function osmMatchRulesFromAreaConfig(
-  workspaceRoot: string,
-  area: string,
-): { osmProfile?: OsmProfileId; osmMatchProperties?: string[]; osmAdminLevels?: string[] } {
+function osmMatchRulesFromAreaConfig(area: string): {
+  osmProfile?: OsmProfileId
+  osmMatchProperties?: string[]
+  osmAdminLevels?: string[]
+} {
   try {
-    const cfg = loadAreaConfig(workspaceRoot, area)
+    const cfg = loadAreaConfig(CONFIG_ROOT, area)
     const matchProperty = resolveOsmProfile(cfg.osmProfile).matchProperty
     const osmMatchProperties =
       cfg.osmProfile === 'admin_rs' ? ['de:regionalschluessel'] : [matchProperty]
@@ -177,7 +185,7 @@ export function listAreaLicenseSummaries(runtimeRoot: string): AreaLicenseSummar
         : null
     let officialSourceGroupKeyValue: string
     try {
-      const cfg = loadAreaConfig(runtimeRoot, area)
+      const cfg = loadAreaConfig(CONFIG_ROOT, area)
       officialSourceGroupKeyValue = officialSourceGroupKey(cfg, official?.sourceDownloadUrl, area)
     } catch {
       officialSourceGroupKeyValue = fallbackOfficialSourceGroupKey(
@@ -247,7 +255,7 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
       const unmatched = (parsed.unmatchedOsm ?? []).filter(
         (row) => row.staleOfficialPredecessor == null,
       ).length
-      const fromConfig = osmMatchRulesFromAreaConfig(runtimeRoot, area)
+      const fromConfig = osmMatchRulesFromAreaConfig(area)
       const summary: AreaHomeSummary = {
         area,
         displayName: parsed.displayName,
