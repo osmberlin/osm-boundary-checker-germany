@@ -329,6 +329,7 @@ async function main() {
       configRaw.officialMode === 'dtp' ? DTP_TABLE_ROW_SLIMMING : null,
       sourceKindFromDatasetConfig(configRaw),
       configRaw.rowFlags ?? [],
+      configRaw.compare.attributeChecks ?? [],
     )
     checkpoint('after_write_outputs')
     console.log(

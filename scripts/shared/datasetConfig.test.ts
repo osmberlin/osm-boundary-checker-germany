@@ -162,4 +162,38 @@ describe('parseDatasetConfig', () => {
       }
     })
   })
+
+  describe('compare.attributeChecks', () => {
+    const withChecks = (attributeChecks: unknown) =>
+      parseDatasetConfig('area-dtp', {
+        ...dtpBase,
+        official: { dtp: { categoryIds: [1] } },
+        compare: { ...dtpBase.compare, attributeChecks },
+      })
+
+    test('parses optional attributeChecks and leaves them undefined otherwise', () => {
+      const checks = [
+        { label: 'Wikidata', official: 'wikidata', osm: ['wikidata'] },
+        {
+          label: 'Name',
+          official: 'name',
+          osm: ['name', 'official_name'],
+          compare: 'name' as const,
+        },
+      ]
+      expect(withChecks(checks).compare.attributeChecks).toEqual(checks)
+      expect(withChecks(undefined).compare.attributeChecks).toBeUndefined()
+    })
+
+    test('rejects empty lists, unknown modes and unknown keys', () => {
+      for (const attributeChecks of [
+        [],
+        [{ label: 'W', official: 'w', osm: [] }],
+        [{ label: 'W', official: 'w', osm: ['w'], compare: 'fuzzy' }],
+        [{ label: 'W', official: 'w', osm: ['w'], extra: 1 }],
+      ]) {
+        expect(() => withChecks(attributeChecks)).toThrow()
+      }
+    })
+  })
 })

@@ -551,6 +551,12 @@ export const de = {
     datasetPropertiesEmpty: '—',
     datasetOsmCandidateSelectLabel: 'Kandidat anzeigen',
     datasetOsmCandidateTagsLabel: 'OSM-Kandidat (Auszug aus dem Vergleichsextrakt)',
+    /** Attribute checks (config `compare.attributeChecks`): marker tooltips and summary chips. */
+    datasetAttributeCheckEqualTooltip: (osmPairs: string) => `gleich in OSM: ${osmPairs}`,
+    datasetAttributeCheckDifferentTooltip: (osmPairs: string) => `OSM: ${osmPairs}`,
+    datasetAttributeCheckEqualChip: (label: string) => `${label} gleich`,
+    datasetAttributeCheckCombinedNameRule: 'kombinierte Namensregel',
+    datasetAttributeChecksAria: 'Ergebnis der Attributprüfung',
 
     /** Live-Abruf row inside "Attribute zum Zeitpunkt des Vergleichs". */
     datasetOsmLiveCardTitle: 'OSM-Daten (Live-Abruf)',

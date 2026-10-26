@@ -25,6 +25,20 @@
       // 3. The OSM object tagged dtp_id=<DtP uuid>.
       { "kind": "osm_tag", "officialProperty": "dtp_uuid", "osmTag": "dtp_id" },
     ],
+    // Attribute markers on the feature detail page (official property against OSM keys).
+    "attributeChecks": [
+      { "label": "Wikidata", "official": "wikidata", "osm": ["wikidata"] },
+      // Combined name rule: name or official_name; a leading "NSG"/"Naturschutzgebiet" etc. is ignored.
+      { "label": "Name", "official": "name", "osm": ["name", "official_name"], "compare": "name" },
+      { "label": "WDPA-ID", "official": "wdpa", "osm": ["ref:WDPA"] },
+      // category_id is the DtP category; equal when the OSM type tags fit its scope (protectedAreaCategories.ts).
+      {
+        "label": "Schutzkategorie",
+        "official": "category_id",
+        "osm": ["protection_title", "protect_class"],
+        "compare": "protectedCategory",
+      },
+    ],
     "bboxFilter": "none",
     "osmScopeFilter": "none",
   },

@@ -4,6 +4,10 @@ import {
   QuestionMarkCircleIcon,
 } from '@heroicons/react/20/solid'
 import { useState } from 'react'
+import {
+  evaluateAttributeChecks,
+  type AttributeCheckResult,
+} from '../../../scripts/shared/attributeChecks.ts'
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { useOverpassRelationTags } from '../hooks/useOverpassRelationTags'
@@ -199,7 +203,77 @@ function verificationIndicatorsFromOfficial(
 
 const HTTP_URL_PATTERN = /^https?:\/\//
 
-function DatasetPropertyCard({ properties }: { properties: Record<string, unknown> }) {
+function attributeCheckOsmPairs(result: AttributeCheckResult): string {
+  return result.osm.map(({ key, value }) => `${key}=${value}`).join(', ')
+}
+
+function attributeCheckTooltip(result: AttributeCheckResult): string {
+  const pairs = attributeCheckOsmPairs(result)
+  return result.status === 'equal'
+    ? de.feature.datasetAttributeCheckEqualTooltip(pairs)
+    : de.feature.datasetAttributeCheckDifferentTooltip(pairs)
+}
+
+/** Small marker next to an official property: green check for equal in OSM, amber ≠ for different. */
+function AttributeCheckMarker({ result }: { result: AttributeCheckResult }) {
+  if (result.status === 'missing') return null
+  const tooltip = attributeCheckTooltip(result)
+  const equal = result.status === 'equal'
+  return (
+    <span
+      title={tooltip}
+      aria-label={tooltip}
+      className={`inline-flex shrink-0 cursor-help items-center rounded-sm px-1 text-xs leading-5 font-semibold ${
+        equal
+          ? 'bg-emerald-900/45 text-emerald-300 ring-1 ring-emerald-700/60'
+          : 'bg-amber-900/35 text-amber-300 ring-1 ring-amber-700/60'
+      }`}
+    >
+      {equal ? '✓' : '≠'}
+    </span>
+  )
+}
+
+/** One line of small chips above the two lists: the checks that are equal or different. */
+function AttributeCheckSummary({ results }: { results: readonly AttributeCheckResult[] }) {
+  const shown = results.filter((result) => result.status !== 'missing')
+  if (shown.length === 0) return null
+  return (
+    <ul
+      aria-label={de.feature.datasetAttributeChecksAria}
+      className="flex flex-wrap gap-x-2 gap-y-1 border-b border-slate-700/80 px-4 py-3 sm:px-6"
+    >
+      {shown.map((result) => {
+        const equal = result.status === 'equal'
+        const combinedName = result.compare === 'name' && result.osmKeys.length > 1 && equal
+        const text = equal ? de.feature.datasetAttributeCheckEqualChip(result.label) : result.label
+        return (
+          <li
+            key={`${result.official}-${result.label}`}
+            title={attributeCheckTooltip(result)}
+            className={`cursor-help rounded-full px-2 py-0.5 text-xs ring-1 ring-inset ${
+              equal
+                ? 'bg-emerald-900/30 text-emerald-200 ring-emerald-700/60'
+                : 'bg-amber-900/30 text-amber-200 ring-amber-700/60'
+            }`}
+          >
+            {equal ? '✓' : '≠'} {text}
+            {combinedName ? ` (${de.feature.datasetAttributeCheckCombinedNameRule})` : ''}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+function DatasetPropertyCard({
+  properties,
+  checkResults,
+}: {
+  properties: Record<string, unknown>
+  /** Attribute check results; markers show next to the property they belong to. */
+  checkResults?: readonly AttributeCheckResult[]
+}) {
   const entries = Object.entries(properties).sort(([a], [b]) => a.localeCompare(b, 'de'))
   const verifyLinkClass =
     'shrink-0 text-xs font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
@@ -237,6 +311,11 @@ function DatasetPropertyCard({ properties }: { properties: Record<string, unknow
                 {linkVal ? (
                   <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />
                 ) : null}
+                {checkResults
+                  ?.filter((result) => result.official === k)
+                  .map((result) => (
+                    <AttributeCheckMarker key={result.label} result={result} />
+                  ))}
               </span>
             </dd>
           </div>
@@ -587,6 +666,12 @@ export function FeatureDatasetProperties({
     taggedCandidates.find((candidate) => candidateKeyOf(candidate) === candidateKey) ?? null
   const official = forDisplayOfficial(row.officialProperties)
   const osm = forDisplay(row.osmProperties)
+  const shownOsmTags = selectedCandidate?.tags ?? osm
+  // No markers for OSM-only rows; official-only rows have markers once a candidate is selected.
+  const attributeCheckResults =
+    row.category === 'unmatched_osm'
+      ? []
+      : evaluateAttributeChecks(data.attributeChecks, official, shownOsmTags)
 
   const osmResolved = buildResolvedOsmSourceSide(data.sourceMetadata?.osm)
   const osmPick = pickOsmDatasetExtractDate(osmResolved)
@@ -607,6 +692,7 @@ export function FeatureDatasetProperties({
     >
       <ProvenanceGridSectionHeader title={de.feature.datasetPropertiesSectionTitle} />
       <div className="border-t border-slate-700">
+        <AttributeCheckSummary results={attributeCheckResults} />
         <dl className="divide-y divide-slate-700/80">
           <ProvenanceGridRow
             asDl
@@ -620,7 +706,7 @@ export function FeatureDatasetProperties({
             }
             titleAside={<OfficialDatasetAgeInfoLink side={data.sourceMetadata?.official} />}
           >
-            <DatasetPropertyCard properties={official} />
+            <DatasetPropertyCard properties={official} checkResults={attributeCheckResults} />
           </ProvenanceGridRow>
           <ProvenanceGridRow
             asDl
@@ -680,7 +766,7 @@ export function FeatureDatasetProperties({
             {selectedCandidate ? (
               <p className="text-xs text-slate-400">{de.feature.datasetOsmCandidateTagsLabel}</p>
             ) : null}
-            <DatasetPropertyCard properties={selectedCandidate?.tags ?? osm} />
+            <DatasetPropertyCard properties={shownOsmTags} />
           </ProvenanceGridRow>
           {osmRef != null && (
             <OsmLiveRelationTagsRow

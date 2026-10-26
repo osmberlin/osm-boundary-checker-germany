@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { attributeChecksConfigSchema } from './attributeChecks.ts'
 import { officialHttpDownloadSchema } from './downloadOfficialConfig.ts'
 import { DTP_OFFICIAL_PROFILE_ID, DTP_OFFICIAL_SOURCE, dtpSelectionSchema } from './dtpOfficial.ts'
 import { matchRuleSchema, validateMatchRules } from './matchRules.ts'
@@ -70,6 +71,11 @@ const compareSchema = z
      * should be available from world view.
      */
     minZoom: z.number().int().min(0).max(15),
+    /**
+     * Checks of an official property against OSM keys, shown on the feature detail page as markers
+     * and a summary line (see `attributeChecks.ts`).
+     */
+    attributeChecks: attributeChecksConfigSchema.optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { attributeCheckConfigSchema } from './attributeChecks.ts'
 import { matchedBySchema, matchRuleSchema } from './matchRules.ts'
 import { ogcWfsInspectSourceSchema } from './ogcInspectSources.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
@@ -240,6 +241,8 @@ export const comparisonForReportSchema = z.object({
   ogcInspectSources: z.array(ogcWfsInspectSourceSchema).optional(),
   /** From optional `rowFlags` in area config, with the number of flagged rows. */
   rowFlags: z.array(rowFlagDefinitionSchema).optional(),
+  /** From optional `compare.attributeChecks` in area config; the report evaluates them per row. */
+  attributeChecks: z.array(attributeCheckConfigSchema).optional(),
   rows: z.array(tableRowSchema),
   unmatchedOsm: z.array(unmatchedOsmRowSchema),
 })

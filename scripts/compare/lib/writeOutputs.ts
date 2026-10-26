@@ -11,6 +11,7 @@ import { join } from 'node:path'
 import { area, bbox, cleanCoords, featureCollection, simplify, truncate } from '@turf/turf'
 import { geojson } from 'flatgeobuf'
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson'
+import type { AttributeCheckConfig } from '../../shared/attributeChecks.ts'
 import type { CompareRulesSummary } from '../../shared/compareRulesSummary.ts'
 import { comparisonDiffPlaceholderFeatureCollection } from '../../shared/comparisonDiffPlaceholder.ts'
 import {
@@ -407,6 +408,7 @@ export function buildStaticPayloadBase(
   officialLicenses: OfficialLicenseOutputs | null = null,
   sourceKind: SourceKind = 'official',
   rowFlagDefinitions?: RowFlagDefinition[],
+  attributeChecks?: readonly AttributeCheckConfig[],
 ): Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> {
   const out: Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> = {
     area: areaFolder,
@@ -430,6 +432,7 @@ export function buildStaticPayloadBase(
   }
   if (ogcInspectSources.length > 0) out.ogcInspectSources = ogcInspectSources
   if (rowFlagDefinitions) out.rowFlags = rowFlagDefinitions
+  if (attributeChecks && attributeChecks.length > 0) out.attributeChecks = [...attributeChecks]
   if (compareRulesSummary != null) {
     out.idNormalizationPreset = compareRulesSummary.idNormalizationPreset
     out.matchRules = compareRulesSummary.matchRules
@@ -600,6 +603,8 @@ export function writeOutputs(
   sourceKind: SourceKind = 'official',
   /** `rowFlags` from the dataset config: flag ids per row plus definitions in the table payload. */
   rowFlags: readonly RowFlagConfig[] = [],
+  /** `compare.attributeChecks` from the dataset config, embedded once in the table payload. */
+  attributeChecks: readonly AttributeCheckConfig[] = [],
 ): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
   const buildDir = join(outDir, BUILD_DIR)
@@ -801,6 +806,7 @@ export function writeOutputs(
     officialLicenses,
     sourceKind,
     buildRowFlagDefinitions(rowFlags, flagIdsPerRow),
+    attributeChecks,
   )
   const payloadRows = rows.map((row, index) =>
     comparisonRowToPayload(

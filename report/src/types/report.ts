@@ -1,3 +1,4 @@
+import type { AttributeCheckConfig } from '../../../scripts/shared/attributeChecks.ts'
 import type {
   IdNormalizationPreset,
   LicenseBreakdownEntry,
@@ -205,6 +206,8 @@ export type ComparisonForReport = {
   ogcInspectSources?: OgcWfsInspectSource[]
   /** From optional `rowFlags` in area config: badge definitions with the number of flagged rows. */
   rowFlags?: RowFlagDefinition[]
+  /** From optional `compare.attributeChecks` in area config. */
+  attributeChecks?: AttributeCheckConfig[]
   rows: ReportRow[]
   unmatchedOsm: UnmatchedOsmReportRow[]
 }
