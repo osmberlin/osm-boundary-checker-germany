@@ -225,6 +225,11 @@ jobs:
       - name: Prepare static report snapshot
         run: bun run --filter report sync-runtime-assets
 
+      # Fails the refresh (with an annotation and a size table in the summary) when the site would
+      # exceed the GitHub Pages limit, before anything is persisted or deployed.
+      - name: Check site size against the GitHub Pages limit
+        run: bun run site-size -- report/public
+
       - name: Validate snapshot output
         run: bun run scripts/ci/validate-refresh-snapshot.ts
 

@@ -80,6 +80,9 @@ jobs:
       - name: Build static report shell
         run: bun run --filter report build
 
+      - name: Check site size against the GitHub Pages limit
+        run: bun run site-size -- report/dist
+
       - uses: actions/upload-pages-artifact@v5
         with:
           path: report/dist
