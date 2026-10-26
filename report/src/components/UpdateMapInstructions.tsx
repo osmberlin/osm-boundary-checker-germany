@@ -169,12 +169,12 @@ export function UpdateMapInstructions({
                   </a>
                 </RevealInfoNote>
               ) : (
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <button
                     type="button"
                     disabled
                     title={downloadDisabledHint}
-                    className={sharedButtonClass}
+                    className={`${sharedButtonClass} shrink-0 whitespace-nowrap`}
                   >
                     {u.downloadOfficial}
                   </button>
@@ -201,8 +201,12 @@ export function UpdateMapInstructions({
                   {u.openOsmOrg}
                 </a>
               ) : (
-                <div className="flex items-center gap-3">
-                  <button type="button" disabled className={sharedButtonClass}>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <button
+                    type="button"
+                    disabled
+                    className={`${sharedButtonClass} shrink-0 whitespace-nowrap`}
+                  >
                     {u.openOsmOrg}
                   </button>
                   <p className="text-xs text-slate-500">{u.openOsmOrgDisabledHint}</p>
