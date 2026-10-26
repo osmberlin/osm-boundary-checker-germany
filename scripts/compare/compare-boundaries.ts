@@ -21,6 +21,7 @@ import { resolveOsmProfile } from '../shared/osmProfiles.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import { buildComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
 import { readAreaSourceMetadataFile } from '../shared/sourceMetadataIo.ts'
+import { wikidataProtectedAreasFileSchema } from '../shared/wikidataProtectedAreasPayload.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
 import { type ComparePhaseLogger, runCompare } from './lib/compare.ts'
 import { buildOfficialLicenseOutputs } from './lib/officialLicenses.ts'
@@ -67,6 +68,20 @@ function overpassBoundaryTagFromMatchProperty(matchProperty: string): OverpassBo
   if (normalized === 'postal_code') return 'postal_code'
   if (normalized === 'ref:wdpa') return 'protected_area'
   return 'administrative'
+}
+
+/** `data/wikidata/protected-areas.json` (written by `wikidata:protected-areas`); `null` when missing or unreadable. */
+function loadWikidataByQid(runtimeRoot: string) {
+  const path = join(runtimeRoot, 'data', 'wikidata', 'protected-areas.json')
+  if (!existsSync(path)) return null
+  try {
+    const parsed = wikidataProtectedAreasFileSchema.safeParse(
+      JSON.parse(readFileSync(path, 'utf-8')),
+    )
+    return parsed.success ? parsed.data.byQid : null
+  } catch {
+    return null
+  }
 }
 
 function nowIso(): string {
@@ -278,6 +293,16 @@ async function main() {
     const ogcInspectSources = parseOgcInspectSourcesFromConfig(configRaw)
     const overpassBoundaryTag = overpassBoundaryTagFromMatchProperty(config.osm.matchProperty)
     const displayName = parseAreaDisplayName(area, configRaw)
+    const wikidataByQid = configRaw.compare.wikidata ? loadWikidataByQid(runtimeRoot) : null
+    if (configRaw.compare.wikidata) {
+      console.log(
+        cliMuted(
+          wikidataByQid
+            ? `[compare] wikidata: ${Object.keys(wikidataByQid).length} items from data/wikidata/protected-areas.json`
+            : '[compare] wikidata: no data/wikidata/protected-areas.json; feature shards get no Wikidata block',
+        ),
+      )
+    }
     const officialLicenses =
       configRaw.officialMode === 'dtp'
         ? buildOfficialLicenseOutputs(rows, loadLicenseCompatibilityTable(workspaceRoot, 'dtp'))
@@ -330,6 +355,7 @@ async function main() {
       sourceKindFromDatasetConfig(configRaw),
       configRaw.rowFlags ?? [],
       configRaw.compare.attributeChecks ?? [],
+      wikidataByQid,
     )
     checkpoint('after_write_outputs')
     console.log(

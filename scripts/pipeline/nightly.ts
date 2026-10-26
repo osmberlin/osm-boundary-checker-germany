@@ -535,39 +535,40 @@ async function main() {
       await runPhaseSteps(downloadSteps)
     }
 
-    const runRegionalHub = async () => {
-      const hubStep = 'pipeline:regional-hub'
-      const hubT0 = Date.now()
-      appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step: hubStep })
-      writeState(statePath, { ...state, phase: hubStep, updatedAt: nowIso() })
-      const hubExitCode = await runCommand(
+    const runSharedStep = async (sharedStep: string, scriptName: string) => {
+      const sharedT0 = Date.now()
+      appendJsonl(logPath, { kind: 'step_start', runId, at: nowIso(), step: sharedStep })
+      writeState(statePath, { ...state, phase: sharedStep, updatedAt: nowIso() })
+      const sharedExitCode = await runCommand(
         'bun',
-        ['run', '--filter', './scripts', 'regional-hub:generate'],
+        ['run', '--filter', './scripts', scriptName],
         workspaceRoot,
-        hubStep,
+        sharedStep,
       )
-      const hubDurationMs = Date.now() - hubT0
+      const sharedDurationMs = Date.now() - sharedT0
       appendJsonl(logPath, {
         kind: 'step_end',
         runId,
         at: nowIso(),
-        step: hubStep,
-        status: hubExitCode === 0 ? 'ok' : 'fail',
-        durationMs: hubDurationMs,
-        exitCode: hubExitCode,
+        step: sharedStep,
+        status: sharedExitCode === 0 ? 'ok' : 'fail',
+        durationMs: sharedDurationMs,
+        exitCode: sharedExitCode,
       })
-      upsertSharedBranchStatus(processingDir, hubStep, {
-        status: hubExitCode === 0 ? 'success' : 'failed_no_cache',
+      upsertSharedBranchStatus(processingDir, sharedStep, {
+        status: sharedExitCode === 0 ? 'success' : 'failed_no_cache',
         usedCache: false,
-        errorCode: hubExitCode === 0 ? undefined : String(hubExitCode),
-        retryHint: hubExitCode === 0 ? undefined : 'automatic retry next nightly run',
+        errorCode: sharedExitCode === 0 ? undefined : String(sharedExitCode),
+        retryHint: sharedExitCode === 0 ? undefined : 'automatic retry next nightly run',
       })
-      if (hubExitCode !== 0) failed = true
+      if (sharedExitCode !== 0) failed = true
     }
 
     if (phase === 'all' || phase === 'extract') {
       await runPhaseSteps(extractSteps)
-      await runRegionalHub()
+      await runSharedStep('pipeline:regional-hub', 'regional-hub:generate')
+      // Needs the OSM extract and the DtP inventory; a failed fetch keeps the previous dump (exit 0).
+      await runSharedStep('pipeline:wikidata-protected-areas', 'wikidata:protected-areas')
     }
 
     if (phase === 'all' || phase === 'compare') {

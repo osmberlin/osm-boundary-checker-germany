@@ -19,6 +19,8 @@ Artifacts are split by usage so recovery can restore only the failed part:
 
 Regional hub JSON (`data/regional-hub/manifest.json`, `osm-tags.json`, `wikidata.json`, `mismatch-flags.json`) is produced by `regional-hub:generate` after OSM extract. OSM tags and Wikidata dumps are **not** git; they travel in `report-runtime-last-good` and are copied to Pages via `prepare-static-snapshot`. Destatis EWZ stays in committed `german-key-lookup.json` (pre-push weekly). Snapshot must not delete committed `german-key-lookup.json` or `ars-successors.json`.
 
+Protected-area Wikidata (`data/wikidata/protected-areas.json`, from `wikidata:protected-areas`, nightly step after the regional hub) is also **not** git. It travels in `report-runtime-last-good` (staged by `stage-report-runtime-artifact`) so the last good dump survives a failed WDQS fetch; compare reads it from the runtime root and embeds the items in the feature shards, so it is not copied to Pages.
+
 ## Compare-ready keep/drop contract
 
 ### Keep

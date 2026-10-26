@@ -10,6 +10,7 @@ import {
 } from '../../../scripts/shared/attributeChecks.ts'
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
+import type { WikidataShard } from '../../../scripts/shared/wikidataProtectedAreasPayload.ts'
 import { useOverpassRelationTags } from '../hooks/useOverpassRelationTags'
 import { de } from '../i18n/de'
 import { renderWithAbbr, SourceTerm, sourceText } from '../i18n/sourceVocabulary'
@@ -22,11 +23,13 @@ import {
 } from '../lib/germanKeyExplorer'
 import { parseReportRowOsmRef, type ParsedReportRowOsmRef } from '../lib/osmObjectRef'
 import type { CandidateMatch, ComparisonForReport, ReportRow } from '../types/report'
+import { WikidataAttributesRow } from './featureDetail/WikidataAttributesRow'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
 import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 import { sharedButtonClass } from './sharedButtonStyles'
+import { CompareMarker } from './ui/CompareMarker'
 import { Tooltip } from './ui/Tooltip'
 
 function formatPropertyValue(value: unknown): string {
@@ -218,22 +221,7 @@ function attributeCheckTooltip(result: AttributeCheckResult): string {
 /** Small marker next to an official property: green check for equal in OSM, amber ≠ for different. */
 function AttributeCheckMarker({ result }: { result: AttributeCheckResult }) {
   if (result.status === 'missing') return null
-  const tooltip = attributeCheckTooltip(result)
-  const equal = result.status === 'equal'
-  return (
-    <Tooltip
-      text={tooltip}
-      as="span"
-      aria-label={tooltip}
-      className={`shrink-0 cursor-help items-center rounded-sm px-1 text-xs leading-5 font-semibold ${
-        equal
-          ? 'bg-emerald-900/45 text-emerald-300 ring-1 ring-emerald-700/60'
-          : 'bg-amber-900/35 text-amber-300 ring-1 ring-amber-700/60'
-      }`}
-    >
-      {equal ? '✓' : '≠'}
-    </Tooltip>
-  )
+  return <CompareMarker equal={result.status === 'equal'} tooltip={attributeCheckTooltip(result)} />
 }
 
 /** One line of small chips above the two lists: the checks that are equal or different. */
@@ -657,11 +645,14 @@ export function FeatureDatasetProperties({
   row,
   data,
   candidates,
+  wikidata,
 }: {
   row: ReportRow
   data: ComparisonForReport
   /** Protected-area candidates (shard); only candidates with `tags` can be shown. */
   candidates?: CandidateMatch[]
+  /** Wikidata items of the record (shard); the "Wikidata" block shows only when present. */
+  wikidata?: WikidataShard
 }) {
   const [candidateKey, setCandidateKey] = useState('')
   const taggedCandidates = (candidates ?? []).filter((candidate) => candidate.tags !== undefined)
@@ -771,6 +762,15 @@ export function FeatureDatasetProperties({
             ) : null}
             <DatasetPropertyCard properties={shownOsmTags} />
           </ProvenanceGridRow>
+          {wikidata ? (
+            <WikidataAttributesRow
+              wikidata={wikidata}
+              official={official}
+              osm={osm}
+              osmRelationId={row.osmRelationId}
+              sourceKind={data.sourceKind}
+            />
+          ) : null}
           {osmRef != null && (
             <OsmLiveRelationTagsRow
               osmRef={osmRef}

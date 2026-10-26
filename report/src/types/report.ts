@@ -13,6 +13,7 @@ import type {
   OsmLicenseCompatibility,
   OsmSourceMetadataPersisted,
 } from '../../../scripts/shared/sourceMetadata.ts'
+import type { WikidataShard } from '../../../scripts/shared/wikidataProtectedAreasPayload.ts'
 
 export type { LicenseBreakdownEntry }
 
@@ -303,4 +304,6 @@ export type FeatureDetailShard = {
   candidates?: CandidateMatch[]
   /** Matched protected-area rows: tag suggestions; absent when there are none. */
   attributeHints?: AttributeHint[]
+  /** Datasets with `compare.wikidata`: Wikidata items of the row; absent without the dump. */
+  wikidata?: WikidataShard
 }

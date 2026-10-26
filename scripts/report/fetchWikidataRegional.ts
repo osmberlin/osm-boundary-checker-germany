@@ -12,7 +12,7 @@ import {
   splitWikidataSparqlQueries,
 } from './wikidataRegionalSparql.ts'
 
-function wikidataQueryHash(query: string) {
+export function wikidataQueryHash(query: string) {
   const hasher = new Bun.CryptoHasher('sha256')
   hasher.update(query)
   return hasher.digest('hex').slice(0, 16)
@@ -21,7 +21,7 @@ function wikidataQueryHash(query: string) {
 const SKIP_MS = 7 * 24 * 60 * 60 * 1000
 const SPARQL_TIMEOUT_MS = 55_000
 
-type SparqlBinding = Record<string, { type?: string; value?: string } | undefined>
+export type SparqlBinding = Record<string, { type?: string; value?: string } | undefined>
 
 const wikidataSparqlResultsSchema = z.object({
   results: z.object({
@@ -37,7 +37,7 @@ const wikidataSparqlResultsSchema = z.object({
   }),
 })
 
-function bindingValue(row: SparqlBinding, key: string) {
+export function bindingValue(row: SparqlBinding, key: string) {
   const value = row[key]?.value?.trim()
   return value === '' ? undefined : value
 }
@@ -85,7 +85,7 @@ function mergeBindings(bindings: SparqlBinding[]) {
   return { byArs, duplicateArsCount }
 }
 
-async function postSparql(query: string) {
+export async function postSparql(query: string) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), SPARQL_TIMEOUT_MS)
   try {

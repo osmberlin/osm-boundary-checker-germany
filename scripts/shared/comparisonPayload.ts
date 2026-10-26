@@ -11,6 +11,7 @@ import {
   osmSourceMetadataPersistedSchema,
   sourceMetadataSideSchema,
 } from './sourceMetadata.ts'
+import { wikidataShardSchema } from './wikidataProtectedAreasPayload.ts'
 
 export const reportMetricsSchema = z.object({
   iou: z.number(),
@@ -300,6 +301,8 @@ export const featureDetailShardSchema = z.object({
   candidates: z.array(candidateMatchSchema).optional(),
   /** Matched protected-area rows: tag suggestions; absent when there are none. */
   attributeHints: z.array(attributeHintSchema).optional(),
+  /** Datasets with `compare.wikidata`: the Wikidata items the row's records name; absent without the dump. */
+  wikidata: wikidataShardSchema.optional(),
 })
 
 export type CandidateMatch = z.infer<typeof candidateMatchSchema>

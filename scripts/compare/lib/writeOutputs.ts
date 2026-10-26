@@ -38,6 +38,7 @@ import {
 } from '../../shared/rowFlags.ts'
 import type { SourceKind } from '../../shared/sourceKind.ts'
 import type { ComparisonSourceMetadata, SourceMetadataSide } from '../../shared/sourceMetadata.ts'
+import type { WikidataProtectedAreaItem } from '../../shared/wikidataProtectedAreasPayload.ts'
 import type {
   CompareInstrumentation,
   ComparePhaseLogger,
@@ -52,6 +53,7 @@ import {
   TIPPECANOE_LAYER,
 } from './runTippecanoe.ts'
 import { calculateDiffBatchWithRust } from './rustGeomSidecar.ts'
+import { wikidataShardForRow } from './wikidataShard.ts'
 
 const TABLE_JSON = 'comparison_table.json'
 const PMTILES = 'comparison.pmtiles'
@@ -605,6 +607,8 @@ export function writeOutputs(
   rowFlags: readonly RowFlagConfig[] = [],
   /** `compare.attributeChecks` from the dataset config, embedded once in the table payload. */
   attributeChecks: readonly AttributeCheckConfig[] = [],
+  /** `compare.wikidata` with a dump: Wikidata items by id, embedded in the feature shards; `null` = none. */
+  wikidataByQid: Readonly<Record<string, WikidataProtectedAreaItem>> | null = null,
 ): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
   const buildDir = join(outDir, BUILD_DIR)
@@ -875,6 +879,11 @@ export function writeOutputs(
       row: { ...row, ...geometryBboxesByKey.get(row.canonicalMatchKey) },
       ...(candidates !== undefined ? { candidates } : {}),
       ...(attributeHints !== undefined ? { attributeHints } : {}),
+      ...(wikidataByQid
+        ? {
+            wikidata: wikidataShardForRow(row.officialProperties, row.osmProperties, wikidataByQid),
+          }
+        : {}),
     }
     writeStaticJson(join(featureTmp, `${encodeURIComponent(row.canonicalMatchKey)}.json`), shard)
     if (

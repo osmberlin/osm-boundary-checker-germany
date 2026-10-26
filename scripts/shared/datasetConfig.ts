@@ -76,6 +76,11 @@ const compareSchema = z
      * and a summary line (see `attributeChecks.ts`).
      */
     attributeChecks: attributeChecksConfigSchema.optional(),
+    /**
+     * Embed the Wikidata item that the official `wikidata` property and the OSM `wikidata` tag name
+     * into each feature shard (data from `bun run wikidata:protected-areas`; none without it).
+     */
+    wikidata: z.boolean().optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

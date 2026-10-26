@@ -118,6 +118,13 @@ if (
   copiedDataFiles.push('regional-hub')
 }
 
+// Last-good Wikidata items of the protected-area datasets (`wikidata:protected-areas`), reused when WDQS fails.
+if (
+  copyDirectoryIfExists(path.join(dataRoot, 'wikidata'), path.join(reportArtifactData, 'wikidata'))
+) {
+  copiedDataFiles.push('wikidata')
+}
+
 const summary: ReportArtifactSummary = {
   generatedAt: new Date().toISOString(),
   areasIncluded: copiedAreas.sort(),

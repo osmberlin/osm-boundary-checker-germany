@@ -23,6 +23,7 @@ import {
   regionalHubOsmTagsFileSchema,
   regionalHubWikidataFileSchema,
 } from '../../../scripts/shared/regionalHubPayload.ts'
+import type { WikidataShard } from '../../../scripts/shared/wikidataProtectedAreasPayload.ts'
 import {
   type AddrPostcodeGeoJsonFeatureCollection,
   type AddrPostcodeHit,
@@ -180,6 +181,7 @@ export async function loadDiscussionsRegistrySyncMeta(): Promise<DiscussionRegis
 export type FeatureDetailComparison = ComparisonForReport & {
   candidates?: CandidateMatch[]
   attributeHints?: AttributeHint[]
+  wikidata?: WikidataShard
 }
 
 export async function loadFeatureOrFallback(
@@ -195,6 +197,7 @@ export async function loadFeatureOrFallback(
       unmatchedOsm: [],
       ...(shard.candidates !== undefined ? { candidates: shard.candidates } : {}),
       ...(shard.attributeHints !== undefined ? { attributeHints: shard.attributeHints } : {}),
+      ...(shard.wikidata !== undefined ? { wikidata: shard.wikidata } : {}),
     }
   } catch (shardError) {
     const matchedRow = comparison.rows.find((row) => row.canonicalMatchKey === featureKey)

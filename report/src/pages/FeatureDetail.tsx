@@ -147,7 +147,12 @@ function FeatureDetailWithMapContext({
 
         <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
 
-        <FeatureDatasetProperties row={row} data={data} candidates={data.candidates} />
+        <FeatureDatasetProperties
+          row={row}
+          data={data}
+          candidates={data.candidates}
+          wikidata={data.wikidata}
+        />
 
         {hasComparisonMap ? (
           <LiveSourceProperties

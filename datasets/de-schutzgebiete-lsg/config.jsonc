@@ -16,6 +16,8 @@
   "metricsCrs": "EPSG:25832",
   "compare": {
     "minZoom": 5,
+    // Embed the Wikidata item that DtP and OSM name into the feature shard (bun run wikidata:protected-areas).
+    "wikidata": true,
     // Rules run in order; each only handles rows the earlier ones left unmatched, and an OSM object is used once.
     "matchRules": [
       // 1. The WDPA id (DtP areas without one carry a dtp-<uuid> key and can only match by 2 or 3).
