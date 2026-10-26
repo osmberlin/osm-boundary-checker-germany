@@ -46,6 +46,7 @@ import {
   DTP_CATEGORIES_FILE,
   DTP_DOWNLOAD_METADATA,
   DTP_INVENTORY_FILE,
+  DTP_MAX_MISSING_SHARE,
   DTP_ORGANIZATIONS_FILE,
 } from './lib/constants.ts'
 import {
@@ -178,7 +179,7 @@ function extractArea(
     names: DtpOfficialNames
     areasPath: string
   },
-): void {
+): 'written' | 'incomplete' {
   const { area, selection } = spec
   const started = Date.now()
   const selected = selectInventoryItems(ctx.inventory.items, selection)
@@ -209,6 +210,16 @@ function extractArea(
       `${area}: ${stats.duplicateWdpa.size} wdpa id(s) on more than one area (kept; compare unions same keys):\n` +
         formatDuplicates(stats.duplicateWdpa),
     )
+  }
+  const missingShare =
+    stats.selectedInInventory > 0 ? stats.missingFromCache / stats.selectedInInventory : 0
+  if (missingShare > DTP_MAX_MISSING_SHARE) {
+    console.warn(
+      `${area}: ${stats.missingFromCache} of ${stats.selectedInInventory} areas not cached yet ` +
+        `(${(missingShare * 100).toFixed(1)} %, limit ${DTP_MAX_MISSING_SHARE * 100} %); dataset left out until ` +
+        `download:dtp has filled the cache (${existsSync(outFgb) ? 'earlier official.fgb kept' : 'no official.fgb'}).`,
+    )
+    return 'incomplete'
   }
   if (features.length === 0) {
     throw new Error(
@@ -255,6 +266,7 @@ function extractArea(
   console.log(
     `${area}: ${features.length} feature(s) -> ${relative(ctx.runtimeRoot, outFgb)} (${((Date.now() - started) / 1000).toFixed(1)}s)`,
   )
+  return 'written'
 }
 
 function main() {
@@ -299,10 +311,15 @@ function main() {
         ? ` (${downloadMeta.pendingDetailCount} pending at last download run)`
         : ''),
   )
+  const incomplete: string[] = []
   for (const spec of selected) {
-    extractArea(spec, { runtimeRoot, inventory, downloadMeta, names, areasPath })
+    const result = extractArea(spec, { runtimeRoot, inventory, downloadMeta, names, areasPath })
+    if (result === 'incomplete') incomplete.push(spec.area)
   }
-  console.log('Done.')
+  // Exit 0 either way: a cache that is still filling is expected, compare then skips these datasets.
+  console.log(
+    incomplete.length > 0 ? `Done; left out (cache incomplete): ${incomplete.join(', ')}` : 'Done.',
+  )
 }
 
 try {

@@ -1,6 +1,6 @@
 # Plan: protected areas (Digitize the Planet) vs. OSM
 
-Status: local v1 implemented (steps 1–6), not committed; CI wiring (step 7) open. Facts checked against the DtP API v2.2.0 on 2026-10-25.
+Status: implemented including CI wiring (step 7, see `docs/cache-policy.md` → DtP protected areas). Facts checked against the DtP API v2.2.0 on 2026-10-25.
 
 Goal: compare the protected-area geometries that Digitize the Planet e.V. (DtP) collects with OSM, using the same pattern as the admin datasets: one strong reference key, extra attribute checks on matched rows, and a broader candidate search for `official_only` rows. The candidate search exists to get `ref:WDPA` added in OSM.
 

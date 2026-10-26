@@ -13,9 +13,19 @@ import {
 import { join } from 'node:path'
 import { z } from 'zod'
 import { processingLogEventSchema, type LogEvent } from '../../report/src/types/processingLog.ts'
+import {
+  dtpCacheReady,
+  dtpPipelineDownloadArgs,
+  dtpSyncedWithin,
+  isDtpArea,
+} from '../dtp/lib/pipeline.ts'
 import { areaHasCompareConfig } from '../shared/areaConfig.ts'
 import { discoverBkgAreaFolderNames } from '../shared/bkgAreas.ts'
-import { DATASETS_DIRECTORY } from '../shared/datasetPaths.ts'
+import {
+  DATASETS_DIRECTORY,
+  datasetFolderPath,
+  OFFICIAL_SOURCE_RELATIVE_PATH,
+} from '../shared/datasetPaths.ts'
 import {
   officialSourceNeedsFallback,
   osmSharedExtractOutputReady,
@@ -61,7 +71,9 @@ type PipelineStepName =
   | 'download:bkg'
   | 'download:official'
   | 'download:osm'
+  | 'download:dtp'
   | 'extract:bkg'
+  | 'extract:dtp'
   | 'extract:osm'
   | 'extract:osm:plz'
   | 'extract:osm:admin_candidates'
@@ -70,6 +82,8 @@ type PipelineStepName =
   | 'extract:osm:protected_areas_candidates'
 type PipelineStep = { step: PipelineStepName; args: string[] }
 const DEFAULT_COMPARE_CONCURRENCY = 2
+/** A DtP sync newer than this counts as done for the repeated download phase of the same job. */
+const DTP_SYNC_REUSE_WITHIN_MS = 6 * 60 * 60 * 1000
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -89,6 +103,12 @@ function appendJsonl(path: string, event: LogEvent): void {
 
 function writeState(path: string, state: ProcessingState): void {
   writeFileSync(path, `${JSON.stringify(state, null, 2)}\n`, 'utf-8')
+}
+
+/** Degraded but non-fatal situations: a GitHub warning annotation, a plain warning locally. */
+function warnDegraded(title: string, message: string): void {
+  if (process.env.GITHUB_ACTIONS) console.log(`::warning title=${title}::${message}`)
+  else console.warn(`[pipeline] ${title}: ${message}`)
 }
 
 function discoverAreas(workspaceRoot: string): string[] {
@@ -227,7 +247,9 @@ function osmExtractKindForStep(
     case 'download:bkg':
     case 'download:official':
     case 'download:osm':
+    case 'download:dtp':
     case 'extract:bkg':
+    case 'extract:dtp':
       return null
   }
 }
@@ -281,15 +303,37 @@ async function main() {
   let skipExtractOsmProtectedAreas = false
   let skipExtractOsmProtectedAreasCandidates = false
 
+  const dtpAreas = discoverAreas(workspaceRoot).filter((area) => isDtpArea(workspaceRoot, area))
+
   try {
     const downloadSteps: PipelineStep[] = [
       { step: 'download:bkg', args: ['run', '--filter', './scripts', 'download:bkg'] },
       { step: 'download:official', args: ['run', '--filter', './scripts', 'download:official'] },
       { step: 'download:osm', args: ['run', '--filter', './scripts', 'download:osm-pbf'] },
+      // Incremental DtP sync into `.cache/dtp` (restored from the last run's artifact); see dtp/lib/pipeline.ts.
+      ...(dtpAreas.length > 0
+        ? [
+            {
+              step: 'download:dtp' as const,
+              args: [
+                'run',
+                '--filter',
+                './scripts',
+                'download:dtp',
+                '--',
+                ...dtpPipelineDownloadArgs(),
+              ],
+            },
+          ]
+        : []),
     ]
 
     const extractSteps: PipelineStep[] = [
       { step: 'extract:bkg', args: ['run', '--filter', './scripts', 'extract:bkg', '--', '--yes'] },
+      // `datasets/<dtp area>/source/official.fgb` from `.cache/dtp`; leaves out datasets whose cache is incomplete.
+      ...(dtpAreas.length > 0
+        ? [{ step: 'extract:dtp' as const, args: ['run', '--filter', './scripts', 'extract:dtp'] }]
+        : []),
       // Explicit `--kind admin` only: `extract:osm` without `--kind` runs admin+admin_candidates under CI,
       // which would duplicate the next step. Locally, `bun run extract:osm` (wizard) can default both.
       {
@@ -341,7 +385,21 @@ async function main() {
         let usedCache = false
         let reason: string | undefined
         const osmExtractKind = osmExtractKindForStep(phaseStep.step)
+        // Without any DtP cache there is nothing to extract; compare then skips the DtP datasets.
+        if (phaseStep.step === 'extract:dtp' && !dtpCacheReady(runtimeRoot)) {
+          warnDegraded(
+            'DtP',
+            'no .cache/dtp (download:dtp failed and no artifact); DtP datasets are left out of this run',
+          )
+        }
+        // The repeated download phase (another source failed) does not run the DtP sync twice.
+        const dtpAlreadySynced =
+          phaseStep.step === 'download:dtp' &&
+          downloadAttempt === 'fallback' &&
+          dtpSyncedWithin(runtimeRoot, DTP_SYNC_REUSE_WITHIN_MS)
         const shouldSkipFromFallback =
+          dtpAlreadySynced ||
+          (phaseStep.step === 'extract:dtp' && !dtpCacheReady(runtimeRoot)) ||
           (phaseStep.step === 'extract:bkg' &&
             (skipExtractBkg || shouldSkipBkgExtract(workspaceRoot, runtimeRoot))) ||
           (phaseStep.step === 'extract:osm' && skipExtractOsmAdmin) ||
@@ -356,15 +414,38 @@ async function main() {
         if (shouldSkipFromFallback) {
           stepStatus = 'skipped'
           usedCache = true
-          reason =
-            osmExtractKind != null && osmSharedExtractOutputReady(runtimeRoot, osmExtractKind)
-              ? 'compare_ready_osm_fgb_present'
-              : 'fallback_inputs_already_restored'
+          reason = dtpAlreadySynced
+            ? 'dtp_synced_in_fresh_attempt'
+            : phaseStep.step === 'extract:dtp'
+              ? 'dtp_cache_missing'
+              : osmExtractKind != null && osmSharedExtractOutputReady(runtimeRoot, osmExtractKind)
+                ? 'compare_ready_osm_fgb_present'
+                : 'fallback_inputs_already_restored'
+          // Nothing was reused: the status page shows the step as failed (no cache).
+          if (phaseStep.step === 'extract:dtp') usedCache = false
         } else {
           commandExitCode = await runCommand('bun', phaseStep.args, workspaceRoot, phaseStep.step)
         }
         let finalExitCode = commandExitCode
-        if (commandExitCode !== 0 && !shouldSkipFromFallback) {
+        // A failed DtP sync must not stop the other datasets (it is an extra source).
+        let failureIsFatal = true
+        if (commandExitCode !== 0 && phaseStep.step === 'download:dtp') {
+          failureIsFatal = false
+          if (dtpCacheReady(runtimeRoot)) {
+            stepStatus = 'skipped'
+            usedCache = true
+            reason = 'fallback_dtp_cache_reused'
+            finalExitCode = 0
+            warnDegraded('DtP', 'download:dtp failed; DtP datasets use the cache of the last run')
+          } else {
+            stepStatus = 'fail'
+            reason = 'dtp_unavailable_no_cache'
+            warnDegraded(
+              'DtP',
+              'download:dtp failed and there is no cache; DtP datasets are left out',
+            )
+          }
+        } else if (commandExitCode !== 0 && !shouldSkipFromFallback) {
           if (!fallbackRuntimeRoot) {
             stepStatus = 'fail'
           } else {
@@ -465,6 +546,8 @@ async function main() {
                 }
                 break
               }
+              // A crash with a cache present is a bug, not a missing source: fail loudly.
+              case 'extract:dtp':
               case 'extract:osm':
               case 'extract:osm:plz':
               case 'extract:osm:admin_candidates':
@@ -473,6 +556,7 @@ async function main() {
               case 'extract:osm:protected_areas_candidates':
                 stepStatus = 'fail'
                 break
+              case "download:dtp": { throw new Error('Not implemented yet: "download:dtp" case') }
             }
           }
         }
@@ -489,7 +573,7 @@ async function main() {
           reason,
         })
         console.log(
-          `[pipeline] ${stepStatus === 'ok' ? 'finished' : stepStatus === 'skipped' ? 'reused cache for' : 'failed'} ${phaseStep.step} in ${formatDuration(durationMs)} (exit ${finalExitCode})`,
+          `[pipeline] ${stepStatus === 'ok' ? 'finished' : stepStatus === 'skipped' ? (usedCache ? 'reused cache for' : 'skipped') : 'failed'} ${phaseStep.step} in ${formatDuration(durationMs)} (exit ${finalExitCode})`,
         )
         if (phaseStep.step === 'download:official' && finalExitCode !== 0) {
           console.error(
@@ -527,7 +611,7 @@ async function main() {
               ? osmDownloadErrorMessage(finalExitCode, reason)
               : undefined,
         })
-        if (finalExitCode !== 0) failed = true
+        if (finalExitCode !== 0 && failureIsFatal) failed = true
       }
     }
 
@@ -587,6 +671,22 @@ async function main() {
       const runCompareForArea = async (area: string) => {
         const t0 = Date.now()
         const stepName = `compare:${area}`
+        // DtP datasets without input (cache missing or still filling): skip, the others still deploy.
+        if (
+          dtpAreas.includes(area) &&
+          !existsSync(join(datasetFolderPath(runtimeRoot, area), OFFICIAL_SOURCE_RELATIVE_PATH))
+        ) {
+          const message = 'no official.fgb from extract:dtp (DtP cache missing or still filling)'
+          warnDegraded(`DtP ${area}`, `${message}; dataset skipped in this run`)
+          upsertAreaCompareStatus(processingDir, area, {
+            status: 'skipped',
+            usedCache: false,
+            compareOutputOrigin: 'none',
+            errorMessage: message,
+            retryHint: 'automatic retry next nightly run',
+          })
+          return
+        }
         console.log(`[pipeline] starting ${stepName}`)
         appendJsonl(logPath, { kind: 'dataset_start', runId, at: nowIso(), dataset: area })
         writeState(statePath, { ...state, phase: stepName, updatedAt: nowIso() })

@@ -69,6 +69,23 @@ jobs:
           path: .previous-osm-state
           if_no_artifact_found: fail
 
+      # DtP sync cache (scripts/dtp/lib/pipeline.ts): download:dtp only fetches what changed since.
+      # Newest run with the artifact, whatever its outcome: the upload happens right after the
+      # download phase and the files are written atomically, so a run that failed later still left
+      # a good cache. None (first run, expired): download:dtp fills it over a few runs.
+      - name: Download previous DtP cache
+        id: previous-dtp-cache
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v25
+        with:
+          workflow: data-refresh.yml
+          branch: main
+          name: source-cache-dtp
+          workflow_conclusion: ''
+          search_artifacts: true
+          path: .cache/dtp
+          if_no_artifact_found: fail
+
       - name: Compute rust sidecar fingerprint
         id: rust-fingerprint
         run: bun run scripts/ci/rust-sidecar-fingerprint.ts
@@ -166,6 +183,25 @@ jobs:
           PIPELINE_DOWNLOAD_ATTEMPT: fallback
           FALLBACK_RUNTIME_ROOT: ${{ github.workspace }}/.previous-artifact
           RUST_GEOM_BIN: ${{ github.workspace }}/rust/geom-sidecar/target/release/geom-sidecar
+
+      # Right after the download phase and also when it failed: a first fill of the DtP cache keeps
+      # its progress even if a later step stops the job. Same files as DTP_CACHE_ARTIFACT_FILES.
+      - name: Upload DtP cache artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: source-cache-dtp
+          path: |
+            .cache/dtp/inventory.json
+            .cache/dtp/areas.ndjson.gz
+            .cache/dtp/download-metadata.json
+            .cache/dtp/protected-area-categories.json
+            .cache/dtp/organizations.json
+            .cache/dtp/licenses.json
+            .cache/dtp/geometry-sources.json
+          if-no-files-found: ignore
+          retention-days: 14
+          compression-level: 0
 
       - name: Finalize OSM download policy
         run: bun run scripts/ci/finalize-osm-download.ts

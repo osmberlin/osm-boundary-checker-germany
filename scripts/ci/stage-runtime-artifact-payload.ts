@@ -10,6 +10,7 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import { z } from 'zod'
+import { isDtpArea } from '../dtp/lib/pipeline.ts'
 import { COMPARE_READY_OSM_FGB_BASENAMES, GERMANY_OSM_CACHE_DIR } from '../shared/germanyOsmPbf.ts'
 import { rustSidecarMetadataFileSchema } from '../shared/rustSidecarMetadata.ts'
 import { SOURCE_METADATA_FILE } from '../shared/sourceMetadata.ts'
@@ -153,6 +154,8 @@ if (existsSync(datasetsRoot)) {
   for (const entry of readdirSync(datasetsRoot, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.name.startsWith('.')) continue
     const area = entry.name
+    // DtP sources are rebuilt from the DtP cache artifact by extract:dtp (~360 MB not stored twice).
+    if (isDtpArea(path.resolve('.'), area)) continue
     const sourceDir = path.join(datasetsRoot, area, 'source')
     if (existsSync(sourceDir)) {
       const officialSourceFgb = path.join(sourceDir, 'official.fgb')

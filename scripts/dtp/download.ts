@@ -38,6 +38,7 @@ import {
   DTP_LIST_PAGE_SIZE,
   DTP_MANAGED_SWEEP_FIELDS,
   DTP_ORGANIZATIONS_FILE,
+  DTP_FLUSH_EVERY_MS,
   DTP_PROGRESS_EVERY,
   DTP_REQUEST_RETRIES,
   DTP_USER_AGENT,
@@ -71,6 +72,8 @@ type Args = {
   limit: number | null
   reverifyDays: number
   pauseMs: number
+  /** Stop the detail fetches after this many minutes (progress is kept); `null` = no limit. */
+  maxMinutes: number | null
 }
 
 type RequestLabel = 'list' | 'detail' | 'other'
@@ -102,6 +105,7 @@ function usage(): string {
     '  --limit N            testing: fetch at most N details (after planning)',
     '  --reverify-days N    re-fetch details older than N days (default 28)',
     '  --pause-ms N         pause after each request (default 200)',
+    '  --max-minutes N      stop the detail fetches after N minutes; the rest follows next run',
   ].join('\n')
 }
 
@@ -119,6 +123,7 @@ function parseArgs(argv: string[]): Args {
   let reverifyDays = DTP_DEFAULT_REVERIFY_DAYS
   let pauseMs = DTP_DEFAULT_PAUSE_MS
   let full = false
+  let maxMinutes: number | null = null
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i]
     if (flag === '--help' || flag === '-h') {
@@ -133,9 +138,16 @@ function parseArgs(argv: string[]): Args {
     else if (flag === '--limit') limit = readNonNegativeInt(flag, argv[++i])
     else if (flag === '--reverify-days') reverifyDays = readNonNegativeInt(flag, argv[++i])
     else if (flag === '--pause-ms') pauseMs = readNonNegativeInt(flag, argv[++i])
+    else if (flag === '--max-minutes') maxMinutes = readNonNegativeInt(flag, argv[++i])
     else throw new Error(`Unknown flag: ${flag ?? ''}\n${usage()}`)
   }
-  return { maxDetails: full ? Number.POSITIVE_INFINITY : maxDetails, limit, reverifyDays, pauseMs }
+  return {
+    maxDetails: full ? Number.POSITIVE_INFINITY : maxDetails,
+    limit,
+    reverifyDays,
+    pauseMs,
+    maxMinutes,
+  }
 }
 
 function sleep(ms: number): Promise<void> {
@@ -535,12 +547,21 @@ async function main() {
       gzipSync(Buffer.from(serializeAreasNdjson([...recordsByUuid.values()]), 'utf-8')),
     )
 
-  // 4. Detail fetches (sequential). Partial progress is flushed every DTP_PROGRESS_EVERY fetches and on error.
+  // 4. Detail fetches (sequential). Partial progress is flushed every DTP_FLUSH_EVERY_MS and on error.
   let fetched = 0
   let skippedGone = 0
   const detailStarted = Date.now()
+  let lastFlush = detailStarted
+  const detailDeadline =
+    args.maxMinutes === null ? Number.POSITIVE_INFINITY : detailStarted + args.maxMinutes * 60_000
   try {
     for (const uuid of toFetch) {
+      if (Date.now() >= detailDeadline) {
+        console.log(
+          `Time budget of ${args.maxMinutes} min reached after ${fetched}/${toFetch.length} details; the rest follows next run.`,
+        )
+        break
+      }
       const item = inventoryByUuid.get(uuid)
       if (!item) continue
       try {
@@ -572,7 +593,10 @@ async function main() {
         console.log(
           `Detail progress: ${fetched}/${toFetch.length} (${formatSeconds(Date.now() - detailStarted)}, avg ${Math.round(requestStats.detail.totalMs / Math.max(1, requestStats.detail.count))} ms per request)`,
         )
+      }
+      if (Date.now() - lastFlush >= DTP_FLUSH_EVERY_MS) {
         flush()
+        lastFlush = Date.now()
       }
     }
   } finally {

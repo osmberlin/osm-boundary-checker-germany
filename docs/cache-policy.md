@@ -40,6 +40,18 @@ Protected-area Wikidata (`data/wikidata/protected-areas.json`, from `wikidata:pr
 - `.cache/bkg/**/*.gpkg`
 - any raw/intermediate source archives that are not direct compare inputs
 
+## DtP protected areas
+
+The DtP sync cache (`.cache/dtp`: inventory, `areas.ndjson.gz`, download metadata, reference lists; ~175 MB) travels as its own artifact `source-cache-dtp` (`scripts/dtp/lib/pipeline.ts`):
+
+- **Restore:** at the start of every refresh, the newest `source-cache-dtp` from `main` regardless of that run's outcome.
+- **Sync:** `download:dtp` (download phase) syncs only what changed (routine run ~5 min: 598 list pages plus the changed details). Each run fetches details for at most 60 min, so an empty cache (first run, expired artifact, ~25,000 areas) fills over about three runs and never loses progress.
+- **Upload:** right after the download phase with `if: always()`, so a later failing step cannot throw away download progress.
+- **Extract:** `extract:dtp` (extract phase) builds `datasets/<dtp area>/source/official.fgb`. A dataset with more than 1 % of its areas still uncached is left out (no half-filled dataset on the site). Compare then skips it with status `skipped`.
+- **DtP down:** the cache of the last run is reused (status: cache). Without any cache the DtP datasets are left out of the run; the other datasets still compare and deploy. Both cases write a GitHub warning annotation.
+- **Not in `source-cache-official`:** the DtP sources are rebuilt from the DtP cache, so the ~360 MB are not stored twice.
+- **No second sync:** the repeated download phase (after another source failed) skips a DtP sync that already ran in the same job.
+
 ## Site size budget
 
 GitHub Pages allows 1 GB per site. `bun run site-size` (part of `bun run check`, run on `report/public` after `sync-runtime-assets` in the refresh and on `report/dist` before the Pages upload) fails above 1 GB and warns above 90 %, with a table of the largest datasets in the log and the step summary. Levers per dataset config: `compare.tileMaxZoom` (z13 is ~40 % of the default z14 archive) and `compare.officialForEdit: "osm_compatible"` (edit GeoJSON only for areas whose licence allows OSM). Table metrics are rounded to four significant digits (`scripts/shared/tableMetricPrecision.ts`); feature shards keep full precision.
