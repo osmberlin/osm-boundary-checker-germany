@@ -17,7 +17,7 @@ import {
 const SKIP_MS = 7 * 24 * 60 * 60 * 1000
 /** Ids per `VALUES` query. */
 const QID_BATCH_SIZE = 400
-/** WDPA ids are numeric; the split fallback runs one query per leading digit. */
+/** WDPA ids are numeric; the base query runs once per leading digit. */
 const WDPA_PREFIXES = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
 const QID_PATTERN = /^Q[1-9]\d*$/
 
@@ -90,18 +90,18 @@ export function missingQids(referenced: Iterable<string>, byQid: Record<string, 
   return [...missing].sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)))
 }
 
+/**
+ * Items of the base query, one query per leading WDPA digit. The single query takes ~50 s on WDQS
+ * against the 55 s client limit, the nine parts take a few seconds each. All rows are merged
+ * together, so an item with WDPA ids under several digits keeps every id.
+ */
 async function fetchBase() {
-  try {
-    return { byQid: mergeBindings(await postSparql(wikidataProtectedAreasSparql())) }
-  } catch (error) {
-    console.log(`[wikidata] main query failed (${String(error)}), splitting by WDPA digit`)
-    const byQid: Record<string, WikidataProtectedAreaItem> = {}
-    for (const prefix of WDPA_PREFIXES) {
-      console.log(`[wikidata] WDQS split wdpa-${prefix}`)
-      Object.assign(byQid, mergeBindings(await postSparql(wikidataProtectedAreasSparql(prefix))))
-    }
-    return { byQid, split: true, sparqlError: String(error) }
+  const bindings: SparqlBinding[] = []
+  for (const prefix of WDPA_PREFIXES) {
+    console.log(`[wikidata] WDQS wdpa-${prefix}`)
+    bindings.push(...(await postSparql(wikidataProtectedAreasSparql(prefix))))
   }
+  return mergeBindings(bindings)
 }
 
 async function fetchReferenced(qids: readonly string[]) {
@@ -148,10 +148,9 @@ export async function fetchWikidataProtectedAreas(options: {
     referencedBefore = options.existing.referencedCount
   } else {
     try {
-      const fetched = await fetchBase()
-      base = fetched.byQid
+      base = await fetchBase()
       durationMs = Date.now() - started
-      if (fetched.split) extras = { splitByWdpaDigit: true, sparqlError: fetched.sparqlError }
+      extras = { splitByWdpaDigit: true }
     } catch (error) {
       console.warn(`[wikidata] fetch failed: ${String(error)}`)
       if (!options.existing) return null
