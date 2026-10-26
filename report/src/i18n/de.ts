@@ -456,13 +456,12 @@ export const de = {
     noPmtiles:
       'Kein Kachel-Archiv (comparison.pmtiles) vorhanden — Vergleich mit Geometrien ausführen (tippecanoe erforderlich).',
     liveSourcesSectionAria: 'Live-Attribute von amtlichen Diensten und OSM',
-    liveSourcesSectionTitle: 'Live-Daten anzeigen',
+    liveSourcesSectionTitle: 'Weitere Live-Daten',
     liveSourcesSectionLead:
-      'Es kann hilfreich sein, sich die aktuellen Daten in der aktuellen BBOX zum Vergleich anzeigen zu lassen.',
+      'Aktuelle Daten der amtlichen Quelle und PLZ-Punktdaten aus OSM im aktuellen Kartenausschnitt zum Vergleich.',
     liveOfficialHeading: 'Amtliche Quelle (WFS)',
     liveOfficialLoad: 'Eigenschaften laden',
     liveOfficialLoading: 'Wird geladen …',
-    liveOfficialNoBbox: 'Kein Kartenausschnitt — für dieses Objekt liegt keine Geometrie vor.',
     liveMapViewportPending:
       'Kartenausschnitt ist noch nicht bereit — bitte kurz warten oder die Karte leicht bewegen.',
     liveOfficialEmpty: 'Keine Treffer im Ausschnitt.',
@@ -472,10 +471,22 @@ export const de = {
     liveOfficialHttp: 'WFS-Anfrage fehlgeschlagen:',
     liveOfficialFeatureTitle: (index1: number, id: string) =>
       `Datensatz ${index1}${id ? ` · ${id}` : ''}`,
-    liveOsmHeading: 'OpenStreetMap (Overpass)',
-    liveOsmBoundariesRowHeading: 'OSM-Grenzen',
     livePlzAddrRowHeading: 'PLZ-Punktdaten (addr:postcode)',
-    liveOsmLoad: 'OSM-Grenzen im Ausschnitt laden …',
+    liveOsmObjectLoad: 'Aktuellen Stand laden',
+    liveOsmObjectLoading: 'Wird geladen …',
+    liveOsmObjectReload: 'Neu laden',
+    liveOsmObjectGone: 'Dieses Objekt gibt es in OSM nicht mehr (gelöscht?).',
+    liveOsmObjectTagsHeading: 'Aktuell in OSM',
+    /** ✓/≠ tooltips on live OSM tags: result of an attribute check against the official property. */
+    liveOsmCheckEqualTooltip: (officialKey: string, officialValue: string) =>
+      `gleich wie amtlich (${officialKey}: ${officialValue})`,
+    liveOsmCheckDifferentTooltip: (officialKey: string, officialValue: string) =>
+      `weicht von amtlich ab (${officialKey}: ${officialValue})`,
+    liveOsmNearbySearch: 'Weitere OSM-Objekte in der Umgebung suchen',
+    liveOsmNearbyBadge: 'aus der Umgebung',
+    liveOsmNearbyAgain: 'Umgebungssuche zurücksetzen',
+    liveOsmNearbyEmpty: 'Keine weiteren OSM-Objekte im Kartenausschnitt gefunden.',
+    liveOsmNearbyTags: (count: number) => `Tags (${count})`,
     liveOsmOverpassWarnTitle: 'Overpass-Anfrage',
     liveOsmOverpassWarnLead:
       'Es wird eine echte Anfrage an die öffentliche Overpass-API gesendet (Last für die Server, Timeout möglich).',
@@ -489,7 +500,6 @@ export const de = {
     liveOsmLastErrorTitle: 'Overpass-Fehler',
     liveOsmLastErrorHint:
       'Server oder Abfrage anpassen und erneut senden — oder „Abbrechen“ und den Dialog schließen.',
-    liveOsmAgain: 'Neue Overpass-Abfrage',
     livePlzAddrPostcodeButton: 'PLZ-Punktdaten im Gebiet anzeigen',
     livePlzAddrPostcodeLead:
       'Zum Vergleich der Flächen-Daten kannst du dir die `addr:postcode`-Daten an Punkt- und Flächen-Daten im Kartenausschnitt anzeigen lassen.',
@@ -503,7 +513,6 @@ export const de = {
     livePlzAddrHitTitle: (osmType: string, id: number, postcode: string) =>
       `${postcode} · ${osmType} ${id}`,
     liveOsmLoading: 'Overpass antwortet …',
-    liveOsmEmpty: 'Keine Treffer (`boundary=*` passend zum Datensatz in diesem Kasten).',
     liveOsmHitNoTags: '(keine Tags)',
     liveOsmInvalidJson: 'Unerwartete Overpass-Antwort.',
     liveOsmHttp: 'Overpass-Anfrage fehlgeschlagen:',
@@ -558,15 +567,6 @@ export const de = {
     datasetAttributeCheckCombinedNameRule: 'kombinierte Namensregel',
     datasetAttributeChecksAria: 'Ergebnis der Attributprüfung',
 
-    /** Live-Abruf row inside "Attribute zum Zeitpunkt des Vergleichs". */
-    datasetOsmLiveCardTitle: 'OSM-Daten (Live-Abruf)',
-    datasetOsmLiveButton: 'Von Overpass abfragen',
-    datasetOsmLiveButtonHint: (id: number) => `Aktuelle Attribute für Relation ${id}`,
-    /** Hint shown below the "Von Overpass abfragen" button to clarify the comparison purpose. */
-    datasetOsmLiveCompareHint: (officialDataHeading: string) =>
-      `Nutze diese Funktion um weitere Werte aus den „${officialDataHeading}“ oben mit OSM Daten abzugleichen.`,
-    datasetOsmLiveOverpassQueryLabel: 'Overpass-Abfrage',
-    datasetOsmLiveLoading: 'Overpass antwortet …',
     /** Wikidata row inside "Attribute zum Zeitpunkt des Vergleichs" (dataset option `compare.wikidata`). */
     wikidata: {
       title: 'Wikidata',
@@ -602,6 +602,15 @@ export const de = {
       },
     },
 
+    /** Live-Abruf row inside "Attribute zum Zeitpunkt des Vergleichs". */
+    datasetOsmLiveCardTitle: 'OSM-Daten (Live-Abruf)',
+    datasetOsmLiveButton: 'Von Overpass abfragen',
+    datasetOsmLiveButtonHint: (id: number) => `Aktuelle Attribute für Relation ${id}`,
+    /** Hint shown below the "Von Overpass abfragen" button to clarify the comparison purpose. */
+    datasetOsmLiveCompareHint: (officialDataHeading: string) =>
+      `Nutze diese Funktion um weitere Werte aus den „${officialDataHeading}“ oben mit OSM Daten abzugleichen.`,
+    datasetOsmLiveOverpassQueryLabel: 'Overpass-Abfrage',
+    datasetOsmLiveLoading: 'Overpass antwortet …',
     datasetOsmLiveEmpty: 'OSM-Objekt nicht gefunden oder ohne Tags.',
     datasetOsmLiveAgain: 'Erneut abfragen',
     datasetOsmLiveErrorPrefix: 'Overpass-Anfrage fehlgeschlagen:',

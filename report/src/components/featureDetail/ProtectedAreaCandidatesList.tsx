@@ -1,8 +1,15 @@
 import { de } from '../../i18n/de'
+import { relationResolverHref } from '../../lib/relationResolverLink'
 import type { CandidateMatch, CandidateSignalId } from '../../types/report'
 import { sharedButtonClass } from '../sharedButtonStyles'
 import { Abbr } from '../ui/Abbr'
 import { CopyTagsButton } from './CopyTagsButton'
+import {
+  LiveOsmObjectLoadButton,
+  LiveOsmObjectResult,
+  NearbyOsmObjectTags,
+  type LiveOsmContext,
+} from './LiveOsmObject'
 
 const LINK_CLASS =
   'text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
@@ -31,7 +38,19 @@ function signalTitle(signal: CandidateSignalId, similarity: number | undefined):
   return de.feature.protectedCandidatesSignalTitle[signal]
 }
 
-function ProtectedAreaCandidateRow({ candidate }: { candidate: CandidateMatch }) {
+function ProtectedAreaCandidateRow({
+  candidate,
+  areaKey,
+  context,
+  nearby = false,
+}: {
+  candidate: CandidateMatch
+  areaKey: string
+  context: LiveOsmContext
+  /** Found by the nearby search: its tags are live already, so there is nothing to load. */
+  nearby?: boolean
+}) {
+  const liveObject = { type: candidate.osmType, id: Number(candidate.osmId) }
   const objectLabel = `${candidate.osmType}/${candidate.osmId}`
   const displayName =
     candidate.name == null || candidate.name.length === 0
@@ -55,6 +74,9 @@ function ProtectedAreaCandidateRow({ candidate }: { candidate: CandidateMatch })
             {objectLabel}
           </a>
         </p>
+        {nearby ? (
+          <p className="mt-1 text-sm text-slate-400">{de.feature.liveOsmNearbyBadge}</p>
+        ) : null}
         {signals.length > 0 ? (
           <p className="mt-1 text-sm text-slate-400">
             {de.feature.protectedCandidatesDetectedVia}{' '}
@@ -122,25 +144,74 @@ function ProtectedAreaCandidateRow({ candidate }: { candidate: CandidateMatch })
         >
           {de.feature.candidatesViewLink}
         </a>
+        {candidate.osmType === 'relation' ? (
+          <a
+            href={relationResolverHref(areaKey, candidate.osmId)}
+            className={`text-sm ${LINK_CLASS}`}
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label={de.feature.liveOsmHitOpenBoundaryCheckerAria(
+              candidate.osmType,
+              liveObject.id,
+            )}
+          >
+            {de.feature.liveOsmHitOpenBoundaryChecker(candidate.osmType, liveObject.id)}
+          </a>
+        ) : null}
+        {nearby ? null : <LiveOsmObjectLoadButton context={context} object={liveObject} />}
       </div>
 
-      <p className="text-xs break-words text-slate-500">
-        {de.feature.protectedCandidatesColumnCurrent}{' '}
-        <span className="font-mono">
-          {current.length > 0 ? current.join(', ') : de.feature.protectedCandidatesCurrentNone}
-        </span>
-      </p>
+      {nearby ? (
+        <NearbyOsmObjectTags
+          type={liveObject.type}
+          id={liveObject.id}
+          tags={candidate.tags ?? {}}
+          context={context}
+        />
+      ) : (
+        <>
+          <p className="text-xs break-words text-slate-500">
+            {de.feature.protectedCandidatesColumnCurrent}{' '}
+            <span className="font-mono">
+              {current.length > 0 ? current.join(', ') : de.feature.protectedCandidatesCurrentNone}
+            </span>
+          </p>
+          <LiveOsmObjectResult context={context} object={liveObject} />
+        </>
+      )}
     </li>
   )
 }
 
-export function ProtectedAreaCandidatesList({ candidates }: { candidates: CandidateMatch[] }) {
+export function ProtectedAreaCandidatesList({
+  candidates,
+  nearby,
+  areaKey,
+  context,
+}: {
+  candidates: CandidateMatch[]
+  /** Objects from the nearby search, listed after the candidates. */
+  nearby: CandidateMatch[]
+  areaKey: string
+  context: LiveOsmContext
+}) {
   return (
     <ul className="divide-y divide-sky-800/45">
       {candidates.map((candidate) => (
         <ProtectedAreaCandidateRow
           key={`${candidate.osmType}/${candidate.osmId}`}
           candidate={candidate}
+          areaKey={areaKey}
+          context={context}
+        />
+      ))}
+      {nearby.map((candidate) => (
+        <ProtectedAreaCandidateRow
+          key={`nearby-${candidate.osmType}/${candidate.osmId}`}
+          candidate={candidate}
+          areaKey={areaKey}
+          context={context}
+          nearby
         />
       ))}
     </ul>

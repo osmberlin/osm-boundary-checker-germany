@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { DTP_KEYLESS_MATCH_KEY_PREFIX } from '../../../../scripts/shared/dtpOfficial.ts'
 import {
   categoryIdFromOfficialProperties,
@@ -7,7 +8,8 @@ import {
 import { areasIndex } from '../../data/areasIndex'
 import { de } from '../../i18n/de'
 import { isGermanKeyExplorerDisplayKey } from '../../lib/germanKeyExplorer'
-import { withSiteBasePath } from '../../lib/siteBasePath'
+import { nearbyCandidates } from '../../lib/nearbyCandidates'
+import { relationResolverHref } from '../../lib/relationResolverLink'
 import type {
   CandidateMatch,
   ComparisonFilterConfigSummary,
@@ -16,6 +18,14 @@ import type {
   ReportRow,
 } from '../../types/report'
 import { ProvenanceGridSectionHeader } from '../ProvenanceGridSectionHeader'
+import { sharedButtonTinyClass } from '../sharedButtonStyles'
+import {
+  LiveOsmObjectLoadButton,
+  LiveOsmObjectResult,
+  NearbyOsmObjectTags,
+  type LiveOsmContext,
+} from './LiveOsmObject'
+import { NearbyOsmSearch, type NearbyOsmSearchState } from './NearbyOsmSearch'
 import { ProtectedAreaCandidatesList } from './ProtectedAreaCandidatesList'
 
 type ExpectedTag = { key: string; value: string }
@@ -55,17 +65,6 @@ function osmObjectUrl(candidate: CandidateMatch): string {
 
 function osmEditUrl(candidate: CandidateMatch): string {
   return `https://www.openstreetmap.org/edit?${candidate.osmType}=${candidate.osmId}`
-}
-
-/** Same resolver as Live-OSM treffer (`LiveSourceProperties`). */
-function relationResolverHref(areaKey: string, relationId: string): string {
-  const query = new URLSearchParams()
-  const dataset = areaKey.trim()
-  if (dataset.length > 0) query.set('dataset', dataset)
-  const search = query.toString()
-  return withSiteBasePath(
-    `/resolve/relation/${encodeURIComponent(relationId)}${search ? `?${search}` : ''}`,
-  )
 }
 
 function candidateObjectHref(candidate: CandidateMatch, areaKey: string): string {
@@ -191,9 +190,18 @@ type CandidateRowProps = {
   candidate: CandidateMatch
   isPostalCodeProfile: boolean
   areaKey: string
+  context: LiveOsmContext
+  /** Found by the nearby search: its tags are live already, so there is nothing to load. */
+  nearby?: boolean
 }
 
-function CandidateRow({ candidate, isPostalCodeProfile, areaKey }: CandidateRowProps) {
+function CandidateRow({
+  candidate,
+  isPostalCodeProfile,
+  areaKey,
+  context,
+  nearby = false,
+}: CandidateRowProps) {
   const objectLabel = `${candidate.osmType}/${candidate.osmId}`
   const displayName =
     candidate.name == null || candidate.name.length === 0
@@ -206,6 +214,7 @@ function CandidateRow({ candidate, isPostalCodeProfile, areaKey }: CandidateRowP
   const objectLinkAria = objectLinkIsInternal
     ? de.feature.liveOsmHitOpenBoundaryCheckerAria(candidate.osmType, Number(candidate.osmId))
     : de.feature.liveOsmHitOpenLinkAria(candidate.osmType, Number(candidate.osmId))
+  const liveObject = { type: candidate.osmType, id: Number(candidate.osmId) }
 
   return (
     <div className="contents">
@@ -220,6 +229,11 @@ function CandidateRow({ candidate, isPostalCodeProfile, areaKey }: CandidateRowP
         >
           {objectLabel}
         </a>
+        {nearby ? (
+          <span className="mt-1 block font-sans text-xs text-slate-400">
+            {de.feature.liveOsmNearbyBadge}
+          </span>
+        ) : null}
       </span>
       <span className="min-w-0 break-words text-slate-100">{displayName}</span>
       {isPostalCodeProfile ? (
@@ -241,16 +255,42 @@ function CandidateRow({ candidate, isPostalCodeProfile, areaKey }: CandidateRowP
           </span>
         </>
       )}
-      <span className="flex shrink-0 gap-x-3 text-xs">
+      <span className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <a href={osmObjectUrl(candidate)} className={linkClass} target="_blank" rel="noreferrer">
           {de.feature.candidatesViewLink}
         </a>
         <a href={osmEditUrl(candidate)} className={linkClass} target="_blank" rel="noreferrer">
           {de.feature.candidatesEditLink}
         </a>
+        {nearby ? null : (
+          <LiveOsmObjectLoadButton
+            context={context}
+            object={liveObject}
+            className={sharedButtonTinyClass}
+          />
+        )}
       </span>
+      <div className="col-span-full pb-3 empty:hidden">
+        {nearby ? (
+          <NearbyOsmObjectTags
+            type={liveObject.type}
+            id={liveObject.id}
+            tags={candidate.tags ?? {}}
+            context={context}
+          />
+        ) : (
+          <LiveOsmObjectResult context={context} object={liveObject} />
+        )}
+      </div>
     </div>
   )
+}
+
+/** Live OSM data around the candidate lists: the nearby bbox search and the map viewport it uses. */
+export type CandidatesLiveSources = {
+  featureKey: string
+  nearbySearch: NearbyOsmSearchState
+  getLiveQueryBbox: () => [number, number, number, number] | null
 }
 
 /**
@@ -259,32 +299,54 @@ function CandidateRow({ candidate, isPostalCodeProfile, areaKey }: CandidateRowP
  * comparison table stays slim. A row without candidates (`candidates` undefined or empty) still
  * shows the expected OSM tags in the empty state.
  *
- * The section deliberately stays read-only in v1: a future iteration can add an "Auf
- * Karte zeigen" button that fetches the candidate polygons via Overpass-by-id.
+ * Each candidate can load its current OSM state (Overpass by id); the last entry searches the
+ * map viewport for further OSM objects, which then appear as additional entries.
  */
 export function OfficialOnlyCandidatesSection({
   areaKey,
   row,
   candidates,
   data,
+  live,
 }: {
   areaKey: string
   row: ReportRow
   candidates: CandidateMatch[] | undefined
   data: ComparisonForReport
+  live: CandidatesLiveSources
 }) {
   if (row.category !== 'official_only') return null
   const list = candidates ?? []
+  const nearby = nearbyCandidates(live.nearbySearch.hits, list)
+  const context: LiveOsmContext = { featureKey: live.featureKey, row, data }
+  const nearbySearch = (
+    <NearbyOsmSearch
+      search={live.nearbySearch}
+      getLiveQueryBbox={live.getLiveQueryBbox}
+      overpassBoundaryTag={data.overpassBoundaryTag ?? 'administrative'}
+      entryCount={nearby.length}
+    />
+  )
 
   if (data.overpassBoundaryTag === 'protected_area') {
     return (
-      <ProtectedAreaCandidatesSection areaKey={areaKey} row={row} data={data} candidates={list} />
+      <ProtectedAreaCandidatesSection
+        areaKey={areaKey}
+        row={row}
+        data={data}
+        candidates={list}
+        nearby={nearby}
+        context={context}
+        nearbySearch={nearbySearch}
+      />
     )
   }
 
   const { filterConfigSummary, overpassBoundaryTag } = data
-  const isPostalCodeProfile = list.some((candidate) => candidate.postalCodeRaw !== undefined)
   const boundaryMode = boundaryModeFromData(overpassBoundaryTag)
+  const isPostalCodeProfile =
+    boundaryMode === 'postal_code' ||
+    list.some((candidate) => candidate.postalCodeRaw !== undefined)
   const osmTagsJoined = osmMatchTagsJoinedForProse(filterConfigSummary, boundaryMode)
   const officialProp = officialMatchPropertyOrPlaceholder(filterConfigSummary)
   const leadChecks =
@@ -329,10 +391,9 @@ export function OfficialOnlyCandidatesSection({
           </p>
         ) : null}
       </ProvenanceGridSectionHeader>
-      <div className="border-t border-sky-800/45 px-4 py-6 sm:px-6">
-        {list.length === 0 ? (
-          <NoCandidatesNotice areaKey={areaKey} row={row} data={data} />
-        ) : (
+      <div className="flex flex-col gap-6 border-t border-sky-800/45 px-4 py-6 sm:px-6">
+        {list.length === 0 ? <NoCandidatesNotice areaKey={areaKey} row={row} data={data} /> : null}
+        {list.length + nearby.length > 0 ? (
           <div className={CANDIDATE_LIST_GRID}>
             <span className="text-xs font-medium tracking-wide text-slate-400 uppercase">
               {de.feature.candidatesColumnObject}
@@ -357,10 +418,22 @@ export function OfficialOnlyCandidatesSection({
                 areaKey={areaKey}
                 candidate={candidate}
                 isPostalCodeProfile={isPostalCodeProfile}
+                context={context}
+              />
+            ))}
+            {nearby.map((candidate) => (
+              <CandidateRow
+                key={`nearby-${candidate.osmType}/${candidate.osmId}`}
+                areaKey={areaKey}
+                candidate={candidate}
+                isPostalCodeProfile={isPostalCodeProfile}
+                context={context}
+                nearby
               />
             ))}
           </div>
-        )}
+        ) : null}
+        {nearbySearch}
       </div>
     </section>
   )
@@ -372,11 +445,17 @@ function ProtectedAreaCandidatesSection({
   row,
   data,
   candidates,
+  nearby,
+  context,
+  nearbySearch,
 }: {
   areaKey: string
   row: ReportRow
   data: ComparisonForReport
   candidates: CandidateMatch[]
+  nearby: CandidateMatch[]
+  context: LiveOsmContext
+  nearbySearch: ReactNode
 }) {
   return (
     <section
@@ -388,12 +467,19 @@ function ProtectedAreaCandidatesSection({
           {de.feature.protectedCandidatesLead}
         </p>
       </ProvenanceGridSectionHeader>
-      <div className="border-t border-sky-800/45 px-4 py-6 sm:px-6">
+      <div className="flex flex-col gap-6 border-t border-sky-800/45 px-4 py-6 sm:px-6">
         {candidates.length === 0 ? (
           <NoCandidatesNotice areaKey={areaKey} row={row} data={data} />
-        ) : (
-          <ProtectedAreaCandidatesList candidates={candidates} />
-        )}
+        ) : null}
+        {candidates.length + nearby.length > 0 ? (
+          <ProtectedAreaCandidatesList
+            candidates={candidates}
+            nearby={nearby}
+            areaKey={areaKey}
+            context={context}
+          />
+        ) : null}
+        {nearbySearch}
       </div>
     </section>
   )
