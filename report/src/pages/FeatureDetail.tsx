@@ -6,7 +6,6 @@ import { padRegional12 } from '../../../scripts/shared/regionalArs.ts'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import { AttributeHintsSection } from '../components/featureDetail/AttributeHintsSection'
-import { ExpectedOsmTagsSection } from '../components/featureDetail/ExpectedOsmTagsSection'
 import { FeatureDetailHeader } from '../components/featureDetail/FeatureDetailHeader'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
 import { FeatureDetailStatsDiffMetricsSection } from '../components/featureDetail/FeatureDetailStatsDiffMetricsSection'
@@ -109,8 +108,7 @@ function FeatureDetailWithMapContext({
           areaKey={areaKey}
           row={row}
           candidates={data.candidates}
-          filterConfigSummary={data.filterConfigSummary}
-          overpassBoundaryTag={data.overpassBoundaryTag}
+          data={data}
         />
 
         <AttributeHintsSection row={row} hints={data.attributeHints} sourceKind={data.sourceKind} />
@@ -150,8 +148,6 @@ function FeatureDetailWithMapContext({
         <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
 
         <FeatureDatasetProperties row={row} data={data} candidates={data.candidates} />
-
-        <ExpectedOsmTagsSection areaKey={areaKey} data={data} row={row} />
 
         {hasComparisonMap ? (
           <LiveSourceProperties

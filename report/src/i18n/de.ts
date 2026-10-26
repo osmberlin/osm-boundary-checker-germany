@@ -589,10 +589,6 @@ export const de = {
     datasetIndicatorDescNBD:
       'Kennzeichnet, ob die Bezeichnung Bestandteil des amtlichen Namens ist (Namensprüfung).',
 
-    expectedOsmTagsSectionAria: 'Erwartete OSM-Tags für den Abgleich',
-    expectedOsmTagsSectionTitle: 'Erwartete OSM-Tags',
-    expectedOsmTagsSectionLead:
-      'Diese Grenze ist in OpenStreetMap bisher nicht zugeordnet. Damit der Abgleich greift, sollte die passende Grenz-Relation folgende Tags enthalten (laut aktueller Datensatz-Konfiguration):',
     staleOfficialKeySectionAria: 'Amtlicher Schlüssel ist veraltet',
     staleOfficialKeyTitle: 'Amtlicher Schlüssel veraltet',
     staleOfficialKeyLead:
@@ -621,8 +617,6 @@ export const de = {
       `Die ${opts.areaLabel} und die OSM-Fläche überschneiden sich nicht und liegen bis zu ${opts.distanceKm} km auseinander. Vermutlich ist der Schlüssel (${opts.matchProperty}) in OSM oder in den ${opts.dataLabel} falsch.`,
     disjointGeometryZoomToArea: (areaLabel: string) => `Zur ${areaLabel}`,
     disjointGeometryZoomToOsm: 'Zur OSM-Fläche',
-    expectedOsmTagsStaleLead:
-      'Der Abgleich nutzt den exakten 12-stelligen Regionalschlüssel. Hier weicht der amtliche Stand nur deshalb ab, weil VG25 älter ist als Destatis und OSM — nicht weil ein OSM-Tag fehlt.',
     decodeKeyExplorerLink: 'Schlüssel-Felder dekodieren',
 
     candidatesSectionAria: 'OSM-Matching-Kandidaten für diese amtliche Grenze',
@@ -644,6 +638,7 @@ export const de = {
     candidatesSectionStaleHint:
       'Der räumliche Kandidat trägt bereits den aktuellen Regionalschlüssel. Den alten amtlichen Schlüssel nicht nach OSM übernehmen.',
     candidatesEmpty: 'Keine Kandidaten gefunden.',
+    candidatesExpectedTagsLead: 'Ein OSM-Objekt für dieses Gebiet sollte diese Tags tragen:',
     candidatesColumnObject: 'OSM-Objekt',
     candidatesColumnName: 'Name',
     candidatesColumnAdminLevel: 'admin_level',

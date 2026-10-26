@@ -1,13 +1,24 @@
+import { Link } from '@tanstack/react-router'
+import { DTP_KEYLESS_MATCH_KEY_PREFIX } from '../../../../scripts/shared/dtpOfficial.ts'
+import {
+  categoryIdFromOfficialProperties,
+  protectedAreaCategoryRule,
+} from '../../../../scripts/shared/protectedAreaCategories.ts'
+import { areasIndex } from '../../data/areasIndex'
 import { de } from '../../i18n/de'
+import { isGermanKeyExplorerDisplayKey } from '../../lib/germanKeyExplorer'
 import { withSiteBasePath } from '../../lib/siteBasePath'
 import type {
   CandidateMatch,
   ComparisonFilterConfigSummary,
+  ComparisonForReport,
   OverpassBoundaryTag,
   ReportRow,
 } from '../../types/report'
 import { ProvenanceGridSectionHeader } from '../ProvenanceGridSectionHeader'
 import { ProtectedAreaCandidatesList } from './ProtectedAreaCandidatesList'
+
+type ExpectedTag = { key: string; value: string }
 
 function boundaryModeFromData(
   overpassBoundaryTag: OverpassBoundaryTag | undefined,
@@ -68,15 +79,121 @@ function emptyValue(value: string | null | undefined): string {
   return trimmed.length > 0 ? trimmed : de.feature.candidatesEmptyValue
 }
 
-function CandidateRow({
-  candidate,
-  isPostalCodeProfile,
+/** `dtp-<uuid>` of a DtP area without WDPA id, or null for rows keyed by their WDPA id. */
+function keylessDtpIdOf(row: ReportRow): string | null {
+  return row.canonicalMatchKey.startsWith(DTP_KEYLESS_MATCH_KEY_PREFIX)
+    ? row.canonicalMatchKey.slice(DTP_KEYLESS_MATCH_KEY_PREFIX.length)
+    : null
+}
+
+/** Administrative and postal-code rows: boundary, admin levels and the match tag with the row's key. */
+function administrativeExpectedTags(
+  areaKey: string,
+  row: ReportRow,
+  data: ComparisonForReport,
+): ExpectedTag[] {
+  const summary = areasIndex.summaries.find((s) => s.area === areaKey)
+  const adminLevels = summary?.osmAdminLevels ?? data.filterConfigSummary.adminLevels
+  // DtP areas without a WDPA id have no ref:WDPA to expect; the tag of the osm_tag rule links them.
+  const identityTags = (data.matchRules ?? []).flatMap((rule) =>
+    rule.kind === 'osm_tag' ? [rule.osmTag] : [],
+  )
+  const keylessDtpId = keylessDtpIdOf(row)
+  const matchProperties =
+    keylessDtpId && identityTags.length > 0
+      ? identityTags
+      : (data.filterConfigSummary.osmMatchProperties
+          ?.map((x) => x.trim())
+          .filter((x) => x.length > 0) ??
+        summary?.osmMatchProperties?.map((x) => x.trim()).filter((x) => x.length > 0) ??
+        [])
+  const matchValue = keylessDtpId ?? row.canonicalMatchKey
+  return [
+    { key: 'boundary', value: data.overpassBoundaryTag ?? 'administrative' },
+    ...(adminLevels ?? []).map((level) => ({ key: 'admin_level', value: level })),
+    ...matchProperties.map((key) => ({ key, value: matchValue })),
+  ]
+}
+
+/** DtP rows: the tags of the row's category, plus its WDPA key and wikidata when present. */
+function protectedAreaExpectedTags(row: ReportRow): ExpectedTag[] | null {
+  const rule = protectedAreaCategoryRule(categoryIdFromOfficialProperties(row.officialProperties))
+  if (!rule) return null
+  const tags: ExpectedTag[] = Object.entries(rule.expectedTags).map(([key, value]) => ({
+    key,
+    value,
+  }))
+  const wdpa = keylessDtpIdOf(row) === null ? row.canonicalMatchKey.trim() : ''
+  if (wdpa.length > 0) tags.push({ key: 'ref:WDPA', value: wdpa })
+  const wikidata = String(row.officialProperties?.wikidata ?? '').trim()
+  if (wikidata.length > 0) tags.push({ key: 'wikidata', value: wikidata })
+  return tags
+}
+
+function expectedOsmTags(
+  areaKey: string,
+  row: ReportRow,
+  data: ComparisonForReport,
+): ExpectedTag[] {
+  // A stale official key must not be written to OSM, so there is no tag set to suggest.
+  if (row.staleOfficialKey) return []
+  if (data.overpassBoundaryTag === 'protected_area') {
+    const protectedTags = protectedAreaExpectedTags(row)
+    if (protectedTags) return protectedTags
+  }
+  return administrativeExpectedTags(areaKey, row, data)
+}
+
+/** Empty state of the candidate lists: says which tags a matching OSM object should carry. */
+function NoCandidatesNotice({
   areaKey,
+  row,
+  data,
 }: {
+  areaKey: string
+  row: ReportRow
+  data: ComparisonForReport
+}) {
+  const tags = expectedOsmTags(areaKey, row, data)
+  if (tags.length === 0) {
+    return <p className="text-sm text-slate-400">{de.feature.candidatesEmpty}</p>
+  }
+  const showKeyExplorer = tags.some(({ key }) => isGermanKeyExplorerDisplayKey(key))
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-slate-400">
+        {de.feature.candidatesEmpty} {de.feature.candidatesExpectedTagsLead}
+      </p>
+      <code className="self-start rounded bg-slate-950/80 px-1.5 py-0.5 font-mono text-xs break-all text-slate-200 ring-1 ring-slate-700/80">
+        {tags.map(({ key, value }) => (
+          <span key={`${key}=${value}`} className="block">
+            {key}={value}
+          </span>
+        ))}
+      </code>
+      {showKeyExplorer ? (
+        <p className="text-sm">
+          <Link
+            to="/tools/german-key"
+            search={{ key: row.canonicalMatchKey }}
+            className="font-medium text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400"
+          >
+            {de.feature.decodeKeyExplorerLink}
+          </Link>
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+type CandidateRowProps = {
   candidate: CandidateMatch
   isPostalCodeProfile: boolean
   areaKey: string
-}) {
+}
+
+function CandidateRow({ candidate, isPostalCodeProfile, areaKey }: CandidateRowProps) {
   const objectLabel = `${candidate.osmType}/${candidate.osmId}`
   const displayName =
     candidate.name == null || candidate.name.length === 0
@@ -139,8 +256,8 @@ function CandidateRow({
 /**
  * Renders the additive "OSM-Matching-Kandidaten" list for `official_only` rows. Candidate data
  * is shipped only in the per-feature shard (`output/features/<key>.json`) so the main
- * comparison table stays slim — this component is therefore expected to be invoked with
- * `candidates !== undefined` only on detail pages where the shard was successfully loaded.
+ * comparison table stays slim. A row without candidates (`candidates` undefined or empty) still
+ * shows the expected OSM tags in the empty state.
  *
  * The section deliberately stays read-only in v1: a future iteration can add an "Auf
  * Karte zeigen" button that fetches the candidate polygons via Overpass-by-id.
@@ -149,23 +266,24 @@ export function OfficialOnlyCandidatesSection({
   areaKey,
   row,
   candidates,
-  filterConfigSummary,
-  overpassBoundaryTag,
+  data,
 }: {
   areaKey: string
   row: ReportRow
   candidates: CandidateMatch[] | undefined
-  filterConfigSummary: ComparisonFilterConfigSummary
-  overpassBoundaryTag: OverpassBoundaryTag | undefined
+  data: ComparisonForReport
 }) {
   if (row.category !== 'official_only') return null
-  if (candidates === undefined) return null
+  const list = candidates ?? []
 
-  if (overpassBoundaryTag === 'protected_area') {
-    return <ProtectedAreaCandidatesSection candidates={candidates} />
+  if (data.overpassBoundaryTag === 'protected_area') {
+    return (
+      <ProtectedAreaCandidatesSection areaKey={areaKey} row={row} data={data} candidates={list} />
+    )
   }
 
-  const isPostalCodeProfile = candidates.some((candidate) => candidate.postalCodeRaw !== undefined)
+  const { filterConfigSummary, overpassBoundaryTag } = data
+  const isPostalCodeProfile = list.some((candidate) => candidate.postalCodeRaw !== undefined)
   const boundaryMode = boundaryModeFromData(overpassBoundaryTag)
   const osmTagsJoined = osmMatchTagsJoinedForProse(filterConfigSummary, boundaryMode)
   const officialProp = officialMatchPropertyOrPlaceholder(filterConfigSummary)
@@ -212,8 +330,8 @@ export function OfficialOnlyCandidatesSection({
         ) : null}
       </ProvenanceGridSectionHeader>
       <div className="border-t border-sky-800/45 px-4 py-6 sm:px-6">
-        {candidates.length === 0 ? (
-          <p className="text-sm text-slate-400">{de.feature.candidatesEmpty}</p>
+        {list.length === 0 ? (
+          <NoCandidatesNotice areaKey={areaKey} row={row} data={data} />
         ) : (
           <div className={CANDIDATE_LIST_GRID}>
             <span className="text-xs font-medium tracking-wide text-slate-400 uppercase">
@@ -233,7 +351,7 @@ export function OfficialOnlyCandidatesSection({
             <span className="text-xs font-medium tracking-wide text-slate-400 uppercase">
               {de.feature.candidatesColumnActions}
             </span>
-            {candidates.map((candidate) => (
+            {list.map((candidate) => (
               <CandidateRow
                 key={`${candidate.osmType}/${candidate.osmId}`}
                 areaKey={areaKey}
@@ -249,7 +367,17 @@ export function OfficialOnlyCandidatesSection({
 }
 
 /** Protected-area (DtP) variant: per-candidate signals and a call to add the suggested tags. */
-function ProtectedAreaCandidatesSection({ candidates }: { candidates: CandidateMatch[] }) {
+function ProtectedAreaCandidatesSection({
+  areaKey,
+  row,
+  data,
+  candidates,
+}: {
+  areaKey: string
+  row: ReportRow
+  data: ComparisonForReport
+  candidates: CandidateMatch[]
+}) {
   return (
     <section
       className="overflow-hidden rounded-lg border border-sky-800/50 bg-sky-950/45 shadow-sm"
@@ -262,7 +390,7 @@ function ProtectedAreaCandidatesSection({ candidates }: { candidates: CandidateM
       </ProvenanceGridSectionHeader>
       <div className="border-t border-sky-800/45 px-4 py-6 sm:px-6">
         {candidates.length === 0 ? (
-          <p className="text-sm text-slate-400">{de.feature.candidatesEmpty}</p>
+          <NoCandidatesNotice areaKey={areaKey} row={row} data={data} />
         ) : (
           <ProtectedAreaCandidatesList candidates={candidates} />
         )}
