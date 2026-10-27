@@ -6,6 +6,7 @@ Local runs (`bun run compare`, `extract:official`, `report` `predev` / `sync-run
 
 - `datasets/*/snapshots.json`: chart history, committed by CI as `chore(data): refresh runtime history` ([docs/cache-policy.md](docs/cache-policy.md)). A local compare appends a snapshot that would clash with CI.
 - `datasets/*/source/metadata.json`: download timestamps of the local source cache.
+- `data/processing-log.jsonl`: `/status` pipeline timeline, appended by every `scripts/pipeline/nightly.ts` run and committed by CI the same way.
 - `report/src/data/areasIndex.gen.ts`: built by `report/generateAreasIndex.ts` in `sync-runtime-assets` before every deploy (`.github/workflows/pages-deploy.yml`, `data-refresh.yml`).
 - `report/public/discussions.registry.json`: fetched from GitHub issues by `report/syncDiscussionsRegistry.ts` in the same step ([docs/discussion-issues.md](docs/discussion-issues.md)).
 
