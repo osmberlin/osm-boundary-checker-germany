@@ -4,6 +4,22 @@ Automatisch aus `changelog.registry.yaml` erzeugt.
 
 ## 2026-10
 
+### `075170b`
+
+Auf der Detailseite blendet „Nur diesen zeigen“ bei live geladenen OSM-Objekten alle anderen auf der Karte aus. „Alle ausblenden / Alle einblenden“ über der Umgebungssuche schaltet alle auf einmal.
+
+### `93cd68d`
+
+Wikidata-IDs in Tags und Eigenschaften (OSM-Auszug, Kandidaten, live geladene OSM-Objekte, erwartete Tags) sind jetzt Links auf das Wikidata-Objekt.
+
+### `31fcdb7`, `9d92e2e`
+
+Neue Vergleichsseite: Eine Fläche, die nur amtlich vorkommt, und eine OSM-Relation ohne Treffer lassen sich nebeneinander ansehen. Die Seite zeigt beide Geometrien auf einer Karte, zerlegt beide Regionalschlüssel nach Ebenen (abweichende Ebenen sind markiert), stellt die amtlichen Eigenschaften neben die OSM-Tags und verlinkt iD und JOSM mit der amtlichen Grenze.
+
+Auf Detailseiten ohne Treffer öffnet „Vergleichen“ neben dem Titel eine Auswahl: die Kandidaten aus dem nächtlichen Abgleich und die Seiten der Gegenseite, die in den letzten drei Stunden in einem Browser-Tab offen waren. Kandidaten und Treffer der Umgebungssuche, die als OSM-Relation ohne Treffer im Datensatz stehen, haben einen direkten Link „Vergleichen“.
+
+Lässt sich eine Abweichung nicht auflösen, legt „Vergleich diskutieren“ ein Issue für das Paar an. Es erscheint auf der Vergleichsseite und auf beiden Detailseiten.
+
 ### `4cbf94d`, `60c2f3e`, `a9d6bf8`, `5019432`, `0ab38ca`
 
 Auf der Detailseite eines Schutzgebiets zeigen Häkchen und ≠ neben den DtP-Attributen und den OSM-Tags, was übereinstimmt und was abweicht (Name, WDPA-ID, Wikidata, Schutzkategorie). Darüber fasst eine Zeile zusammen, was in OSM oder bei DtP fehlt, mit Tags zum Kopieren. Das verknüpfte Wikidata-Objekt erscheint mit seinen Angaben, auch der Fläche im Vergleich zur DtP-Geometrie.
