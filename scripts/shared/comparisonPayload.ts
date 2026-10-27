@@ -174,7 +174,7 @@ export const comparisonSourceMetadataEmbeddedSchema = z.object({
   licenseBreakdown: z.array(licenseBreakdownEntrySchema).optional(),
 })
 
-/** Subset of direct `official.extractFilter` embedded for report provenance. */
+/** Subset of `official.extractFilter` (direct and profile mode) embedded for report provenance. */
 export const officialExtractFilterSummarySchema = z
   .object({
     property: z
@@ -197,7 +197,7 @@ export const comparisonFilterConfigSummarySchema = z.object({
   adminLevels: z.array(z.string().trim().min(1)).optional(),
   ignoreRelationIds: z.array(z.string().trim().min(1)).optional(),
   officialExtractLayer: z.string().trim().min(1).optional(),
-  /** Direct-mode `official.extractFilter`: keep only features matching the prefix and/or not matching the excluded values. */
+  /** `official.extractFilter`: keep only features matching the prefix and/or not matching the excluded values. */
   officialExtractFilter: officialExtractFilterSummarySchema.optional(),
   /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties: z.array(z.string().trim().min(1)).min(1).optional(),

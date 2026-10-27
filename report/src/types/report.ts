@@ -87,7 +87,7 @@ export type ComparisonFilterConfigSummary = {
   adminLevels?: string[]
   ignoreRelationIds?: string[]
   officialExtractLayer?: string
-  /** Direct-mode subset of the official export before compare (`official.extractFilter`). */
+  /** Subset of the official export before compare (`official.extractFilter`). */
   officialExtractFilter?: OfficialExtractFilterSummary
   /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties?: string[]

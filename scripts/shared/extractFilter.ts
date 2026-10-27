@@ -1,4 +1,4 @@
-/** Direct-mode `official.extractFilter` after trimming (see `normalizeExtractFilter`). */
+/** `official.extractFilter` (direct and profile mode) after trimming (see `normalizeExtractFilter`). */
 export type NormalizedExtractFilter = {
   property: string
   /** Keep only features whose property value starts with this prefix (`ARS LIKE '09%'`). */
@@ -7,15 +7,9 @@ export type NormalizedExtractFilter = {
   excludeValues?: string[]
 }
 
-type ExtractFilterInput = {
-  property: string
-  valuePrefix?: string
-  excludeValues?: string[]
-}
-
 /** Trim a config `official.extractFilter`; null when it has no usable condition. */
 export function normalizeExtractFilter(
-  filter: ExtractFilterInput | undefined,
+  filter: NormalizedExtractFilter | undefined,
 ): NormalizedExtractFilter | null {
   if (!filter) return null
   const property = filter.property.trim()

@@ -45,6 +45,13 @@ describe('geometryFeatureForArs', () => {
     })
   })
 
+  test('points the pseudo-Verband of a gemeindefreies Gebiet at that Gebiet', () => {
+    expect(geometryFeatureForArs('010539105000', { '010539105105': 'Sachsenwald' })).toEqual({
+      areaId: 'de-gemeinden-sh',
+      featureKey: '010539105105',
+    })
+  })
+
   test('keeps a Verband with a leading zero when no matching Gemeinde exists', () => {
     expect(geometryFeatureForArs('071310900000', gemeindenByArs)).toEqual({
       areaId: 'de-verwaltungsgemeinschaften',

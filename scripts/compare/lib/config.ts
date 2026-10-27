@@ -87,7 +87,7 @@ export type BoundaryConfig = {
     /** Optional fixed key for all official rows in this dataset (normalized with preset). */
     constantMatchKey?: string
     keyTransposition?: OfficialKeyTransposition
-    /** Direct-mode official extract prefix (`ARS LIKE '09%'`). Used to scope unmatched OSM. */
+    /** Official extract filter (`ARS LIKE '09%'`, excluded values). The prefix scopes unmatched OSM. */
     extractFilter?: OfficialExtractFilter
   }
   osm: OsmConfig

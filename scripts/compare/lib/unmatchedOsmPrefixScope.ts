@@ -1,8 +1,6 @@
-export type OfficialExtractFilter = {
-  property: string
-  valuePrefix?: string
-  excludeValues?: string[]
-}
+import type { NormalizedExtractFilter } from '../../shared/extractFilter.ts'
+
+export type OfficialExtractFilter = NormalizedExtractFilter
 
 const ARS_PROPERTY = /^ars$/i
 
