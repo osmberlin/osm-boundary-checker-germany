@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "report",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "--cwd", "report", "dev"],
+      "port": 5185,
+      "url": "http://127.0.0.1:5185"
+    }
+  ]
+}
