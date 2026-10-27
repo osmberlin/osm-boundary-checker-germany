@@ -29,6 +29,7 @@ export function classifyRegionalArsLevel(ars12: string) {
 /** BKG/OSM compare datasets keyed by 12-digit ARS (`admin_rs`). */
 export const REGIONAL_LAENDER_AREA_ID = 'de-laender'
 export const REGIONAL_LANDKREISE_AREA_ID = 'de-landkreise'
+const REGIONAL_VERWALTUNGSGEMEINSCHAFTEN_AREA_ID = 'de-verwaltungsgemeinschaften'
 
 export const REGIONAL_GEMEINDE_AREA_BY_LAND: Record<string, string> = {
   '01': 'de-gemeinden-sh',
@@ -49,18 +50,36 @@ export const REGIONAL_GEMEINDE_AREA_BY_LAND: Record<string, string> = {
   '16': 'de-gemeinden-th',
 }
 
-export function geometryAreaIdForArs(ars12: string, gemeindenByArs: Record<string, string>) {
+/**
+ * Pseudo-Verbände (BKG "gemeinschaftsfrei") stand in for a verbandsfreie Gemeinde: the Verband part
+ * is `0` + the 3-digit Gemeinde number, e.g. `097720207000` for Gemeinde `097720207207`.
+ * Returns that Gemeinde key, or null when the key is no pseudo-Verband.
+ */
+function pseudoVerbandGemeindeArs(ars12: string, gemeindenByArs: Record<string, string>) {
+  if (ars12[5] !== '0') return null
+  const gemeindeArs = ars12.slice(0, 9) + ars12.slice(6, 9)
+  return Object.hasOwn(gemeindenByArs, gemeindeArs) ? gemeindeArs : null
+}
+
+/** Dataset and feature key that hold the geometry for a Regional Hub ARS, or null when none does. */
+export function geometryFeatureForArs(ars12: string, gemeindenByArs: Record<string, string>) {
+  const gemeindeAreaId = REGIONAL_GEMEINDE_AREA_BY_LAND[arsLandPrefix(ars12)] ?? null
   if (Object.hasOwn(gemeindenByArs, ars12)) {
-    return REGIONAL_GEMEINDE_AREA_BY_LAND[arsLandPrefix(ars12)] ?? null
+    return gemeindeAreaId ? { areaId: gemeindeAreaId, featureKey: ars12 } : null
   }
-  const level = classifyRegionalArsLevel(ars12)
-  switch (level) {
+  switch (classifyRegionalArsLevel(ars12)) {
     case 'land':
-      return REGIONAL_LAENDER_AREA_ID
+      return { areaId: REGIONAL_LAENDER_AREA_ID, featureKey: ars12 }
     case 'kreis':
-      return REGIONAL_LANDKREISE_AREA_ID
-    case 'verband':
+      return { areaId: REGIONAL_LANDKREISE_AREA_ID, featureKey: ars12 }
+    case 'verband': {
+      // The Verwaltungsgemeinschaften dataset leaves pseudo-Verbände out, their geometry is the Gemeinde's.
+      const gemeindeArs = pseudoVerbandGemeindeArs(ars12, gemeindenByArs)
+      if (gemeindeArs)
+        return gemeindeAreaId ? { areaId: gemeindeAreaId, featureKey: gemeindeArs } : null
+      return { areaId: REGIONAL_VERWALTUNGSGEMEINSCHAFTEN_AREA_ID, featureKey: ars12 }
+    }
     case 'gemeinde':
-      return REGIONAL_GEMEINDE_AREA_BY_LAND[arsLandPrefix(ars12)] ?? null
+      return gemeindeAreaId ? { areaId: gemeindeAreaId, featureKey: ars12 } : null
   }
 }

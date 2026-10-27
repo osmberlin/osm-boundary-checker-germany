@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from '@tanstack/react-router'
 import { lookupSuccessorForExplorerKey } from '../../../scripts/shared/arsSuccessorTable.ts'
 import { destatisAttributesForArs } from '../../../scripts/shared/germanKeyGemeindeSum.ts'
-import { geometryAreaIdForArs } from '../../../scripts/shared/regionalArs.ts'
+import { geometryFeatureForArs } from '../../../scripts/shared/regionalArs.ts'
 import {
   NEUTRAL_HUB_CELL_TONES,
   numericOsmRelationId,
@@ -144,7 +144,7 @@ export function RegionalHubDetail() {
   const successor = successorsQuery.data
     ? lookupSuccessorForExplorerKey(successorsQuery.data, ars)
     : null
-  const geometryArea = bundle ? geometryAreaIdForArs(ars, bundle.latest.gemeindenByArs) : null
+  const geometry = bundle ? geometryFeatureForArs(ars, bundle.latest.gemeindenByArs) : null
   const newest = newestPopulationSource({
     destatisDate: bundle?.latest.populationDate,
     osmDate: osm?.populationDate,
@@ -174,10 +174,10 @@ export function RegionalHubDetail() {
           <Link to="/tools/german-key" search={{ key: ars }} className={linkClass}>
             {t.decodeLink}
           </Link>
-          {geometryArea ? (
+          {geometry ? (
             <Link
               to="/$areaId/feature/$featureKey"
-              params={{ areaId: geometryArea, featureKey: ars }}
+              params={{ areaId: geometry.areaId, featureKey: geometry.featureKey }}
               className={linkClass}
             >
               {t.geometryLink}
