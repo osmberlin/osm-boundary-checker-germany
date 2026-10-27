@@ -33,10 +33,33 @@ export function needsOfficialOnlyAndUnmatchedOsmPicker(
   return hasOfficialOnly && hasUnmatched
 }
 
-type NavigateToFeatureDetail = (opts: {
-  to: '/$areaId/feature/$featureKey'
-  params: { areaId: string; featureKey: string }
-}) => void | Promise<unknown>
+/** The official-only and the unmatched OSM key when the click hit exactly those two areas. */
+export function officialOnlyAndUnmatchedOsmPair(
+  keys: string[],
+  reportData: ComparisonForReport,
+): { officialKey: string; osmKey: string } | null {
+  if (keys.length !== 2) return null
+  let officialKey: string | null = null
+  let osmKey: string | null = null
+  for (const k of keys) {
+    const m = resolveFeatureRowMeta(reportData, k)
+    if (m?.category === 'official_only') officialKey = k
+    if (m?.category === 'unmatched_osm') osmKey = k
+  }
+  return officialKey !== null && osmKey !== null ? { officialKey, osmKey } : null
+}
+
+type NavigateToFeatureDetail = (
+  opts:
+    | {
+        to: '/$areaId/feature/$featureKey'
+        params: { areaId: string; featureKey: string }
+      }
+    | {
+        to: '/$areaId/compare/$officialKey/$osmKey'
+        params: { areaId: string; officialKey: string; osmKey: string }
+      },
+) => void | Promise<unknown>
 
 export function handleComparisonMapFeatureClick(args: {
   featureKeys: string[]
@@ -52,6 +75,14 @@ export function handleComparisonMapFeatureClick(args: {
     void navigate({
       to: '/$areaId/feature/$featureKey',
       params: { areaId: areaKey, featureKey },
+    })
+    return
+  }
+  const pair = officialOnlyAndUnmatchedOsmPair(featureKeys, data)
+  if (pair) {
+    void navigate({
+      to: '/$areaId/compare/$officialKey/$osmKey',
+      params: { areaId: areaKey, ...pair },
     })
     return
   }
