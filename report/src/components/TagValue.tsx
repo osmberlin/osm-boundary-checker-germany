@@ -1,9 +1,9 @@
 import { Fragment } from 'react'
 import { wikidataItemUrl } from '../lib/regionalHubQuickStatements'
 
-/** Same text color as the surrounding value; only the underline marks the link (like other external links). */
+/** The report's standard link style. */
 const WIKIDATA_LINK_CLASS =
-  'underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
+  'text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 const QID_PATTERN = /^Q\d+$/
 
 /**
