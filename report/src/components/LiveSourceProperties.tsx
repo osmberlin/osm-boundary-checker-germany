@@ -279,7 +279,7 @@ function LiveResultCard({
  * - When at least one row is currently visible: hides all rows in `rowKeys`.
  * - When all rows are already hidden: shows all rows again.
  */
-function LiveSectionVisibilityToggle({
+export function LiveSectionVisibilityToggle({
   featureKey,
   rowKeys,
 }: {

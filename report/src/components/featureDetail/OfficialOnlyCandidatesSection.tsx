@@ -6,6 +6,7 @@ import {
   protectedAreaCategoryRule,
 } from '../../../../scripts/shared/protectedAreaCategories.ts'
 import { areasIndex } from '../../data/areasIndex'
+import { useOverpassMapRowKeys } from '../../hooks/useOverpassMapRowKeys'
 import { de } from '../../i18n/de'
 import { unmatchedOsmKeyForObject } from '../../lib/compareRows'
 import { isGermanKeyExplorerDisplayKey } from '../../lib/germanKeyExplorer'
@@ -19,6 +20,7 @@ import type {
   ReportRow,
 } from '../../types/report'
 import { CandidateCompareLink } from '../compare/CandidateCompareLink'
+import { LiveSectionVisibilityToggle } from '../LiveSourceProperties'
 import { ProvenanceGridSectionHeader } from '../ProvenanceGridSectionHeader'
 import { sharedButtonTinyClass } from '../sharedButtonStyles'
 import { TagValue } from '../TagValue'
@@ -298,6 +300,13 @@ function CandidateRow({
   )
 }
 
+/** "Alle ausblenden / einblenden" for the Overpass objects of the candidate lists on the map. */
+function CandidatesMapVisibilityToggle({ featureKey }: { featureKey: string }) {
+  const rowKeys = useOverpassMapRowKeys(featureKey)
+  if (rowKeys.length < 2) return null
+  return <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={rowKeys} />
+}
+
 /** Live OSM data around the candidate lists: the nearby bbox search and the map viewport it uses. */
 export type CandidatesLiveSources = {
   featureKey: string
@@ -340,12 +349,15 @@ export function OfficialOnlyCandidatesSection({
   const compareOsmKeyOf = (candidate: CandidateMatch) =>
     comparison ? unmatchedOsmKeyForObject(comparison, candidate.osmType, candidate.osmId) : null
   const nearbySearch = (
-    <NearbyOsmSearch
-      search={live.nearbySearch}
-      getLiveQueryBbox={live.getLiveQueryBbox}
-      overpassBoundaryTag={data.overpassBoundaryTag ?? 'administrative'}
-      entryCount={nearby.length}
-    />
+    <>
+      <CandidatesMapVisibilityToggle featureKey={live.featureKey} />
+      <NearbyOsmSearch
+        search={live.nearbySearch}
+        getLiveQueryBbox={live.getLiveQueryBbox}
+        overpassBoundaryTag={data.overpassBoundaryTag ?? 'administrative'}
+        entryCount={nearby.length}
+      />
+    </>
   )
 
   if (data.overpassBoundaryTag === 'protected_area') {

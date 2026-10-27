@@ -577,6 +577,8 @@ export const de = {
     liveOsmHitTitle: (osmType: string, id: number) => `${osmType} ${id}`,
     liveRowShowOnMap: 'Auf der Karte einblenden',
     liveRowHideOnMap: 'Auf der Karte ausblenden',
+    liveRowShowOnlyThis: 'Nur diesen zeigen',
+    liveRowShowOnlyThisAria: 'Alle anderen Treffer auf der Karte ausblenden',
     liveSectionHideAll: 'Alle ausblenden',
     liveSectionShowAll: 'Alle einblenden',
     liveSectionHideAllAria: 'Alle Treffer auf der Karte ausblenden',

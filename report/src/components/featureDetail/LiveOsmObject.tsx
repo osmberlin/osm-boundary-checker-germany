@@ -1,5 +1,6 @@
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, EyeSlashIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import { useLiveOsmObjects } from '../../hooks/useLiveOsmObjects'
+import { useOverpassMapRowKeys } from '../../hooks/useOverpassMapRowKeys'
 import { de } from '../../i18n/de'
 import { formatOverpassRunError } from '../../lib/formatOverpassRunError'
 import {
@@ -35,25 +36,42 @@ function listedTags(tags: Record<string, string>): Array<[string, string]> {
     .sort(([a], [b]) => a.localeCompare(b, 'de'))
 }
 
-/** Hides or shows one object's geometry on the detail map. */
+/** Hides or shows one object's geometry on the detail map; "Nur diesen zeigen" hides all others. */
 function LiveRowMapToggle({ featureKey, type, id }: { featureKey: string } & LiveOsmObjectRef) {
   const rowKey = overpassLiveRowKey(type, id)
   const isHidden = useIsLiveRowHidden(featureKey, rowKey)
-  const { show, hide } = useLiveOverlayActions()
+  const { show, hide, hideMany } = useLiveOverlayActions()
+  const otherRowKeys = useOverpassMapRowKeys(featureKey).filter((key) => key !== rowKey)
   const label = isHidden ? de.feature.liveRowShowOnMap : de.feature.liveRowHideOnMap
   return (
-    <button
-      type="button"
-      onClick={() => (isHidden ? show(featureKey, rowKey) : hide(featureKey, rowKey))}
-      className={TEXT_BUTTON_CLASS}
-    >
-      {isHidden ? (
-        <EyeSlashIcon aria-hidden="true" className="h-4 w-4" />
-      ) : (
-        <EyeIcon aria-hidden="true" className="h-4 w-4" />
-      )}
-      {label}
-    </button>
+    <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
+      <button
+        type="button"
+        onClick={() => (isHidden ? show(featureKey, rowKey) : hide(featureKey, rowKey))}
+        className={TEXT_BUTTON_CLASS}
+      >
+        {isHidden ? (
+          <EyeSlashIcon aria-hidden="true" className="h-4 w-4" />
+        ) : (
+          <EyeIcon aria-hidden="true" className="h-4 w-4" />
+        )}
+        {label}
+      </button>
+      {otherRowKeys.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => {
+            hideMany(featureKey, otherRowKeys)
+            show(featureKey, rowKey)
+          }}
+          aria-label={de.feature.liveRowShowOnlyThisAria}
+          className={TEXT_BUTTON_CLASS}
+        >
+          <FunnelIcon aria-hidden="true" className="h-4 w-4" />
+          {de.feature.liveRowShowOnlyThis}
+        </button>
+      ) : null}
+    </span>
   )
 }
 
