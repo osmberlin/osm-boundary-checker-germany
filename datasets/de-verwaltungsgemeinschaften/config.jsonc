@@ -4,10 +4,11 @@
   "officialProfile": "bkg_vg25_vwg",
   "official": {
     // Pseudo-Verbände for verbandsfreie Gemeinden (BEM "gemeinschaftsfrei") share the geometry of
-    // their Gemeinde and are already compared in the de-gemeinden-* datasets, so drop them here.
+    // their Gemeinde and are already compared in the de-gemeinden-* datasets. Kreisfreie Städte
+    // (BEM "kreisfrei") are already compared in de-landkreise and de-gemeinden-*. Drop both here.
     "extractFilter": {
       "property": "BEM",
-      "excludeValues": ["gemeinschaftsfrei"],
+      "excludeValues": ["gemeinschaftsfrei", "kreisfrei"],
     },
   },
   "osmProfile": "admin_rs",
