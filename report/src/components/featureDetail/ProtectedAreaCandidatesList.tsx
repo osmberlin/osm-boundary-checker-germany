@@ -1,6 +1,7 @@
 import { de } from '../../i18n/de'
 import { relationResolverHref } from '../../lib/relationResolverLink'
 import type { CandidateMatch, CandidateSignalId } from '../../types/report'
+import { CandidateCompareLink } from '../compare/CandidateCompareLink'
 import { sharedButtonClass } from '../sharedButtonStyles'
 import { TagPairText, TagValue } from '../TagValue'
 import { Abbr } from '../ui/Abbr'
@@ -43,11 +44,14 @@ function ProtectedAreaCandidateRow({
   candidate,
   areaKey,
   context,
+  compareOsmKey,
   nearby = false,
 }: {
   candidate: CandidateMatch
   areaKey: string
   context: LiveOsmContext
+  /** Unmatched OSM row of this candidate, for the compare link. */
+  compareOsmKey: string | null
   /** Found by the nearby search: its tags are live already, so there is nothing to load. */
   nearby?: boolean
 }) {
@@ -159,6 +163,12 @@ function ProtectedAreaCandidateRow({
             {de.feature.liveOsmHitOpenBoundaryChecker(candidate.osmType, liveObject.id)}
           </a>
         ) : null}
+        <CandidateCompareLink
+          areaKey={areaKey}
+          officialKey={context.row.canonicalMatchKey}
+          osmKey={compareOsmKey}
+          className={`text-sm ${LINK_CLASS}`}
+        />
         {nearby ? null : <LiveOsmObjectLoadButton context={context} object={liveObject} />}
       </div>
 
@@ -196,12 +206,15 @@ export function ProtectedAreaCandidatesList({
   nearby,
   areaKey,
   context,
+  compareOsmKeyOf,
 }: {
   candidates: CandidateMatch[]
   /** Objects from the nearby search, listed after the candidates. */
   nearby: CandidateMatch[]
   areaKey: string
   context: LiveOsmContext
+  /** Unmatched OSM row of a candidate, or null: the compare link shows only for those rows. */
+  compareOsmKeyOf: (candidate: CandidateMatch) => string | null
 }) {
   return (
     <ul className="divide-y divide-sky-800/45">
@@ -211,6 +224,7 @@ export function ProtectedAreaCandidatesList({
           candidate={candidate}
           areaKey={areaKey}
           context={context}
+          compareOsmKey={compareOsmKeyOf(candidate)}
         />
       ))}
       {nearby.map((candidate) => (
@@ -219,6 +233,7 @@ export function ProtectedAreaCandidatesList({
           candidate={candidate}
           areaKey={areaKey}
           context={context}
+          compareOsmKey={compareOsmKeyOf(candidate)}
           nearby
         />
       ))}

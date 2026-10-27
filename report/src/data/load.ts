@@ -187,11 +187,13 @@ export type FeatureDetailComparison = ComparisonForReport & {
 export async function loadFeatureOrFallback(
   area: string,
   featureKey: string,
+  /** Source of the comparison table; the query cache, so pages that also show it fetch it once. */
+  getComparison: (area: string) => Promise<ComparisonForReport> = loadComparison,
 ): Promise<FeatureDetailComparison> {
   // Both requests at once: the table is large for some datasets, the shard is tiny.
   const shardRequest = loadFeatureShard(area, featureKey)
   shardRequest.catch(() => {})
-  const comparison = await loadComparison(area)
+  const comparison = await getComparison(area)
   try {
     const shard = await shardRequest
     return {
@@ -234,7 +236,10 @@ export function snapshotsQueryOptions(area: string) {
 export function featureQueryOptions(area: string, featureKey: string) {
   return queryOptions({
     queryKey: ['feature', area, featureKey],
-    queryFn: () => loadFeatureOrFallback(area, featureKey),
+    queryFn: ({ client }) =>
+      loadFeatureOrFallback(area, featureKey, () =>
+        client.ensureQueryData(comparisonQueryOptions(area)),
+      ),
   })
 }
 

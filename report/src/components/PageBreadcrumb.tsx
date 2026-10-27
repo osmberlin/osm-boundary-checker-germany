@@ -65,6 +65,19 @@ export function PageBreadcrumb() {
                       }
                     }
 
+                    if (segs[1] === 'compare' && segs[2] && segs[3]) {
+                      return {
+                        homeCurrent: false,
+                        items: [
+                          { name: areaLabel, to: `/${areaId}` },
+                          {
+                            name: `${de.compare.heading} ${shortFeatureKey(segs[2])} ↔ ${shortFeatureKey(segs[3])}`,
+                            current: true,
+                          },
+                        ],
+                      }
+                    }
+
                     return { homeCurrent: false, items: [{ name: areaLabel, current: true }] }
                   })()
 

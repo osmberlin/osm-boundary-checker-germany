@@ -7,6 +7,7 @@ import {
 } from '../../../../scripts/shared/protectedAreaCategories.ts'
 import { areasIndex } from '../../data/areasIndex'
 import { de } from '../../i18n/de'
+import { unmatchedOsmKeyForObject } from '../../lib/compareRows'
 import { isGermanKeyExplorerDisplayKey } from '../../lib/germanKeyExplorer'
 import { nearbyCandidates } from '../../lib/nearbyCandidates'
 import { relationResolverHref } from '../../lib/relationResolverLink'
@@ -17,6 +18,7 @@ import type {
   OverpassBoundaryTag,
   ReportRow,
 } from '../../types/report'
+import { CandidateCompareLink } from '../compare/CandidateCompareLink'
 import { ProvenanceGridSectionHeader } from '../ProvenanceGridSectionHeader'
 import { sharedButtonTinyClass } from '../sharedButtonStyles'
 import { TagValue } from '../TagValue'
@@ -192,6 +194,8 @@ type CandidateRowProps = {
   isPostalCodeProfile: boolean
   areaKey: string
   context: LiveOsmContext
+  /** Unmatched OSM row of this candidate, for the compare link. */
+  compareOsmKey: string | null
   /** Found by the nearby search: its tags are live already, so there is nothing to load. */
   nearby?: boolean
 }
@@ -201,6 +205,7 @@ function CandidateRow({
   isPostalCodeProfile,
   areaKey,
   context,
+  compareOsmKey,
   nearby = false,
 }: CandidateRowProps) {
   const objectLabel = `${candidate.osmType}/${candidate.osmId}`
@@ -263,6 +268,12 @@ function CandidateRow({
         <a href={osmEditUrl(candidate)} className={linkClass} target="_blank" rel="noreferrer">
           {de.feature.candidatesEditLink}
         </a>
+        <CandidateCompareLink
+          areaKey={areaKey}
+          officialKey={context.row.canonicalMatchKey}
+          osmKey={compareOsmKey}
+          className={linkClass}
+        />
         {nearby ? null : (
           <LiveOsmObjectLoadButton
             context={context}
@@ -308,18 +319,26 @@ export function OfficialOnlyCandidatesSection({
   row,
   candidates,
   data,
+  comparison,
   live,
 }: {
   areaKey: string
   row: ReportRow
   candidates: CandidateMatch[] | undefined
   data: ComparisonForReport
+  /**
+   * Full comparison table (with `unmatchedOsm`): candidates found there link to a comparison.
+   * Undefined while it loads; the links appear once it is there.
+   */
+  comparison: ComparisonForReport | undefined
   live: CandidatesLiveSources
 }) {
   if (row.category !== 'official_only') return null
   const list = candidates ?? []
   const nearby = nearbyCandidates(live.nearbySearch.hits, list)
   const context: LiveOsmContext = { featureKey: live.featureKey, row, data }
+  const compareOsmKeyOf = (candidate: CandidateMatch) =>
+    comparison ? unmatchedOsmKeyForObject(comparison, candidate.osmType, candidate.osmId) : null
   const nearbySearch = (
     <NearbyOsmSearch
       search={live.nearbySearch}
@@ -338,6 +357,7 @@ export function OfficialOnlyCandidatesSection({
         candidates={list}
         nearby={nearby}
         context={context}
+        compareOsmKeyOf={compareOsmKeyOf}
         nearbySearch={nearbySearch}
       />
     )
@@ -420,6 +440,7 @@ export function OfficialOnlyCandidatesSection({
                 candidate={candidate}
                 isPostalCodeProfile={isPostalCodeProfile}
                 context={context}
+                compareOsmKey={compareOsmKeyOf(candidate)}
               />
             ))}
             {nearby.map((candidate) => (
@@ -429,6 +450,7 @@ export function OfficialOnlyCandidatesSection({
                 candidate={candidate}
                 isPostalCodeProfile={isPostalCodeProfile}
                 context={context}
+                compareOsmKey={compareOsmKeyOf(candidate)}
                 nearby
               />
             ))}
@@ -448,6 +470,7 @@ function ProtectedAreaCandidatesSection({
   candidates,
   nearby,
   context,
+  compareOsmKeyOf,
   nearbySearch,
 }: {
   areaKey: string
@@ -456,6 +479,7 @@ function ProtectedAreaCandidatesSection({
   candidates: CandidateMatch[]
   nearby: CandidateMatch[]
   context: LiveOsmContext
+  compareOsmKeyOf: (candidate: CandidateMatch) => string | null
   nearbySearch: ReactNode
 }) {
   return (
@@ -478,6 +502,7 @@ function ProtectedAreaCandidatesSection({
             nearby={nearby}
             areaKey={areaKey}
             context={context}
+            compareOsmKeyOf={compareOsmKeyOf}
           />
         ) : null}
         {nearbySearch}

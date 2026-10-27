@@ -3,6 +3,7 @@ import { Link, useParams } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { padRegional12 } from '../../../scripts/shared/regionalArs.ts'
+import { CompareDialogButton } from '../components/compare/CompareDialogButton'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
 import { FeatureDetailHeader } from '../components/featureDetail/FeatureDetailHeader'
@@ -29,6 +30,7 @@ import { useFilteredLiveOverlays } from '../hooks/useFilteredLiveOverlays'
 import { useLiveOsmObjects } from '../hooks/useLiveOsmObjects'
 import { useLiveQueryBboxFromMap } from '../hooks/useLiveQueryBboxFromMap'
 import { useMapViewParam } from '../hooks/useMapViewParam'
+import { useRecordRecentFeatureVisit } from '../hooks/useRecentFeatureVisits'
 import { de } from '../i18n/de'
 import { featureDetailHasComparisonMap } from '../lib/featureDetailHasComparisonMap'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
@@ -47,6 +49,7 @@ function FeatureDetailWithMapContext({
   row,
   data,
   comparisonOverlayData,
+  fullComparison,
   mapViewParam,
   showCompareFailedNotice,
 }: {
@@ -55,6 +58,8 @@ function FeatureDetailWithMapContext({
   row: ReportRow
   data: FeatureDetailComparison
   comparisonOverlayData: ComparisonForReport
+  /** Full comparison table; undefined while it loads (the feature shard comes first). */
+  fullComparison: ComparisonForReport | undefined
   mapViewParam: MapViewParam
   showCompareFailedNotice: boolean
 }) {
@@ -79,11 +84,25 @@ function FeatureDetailWithMapContext({
     addrPostcodeGeojson: addrPostcode.geojson,
   })
   const hasComparisonMap = featureDetailHasComparisonMap(row, data)
+  useRecordRecentFeatureVisit(areaKey, row)
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
       <div className="flex flex-col gap-10">
-        <FeatureDetailHeader titlePrefix={data.titlePrefix} row={row} rowFlags={data.rowFlags} />
+        <FeatureDetailHeader
+          titlePrefix={data.titlePrefix}
+          row={row}
+          rowFlags={data.rowFlags}
+          actions={
+            <CompareDialogButton
+              areaKey={areaKey}
+              row={row}
+              comparison={fullComparison}
+              candidates={data.candidates}
+              className="inline shrink-0 align-baseline text-xs font-medium text-sky-400 underline decoration-sky-500/50 underline-offset-2 hover:text-sky-300"
+            />
+          }
+        />
         <StaleOfficialKeySection areaKey={areaKey} row={row} data={data} />
         <DatasetDiscussionAlerts />
         {showCompareFailedNotice ? (
@@ -116,6 +135,7 @@ function FeatureDetailWithMapContext({
           row={row}
           candidates={data.candidates}
           data={data}
+          comparison={fullComparison}
           live={{ featureKey: featureLookupKey, nearbySearch, getLiveQueryBbox }}
         />
 
@@ -236,6 +256,7 @@ export function FeatureDetail() {
         row={row}
         data={data}
         comparisonOverlayData={comparisonQuery.data ?? data}
+        fullComparison={comparisonQuery.data}
         mapViewParam={mapViewParam}
         showCompareFailedNotice={showCompareFailedNotice}
       />

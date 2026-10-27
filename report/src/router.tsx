@@ -26,10 +26,12 @@ import {
 import { relationResolverIndexUrl, routerBasePath } from './data/paths'
 import { validateAreaReportSearch } from './hooks/useAreaReportStaleKeysFilter'
 import { de } from './i18n/de'
+import { COMPARE_ROUTE_FROM, rowDisplayName } from './lib/compareRows'
 import { validateFeatureDetailSearch } from './lib/featureDetailSearch'
 import { validateGermanKeySearch } from './lib/germanKeySearch'
 import {
   FEATURE_DETAIL_ROUTE_FROM,
+  parseCompareRouteParams,
   parseFeatureDetailRouteParams,
 } from './lib/parseFeatureDetailRouteParams'
 import { decideRelationResolution, relationResolverIndexSchema } from './lib/relationResolver'
@@ -40,6 +42,7 @@ import { safeDecodeURIComponent } from './lib/safeDecodeURIComponent'
 import { socialSharingImageAbsoluteUrl } from './lib/siteBasePath'
 import { AreaReport } from './pages/AreaReport'
 import { Changelog } from './pages/Changelog'
+import { CompareFeatures } from './pages/CompareFeatures'
 import { FeatureDetail } from './pages/FeatureDetail'
 import { GermanKeyExplorer } from './pages/GermanKeyExplorer'
 import { Home } from './pages/Home'
@@ -84,6 +87,11 @@ function FeaturePendingPane() {
   const { featureKey } = useParams({ from: FEATURE_DETAIL_ROUTE_FROM })
   const decoded = safeDecodeURIComponent(featureKey)
   return <RouteLoadingPane title={de.routeLoading.feature(decoded)} />
+}
+
+function ComparePendingPane() {
+  const { officialKey, osmKey } = useParams({ from: COMPARE_ROUTE_FROM })
+  return <RouteLoadingPane title={de.routeLoading.compare(officialKey, osmKey)} />
 }
 
 function RegionalHubDetailPendingPane() {
@@ -264,6 +272,41 @@ const featureRoute = createRoute({
   component: FeatureDetail,
 })
 
+const compareRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: COMPARE_ROUTE_FROM,
+  params: {
+    parse: parseCompareRouteParams,
+  },
+  loader: async ({ context, params }) => {
+    const [official, comparison] = await Promise.all([
+      context.queryClient.ensureQueryData(featureQueryOptions(params.areaId, params.officialKey)),
+      context.queryClient.ensureQueryData(comparisonQueryOptions(params.areaId)),
+      context.queryClient.ensureQueryData(discussionsRegistryQueryOptions()),
+    ])
+    const officialRow = official.rows.find((row) => row.canonicalMatchKey === params.officialKey)
+    return {
+      officialName: officialRow ? rowDisplayName(officialRow) : params.officialKey,
+      osmName:
+        comparison.unmatchedOsm.find((row) => row.canonicalMatchKey === params.osmKey)?.nameLabel ??
+        params.osmKey,
+    }
+  },
+  pendingComponent: ComparePendingPane,
+  head: ({ params, loaderData }) => ({
+    meta: [
+      {
+        title: `${de.compare.metaTitle(
+          loaderData?.officialName ?? params.officialKey,
+          loaderData?.osmName ?? params.osmKey,
+        )} | ${de.appTitle}`,
+      },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
+  component: CompareFeatures,
+})
+
 const relationResolverRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/resolve/relation/$relationId',
@@ -325,6 +368,7 @@ const routeTree = rootRoute.addChildren([
   regionalHubSourcesRoute,
   areaRoute,
   featureRoute,
+  compareRoute,
   relationResolverRoute,
   fallbackRoute,
 ])

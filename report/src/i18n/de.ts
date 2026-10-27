@@ -365,6 +365,52 @@ export const de = {
     stateClosed: 'Geschlossen',
   },
 
+  /** Compare page of an official-only row and an unmatched OSM row of the same dataset. */
+  compare: {
+    buttonLabel: 'Vergleichen',
+    metaTitle: (officialName: string, osmName: string) => `Vergleich ${officialName} ↔ ${osmName}`,
+    heading: 'Vergleich',
+    lead: 'Amtliche Fläche und OSM-Relation ohne Treffer nebeneinander. Passt die OSM-Relation, kann sie in OSM korrigiert werden; bleibt eine Abweichung, dokumentiert ein Issue zu diesem Vergleich beide Einträge zugleich.',
+    openDetail: 'Detailseite',
+    mapLegendOfficial: 'Amtliche Fläche',
+    mapLegendOsm: 'OSM-Relation',
+    invalidPair:
+      'Dieser Vergleich ist nicht möglich. Links muss ein Eintrag ohne OSM-Treffer stehen, rechts eine OSM-Relation ohne Treffer, beide aus diesem Datensatz.',
+    officialNotFound: (key: string) => `Kein Eintrag ohne OSM-Treffer mit dem Schlüssel ${key}.`,
+    osmNotFound: (key: string) => `Keine OSM-Relation ohne Treffer mit dem Schlüssel ${key}.`,
+    mapNoOsmTiles:
+      'Für diesen Datensatz gibt es keine Kartenkacheln der OSM-Objekte ohne Treffer. Die OSM-Geometrie kann live geladen werden.',
+    keysHeading: 'Abgleich der Regionalschlüssel',
+    keysLead:
+      'Beide Schlüssel nach Ebenen zerlegt und im Schlüsselverzeichnis nachgeschlagen. Abweichende Ebenen sind markiert.',
+    keysColumnSegment: 'Ebene',
+    keysColumnOfficial: 'Amtlich',
+    keysColumnOsm: 'OSM',
+    keysLoading: 'Lade Schlüsselverzeichnis…',
+    keysNotFound: 'nicht im Verzeichnis',
+    keysObsolete: (year: number) => `veraltet, zuletzt ${year}`,
+    keysDiffer: 'abweichend',
+    keysOpenExplorer: 'Im Explorer öffnen',
+    discussButton: 'Vergleich diskutieren',
+    discussBody: (compareUrl: string, officialUrl: string, osmUrl: string) =>
+      [`Vergleich: ${compareUrl}`, '', `- ${officialUrl}`, `- ${osmUrl}`, ''].join('\n'),
+    dialogTitle: 'Vergleichen mit …',
+    dialogLeadOfficial: (areaName: string) =>
+      `Wählen Sie eine OSM-Relation ohne Treffer dieses Vergleichs „${areaName}“.`,
+    dialogLeadOsm: (areaName: string) =>
+      `Wählen Sie einen Eintrag ohne OSM-Treffer dieses Vergleichs „${areaName}“.`,
+    dialogCurrent: 'Diese Seite',
+    dialogSuggested: 'Vorgeschlagen',
+    dialogSuggestedHint: 'Kandidaten aus dem nächtlichen Abgleich.',
+    dialogRecent: 'Zuletzt geöffnet',
+    dialogRecentHint: (areaName: string) =>
+      `Detailseiten dieses Vergleichs „${areaName}“, die Sie in den letzten 3 Stunden in einem Browser-Tab geöffnet hatten. Fehlt eine, öffnen Sie sie zuerst in einem Tab; die Liste aktualisiert sich dann von selbst.`,
+    dialogRecentEmpty: 'Noch keine passende Detailseite geöffnet.',
+    dialogClose: 'Schließen',
+    dialogLoading: 'Lade Daten des Vergleichs…',
+    openCompare: 'Vergleichen',
+  },
+
   areaReport: {
     backAreas: '← Gebiete',
     chartTitle: meanIouChartDe.chartTitle,
@@ -1059,6 +1105,7 @@ export const de = {
       'Auswertungsdaten enthalten alle verglichenen Grenzen mit Geometrie- und Kennzahlen-Snippets.',
     /** Feature detail page: short label = decoded canonicalMatchKey. */
     feature: (label: string) => `Lade Detaildaten für ${label}…`,
+    compare: (officialKey: string, osmKey: string) => `Lade Vergleich ${officialKey} ↔ ${osmKey}…`,
     changelog: 'Lade Changelog…',
     status: 'Lade Verarbeitungsstatus…',
     germanKey: 'Lade Schlüssel-Explorer…',

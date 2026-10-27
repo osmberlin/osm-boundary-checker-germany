@@ -22,3 +22,18 @@ export function parseFeatureDetailRouteParams(params: { areaId: string; featureK
   }
   return params
 }
+
+/** Path param guard for `/$areaId/compare/$officialKey/$osmKey`, like the detail route. */
+export function parseCompareRouteParams(params: {
+  areaId: string
+  officialKey: string
+  osmKey: string
+}): { areaId: string; officialKey: string; osmKey: string } {
+  if (!validAreaIds.has(params.areaId)) {
+    throw redirect({ to: '/' })
+  }
+  if (params.officialKey.trim() === '' || params.osmKey.trim() === '') {
+    throw redirect({ to: '/$areaId', params: { areaId: params.areaId } })
+  }
+  return params
+}

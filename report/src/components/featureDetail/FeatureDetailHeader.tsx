@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { RowFlagDefinition } from '../../../../scripts/shared/rowFlags.ts'
 import { de } from '../../i18n/de'
 import type { ReportRow } from '../../types/report'
@@ -8,13 +9,15 @@ type Props = {
   titlePrefix: string
   row: ReportRow
   rowFlags?: RowFlagDefinition[] | undefined
+  /** Further links next to "Datensatz diskutieren" (rows without a match: "Vergleichen"). */
+  actions?: ReactNode
 }
 
 /**
  * Title + discuss link on one row when space allows; meta wraps below a long title.
  * Vertical spacing to the next block is handled by the parent stack (`gap-6`).
  */
-export function FeatureDetailHeader({ titlePrefix, row, rowFlags }: Props) {
+export function FeatureDetailHeader({ titlePrefix, row, rowFlags, actions }: Props) {
   const flags = rowFlags?.filter((flag) => row.flags?.includes(flag.id)) ?? []
   const detailLines = flags.flatMap((flag) => {
     const value = flag.detailProperty ? row.officialProperties?.[flag.detailProperty] : undefined
@@ -28,7 +31,8 @@ export function FeatureDetailHeader({ titlePrefix, row, rowFlags }: Props) {
         <h1 className="max-w-full min-w-0 flex-[1_1_0] text-2xl font-semibold tracking-tight text-slate-100">
           {`${titlePrefix} ${row.nameLabel}`.trim()}
         </h1>
-        <div className="ml-auto flex w-fit max-w-full flex-wrap items-baseline justify-end gap-x-2 text-xs">
+        <div className="ml-auto flex w-fit max-w-full flex-wrap items-baseline justify-end gap-x-4 text-xs">
+          {actions}
           <DiscussDatasetButton className="inline shrink-0 align-baseline text-xs font-medium text-sky-400 underline decoration-sky-500/50 underline-offset-2 hover:text-sky-300" />
         </div>
       </div>

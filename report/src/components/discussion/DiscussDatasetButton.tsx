@@ -16,12 +16,16 @@ import {
 
 type Props = {
   className?: string
+  /** Button text; defaults to "Datensatz diskutieren". */
+  label?: string
+  /** Issue body; defaults to the page URL. */
+  body?: string
 }
 
-export function DiscussDatasetButton({ className }: Props) {
+export function DiscussDatasetButton({ className, label = de.discuss.buttonLabel, body }: Props) {
   const [open, setOpen] = useState(false)
   const { matchKey, pageUrlAbsolute } = useDiscussPageLinkParts()
-  const createUrl = githubNewDiscussIssueUrl({ title: matchKey, body: pageUrlAbsolute })
+  const createUrl = githubNewDiscussIssueUrl({ title: matchKey, body: body ?? pageUrlAbsolute })
 
   return (
     <>
@@ -33,7 +37,7 @@ export function DiscussDatasetButton({ className }: Props) {
           'shrink-0 text-xs font-medium text-sky-400 underline decoration-sky-500/50 underline-offset-2 hover:text-sky-300'
         }
       >
-        {de.discuss.buttonLabel}
+        {label}
       </button>
 
       <Dialog open={open} onClose={setOpen} size="lg">
