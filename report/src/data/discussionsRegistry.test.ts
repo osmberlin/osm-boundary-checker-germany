@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  discussionIssuesForPathMatch,
+  discussionIssuesForPaths,
   discussionRegistryFileSchema,
   emptyDiscussionRegistryFile,
 } from '../../../scripts/shared/discussionsRegistry.ts'
@@ -51,7 +51,7 @@ describe('discussionRegistrySyncMetaSchema', () => {
   })
 })
 
-describe('discussionIssuesForPathMatch', () => {
+describe('discussionIssuesForPaths with one path', () => {
   it('returns all issues matching normalized path', () => {
     const registry = discussionRegistryFileSchema.parse({
       issues: [
@@ -78,11 +78,57 @@ describe('discussionIssuesForPathMatch', () => {
         },
       ],
     })
-    const hits = discussionIssuesForPathMatch(registry, '/a/')
+    const hits = discussionIssuesForPaths(registry, ['/a/'])
     expect(hits.map((h) => h.number).sort()).toEqual([1, 2])
   })
 
   it('empty registry yields no hits', () => {
-    expect(discussionIssuesForPathMatch(emptyDiscussionRegistryFile(), '/x')).toEqual([])
+    expect(discussionIssuesForPaths(emptyDiscussionRegistryFile(), ['/x'])).toEqual([])
+  })
+
+  it('shows a compare-page issue on both detail pages', () => {
+    const registry = discussionRegistryFileSchema.parse({
+      issues: [
+        {
+          match: '/vg/compare/a/b',
+          number: 7,
+          url: 'https://github.com/osmberlin/osm-boundary-checker-germany/issues/7',
+          state: 'open',
+          lastTouchedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    })
+    expect(discussionIssuesForPaths(registry, ['/vg/feature/a']).map((h) => h.number)).toEqual([7])
+    expect(discussionIssuesForPaths(registry, ['/vg/feature/b']).map((h) => h.number)).toEqual([7])
+    expect(discussionIssuesForPaths(registry, ['/vg/feature/c'])).toEqual([])
+  })
+})
+
+describe('discussionIssuesForPaths', () => {
+  it('lists each issue once across several paths', () => {
+    const registry = discussionRegistryFileSchema.parse({
+      issues: [
+        {
+          match: '/vg/compare/a/b',
+          number: 7,
+          url: 'https://github.com/osmberlin/osm-boundary-checker-germany/issues/7',
+          state: 'open',
+          lastTouchedAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          match: '/vg/feature/b',
+          number: 8,
+          url: 'https://github.com/osmberlin/osm-boundary-checker-germany/issues/8',
+          state: 'open',
+          lastTouchedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+    })
+    const hits = discussionIssuesForPaths(registry, [
+      '/vg/compare/a/b',
+      '/vg/feature/a',
+      '/vg/feature/b',
+    ])
+    expect(hits.map((h) => h.number)).toEqual([7, 8])
   })
 })

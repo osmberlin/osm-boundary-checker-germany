@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { de as deLocale } from 'date-fns/locale/de'
 import {
-  discussionIssuesForPathMatch,
+  discussionIssuesForPaths,
   emptyDiscussionRegistryFile,
 } from '../../../../scripts/shared/discussionsRegistry.ts'
 import {
@@ -21,13 +21,14 @@ function formatLastTouchedRelative(iso: string): string {
   return formatDistanceToNow(berlin, { locale: deLocale, addSuffix: true })
 }
 
-export function DatasetDiscussionAlerts() {
+/** Issues of this page; `extraPaths` adds the issues of other pages (compare page: both detail pages). */
+export function DatasetDiscussionAlerts({ extraPaths = [] }: { extraPaths?: readonly string[] }) {
   const registryQuery = useQuery(discussionsRegistryQueryOptions())
   const syncMetaQuery = useQuery(discussionsRegistrySyncMetaQueryOptions())
   const registry = registryQuery.data ?? emptyDiscussionRegistryFile()
   const syncMeta = syncMetaQuery.data
   const { matchKey } = useDiscussPageLinkParts()
-  const items = discussionIssuesForPathMatch(registry, matchKey)
+  const items = discussionIssuesForPaths(registry, [matchKey, ...extraPaths])
   if (items.length === 0) return null
 
   const checkedRelative =

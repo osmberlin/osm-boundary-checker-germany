@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { normalizeDiscussMatchString } from './discussMatch.ts'
+import { discussMatchPaths, normalizeDiscussMatchString } from './discussMatch.ts'
 
 export const discussionRegistryIssueRowSchema = z.object({
   match: z.string().min(1),
@@ -20,10 +20,14 @@ export function emptyDiscussionRegistryFile(): DiscussionRegistryFile {
   return { issues: [] }
 }
 
-export function discussionIssuesForPathMatch(
+/**
+ * Issues whose title matches any of the page paths, each issue once, in registry order. A
+ * compare-page title also matches the detail pages of both keys.
+ */
+export function discussionIssuesForPaths(
   registry: DiscussionRegistryFile,
-  pathnameOrMatch: string,
+  pathnames: readonly string[],
 ): DiscussionRegistryIssueRow[] {
-  const key = normalizeDiscussMatchString(pathnameOrMatch)
-  return registry.issues.filter((row) => normalizeDiscussMatchString(row.match) === key)
+  const keys = new Set(pathnames.map(normalizeDiscussMatchString))
+  return registry.issues.filter((row) => discussMatchPaths(row.match).some((p) => keys.has(p)))
 }

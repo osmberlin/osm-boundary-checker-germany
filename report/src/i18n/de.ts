@@ -344,7 +344,7 @@ export const de = {
     modalLead: 'Hinweise oder vertiefende Fragen zu dieser Seite.',
     modalParagraphs: [
       'Über die Schaltfläche unten öffnen Sie das neue Issue auf GitHub — Label „discussion“ und der Issue-Titel (Seitenpfad ohne URL-Parameter) sind dabei bereits gesetzt.',
-      'Technischer Hinweis: Die Verknüpfung zu dieser Seite entsteht, indem genau dieses Label und der Titel mit dem aktuellen Seitenpfad übereinstimmen.',
+      'Technischer Hinweis: Die Verknüpfung zu dieser Seite entsteht, indem genau dieses Label und der Titel mit dem aktuellen Seitenpfad übereinstimmen. Ein Issue zu einer Vergleichsseite erscheint zusätzlich auf den Detailseiten beider Einträge.',
       'Nach dem nächsten Report-Lauf kann der Hinweis hier für andere sichtbar werden.',
     ],
     modalClose: 'Schließen',
