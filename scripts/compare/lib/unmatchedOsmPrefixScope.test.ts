@@ -30,6 +30,12 @@ describe('resolveArsExtractPrefix', () => {
     expect(resolveArsExtractPrefix({ property: 'ARS', valuePrefix: '  ' }, true)).toBeNull()
   })
 
+  test('returns null for an exclude-only extractFilter', () => {
+    expect(
+      resolveArsExtractPrefix({ property: 'ARS', excludeValues: ['gemeinschaftsfrei'] }, true),
+    ).toBeNull()
+  })
+
   test('returns null when extractFilter is missing', () => {
     expect(resolveArsExtractPrefix(undefined, true)).toBeNull()
   })

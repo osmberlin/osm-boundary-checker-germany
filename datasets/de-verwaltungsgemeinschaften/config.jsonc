@@ -2,6 +2,14 @@
   "displayName": "Deutschland Verwaltungsgemeinschaften",
   "titlePrefix": "Verwaltungsgemeinschaft",
   "officialProfile": "bkg_vg25_vwg",
+  "official": {
+    // Pseudo-Verbände for verbandsfreie Gemeinden (BEM "gemeinschaftsfrei") share the geometry of
+    // their Gemeinde and are already compared in the de-gemeinden-* datasets, so drop them here.
+    "extractFilter": {
+      "property": "BEM",
+      "excludeValues": ["gemeinschaftsfrei"],
+    },
+  },
   "osmProfile": "admin_rs",
 
   "idNormalization": {

@@ -75,7 +75,8 @@ export type SourceMetadataSide = {
 
 export type OfficialExtractFilterSummary = {
   property: string
-  valuePrefix: string
+  valuePrefix?: string
+  excludeValues?: string[]
 }
 
 export type ComparisonFilterConfigSummary = {

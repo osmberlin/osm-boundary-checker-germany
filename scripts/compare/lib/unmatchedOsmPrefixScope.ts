@@ -1,6 +1,7 @@
 export type OfficialExtractFilter = {
   property: string
-  valuePrefix: string
+  valuePrefix?: string
+  excludeValues?: string[]
 }
 
 const ARS_PROPERTY = /^ars$/i
@@ -15,7 +16,7 @@ export function resolveArsExtractPrefix(
 ): string | null {
   if (!isRsMode) return null
   if (!extractFilter) return null
-  const prefix = extractFilter.valuePrefix.trim()
+  const prefix = extractFilter.valuePrefix?.trim() ?? ''
   if (prefix.length === 0) return null
   if (!ARS_PROPERTY.test(extractFilter.property.trim())) return null
   return prefix

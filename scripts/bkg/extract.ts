@@ -19,6 +19,7 @@ import {
   OFFICIAL_SOURCE_RELATIVE_PATH,
   datasetFolderPath,
 } from '../shared/datasetPaths.ts'
+import { extractFilterWhereClause, normalizeExtractFilter } from '../shared/extractFilter.ts'
 import { officialProfileIdSchema, resolveOfficialProfile } from '../shared/officialProfiles.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
@@ -84,21 +85,21 @@ function readBkgLayerForArea(workspaceRoot: string, area: string): AreaLayerSpec
   if (parsed.officialMode === 'profile') {
     const profileId = parsed.officialProfile
     const layer = resolveOfficialProfile(profileId).extractLayer
-    return { area, profileId, layer }
+    const extractFilter = normalizeExtractFilter(parsed.official?.extractFilter)
+    if (!extractFilter) return { area, profileId, layer }
+    return { area, profileId, layer, where: extractFilterWhereClause(extractFilter) }
   }
   if (parsed.officialMode === 'dtp') return null
 
-  const extractFilter = parsed.official.extractFilter
+  const extractFilter = normalizeExtractFilter(parsed.official.extractFilter)
   if (!extractFilter) return null
   if (parsed.compare.officialMatchProperty !== 'ARS') return null
   const layer = parsed.official.extractLayer ?? 'vg25_gem'
-  const filterProperty = extractFilter.property.trim()
-  const filterValuePrefix = extractFilter.valuePrefix.trim()
   return {
     area,
     profileId: 'bkg_vg25_gem',
     layer,
-    where: `${filterProperty} LIKE '${filterValuePrefix}%'`,
+    where: extractFilterWhereClause(extractFilter),
   }
 }
 

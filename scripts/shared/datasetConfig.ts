@@ -18,9 +18,13 @@ const extractFilterSchema = z
       .string()
       .trim()
       .regex(/^[A-Za-z_][A-Za-z0-9_]*$/),
-    valuePrefix: z.string().trim().min(1),
+    valuePrefix: trimmedString.optional(),
+    excludeValues: nonEmptyStringArray.optional(),
   })
   .strict()
+  .refine((filter) => filter.valuePrefix !== undefined || filter.excludeValues !== undefined, {
+    message: 'extractFilter needs valuePrefix or excludeValues',
+  })
 
 const officialSourceSchema = z
   .object({
@@ -193,6 +197,8 @@ const profileAreaConfigSchema = z
     displayName: trimmedString,
     titlePrefix: trimmedString,
     officialProfile: officialProfileIdSchema,
+    /** Profile mode only accepts `official.extractFilter` (narrows the profile layer, e.g. drop pseudo rows). */
+    official: z.object({ extractFilter: extractFilterSchema }).strict().optional(),
     osmProfile: osmProfileIdSchema,
     osm: osmConfigSchema.optional(),
     idNormalization: idNormalizationSchema,

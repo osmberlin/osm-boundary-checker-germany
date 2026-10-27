@@ -181,9 +181,13 @@ export const officialExtractFilterSummarySchema = z
       .string()
       .trim()
       .regex(/^[A-Za-z_][A-Za-z0-9_]*$/),
-    valuePrefix: z.string().trim().min(1),
+    valuePrefix: z.string().trim().min(1).optional(),
+    excludeValues: z.array(z.string().trim().min(1)).min(1).optional(),
   })
   .strict()
+  .refine((filter) => filter.valuePrefix !== undefined || filter.excludeValues !== undefined, {
+    message: 'officialExtractFilter needs valuePrefix or excludeValues',
+  })
 
 export const comparisonFilterConfigSummarySchema = z.object({
   officialMatchProperty: z.string().trim().min(1),
@@ -193,7 +197,7 @@ export const comparisonFilterConfigSummarySchema = z.object({
   adminLevels: z.array(z.string().trim().min(1)).optional(),
   ignoreRelationIds: z.array(z.string().trim().min(1)).optional(),
   officialExtractLayer: z.string().trim().min(1).optional(),
-  /** Direct-mode `official.extractFilter`: keep only features whose property value starts with this prefix. */
+  /** Direct-mode `official.extractFilter`: keep only features matching the prefix and/or not matching the excluded values. */
   officialExtractFilter: officialExtractFilterSummarySchema.optional(),
   /** Ordered OSM tags used as match keys (e.g. `de:regionalschluessel` for `admin_rs`). */
   osmMatchProperties: z.array(z.string().trim().min(1)).min(1).optional(),

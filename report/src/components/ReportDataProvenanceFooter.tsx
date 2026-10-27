@@ -328,14 +328,25 @@ function compareFilterItems(
   }
 
   if (filter?.officialExtractFilter) {
-    const { property, valuePrefix } = filter.officialExtractFilter
-    officialItems.push(
-      <FilterItem
-        key="compare-official-extract-filter"
-        code={`officialExtractFilter.${property}=${valuePrefix}*`}
-        description={p.filterDescriptions.officialExtractFilter(property, valuePrefix)}
-      />,
-    )
+    const { property, valuePrefix, excludeValues } = filter.officialExtractFilter
+    if (valuePrefix) {
+      officialItems.push(
+        <FilterItem
+          key="compare-official-extract-filter"
+          code={`officialExtractFilter.${property}=${valuePrefix}*`}
+          description={p.filterDescriptions.officialExtractFilter(property, valuePrefix)}
+        />,
+      )
+    }
+    if (excludeValues && excludeValues.length > 0) {
+      officialItems.push(
+        <FilterItem
+          key="compare-official-extract-exclude"
+          code={`officialExtractFilter.${property}!=${excludeValues.join(',')}`}
+          description={p.filterDescriptions.officialExtractExclude(property, excludeValues)}
+        />,
+      )
+    }
   }
 
   if (filter?.officialExtractLayer?.trim()) {

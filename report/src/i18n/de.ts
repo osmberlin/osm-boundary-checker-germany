@@ -222,6 +222,8 @@ export const de = {
       ignoreRelationIds: 'Diese OSM-Relationen werden vor dem Matching explizit ausgeschlossen.',
       officialExtractFilter: (property: string, valuePrefix: string) =>
         `Der für den Vergleich verwendete amtliche Datensatz enthält nur Features, deren Feld \`${property}\` mit dem Präfix \`${valuePrefix}\` beginnt. OSM-only-Zeilen, deren Vergleichsschlüssel nicht mit diesem Präfix beginnt (z. B. Nachbar-Bundesländer), werden nicht als „Nur OSM“ gelistet.`,
+      officialExtractExclude: (property: string, values: string[]) =>
+        `Der für den Vergleich verwendete amtliche Datensatz enthält keine Features, deren Feld \`${property}\` einem dieser Werte entspricht: ${values.map((value) => `\`${value}\``).join(', ')}. Diese Features fehlen daher auf der amtlichen Seite des Vergleichs.`,
     },
     noSourceData: 'Keine Quellenangaben im Report enthalten.',
     osmFilterNoteTitle: 'Zusatzhinweis aus dem Build',

@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import type { DatasetConfig } from '../../shared/datasetConfig.ts'
 import { OFFICIAL_SOURCE_RELATIVE_PATH } from '../../shared/datasetPaths.ts'
+import { normalizeExtractFilter } from '../../shared/extractFilter.ts'
 import { GERMANY_OSM_CACHE_DIR } from '../../shared/germanyOsmPbf.ts'
 import {
   type MatchRule,
@@ -151,6 +152,9 @@ export function loadBoundaryConfig(config: DatasetConfig, areaLabel = 'area'): B
     )
   }
   const directOfficial = config.officialMode === 'direct' ? config.official : null
+  const extractFilter = normalizeExtractFilter(
+    config.officialMode === 'dtp' ? undefined : config.official?.extractFilter,
+  )
 
   const keyTransposition = parseOfficialKeyTransposition(
     areaLabel,
@@ -173,14 +177,7 @@ export function loadBoundaryConfig(config: DatasetConfig, areaLabel = 'area'): B
         ? { constantMatchKey: directOfficial.constantMatchKey }
         : {}),
       ...(keyTransposition ? { keyTransposition } : {}),
-      ...(directOfficial?.extractFilter
-        ? {
-            extractFilter: {
-              property: directOfficial.extractFilter.property.trim(),
-              valuePrefix: directOfficial.extractFilter.valuePrefix.trim(),
-            },
-          }
-        : {}),
+      ...(extractFilter ? { extractFilter } : {}),
     },
     osm,
     compare,

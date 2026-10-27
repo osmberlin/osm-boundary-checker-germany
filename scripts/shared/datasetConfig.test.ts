@@ -196,4 +196,67 @@ describe('parseDatasetConfig', () => {
       }
     })
   })
+
+  describe('official.extractFilter', () => {
+    const baseConfig = {
+      displayName: 'Area Filter',
+      titlePrefix: 'Area',
+      osmProfile: 'admin_rs',
+      idNormalization: { preset: 'regional-12' },
+      metricsCrs: 'EPSG:25832',
+      compare: {
+        officialMatchProperty: 'ARS',
+        bboxFilter: 'none',
+        osmScopeFilter: 'none',
+        minZoom: 0,
+      },
+    }
+
+    test('accepts excludeValues without valuePrefix', () => {
+      const parsed = parseDatasetConfig('area-exclude', {
+        ...baseConfig,
+        official: { extractFilter: { property: 'BEM', excludeValues: ['gemeinschaftsfrei'] } },
+      })
+      expect(parsed.officialMode).toBe('direct')
+    })
+
+    test('rejects a filter without valuePrefix or excludeValues', () => {
+      expect(() =>
+        parseDatasetConfig('area-empty-filter', {
+          ...baseConfig,
+          official: { extractFilter: { property: 'BEM' } },
+        }),
+      ).toThrow()
+    })
+
+    test('rejects an empty excludeValues list', () => {
+      expect(() =>
+        parseDatasetConfig('area-empty-exclude', {
+          ...baseConfig,
+          official: { extractFilter: { property: 'BEM', excludeValues: [] } },
+        }),
+      ).toThrow()
+    })
+
+    test('accepts extractFilter in profile mode', () => {
+      const parsed = parseDatasetConfig('area-profile-filter', {
+        ...baseConfig,
+        officialProfile: 'bkg_vg25_vwg',
+        official: { extractFilter: { property: 'BEM', excludeValues: ['gemeinschaftsfrei'] } },
+      })
+      expect(parsed.officialMode).toBe('profile')
+      if (parsed.officialMode !== 'profile') throw new Error('expected profile mode')
+      expect(parsed.official?.extractFilter?.excludeValues).toEqual(['gemeinschaftsfrei'])
+    })
+
+    test('rejects other official keys in profile mode', () => {
+      expect(() =>
+        parseDatasetConfig('area-profile-source', {
+          ...baseConfig,
+          officialProfile: 'bkg_vg25_vwg',
+          official: { source: { note: 'x' } },
+        }),
+      ).toThrow()
+    })
+  })
 })

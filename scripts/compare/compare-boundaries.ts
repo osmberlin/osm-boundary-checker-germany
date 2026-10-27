@@ -14,6 +14,7 @@ import {
 } from '../shared/comparisonPayload.ts'
 import { sourceKindFromDatasetConfig, type DatasetConfig } from '../shared/datasetConfig.ts'
 import { DATASETS_DIRECTORY, datasetFolderPath } from '../shared/datasetPaths.ts'
+import { normalizeExtractFilter } from '../shared/extractFilter.ts'
 import { loadLicenseCompatibilityTable } from '../shared/licenseCompatibility.ts'
 import { resolveOfficialMatchProperty } from '../shared/matchRules.ts'
 import { parseOgcInspectSourcesFromConfig } from '../shared/ogcInspectSources.ts'
@@ -92,6 +93,9 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
   const osmProfile = resolveOsmProfile(configRaw.osmProfile)
   const osmMatchProperties =
     configRaw.osmProfile === 'admin_rs' ? ['de:regionalschluessel'] : [osmProfile.matchProperty]
+  const officialExtractFilter = normalizeExtractFilter(
+    configRaw.officialMode === 'dtp' ? undefined : configRaw.official?.extractFilter,
+  )
   return {
     officialMatchProperty: resolveOfficialMatchProperty(configRaw) ?? '',
     bboxFilter: configRaw.compare.bboxFilter,
@@ -107,16 +111,7 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
     ...(configRaw.officialMode === 'direct' && configRaw.official.extractLayer?.trim()
       ? { officialExtractLayer: configRaw.official.extractLayer.trim() }
       : {}),
-    ...(configRaw.officialMode === 'direct' &&
-    configRaw.official.extractFilter?.property?.trim() &&
-    configRaw.official.extractFilter?.valuePrefix?.trim()
-      ? {
-          officialExtractFilter: {
-            property: configRaw.official.extractFilter.property.trim(),
-            valuePrefix: configRaw.official.extractFilter.valuePrefix.trim(),
-          },
-        }
-      : {}),
+    ...(officialExtractFilter ? { officialExtractFilter } : {}),
     minZoom: configRaw.compare.minZoom,
   }
 }
