@@ -56,7 +56,7 @@ export const REGIONAL_GEMEINDE_AREA_BY_LAND: Record<string, string> = {
  * Gemeinde `097720207207`. Some real Verbände also start with `0` or `9`, so the Gemeinde must exist.
  * Returns that Gemeinde key, or null when the key is no pseudo-Verband.
  */
-function pseudoVerbandGemeindeArs(ars12: string, gemeindenByArs: Record<string, string>) {
+export function pseudoVerbandGemeindeArs(ars12: string, gemeindenByArs: Record<string, string>) {
   if (ars12[5] !== '0' && ars12[5] !== '9') return null
   const gemeindeArs = ars12.slice(0, 9) + ars12.slice(6, 9)
   return Object.hasOwn(gemeindenByArs, gemeindeArs) ? gemeindeArs : null

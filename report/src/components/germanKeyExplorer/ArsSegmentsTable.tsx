@@ -1,4 +1,5 @@
 import { de } from '../../i18n/de'
+import type { PseudoVerbandVariant } from '../../lib/germanKeyExplorer'
 import type { ResolvedField } from '../../lib/germanKeyLookupBundle'
 
 export type SegmentsTableRow = {
@@ -24,6 +25,8 @@ export type SegmentsTableRow = {
    * when the reverse lookup succeeded.
    */
   agsView?: 'not-in-ags' | 'from-lookup'
+  /** Set on the Verband row when that Verband is a pseudo-Verband (see `pseudoVerbandInfoForArs`). */
+  pseudoVerband?: PseudoVerbandVariant
 }
 
 /** Padding state for ARS-view rows. AGS-view rows ignore this and use `agsView` instead. */
@@ -156,6 +159,11 @@ export function ArsSegmentsTable({
                   </td>
                   <td className="px-3 py-2 text-slate-300">
                     <CellName row={row} paddingState={paddingState} />
+                    {row.pseudoVerband ? (
+                      <span className="ml-1 text-xs text-amber-400/90">
+                        ({t.pseudoVerbandSuffix[row.pseudoVerband]})
+                      </span>
+                    ) : null}
                   </td>
                 </tr>
               )

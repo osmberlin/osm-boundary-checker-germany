@@ -955,11 +955,59 @@ export const de = {
     sourcesDataSourcesLabel: 'Datenquellen:',
     sourcesIntroLatestSnapshot: (dateLabel: string) =>
       `TXT-Stichtag in der gewählten Quartalsdatei: ${dateLabel}.`,
-    obsoleteNoticeLead:
-      'Mindestens ein angezeigter Name ist nur in einer älteren GV100ADJ-Jahresausgabe erhalten — in der aktuellen Quartalsdatei fehlt dieser Schlüssel.',
+    /** Obsolete notice, case: the key's own segment is obsolete (the key itself is no longer listed). */
+    obsoleteKeyHeading: 'Veralteter Schlüssel',
+    obsoleteKeyLeadBeforeLink: (year: number) =>
+      `Dieser Schlüssel steht nicht mehr im aktuellen Gemeindeverzeichnis. Zuletzt enthalten war er in der Jahresausgabe zum 31.12.${year} (`,
+    obsoleteKeyLeadAfterLink:
+      '). Das Gebiet wurde danach aufgelöst, zusammengelegt oder neu nummeriert.',
+    obsoleteKeyOsmLead:
+      'Dieser Schlüssel sollte nicht mehr vorkommen. Trägt eine Relation ihn, prüfen Sie, ob es das Gebiet noch gibt:',
+    obsoleteKeyOsmYesLabel: 'Ja:',
+    obsoleteKeyOsmYesText:
+      'Ersetzen Sie den Schlüssel durch den aktuellen (siehe Nachfolger, falls angezeigt).',
+    obsoleteKeyOsmNoLabel: 'Nein',
+    obsoleteKeyOsmNoText:
+      '(z.B. aufgelöste Verwaltungsgemeinschaft oder erfüllende Gemeinde): Löschen Sie die Relation.',
+    /** Obsolete notice, case: only a higher segment of the key is obsolete. */
+    obsoleteParentLead:
+      'Ein Teil dieses Schlüssels (z.B. ein früherer Kreis) ist nur in älteren Ausgaben des Gemeindeverzeichnisses enthalten.',
     obsoleteNoticeYearBadge: (year: number) => `31.12.${year}:`,
     obsoleteNoticePublicationLink: 'Destatis-Publikationsseite',
     obsoleteYearSuffix: (year: number) => `nur GV100ADJ bis ${year}`,
+    /** Shared label for "In OSM:" paragraphs in the obsolete and pseudo-Verband notices. */
+    inOsmLabel: 'In OSM:',
+    overpassSearchLabel: 'Relationen mit diesem Schlüssel in OSM suchen (Overpass)',
+    /** Pseudo-Verband notice (input stops at Verband level, e.g. 160720015000). */
+    pseudoVerbandHeading: {
+      gemeinschaftsfrei: 'Pseudo-Verband (gemeinschaftsfreie Gemeinde)',
+      gemeindefrei: 'Pseudo-Verband (gemeindefreies Gebiet)',
+    },
+    pseudoVerbandIntro:
+      'Dieser Schlüssel beschreibt keine eigene Verwaltungseinheit und kein eigenes Gebiet. Destatis und BKG vergeben ihn nur, damit auch Gemeinden ohne Verwaltungsgemeinschaft, Amt oder Verbandsgemeinde einen vollständigen Verbandsteil im Regionalschlüssel haben.',
+    pseudoVerbandAreaLead: {
+      gemeinschaftsfrei: 'Die Fläche ist identisch mit der Gemeinde',
+      gemeindefrei: 'Die Fläche ist identisch mit dem gemeindefreien Gebiet',
+    },
+    pseudoVerbandOsmBeforeTag: {
+      gemeinschaftsfrei:
+        'Dieser Schlüssel sollte an keiner Grenzrelation stehen. Trägt eine Relation (meist admin_level 7) diesen Schlüssel, ist sie ein Duplikat der Gemeinde und kann gelöscht werden. Prüfen Sie vorher, ob Tags wie',
+      gemeindefrei:
+        'Dieser Schlüssel sollte an keiner Grenzrelation stehen. Trägt eine Relation (meist admin_level 7) diesen Schlüssel, ist sie ein Duplikat des gemeindefreien Gebiets und kann gelöscht werden. Prüfen Sie vorher, ob Tags wie',
+    },
+    pseudoVerbandOsmAfterTag: {
+      gemeinschaftsfrei: 'an die Gemeinde-Relation gehören.',
+      gemeindefrei: 'an dessen Relation gehören.',
+    },
+    pseudoVerbandOpenLabel: {
+      gemeinschaftsfrei: (ars12: string) => `Gemeinde ${ars12} öffnen`,
+      gemeindefrei: (ars12: string) => `Gebiet ${ars12} öffnen`,
+    },
+    /** Short amber suffix after the name in the segments table and key overview. */
+    pseudoVerbandSuffix: {
+      gemeinschaftsfrei: 'Pseudo-Verband, gemeinschaftsfreie Gemeinde',
+      gemeindefrei: 'Pseudo-Verband, gemeindefreies Gebiet',
+    },
     successorCalloutFrom: (validFrom: string) =>
       `Dieser Schlüssel wurde zum ${validFrom} durch einen neuen Regionalschlüssel ersetzt.`,
     successorCalloutTo: (validFrom: string) =>

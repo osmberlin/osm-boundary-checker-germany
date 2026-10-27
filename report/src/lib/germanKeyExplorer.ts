@@ -5,7 +5,12 @@ import {
   type NormalizedGermanKey,
 } from '../../../scripts/compare/lib/normalizeGermanKey.ts'
 import type { IdNormalizationPreset } from '../../../scripts/shared/comparisonPayload.ts'
+import {
+  pseudoVerbandGemeindeArs,
+  type RegionalArsLevel,
+} from '../../../scripts/shared/regionalArs.ts'
 import { de } from '../i18n/de'
+import type { ArsSegmentNameCells, ObsoleteMeta, ResolvedField } from './germanKeyLookupBundle'
 
 /** GV100AD-derived lookup maps merged from latest + obsolete shards (`german-key-lookup.json`). */
 export type GermanKeyLookupTables = {
@@ -257,4 +262,78 @@ export function germanKeyExplorerLinkValueOrNull(value: string | number): string
   if (trimmed === '') return null
   if (digitsOnly(trimmed) === '') return null
   return trimmed
+}
+
+export type PseudoVerbandVariant = 'gemeinschaftsfrei' | 'gemeindefrei'
+
+export type PseudoVerbandInfo = {
+  /** Gemeinde (or gemeindefreies Gebiet) the pseudo-Verband stands in for, e.g. `160720015015`. */
+  gemeindeArs: string
+  gemeindeName: string
+  variant: PseudoVerbandVariant
+}
+
+/**
+ * Pseudo-Verband detection on a 12-digit ARS (see `pseudoVerbandGemeindeArs`). `9` in the Verband
+ * part marks a gemeindefreies Gebiet, `0` a gemeinschaftsfreie Gemeinde. Null for real Verbände.
+ */
+export function pseudoVerbandInfoForArs(
+  ars12: string,
+  gemeindenByArs: Record<string, string>,
+): PseudoVerbandInfo | null {
+  const d = digitsOnly(ars12)
+  if (d.length !== 12) return null
+  const gemeindeArs = pseudoVerbandGemeindeArs(d, gemeindenByArs)
+  if (gemeindeArs === null) return null
+  return {
+    gemeindeArs,
+    gemeindeName: gemeindenByArs[gemeindeArs] ?? gemeindeArs,
+    variant: d[5] === '9' ? 'gemeindefrei' : 'gemeinschaftsfrei',
+  }
+}
+
+/**
+ * Overpass Turbo search for OSM relations tagged with a Regionalschlüssel. A Verband-level key
+ * (last 3 digits `000`) also matches the 9-digit tagging form, e.g. `160720015` for `160720015000`.
+ */
+export function overpassTurboUrlForRegionalKey(ars12: string): string {
+  const d = digitsOnly(ars12)
+  const query =
+    d.length === 12 && d.endsWith('000')
+      ? `[out:json][timeout:60];\nrelation["de:regionalschluessel"~"^${d.slice(0, 9)}(000)?$"];\nout geom;`
+      : `[out:json][timeout:60];\nrelation["de:regionalschluessel"="${d}"];\nout geom;`
+  return `https://overpass-turbo.eu/?Q=${encodeURIComponent(query)}&R`
+}
+
+/**
+ * Which obsolete notice applies: `key` when the key's own segment is obsolete (with that segment's
+ * last publication), `parent` when only a higher segment is.
+ */
+export type ObsoleteKeyNotice = { kind: 'key'; publication: ObsoleteMeta } | { kind: 'parent' }
+
+function keySegmentCell(level: RegionalArsLevel, cells: ArsSegmentNameCells): ResolvedField {
+  switch (level) {
+    case 'gemeinde':
+      return cells.gemeinde
+    case 'verband':
+      return cells.gemeindeverband
+    case 'kreis':
+      return cells.kreis
+    case 'land':
+      return cells.bundesland
+  }
+}
+
+/**
+ * Obsolete notice for the key the input names. `level` is the most specific ARS level the input
+ * names (`gemeinde` for an 8-digit AGS). Null when no segment carries an obsolete publication.
+ */
+export function obsoleteKeyNotice(
+  level: RegionalArsLevel,
+  cells: ArsSegmentNameCells,
+  publications: ObsoleteMeta[],
+): ObsoleteKeyNotice | null {
+  if (publications.length === 0) return null
+  const own = keySegmentCell(level, cells).obsolete
+  return own ? { kind: 'key', publication: own } : { kind: 'parent' }
 }

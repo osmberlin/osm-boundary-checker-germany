@@ -3,6 +3,7 @@ import { useId, useState } from 'react'
 import type { ArsSuccessorTable } from '../../../../scripts/shared/arsSuccessorTable.ts'
 import { lookupSuccessorForExplorerKey } from '../../../../scripts/shared/arsSuccessorTable.ts'
 import type { GermanKeyLookupBundle } from '../../../../scripts/shared/germanKeyLookupPayload.ts'
+import { classifyRegionalArsLevel } from '../../../../scripts/shared/regionalArs.ts'
 import { de } from '../../i18n/de'
 import {
   ags8FromArs12Digits,
@@ -11,10 +12,14 @@ import {
   formatNormalizationNotesForExplorerUi,
   normalizationsForSchluesselExplorerTable,
   normalizationsForSchluesselPresets,
+  obsoleteKeyNotice,
+  overpassTurboUrlForRegionalKey,
   parseArs12Segments,
+  pseudoVerbandInfoForArs,
   statistikportalGemeindeUrl,
   tryBerlinBezirkCanonical5,
   type GermanSchluesselExplorerPreset,
+  type PseudoVerbandVariant,
 } from '../../lib/germanKeyExplorer'
 import {
   agsSegmentCells,
@@ -54,7 +59,11 @@ type SegmentsBase =
     }
   | null
 
-function buildArsViewRows(ars12: string, cells: ArsSegmentNameCells): SegmentsTableRow[] {
+function buildArsViewRows(
+  ars12: string,
+  cells: ArsSegmentNameCells,
+  pseudoVerband: PseudoVerbandVariant | undefined,
+): SegmentsTableRow[] {
   const t = de.germanKeyExplorer
   const segments = parseArs12Segments(ars12)
   if (!segments) return []
@@ -98,6 +107,7 @@ function buildArsViewRows(ars12: string, cells: ArsSegmentNameCells): SegmentsTa
       endPos: 9,
       resolved: cells.gemeindeverband,
       fallbackLabel: segments.gemeindeverband === '0000' ? t.noGemeindeverband : null,
+      pseudoVerband,
     },
     {
       label: t.segmentGem,
@@ -116,6 +126,7 @@ function buildAgsViewRows(
   ags8: string,
   cells: ArsSegmentNameCells,
   resolvedArs: { ars12: string } | null,
+  pseudoVerband: PseudoVerbandVariant | undefined,
 ): SegmentsTableRow[] {
   const t = de.germanKeyExplorer
   return [
@@ -159,6 +170,7 @@ function buildAgsViewRows(
       resolved: cells.gemeindeverband,
       fallbackLabel: null,
       agsView: resolvedArs ? 'from-lookup' : 'not-in-ags',
+      pseudoVerband,
     },
     {
       label: t.segmentGem,
@@ -274,16 +286,41 @@ export function GermanKeyExplorerContent({
         ? lookupArsSegmentNameCells(bundle, segmentsBase.ars12)
         : agsSegmentCells(bundle, segmentsBase.ags8, segmentsBase.resolvedArs)
 
+  /** ARS the segments table shows: the input itself, or the reverse-resolved ARS for an 8-digit AGS. */
+  const segmentArs12 =
+    segmentsBase === null
+      ? null
+      : segmentsBase.kind === 'ars12'
+        ? segmentsBase.ars12
+        : (segmentsBase.resolvedArs?.ars12 ?? null)
+  const segmentPseudoVerband = segmentArs12
+    ? pseudoVerbandInfoForArs(segmentArs12, bundle.latest.gemeindenByArs)?.variant
+    : undefined
+
   const segmentRows: SegmentsTableRow[] =
     segmentsBase === null || segmentCells === null
       ? []
       : segmentsBase.kind === 'ars12'
-        ? buildArsViewRows(segmentsBase.ars12, segmentCells)
-        : buildAgsViewRows(segmentsBase.ags8, segmentCells, segmentsBase.resolvedArs)
+        ? buildArsViewRows(segmentsBase.ars12, segmentCells, segmentPseudoVerband)
+        : buildAgsViewRows(
+            segmentsBase.ags8,
+            segmentCells,
+            segmentsBase.resolvedArs,
+            segmentPseudoVerband,
+          )
 
   const segmentsTitle = segmentsBase?.kind === 'ags8' ? t.agsTableTitle : t.arsTableTitle
 
-  const ags8From12 = d.length >= 12 ? ags8FromArs12Digits(d) : d.length >= 8 ? d.slice(0, 8) : null
+  /**
+   * A Verband-level ARS has no AGS: LLRKK + `000` would read as the Kreis, and the first 8 digits of
+   * a 9-digit Verband key name an unrelated Gemeinde (e.g. `16072001` for `160720015`).
+   */
+  const ags8From12 =
+    d.length === 8
+      ? d
+      : padded12.length === 12 && classifyRegionalArsLevel(padded12) !== 'verband'
+        ? ags8FromArs12Digits(padded12)
+        : null
   const agsForPortal =
     ags8From12 !== null && ags8From12.length === 8 ? ags8From12 : d.length === 8 ? d : null
 
@@ -327,6 +364,25 @@ export function GermanKeyExplorerContent({
   ]
   const obsoletePublications = collectObsoleteFields(obsoleteMetaFields)
 
+  /**
+   * The input stops at Verband level (last 3 ARS digits `000`, not an 8-digit AGS): the key names a
+   * pseudo-Verband, so the pseudo notice and the key overview suffix apply.
+   */
+  const pseudoVerbandAtInput =
+    d.length !== 8 && padded12.length === 12 && classifyRegionalArsLevel(padded12) === 'verband'
+      ? pseudoVerbandInfoForArs(padded12, bundle.latest.gemeindenByArs)
+      : null
+
+  /** Most specific ARS level the input names. An 8-digit AGS names a Gemeinde. */
+  const obsoleteKeyLevel =
+    segmentsBase?.kind === 'ars12' ? classifyRegionalArsLevel(segmentsBase.ars12) : 'gemeinde'
+  const obsoleteNotice = segmentCells
+    ? obsoleteKeyNotice(obsoleteKeyLevel, segmentCells, obsoletePublications)
+    : null
+
+  /** 12-digit ARS for the OSM search link; null when an 8-digit AGS has no resolved ARS. */
+  const arsForOverpass = arsRowDisplay.value.length === 12 ? arsRowDisplay.value : null
+
   const keyOverviewRows = [
     {
       value: arsRowDisplay.value,
@@ -335,6 +391,7 @@ export function GermanKeyExplorerContent({
       bkgKey: 'ARS',
       length: '12',
       resolved: arsRowDisplay.resolved,
+      pseudoVerband: pseudoVerbandAtInput?.variant,
     },
     {
       value: ags8From12 ?? '—',
@@ -343,6 +400,7 @@ export function GermanKeyExplorerContent({
       bkgKey: 'AGS',
       length: '8',
       resolved: agsResolved,
+      pseudoVerband: undefined,
     },
   ]
 
@@ -415,9 +473,89 @@ export function GermanKeyExplorerContent({
         <p className="text-sm text-slate-500">{t.emptyState}</p>
       ) : (
         <>
-          {obsoletePublications.length > 0 ? (
+          {pseudoVerbandAtInput ? (
             <AlertNotice>
-              <p>{t.obsoleteNoticeLead}</p>
+              <p className="font-semibold">
+                {t.pseudoVerbandHeading[pseudoVerbandAtInput.variant]}
+              </p>
+              <p className="mt-2">
+                {t.pseudoVerbandIntro} {t.pseudoVerbandAreaLead[pseudoVerbandAtInput.variant]}{' '}
+                <span className="font-semibold">{pseudoVerbandAtInput.gemeindeName}</span> (
+                <span className="font-mono">{pseudoVerbandAtInput.gemeindeArs}</span>).
+              </p>
+              <p className="mt-2">
+                <span className="font-semibold">{t.inOsmLabel}</span>{' '}
+                {t.pseudoVerbandOsmBeforeTag[pseudoVerbandAtInput.variant]}{' '}
+                <span className="font-mono">wikidata</span>{' '}
+                {t.pseudoVerbandOsmAfterTag[pseudoVerbandAtInput.variant]}
+              </p>
+              <p className="mt-2">
+                <button
+                  type="button"
+                  className="font-medium text-amber-100 underline decoration-amber-600/60 underline-offset-2 hover:decoration-amber-300"
+                  onClick={() => onApplySearch({ key: pseudoVerbandAtInput.gemeindeArs })}
+                >
+                  {t.pseudoVerbandOpenLabel[pseudoVerbandAtInput.variant](
+                    pseudoVerbandAtInput.gemeindeArs,
+                  )}
+                </button>
+                {' · '}
+                <a
+                  href={overpassTurboUrlForRegionalKey(padded12)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="font-medium text-amber-100 underline decoration-amber-600/60 underline-offset-2 hover:decoration-amber-300"
+                >
+                  {t.overpassSearchLabel}
+                </a>
+              </p>
+            </AlertNotice>
+          ) : null}
+
+          {obsoleteNotice?.kind === 'key' ? (
+            <AlertNotice>
+              <p className="font-semibold">{t.obsoleteKeyHeading}</p>
+              <p className="mt-2">
+                {t.obsoleteKeyLeadBeforeLink(obsoleteNotice.publication.year)}
+                <a
+                  href={obsoleteNotice.publication.sourcePublicUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="font-medium text-amber-100 underline decoration-amber-600/60 underline-offset-2 hover:decoration-amber-300"
+                >
+                  {t.obsoleteNoticePublicationLink}
+                </a>
+                {t.obsoleteKeyLeadAfterLink}
+              </p>
+              <p className="mt-2">
+                <span className="font-semibold">{t.inOsmLabel}</span> {t.obsoleteKeyOsmLead}
+              </p>
+              <ul className="mt-2 list-inside list-disc space-y-1">
+                <li>
+                  <span className="font-semibold">{t.obsoleteKeyOsmYesLabel}</span>{' '}
+                  {t.obsoleteKeyOsmYesText}
+                </li>
+                <li>
+                  <span className="font-semibold">{t.obsoleteKeyOsmNoLabel}</span>{' '}
+                  {t.obsoleteKeyOsmNoText}
+                </li>
+              </ul>
+              {arsForOverpass ? (
+                <p className="mt-2">
+                  <a
+                    href={overpassTurboUrlForRegionalKey(arsForOverpass)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="font-medium text-amber-100 underline decoration-amber-600/60 underline-offset-2 hover:decoration-amber-300"
+                  >
+                    {t.overpassSearchLabel}
+                  </a>
+                </p>
+              ) : null}
+            </AlertNotice>
+          ) : obsoleteNotice?.kind === 'parent' ? (
+            <AlertNotice>
+              <p>{t.obsoleteParentLead}</p>
               <ul className="mt-2 list-inside list-disc space-y-1">
                 {obsoletePublications.map((pub) => (
                   <li key={`${pub.year}-${pub.sourcePublicUrl}`}>
@@ -529,6 +667,11 @@ export function GermanKeyExplorerContent({
                         ) : (
                           '—'
                         )}
+                        {row.pseudoVerband ? (
+                          <span className="ml-1 text-xs text-amber-400/90">
+                            ({t.pseudoVerbandSuffix[row.pseudoVerband]})
+                          </span>
+                        ) : null}
                       </td>
                     </tr>
                   ))}

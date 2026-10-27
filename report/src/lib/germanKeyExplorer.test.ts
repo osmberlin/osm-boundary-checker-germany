@@ -12,7 +12,10 @@ import {
   lookupArsSegmentNames,
   lookupGemeindeNameByAgs,
   lookupNameForNormalizedPresetKey,
+  obsoleteKeyNotice,
+  overpassTurboUrlForRegionalKey,
   parseArs12Segments,
+  pseudoVerbandInfoForArs,
   sourceKeyForPreset,
   statistikportalGemeindeUrl,
   tryBerlinBezirkCanonical5,
@@ -22,6 +25,8 @@ import {
   mergeGermanKeyLookupTables,
   resolveGemeindeNameByAgs,
   searchGermanKeyDisplayNames,
+  type ArsSegmentNameCells,
+  type ObsoleteMeta,
 } from './germanKeyLookupBundle'
 
 const minimalLookupBundle = germanKeyLookupBundleSchema.parse({
@@ -203,5 +208,77 @@ describe('germanKeyExplorer', () => {
     expect(germanKeyExplorerLinkValueOrNull('--------')).toBeNull()
     expect(germanKeyExplorerLinkValueOrNull(Number.NaN)).toBeNull()
     expect(germanKeyExplorerLinkValueOrNull(Number.POSITIVE_INFINITY)).toBeNull()
+  })
+})
+
+describe('pseudo-Verband, obsolete notice kind and Overpass link', () => {
+  const gemeindenByArs = {
+    '160720015015': 'Schalkau, Stadt',
+    '031519501501': 'Giebel, gemfr. Gebiet',
+  }
+  const obsoletePub: ObsoleteMeta = {
+    year: 2018,
+    sourcePublicUrl: 'https://example.invalid/2018',
+  }
+
+  test('pseudoVerbandInfoForArs maps a gemeinschaftsfreie Gemeinde Verband to its Gemeinde', () => {
+    expect(pseudoVerbandInfoForArs('160720015000', gemeindenByArs)).toEqual({
+      gemeindeArs: '160720015015',
+      gemeindeName: 'Schalkau, Stadt',
+      variant: 'gemeinschaftsfrei',
+    })
+  })
+
+  test('pseudoVerbandInfoForArs marks a 9 in the Verband part as gemeindefreies Gebiet', () => {
+    expect(pseudoVerbandInfoForArs('031519501000', gemeindenByArs)).toEqual({
+      gemeindeArs: '031519501501',
+      gemeindeName: 'Giebel, gemfr. Gebiet',
+      variant: 'gemeindefrei',
+    })
+  })
+
+  test('pseudoVerbandInfoForArs treats a Gemeinde key as pseudo too (its Verband part is pseudo)', () => {
+    expect(pseudoVerbandInfoForArs('160720015015', gemeindenByArs)?.gemeindeArs).toBe(
+      '160720015015',
+    )
+  })
+
+  test('pseudoVerbandInfoForArs returns null for a real Verband or unknown Gemeinde', () => {
+    expect(pseudoVerbandInfoForArs('160725050000', gemeindenByArs)).toBeNull()
+    expect(pseudoVerbandInfoForArs('097725707000', gemeindenByArs)).toBeNull()
+    expect(pseudoVerbandInfoForArs('16072001500', gemeindenByArs)).toBeNull()
+  })
+
+  test('overpassTurboUrlForRegionalKey matches 9- and 12-digit tagging for Verband-level keys', () => {
+    const url = new URL(overpassTurboUrlForRegionalKey('160720015000'))
+    expect(`${url.origin}${url.pathname}`).toBe('https://overpass-turbo.eu/')
+    expect(url.searchParams.get('Q')).toBe(
+      '[out:json][timeout:60];\nrelation["de:regionalschluessel"~"^160720015(000)?$"];\nout geom;',
+    )
+  })
+
+  test('overpassTurboUrlForRegionalKey searches the exact 12-digit key otherwise', () => {
+    const url = new URL(overpassTurboUrlForRegionalKey('160720015015'))
+    expect(url.searchParams.get('Q')).toBe(
+      '[out:json][timeout:60];\nrelation["de:regionalschluessel"="160720015015"];\nout geom;',
+    )
+  })
+
+  test('obsoleteKeyNotice is key with its own publication when the key segment is obsolete, parent otherwise', () => {
+    const kreisPub = { year: 2020, sourcePublicUrl: 'https://example.invalid/2020' }
+    const cells: ArsSegmentNameCells = {
+      bundesland: { value: 'Thüringen' },
+      regierungsbezirk: { value: null },
+      kreis: { value: 'Sonneberg', obsolete: kreisPub },
+      gemeindeverband: { value: 'Schalkau, Stadt', obsolete: obsoletePub },
+      gemeinde: { value: null },
+    }
+    const publications = [obsoletePub, kreisPub]
+    expect(obsoleteKeyNotice('verband', cells, publications)).toEqual({
+      kind: 'key',
+      publication: obsoletePub,
+    })
+    expect(obsoleteKeyNotice('gemeinde', cells, publications)).toEqual({ kind: 'parent' })
+    expect(obsoleteKeyNotice('verband', cells, [])).toBeNull()
   })
 })
