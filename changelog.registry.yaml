@@ -454,3 +454,11 @@ entries:
       - '075170b'
     descriptionMd: |
       Auf der Detailseite blendet „Nur diesen zeigen“ bei live geladenen OSM-Objekten alle anderen auf der Karte aus. „Alle ausblenden / Alle einblenden“ über der Umgebungssuche schaltet alle auf einmal.
+  - refs:
+      - '5fa1bf8'
+    descriptionMd: |
+      Verwaltungsgemeinschaften: Gemeinden, die keiner Verwaltungsgemeinschaft angehören, führt das BKG zusätzlich als eigene „gemeinschaftsfreie“ Verwaltungsgemeinschaft. Diese Einträge sind jetzt nicht mehr im Datensatz, weil dieselben Flächen schon in den Gemeinde-Datensätzen abgeglichen werden. Die Zahl der Einträge ohne OSM-Treffer sinkt dadurch von 3285 auf 6.
+  - refs:
+      - 'ded4929'
+    descriptionMd: |
+      Behoben: Im Regional-Hub führte der Geometrie-Link einer Verwaltungsgemeinschaft auf eine Seite, die es nicht gibt. Er zeigt jetzt auf die Verwaltungsgemeinschaft oder, bei Gemeinden ohne Verwaltungsgemeinschaft, auf die Gemeinde.
