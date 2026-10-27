@@ -438,6 +438,7 @@ entries:
     hide: true
   - refs:
       - '93cd68d'
+      - 'c12e633'
     descriptionMd: |
       Wikidata-IDs in Tags und Eigenschaften (OSM-Auszug, Kandidaten, live geladene OSM-Objekte, erwartete Tags) sind jetzt Links auf das Wikidata-Objekt.
   - refs:
