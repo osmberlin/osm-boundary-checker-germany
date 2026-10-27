@@ -467,3 +467,8 @@ entries:
       - '7194abf'
     descriptionMd: |
       Liegen auf der Übersichtskarte genau eine Fläche „nur amtlich“ und eine Fläche „nur OSM“ übereinander, öffnet ein Klick darauf jetzt direkt die Vergleichsseite der beiden statt des Auswahldialogs. Von dort geht es weiter zu den beiden Detailseiten. Den Auswahldialog gibt es nur noch, wenn mehr als zwei Flächen übereinanderliegen.
+  - refs:
+      - '6819c04'
+    descriptionMd: |
+      Der Schlüssel-Explorer erklärt jetzt Pseudo-Verbände: Für Gemeinden ohne Verwaltungsgemeinschaft vergeben Destatis und BKG einen Platzhalter-Verband (z.B. `160720015` für die Stadt Schalkau). Er beschreibt kein eigenes Gebiet und sollte in OSM an keiner Grenzrelation stehen. Der Hinweis nennt die zugehörige Gemeinde und verlinkt eine Overpass-Suche nach Relationen mit diesem Schlüssel. Veraltete Schlüssel bekommen einen ähnlichen Hinweis mit der letzten Destatis-Ausgabe und was in OSM zu tun ist.
+      Behoben: Ein 9-stelliger Verbandsschlüssel zeigte als Gemeindeschlüssel die ersten 8 Ziffern an, also eine fremde Gemeinde (z.B. Bachfeld bei `160720015`).
