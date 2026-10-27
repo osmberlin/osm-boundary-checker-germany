@@ -40,6 +40,7 @@ import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
 import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 import { sharedButtonClass } from './sharedButtonStyles'
+import { TagValue } from './TagValue'
 import { CompareMarker } from './ui/CompareMarker'
 import { MarkedValue } from './ui/MarkedValue'
 import { Tooltip } from './ui/Tooltip'
@@ -469,7 +470,7 @@ function DatasetPropertyCard({
                     {v}
                   </a>
                 ) : (
-                  formatPropertyValue(v)
+                  <TagValue tagKey={k} value={formatPropertyValue(v)} />
                 )}
               </MarkedValue>
             </dd>
@@ -538,7 +539,7 @@ function DatasetLiveComparedPropertyCard({
               <dt className="font-mono text-xs break-words text-slate-400">{k}</dt>
               <dd className="min-w-0 break-words">
                 <span className={`inline-block min-w-0 rounded-sm px-1 py-0.5 ${valueClass}`}>
-                  {liveValue}
+                  <TagValue tagKey={k} value={liveValue} />
                 </span>
               </dd>
               <dd className="flex min-w-0 items-start gap-1.5 break-words">
@@ -564,7 +565,9 @@ function DatasetLiveComparedPropertyCard({
                       />
                       <span className="text-xs text-slate-300">
                         <SourceTerm kind={sourceKind} term="dataHeading" />:{' '}
-                        <code className={codeClass}>{expectedValues.join(' | ')}</code>
+                        <code className={codeClass}>
+                          <TagValue tagKey={k} value={expectedValues.join(' | ')} />
+                        </code>
                         {mappedOfficial ? (
                           <>
                             {' '}
@@ -600,7 +603,9 @@ function DatasetLiveComparedPropertyCard({
                 />
                 <span className="text-xs text-slate-300">
                   {de.feature.datasetOsmLiveCompareMissingPrefix}{' '}
-                  <code className={codeClass}>{expectedOsm}</code>{' '}
+                  <code className={codeClass}>
+                    <TagValue tagKey={osmKey} value={expectedOsm} />
+                  </code>{' '}
                   {de.feature.datasetOsmLiveCompareMissingSuffix}{' '}
                   <a
                     href={entry.wikiUrl}

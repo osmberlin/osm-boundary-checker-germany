@@ -14,6 +14,7 @@ import type { LiveOsmObjectRef } from '../../lib/overpassOsmObject'
 import { useIsLiveRowHidden, useLiveOverlayActions } from '../../stores/liveOverlayVisibilityStore'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { sharedButtonClass } from '../sharedButtonStyles'
+import { TagValue } from '../TagValue'
 import { CompareMarker } from '../ui/CompareMarker'
 import { MarkedValue } from '../ui/MarkedValue'
 
@@ -87,7 +88,7 @@ function LiveOsmTagList({
                 />
               ))}
             >
-              {value}
+              <TagValue tagKey={key} value={value} />
             </MarkedValue>
           </dd>
         </div>

@@ -2,6 +2,7 @@ import { de } from '../../i18n/de'
 import { relationResolverHref } from '../../lib/relationResolverLink'
 import type { CandidateMatch, CandidateSignalId } from '../../types/report'
 import { sharedButtonClass } from '../sharedButtonStyles'
+import { TagPairText, TagValue } from '../TagValue'
 import { Abbr } from '../ui/Abbr'
 import { CopyTagsButton } from './CopyTagsButton'
 import {
@@ -101,7 +102,7 @@ function ProtectedAreaCandidateRow({
           <code className="self-start rounded bg-slate-950/80 px-1.5 py-0.5 font-mono text-xs break-all text-slate-200 ring-1 ring-slate-700/80">
             {suggested.map(([key, value]) => (
               <span key={key} className="block">
-                {key}={value}
+                {key}={<TagValue tagKey={key} value={value} />}
               </span>
             ))}
           </code>
@@ -173,7 +174,14 @@ function ProtectedAreaCandidateRow({
           <p className="text-xs break-words text-slate-500">
             {de.feature.protectedCandidatesColumnCurrent}{' '}
             <span className="font-mono">
-              {current.length > 0 ? current.join(', ') : de.feature.protectedCandidatesCurrentNone}
+              {current.length > 0
+                ? current.map((pair, index) => (
+                    <span key={pair}>
+                      {index > 0 ? ', ' : null}
+                      <TagPairText pair={pair} />
+                    </span>
+                  ))
+                : de.feature.protectedCandidatesCurrentNone}
             </span>
           </p>
           <LiveOsmObjectResult context={context} object={liveObject} />

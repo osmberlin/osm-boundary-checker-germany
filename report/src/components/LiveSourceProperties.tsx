@@ -36,6 +36,7 @@ import { mapLayerColors } from './mapLayerColors'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
 import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 import { sharedButtonClass } from './sharedButtonStyles'
+import { TagValue } from './TagValue'
 
 type OfficialSlot =
   | { status: 'idle' }
@@ -228,7 +229,7 @@ function PropertyCard({
                           matchesSnapshot && 'bg-fuchsia-800 outline outline-4 outline-fuchsia-800',
                         )}
                       >
-                        {displayValue}
+                        <TagValue tagKey={k} value={displayValue} />
                       </span>
                       {linkVal && germanKeyContext ? (
                         <GermanKeyVerifyLink keyValue={linkVal} className={verifyLinkClass} />

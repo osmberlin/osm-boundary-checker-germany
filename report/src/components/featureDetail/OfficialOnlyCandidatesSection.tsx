@@ -19,6 +19,7 @@ import type {
 } from '../../types/report'
 import { ProvenanceGridSectionHeader } from '../ProvenanceGridSectionHeader'
 import { sharedButtonTinyClass } from '../sharedButtonStyles'
+import { TagValue } from '../TagValue'
 import {
   LiveOsmObjectLoadButton,
   LiveOsmObjectResult,
@@ -167,7 +168,7 @@ function NoCandidatesNotice({
       <code className="self-start rounded bg-slate-950/80 px-1.5 py-0.5 font-mono text-xs break-all text-slate-200 ring-1 ring-slate-700/80">
         {tags.map(({ key, value }) => (
           <span key={`${key}=${value}`} className="block">
-            {key}={value}
+            {key}={<TagValue tagKey={key} value={value} />}
           </span>
         ))}
       </code>
