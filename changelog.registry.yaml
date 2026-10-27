@@ -463,3 +463,7 @@ entries:
       - 'ded4929'
     descriptionMd: |
       Behoben: Im Regional-Hub führte der Geometrie-Link einer Verwaltungsgemeinschaft auf eine Seite, die es nicht gibt. Er zeigt jetzt auf die Verwaltungsgemeinschaft oder, bei Gemeinden ohne Verwaltungsgemeinschaft, auf die Gemeinde.
+  - refs:
+      - '7194abf'
+    descriptionMd: |
+      Liegen auf der Übersichtskarte genau eine Fläche „nur amtlich“ und eine Fläche „nur OSM“ übereinander, öffnet ein Klick darauf jetzt direkt die Vergleichsseite der beiden statt des Auswahldialogs. Von dort geht es weiter zu den beiden Detailseiten. Den Auswahldialog gibt es nur noch, wenn mehr als zwei Flächen übereinanderliegen.
