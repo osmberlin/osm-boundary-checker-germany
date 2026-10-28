@@ -19,6 +19,8 @@
   "metricsCrs": "EPSG:25832",
   "compare": {
     "minZoom": 4,
+    // Tiles up to z13 (the map overzooms); z14 would more than double the archives for the Pages size limit.
+    "tileMaxZoom": 13,
     "officialMatchProperty": "ARS",
     "bboxFilter": "none",
     "osmScopeFilter": "none",
