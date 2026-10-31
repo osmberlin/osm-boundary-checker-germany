@@ -589,6 +589,8 @@ export const de = {
     liveOsmObjectReload: 'Neu laden',
     liveOsmObjectGone: 'Dieses Objekt gibt es in OSM nicht mehr (gelöscht?).',
     liveOsmObjectTagsHeading: 'Aktuell in OSM',
+    liveOsmAgeTooltip: (dataState: string, loadedAt: string) =>
+      `Datenstand OSM: ${dataState}, abgefragt: ${loadedAt}`,
     /** Matched row: button next to the OSM attribute list. */
     liveOsmMatchedLoad: 'Aktuellen OSM-Stand laden',
     liveOsmChangedSinceExtract: (changes: string) => `Seit dem Extrakt geändert: ${changes}`,

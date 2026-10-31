@@ -1,7 +1,10 @@
 import { EyeIcon, EyeSlashIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { formatDistanceToNow } from 'date-fns'
+import { de as deLocale } from 'date-fns/locale/de'
 import { useLiveOsmMapRowKeys } from '../../hooks/useLiveOsmMapRowKeys'
 import { useLiveOsmObjects, useRestoreLiveOsmObject } from '../../hooks/useLiveOsmObjects'
 import { de } from '../../i18n/de'
+import { formatIsoTimestampToAbsoluteDe } from '../../lib/formatSourceDownloadedAt'
 import {
   describeLiveOsmTagChange,
   liveOsmCheckResults,
@@ -14,10 +17,11 @@ import { liveOsmRowKey } from '../../lib/liveRowKey'
 import type { LiveOsmObjectRef } from '../../lib/postpass'
 import { useIsLiveRowHidden, useLiveOverlayActions } from '../../stores/liveOverlayVisibilityStore'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
-import { sharedButtonClass } from '../sharedButtonStyles'
+import { sharedButtonClass, sharedButtonTinyClass } from '../sharedButtonStyles'
 import { TagValue } from '../TagValue'
 import { CompareMarker } from '../ui/CompareMarker'
 import { MarkedValue } from '../ui/MarkedValue'
+import { Tooltip } from '../ui/Tooltip'
 
 /** What a live OSM object is compared against: the feature's row and the dataset's attribute checks. */
 export type LiveOsmContext = {
@@ -212,7 +216,10 @@ export function LiveOsmObjectLoadButton({
 }) {
   const { getState, load, refresh } = useLiveOsmObjects(context.featureKey)
   useRestoreLiveOsmObject(context.featureKey, object)
-  const status = getState(object)?.status
+  const state = getState(object)
+  const status = state?.status
+  // The tag listing of `LiveOsmObjectResult` carries "Neu laden" from here on.
+  if (state?.status === 'done' && state.tags !== null) return null
   return (
     <button
       type="button"
@@ -231,21 +238,41 @@ export function LiveOsmObjectLoadButton({
   )
 }
 
+/** Age of a live answer; the tooltip has the state of the OSM data and when we asked for it. */
+export function LiveOsmAge({ timestamp, loadedAt }: { timestamp: string; loadedAt: number }) {
+  return (
+    <Tooltip
+      as="span"
+      text={de.feature.liveOsmAgeTooltip(
+        formatIsoTimestampToAbsoluteDe(timestamp),
+        formatIsoTimestampToAbsoluteDe(new Date(loadedAt).toISOString()),
+      )}
+    >
+      <span className="underline decoration-slate-600 decoration-dotted underline-offset-2">
+        {formatDistanceToNow(new Date(timestamp), { locale: deLocale, addSuffix: true })}
+      </span>
+    </Tooltip>
+  )
+}
+
 /** Outcome of "Aktuellen Stand laden" for one object: error, deleted notice or the live tags. */
 export function LiveOsmObjectResult({
   context,
   object,
+  geometry = true,
   snapshotTags,
   notLoadedHint,
 }: {
   context: LiveOsmContext
   object: LiveOsmObjectRef
+  /** Whether "Neu laden" also fetches the geometry. */
+  geometry?: boolean
   /** Tags of the extract row: when given, a note says whether the live tags changed since. */
   snapshotTags?: Record<string, unknown> | null
   /** Shown until the first load starts. */
   notLoadedHint?: string
 }) {
-  const { getState } = useLiveOsmObjects(context.featureKey)
+  const { getState, refresh } = useLiveOsmObjects(context.featureKey)
   const state = getState(object)
   if (!state)
     return notLoadedHint ? <p className="text-xs text-slate-400">{notLoadedHint}</p> : null
@@ -269,9 +296,21 @@ export function LiveOsmObjectResult({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-medium tracking-wide text-slate-400 uppercase">
-        {de.feature.liveOsmObjectTagsHeading}
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-slate-400">
+          <span className="font-medium tracking-wide uppercase">
+            {de.feature.liveOsmObjectTagsHeading}
+          </span>{' '}
+          <LiveOsmAge timestamp={state.timestamp} loadedAt={state.loadedAt} />
+        </p>
+        <button
+          type="button"
+          onClick={() => void refresh(object, { geometry })}
+          className={sharedButtonTinyClass}
+        >
+          {de.feature.liveOsmObjectReload}
+        </button>
+      </div>
       {snapshotTags !== undefined ? (
         <LiveOsmChangeNote snapshotTags={snapshotTags} liveTags={state.tags} />
       ) : null}

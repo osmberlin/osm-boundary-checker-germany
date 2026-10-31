@@ -31,6 +31,7 @@ import {
 import type { AttributeHint, CandidateMatch, ComparisonForReport, ReportRow } from '../types/report'
 import { CopyTagsButton } from './featureDetail/CopyTagsButton'
 import {
+  LiveOsmAge,
   LiveOsmObjectLoadButton,
   LiveOsmObjectResult,
   type LiveOsmContext,
@@ -726,10 +727,13 @@ function OsmLiveRelationTagsRow({
   const ref = { type: 'relation' as const, id: osmRef.numericId }
   useLoadLiveOsmObjectOnOpen(featureKey, ref, { geometry: false })
   const state = live.getState(ref)
-  const captionText =
-    state?.status === 'done' && state.timestamp
-      ? `${de.feature.datasetOsmLiveQueryLabel}: ${formatIsoTimestampToAbsoluteDe(state.timestamp)}`
-      : null
+  const caption =
+    state?.status === 'done' ? (
+      <p className="text-xs leading-normal text-slate-400">
+        {de.feature.datasetOsmLiveQueryLabel}:{' '}
+        <LiveOsmAge timestamp={state.timestamp} loadedAt={state.loadedAt} />
+      </p>
+    ) : null
 
   return (
     <ProvenanceGridRow
@@ -742,9 +746,7 @@ function OsmLiveRelationTagsRow({
           {de.feature.datasetOsmLiveCardTitle}
         </span>
       }
-      titleAside={
-        captionText ? <p className="text-xs leading-normal text-slate-400">{captionText}</p> : null
-      }
+      titleAside={caption}
     >
       {(state === undefined || state.status === 'loading') && (
         <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveLoading}</p>
@@ -970,6 +972,7 @@ export function FeatureDatasetProperties({
                 <LiveOsmObjectResult
                   context={liveContext}
                   object={liveObject}
+                  geometry={osmTagsLiveOnly && !data.hasUnmatchedPmtiles}
                   {...(osmTagsLiveOnly
                     ? { notLoadedHint: de.compare.osmTagsNotLoadedHint }
                     : { snapshotTags: osm })}
