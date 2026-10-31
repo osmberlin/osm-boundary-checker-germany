@@ -17,6 +17,42 @@
       "impact": "matching",
       "comment": "In den DtP-Daten fehlt eine Wikidata-ID, und sie enthalten auch keinen anderen Bezug zu OSM: keine WDPA-ID und keinen OSM-Verweis. Deshalb findet der Abgleich ohne diese Korrektur kein OSM-Objekt. Der Wikidata-Eintrag Q1970418 ist der Naturpark Am Stettiner Haff. In OSM trägt die Relation relation/4538320 diese Wikidata-ID bereits, dort ist also nichts zu ändern. DtP sollte Q1970418 übernehmen.",
       "decidedAt": "2026-10-31"
+    },
+    {
+      "dtpUuid": "2e6b5fd3-bc58-4a2c-9aa6-91c60efcbc36",
+      "name": "Upfinger Ried",
+      "reportedWikidata": "Q27907878",
+      "wikidata": "Q1366856",
+      "impact": "matching",
+      "comment": "In den DtP-Daten trägt das Gebiet Upfinger Ried die Wikidata-ID Q27907878. Dieser Wikidata-Eintrag ist aber der Rappenberg: Die IDs der beiden Gebiete sind bei DtP vertauscht. Deshalb ordnet der Abgleich das Gebiet ohne diese Korrektur dem Rappenberg in OSM zu (way/335562064), die Flächen überlappen sich nicht. Richtig ist Q1366856. In OSM trägt way/319781944 (Upfinger Ried) diese ID bereits, dort ist also nichts zu ändern. DtP sollte die ID ersetzen.",
+      "decidedAt": "2026-10-31"
+    },
+    {
+      "dtpUuid": "1c439aef-e9f7-49a9-a109-ab58168c3e0e",
+      "name": "Rappenberg",
+      "reportedWikidata": "Q1366856",
+      "wikidata": "Q27907878",
+      "impact": "matching",
+      "comment": "In den DtP-Daten trägt das Gebiet Rappenberg die Wikidata-ID Q1366856. Dieser Wikidata-Eintrag ist aber das Upfinger Ried: Die IDs der beiden Gebiete sind bei DtP vertauscht. Deshalb ordnet der Abgleich das Gebiet ohne diese Korrektur dem Upfinger Ried in OSM zu (way/319781944), die Flächen überlappen sich nicht. Richtig ist Q27907878. In OSM trägt way/335562064 (Rappenberg) diese ID bereits, dort ist also nichts zu ändern. DtP sollte die ID ersetzen.",
+      "decidedAt": "2026-10-31"
+    },
+    {
+      "dtpUuid": "6bc975c0-4b39-4f22-b81b-e751fe6fe5fb",
+      "name": "Stenumer Holz",
+      "reportedOsmRef": "way/1169868545",
+      "osmRef": "way/12370992",
+      "impact": "matching",
+      "comment": "In den DtP-Daten verweist der OSM-Verweis auf way/1169868545. Dieses OSM-Objekt ist mit 0,12 km² nur ein kleiner Teil des Gebiets (IoU 0,12). In OSM deckt way/12370992 die DtP-Fläche von 0,96 km² weitgehend ab (IoU 0,84) und trägt die Wikidata-ID Q33403067, deren Eintrag ebenfalls Stenumer Holz heißt. DtP sollte auf way/12370992 verweisen.",
+      "decidedAt": "2026-10-31"
+    },
+    {
+      "dtpUuid": "0202c694-290a-497b-9301-f436b0b1f004",
+      "name": "Bäken der Endeler und Holzhauser Heide",
+      "reportedOsmRef": "way/855558900",
+      "osmRef": null,
+      "impact": "matching",
+      "comment": "In den DtP-Daten verweist der OSM-Verweis auf way/855558900. Dieses OSM-Objekt ist das Naturdenkmal Schlatt in der Kohlenkämpe mit rund 0,01 km² und überlappt die DtP-Fläche von rund 5 km² nicht. In den OSM-Daten vom 25.10.2026 haben wir kein passendes Objekt für das Naturschutzgebiet gefunden. Deshalb entfernt diese Korrektur den Verweis, das Gebiet erscheint als nur amtlich. DtP sollte den Verweis löschen.",
+      "decidedAt": "2026-10-31"
     }
   ]
 }
