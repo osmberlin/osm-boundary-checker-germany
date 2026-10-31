@@ -489,3 +489,11 @@ entries:
       - '9df2b62'
     descriptionMd: |
       Detail- und Vergleichsseiten der Schutzgebiete haben jetzt den Link „Korrektur für DtP vorschlagen“. Er öffnet ein vorausgefülltes GitHub-Issue, in dem nur noch die Begründung fehlt, wenn der Fehler eher bei Digitize the Planet als in OSM liegt. Gilt für ein Gebiet schon eine Korrektur, nennt die Detailseite den DtP-Wert, unseren Wert und die Begründung.
+  - refs:
+      - '0b1c152'
+    descriptionMd: |
+      DtP-Korrekturen sagen jetzt, ob sie für den Abgleich nötig sind oder nur informieren, etwa wenn DtP eine Wikidata-ID fehlt, das Gebiet aber trotzdem richtig zugeordnet ist. Die Detailseite zeigt das über der Begründung.
+  - refs:
+      - 'a90b895'
+    descriptionMd: |
+      Behoben: Die Vergleichsseite meldete Wikidata, WDPA-ID und Schutzkategorie als „fehlt in OSM“, obwohl die OSM-Relation sie hatte, weil ihr für diese Relationen nur Name und ID vorlagen. Attribute werden dort jetzt erst nach „Aktuellen OSM-Stand laden“ verglichen, dann mit den aktuellen OSM-Daten.
