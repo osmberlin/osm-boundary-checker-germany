@@ -1,7 +1,7 @@
 import type { LiveOsmObjectRef } from './postpass'
 
 export type ParsedReportRowOsmRef = {
-  /** Numeric OSM relation id (this product treats matched rows as relations only). */
+  /** Numeric OSM relation id. */
   numericId: number
 }
 
@@ -10,7 +10,7 @@ export type ParsedReportRowOsmRef = {
  * - numeric string → relation id
  * - `relation/<digits>` → relation id
  *
- * `way/…` is ignored (not used in shipped datasets).
+ * `way/…` is ignored here: protected areas match ways too, so links use `parseLiveOsmObjectRef`.
  */
 export function parseReportRowOsmRef(raw: string): ParsedReportRowOsmRef | null {
   const s = raw.trim()

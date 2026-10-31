@@ -10,7 +10,7 @@ import { SourceTerm, sourceText } from '../i18n/sourceVocabulary'
 import {
   absoluteUrlFromPath,
   buildJosmEditorLinks,
-  buildOpenStreetMapBrowseRelationUrl,
+  buildOpenStreetMapBrowseUrl,
   buildOpenStreetMapIdEditUrl,
 } from '../lib/osmEditorLinks'
 import { resolveRowLicense } from '../lib/resolveRowLicense'
@@ -91,7 +91,7 @@ export function UpdateMapInstructions({
     : undefined
   const officialAbsolute = officialHref != null ? absoluteUrlFromPath(officialHref) : null
   const idUrl = buildOpenStreetMapIdEditUrl(row, officialAbsolute)
-  const osmBrowseUrl = buildOpenStreetMapBrowseRelationUrl(row)
+  const osmBrowseUrl = buildOpenStreetMapBrowseUrl(row)
   const josm = buildJosmEditorLinks(row, officialAbsolute)
   const canDownloadOfficial = officialHref != null
   // Rows with an official geometry lack the file when the licence rules out OSM or they are rated ok.

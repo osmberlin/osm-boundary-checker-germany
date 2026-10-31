@@ -858,8 +858,10 @@ export function FeatureDatasetProperties({
     row.metrics && row.metrics.officialAreaM2 > 0
       ? { official: row.metrics.officialAreaM2, osm: row.metrics.osmAreaM2 }
       : null
-  const osmHistoryUrl =
-    osmRef == null ? null : `https://www.openstreetmap.org/relation/${osmRef.numericId}/history`
+  const osmObject = parseLiveOsmObjectRef(row.osmRelationId)
+  const osmHistoryUrl = osmObject
+    ? `https://www.openstreetmap.org/${osmObject.type}/${osmObject.id}/history`
+    : null
   const compactButtonClass =
     'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap shadow-sm ring-1 ring-inset transition-colors bg-slate-100 text-slate-900 ring-slate-300 hover:bg-slate-200'
 

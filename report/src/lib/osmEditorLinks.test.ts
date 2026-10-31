@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ReportRow } from '../types/report'
 import {
   buildJosmEditorLinks,
-  buildOpenStreetMapBrowseRelationUrl,
+  buildOpenStreetMapBrowseUrl,
   buildOpenStreetMapIdEditUrl,
   CHANGESET_HASHTAG_GRENZABGLEICH,
   ID_DISABLE_FEATURES,
@@ -42,10 +42,10 @@ describe('buildOpenStreetMapIdEditUrl', () => {
     expect(hash.get('hashtags')).toBe(CHANGESET_HASHTAG_GRENZABGLEICH)
   })
 
-  it('omits id when osmRelationId is way/… (not used in report rows)', () => {
+  it('selects a way for way/… rows', () => {
     const url = buildOpenStreetMapIdEditUrl(makeReportRow({ osmRelationId: 'way/12345' }), null)
     const hash = new URLSearchParams(new URL(url).hash.slice(1))
-    expect(hash.get('id')).toBeNull()
+    expect(hash.get('id')).toBe('w12345')
   })
 
   it('omits id and map when row has no relation or bbox', () => {
@@ -64,27 +64,27 @@ describe('buildOpenStreetMapIdEditUrl', () => {
   })
 })
 
-describe('buildOpenStreetMapBrowseRelationUrl', () => {
+describe('buildOpenStreetMapBrowseUrl', () => {
   it('returns relation URL when id is set', () => {
-    expect(buildOpenStreetMapBrowseRelationUrl(makeReportRow())).toBe(
+    expect(buildOpenStreetMapBrowseUrl(makeReportRow())).toBe(
       'https://www.openstreetmap.org/relation/55764',
     )
   })
 
   it('returns null when relation id is empty', () => {
-    expect(buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: '' }))).toBeNull()
+    expect(buildOpenStreetMapBrowseUrl(makeReportRow({ osmRelationId: '' }))).toBeNull()
   })
 
-  it('returns null when osmRelationId is way/…', () => {
-    expect(
-      buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: 'way/999' })),
-    ).toBeNull()
+  it('links to the way for way/… rows', () => {
+    expect(buildOpenStreetMapBrowseUrl(makeReportRow({ osmRelationId: 'way/999' }))).toBe(
+      'https://www.openstreetmap.org/way/999',
+    )
   })
 
   it('normalizes relation/ prefix', () => {
-    expect(
-      buildOpenStreetMapBrowseRelationUrl(makeReportRow({ osmRelationId: 'relation/42' })),
-    ).toBe('https://www.openstreetmap.org/relation/42')
+    expect(buildOpenStreetMapBrowseUrl(makeReportRow({ osmRelationId: 'relation/42' }))).toBe(
+      'https://www.openstreetmap.org/relation/42',
+    )
   })
 })
 
@@ -112,9 +112,10 @@ describe('buildJosmEditorLinks', () => {
     expect(parsed.searchParams.get('url')).toBe(geoUrl)
   })
 
-  it('returns null load_object when osmRelationId is way/…', () => {
+  it('loads the way without relation members for way/… rows', () => {
     const { loadObject } = buildJosmEditorLinks(makeReportRow({ osmRelationId: 'way/12345' }), null)
-    expect(loadObject).toBeNull()
+    expect(loadObject).toContain('objects=w12345')
+    expect(loadObject).not.toContain('relation_members')
   })
 
   it('returns null load_object when no relation id', () => {
