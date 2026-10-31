@@ -57,7 +57,7 @@ Tests: `bun test scripts/shared/dtpOverrides.test.ts scripts/dtp/lib/overrides.t
 
 ## Taking over issues (for agents)
 
-Requests come in as GitHub issues with the label `dtp-override`, created from the form `.github/ISSUE_TEMPLATE/dtp-override.yml`. To list them:
+Requests come in as GitHub issues with the label `dtp-override`, created from the form `.github/ISSUE_TEMPLATE/dtp-override.yml`. Datasets offer the form through `compare.correctionIssueForm` in their config. To list them:
 
 ```sh
 gh issue list --label dtp-override --json number,title,body,url
@@ -75,6 +75,8 @@ The form headings are German, so read the body by meaning, not by exact heading 
 - `reason`: the reasoning, with sources.
 
 Write `comment` so that it stands on its own. Name the side for every fact ("in den DtP-Daten", "in OSM"), say what is missing or wrong there, why this affects the match, and what DtP should change. Prefer a longer text to a short one that leaves open which data set a sentence refers to.
+
+End `comment` with the exact change for DtP: name the field and both values, for example "DtP sollte die Wikidata-ID von Q1 zu Q2 ändern." or "DtP sollte den OSM-Verweis von way/1 zu relation/2 ändern."
 
 Set `impact` yourself: compare the row in `datasets/<area>/output/comparison_table.json`. If the area is already matched to the right OSM object, for example by its WDPA id, a missing Wikidata id is `informational`. If the entry is what makes the match right, it is `matching`.
 
