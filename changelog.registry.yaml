@@ -509,3 +509,7 @@ entries:
       - 'e13b43c'
     descriptionMd: |
       „Aktuell in OSM“ zeigt jetzt, wie alt die Daten sind, der Tooltip nennt das genaue Datum. „Neu laden“ steht direkt daneben.
+  - refs:
+      - 'e5232b7'
+    descriptionMd: |
+      Behoben: Kennt Postpass ein OSM-Objekt nicht, behalten Regionalseiten die Werte aus dem Extrakt, und der Hinweis nennt das Objekt nicht mehr pauschal gelöscht.
