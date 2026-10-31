@@ -34,3 +34,6 @@ rust/**/target/
 .tsbuildinfo-cli
 **/.tsbuildinfo-app
 **/.tsbuildinfo-scripts
+
+# Local working notes, for example issue drafts that are not filed yet
+/drafts/
