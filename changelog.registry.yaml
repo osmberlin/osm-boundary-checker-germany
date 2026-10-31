@@ -497,3 +497,7 @@ entries:
       - 'a90b895'
     descriptionMd: |
       Behoben: Die Vergleichsseite meldete Wikidata, WDPA-ID und Schutzkategorie als „fehlt in OSM“, obwohl die OSM-Relation sie hatte, weil ihr für diese Relationen nur Name und ID vorlagen. Attribute werden dort jetzt erst nach „Aktuellen OSM-Stand laden“ verglichen, dann mit den aktuellen OSM-Daten.
+  - refs:
+      - 'e89a9d9'
+    descriptionMd: |
+      Die aktuellen OSM-Daten kommen jetzt von Postpass statt von Overpass. Detail-, Vergleichs- und Regionalseiten zeigen die aktuellen Tags direkt nach dem Öffnen, deshalb läuft der Attributvergleich auf der Vergleichsseite ohne Klick. Die Antworten bleiben 24 Stunden im Browser, ein Button fragt neu ab. Die Umgebungssuche und die PLZ-Punktdaten starten mit einem Klick, die Abfrage lässt sich nicht mehr bearbeiten.
