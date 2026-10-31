@@ -65,6 +65,20 @@ export function dtpCorrectionFormValues(props: Record<string, unknown> | null | 
   }
 }
 
+/** Text split around `way/123`, `relation/123` and `Q123`, so a line can link them. */
+export function splitDataRefs(text: string): { text: string; kind: 'text' | 'osm' | 'wikidata' }[] {
+  return text
+    .split(/((?:way|relation)\/\d+|\bQ\d+\b)/)
+    .map((part, index) => ({
+      text: part,
+      kind: (index % 2 === 0 ? 'text' : part.startsWith('Q') ? 'wikidata' : 'osm') as
+        | 'text'
+        | 'osm'
+        | 'wikidata',
+    }))
+    .filter((part) => part.text !== '')
+}
+
 /** `relation/123` or `way/123` of a row's OSM reference (bare relation ids included); '' otherwise. */
 export function osmObjectText(raw: string | null | undefined): string {
   const ref = parseLiveOsmObjectRef(raw ?? '')

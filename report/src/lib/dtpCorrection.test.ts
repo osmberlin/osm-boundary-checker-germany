@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { dtpCorrectionFormValues, dtpOverrideNotice, osmObjectText } from './dtpCorrection'
+import {
+  dtpCorrectionFormValues,
+  dtpOverrideNotice,
+  osmObjectText,
+  splitDataRefs,
+} from './dtpCorrection'
 
 describe('dtpOverrideNotice', () => {
   it('returns null without an override comment', () => {
@@ -128,5 +133,23 @@ describe('osmObjectText', () => {
     expect(osmObjectText('way/45')).toBe('way/45')
     expect(osmObjectText('node/4')).toBe('')
     expect(osmObjectText(undefined)).toBe('')
+  })
+})
+
+describe('splitDataRefs', () => {
+  it('splits around OSM and Wikidata references', () => {
+    expect(splitDataRefs('DtP nennt way/12 und Q34, wir nutzen relation/56.')).toEqual([
+      { text: 'DtP nennt ', kind: 'text' },
+      { text: 'way/12', kind: 'osm' },
+      { text: ' und ', kind: 'text' },
+      { text: 'Q34', kind: 'wikidata' },
+      { text: ', wir nutzen ', kind: 'text' },
+      { text: 'relation/56', kind: 'osm' },
+      { text: '.', kind: 'text' },
+    ])
+  })
+
+  it('keeps text without a reference', () => {
+    expect(splitDataRefs('Begründung Q-Tag')).toEqual([{ text: 'Begründung Q-Tag', kind: 'text' }])
   })
 })

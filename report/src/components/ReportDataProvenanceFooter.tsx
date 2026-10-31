@@ -5,6 +5,7 @@ import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyPr
 import { areasIndex } from '../data/areasIndex'
 import { de } from '../i18n/de'
 import { renderWithAbbr, SourceTerm, sourceText } from '../i18n/sourceVocabulary'
+import { cn } from '../lib/cn'
 import { DTP_OVERRIDE_OSM_REF_PROPERTY } from '../lib/dtpCorrection'
 import { EM_DASH } from '../lib/formatDe'
 import {
@@ -23,6 +24,7 @@ import {
   reportMatchRules,
 } from '../lib/reportMatchRules'
 import type { ComparisonFilterConfigSummary, ComparisonForReport, ReportRow } from '../types/report'
+import { DtpOverrideRow } from './featureDetail/DtpOverrideRow'
 import { GermanKeyVerifyLink } from './GermanKeyVerifyLink'
 import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
@@ -33,6 +35,8 @@ export type ReportDataProvenanceFooterProps = {
   row?: ReportRow
   className?: string
   hideFreshnessSection?: boolean
+  /** Key of the page's live OSM loads, for map buttons of the OSM objects in this section. */
+  liveFeatureKey?: string
 }
 
 function hostFromHref(url: string): string {
@@ -120,19 +124,33 @@ function FilterItem({
   code,
   description,
   renderDescription,
+  used = false,
 }: {
   code: string
   description: string
   renderDescription?: (text: string) => ReactNode
+  /** The rule that paired the row on a detail page. */
+  used?: boolean
 }) {
   return (
     <li>
-      <span className="block">
-        <code className="break-all text-slate-500">{code}</code>
-      </span>
-      <span className="block">
-        {renderDescription ? renderDescription(description) : description}
-      </span>
+      <div
+        className={used ? 'rounded-md bg-sky-500/10 px-3 py-2 ring-1 ring-sky-500/30' : undefined}
+      >
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <code className={cn('break-all', used ? 'text-slate-300' : 'text-slate-500')}>
+            {code}
+          </code>
+          {used ? (
+            <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-xs font-medium text-sky-200 ring-1 ring-sky-400/30 ring-inset">
+              {de.provenance.matchRuleUsed}
+            </span>
+          ) : null}
+        </span>
+        <span className="block">
+          {renderDescription ? renderDescription(description) : description}
+        </span>
+      </div>
     </li>
   )
 }
@@ -216,11 +234,13 @@ function resolvedOsmMatchProperties(
 function compareMappingItems(
   data: ComparisonForReport,
   filter: ComparisonFilterConfigSummary | undefined,
+  row: ReportRow | undefined,
 ) {
   const p = de.provenance
   const osmMatchProps = resolvedOsmMatchProperties(data, filter)
   const preset = data.idNormalizationPreset
   const rules = reportMatchRules(data, osmMatchProps)
+  const usedPosition = row ? matchedRuleOfRow(row, rules)?.position : undefined
 
   const presetLabels = {
     ...de.germanKeyExplorer.presets,
@@ -241,6 +261,7 @@ function compareMappingItems(
         code={code}
         description={description}
         renderDescription={renderWithAbbr}
+        used={position === usedPosition}
       />,
     )
   })
@@ -376,7 +397,7 @@ function compareProvenanceDlRows(
   filter: ComparisonFilterConfigSummary | undefined,
 ) {
   const p = de.provenance
-  const mappingItems = compareMappingItems(data, filter)
+  const mappingItems = compareMappingItems(data, filter, row)
   const rules = reportMatchRules(data, resolvedOsmMatchProperties(data, filter))
   const { osmItems, officialItems } = compareFilterItems(data, filter)
   // Only German Schlüssel (ARS/AGS) can be checked in the Schlüssel-Explorer, not PLZ or WDPA ids.
@@ -539,6 +560,7 @@ export function ReportDataProvenanceFooter({
   row,
   className = '',
   hideFreshnessSection = false,
+  liveFeatureKey,
 }: ReportDataProvenanceFooterProps) {
   const p = de.provenance
   const { official } = data.sourceMetadata
@@ -615,6 +637,7 @@ export function ReportDataProvenanceFooter({
 
       <div className="border-t border-slate-700">
         <dl className="divide-y divide-slate-700/80">
+          {row ? <DtpOverrideRow row={row} data={data} liveFeatureKey={liveFeatureKey} /> : null}
           {compareProvenanceDlRows(data, row, filter)}
 
           <ProvenanceGridRow

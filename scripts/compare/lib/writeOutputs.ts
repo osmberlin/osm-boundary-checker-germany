@@ -421,6 +421,7 @@ export function buildStaticPayloadBase(
   sourceKind: SourceKind = 'official',
   rowFlagDefinitions?: RowFlagDefinition[],
   attributeChecks?: readonly AttributeCheckConfig[],
+  correctionIssueForm?: ComparisonForReport['correctionIssueForm'],
 ): Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> {
   const out: Omit<ComparisonForReport, 'rows' | 'unmatchedOsm'> = {
     area: areaFolder,
@@ -445,6 +446,7 @@ export function buildStaticPayloadBase(
   if (ogcInspectSources.length > 0) out.ogcInspectSources = ogcInspectSources
   if (rowFlagDefinitions) out.rowFlags = rowFlagDefinitions
   if (attributeChecks && attributeChecks.length > 0) out.attributeChecks = [...attributeChecks]
+  if (correctionIssueForm) out.correctionIssueForm = correctionIssueForm
   if (compareRulesSummary != null) {
     out.idNormalizationPreset = compareRulesSummary.idNormalizationPreset
     out.matchRules = compareRulesSummary.matchRules
@@ -622,6 +624,8 @@ export type WriteOutputsOptions = {
   rowFlags?: readonly RowFlagConfig[]
   /** `compare.attributeChecks` from the dataset config, embedded once in the table payload. */
   attributeChecks?: readonly AttributeCheckConfig[]
+  /** `compare.correctionIssueForm` from the dataset config, embedded in the table payload. */
+  correctionIssueForm?: ComparisonForReport['correctionIssueForm']
   /** `compare.wikidata` with a dump: Wikidata items by id, embedded in the feature shards; `null` = none. */
   wikidataByQid?: Readonly<Record<string, WikidataProtectedAreaItem>> | null
 }
@@ -649,6 +653,7 @@ export function writeOutputs({
   sourceKind = 'official',
   rowFlags = [],
   attributeChecks = [],
+  correctionIssueForm,
   wikidataByQid = null,
 }: WriteOutputsOptions): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
@@ -863,6 +868,7 @@ export function writeOutputs({
     sourceKind,
     buildRowFlagDefinitions(rowFlags, flagIdsPerRow),
     attributeChecks,
+    correctionIssueForm,
   )
   const payloadRows = rows.map((row, index) =>
     comparisonRowToPayload(

@@ -252,6 +252,8 @@ export const comparisonForReportSchema = z.object({
   rowFlags: z.array(rowFlagDefinitionSchema).optional(),
   /** From optional `compare.attributeChecks` in area config; the report evaluates them per row. */
   attributeChecks: z.array(attributeCheckConfigSchema).optional(),
+  /** From optional `compare.correctionIssueForm`; the report offers a correction of the source data. */
+  correctionIssueForm: z.literal('dtp-override').optional(),
   rows: z.array(tableRowSchema),
   unmatchedOsm: z.array(unmatchedOsmRowSchema),
 })

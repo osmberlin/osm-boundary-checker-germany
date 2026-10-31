@@ -93,6 +93,11 @@ const compareSchema = z
      */
     attributeChecks: attributeChecksConfigSchema.optional(),
     /**
+     * GitHub issue form for corrections that belong in the source data, not in OSM. Adds a row to
+     * the edit section of the feature pages (`.github/ISSUE_TEMPLATE/<value>.yml`).
+     */
+    correctionIssueForm: z.literal('dtp-override').optional(),
+    /**
      * Embed the Wikidata item that the official `wikidata` property and the OSM `wikidata` tag name
      * into each feature shard (data from `bun run wikidata:protected-areas`; none without it).
      */

@@ -22,6 +22,8 @@
     "officialForEdit": "osm_compatible",
     // Embed the Wikidata item that DtP and OSM name into the feature shard (bun run wikidata:protected-areas).
     "wikidata": true,
+    // Feature pages offer a GitHub issue for corrections of the DtP data (data/dtp-overrides/README.md).
+    "correctionIssueForm": "dtp-override",
     // Rules run in order; each only handles rows the earlier ones left unmatched, and an OSM object is used once.
     "matchRules": [
       // 1. The WDPA id (DtP areas without one carry a dtp-<uuid> key and can only match by 2 to 5).

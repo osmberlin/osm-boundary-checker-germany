@@ -6,7 +6,9 @@ import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import { isOsmCompatible } from '../../../scripts/shared/sourceMetadata.ts'
 import { officialForEditGeojsonHref } from '../data/paths'
 import { de } from '../i18n/de'
-import { SourceTerm, sourceText } from '../i18n/sourceVocabulary'
+import { renderWithAbbr, SourceTerm, sourceText } from '../i18n/sourceVocabulary'
+import { dtpCorrectionFormValues, dtpOverrideNotice, osmObjectText } from '../lib/dtpCorrection'
+import { githubNewDtpOverrideIssueUrl } from '../lib/githubDtpOverrideIssueUrl'
 import {
   absoluteUrlFromPath,
   buildJosmEditorLinks,
@@ -14,6 +16,7 @@ import {
   buildOpenStreetMapIdEditUrl,
 } from '../lib/osmEditorLinks'
 import { resolveRowLicense } from '../lib/resolveRowLicense'
+import { useDiscussPageLinkParts } from '../lib/useDiscussPageLinkParts'
 import type { ComparisonForReport, ReportRow } from '../types/report'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
 import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
@@ -57,12 +60,12 @@ function RevealInfoNote({
         {!open ? (
           <button
             type="button"
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-600 text-slate-200 hover:border-slate-500 hover:text-slate-100"
+            className="inline-flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-600 text-slate-200 hover:border-slate-500 hover:text-slate-100"
             aria-label={ariaLabel}
             title={ariaLabel}
             onClick={() => setOpen(true)}
           >
-            <InfoGlyphOutlineIcon className="size-6 shrink-0" />
+            <InfoGlyphOutlineIcon className="size-5 shrink-0" />
           </button>
         ) : null}
       </div>
@@ -71,16 +74,52 @@ function RevealInfoNote({
   )
 }
 
+/** Tighter than the default `ProvenanceGridRow`: this section is a list of actions. */
+const ACTION_ROW = { asDl: true, className: 'py-3', rightColumnClassName: 'mt-2 md:mt-0' } as const
+
+/** Correction of the source data, for rows without a reviewed correction of ours. */
+function SourceCorrectionRow({
+  properties,
+  row,
+}: {
+  properties: Record<string, unknown>
+  row: ReportRow
+}) {
+  const { matchKey, pageUrlAbsolute } = useDiscussPageLinkParts()
+  const c = de.feature.dtpCorrection
+  const issueUrl = githubNewDtpOverrideIssueUrl({
+    title: matchKey,
+    page: pageUrlAbsolute,
+    ...dtpCorrectionFormValues(properties),
+    // Only the compare page pairs an official-only row with an OSM object.
+    osmRef: row.category === 'official_only' ? osmObjectText(row.osmRelationId) : '',
+  })
+  return (
+    <ProvenanceGridRow
+      {...ACTION_ROW}
+      title={<h3 className="text-sm/6 font-medium text-slate-200">{renderWithAbbr(c.heading)}</h3>}
+    >
+      <RevealInfoNote text={c.lead} ariaLabel={de.feature.updateMap.revealHintAriaLabel}>
+        <a href={issueUrl} target="_blank" rel="noreferrer" className={sharedButtonClass}>
+          {renderWithAbbr(c.linkLabel)}
+        </a>
+      </RevealInfoNote>
+    </ProvenanceGridRow>
+  )
+}
+
 export function UpdateMapInstructions({
   areaId,
   row,
   sourceMetadata,
   sourceKind,
+  correctionIssueForm,
 }: {
   areaId: string
   row: ReportRow
   sourceMetadata?: ComparisonForReport['sourceMetadata']
   sourceKind?: SourceKind | undefined
+  correctionIssueForm?: ComparisonForReport['correctionIssueForm']
 }) {
   const u = de.feature.updateMap
   const osmCompatibility = resolveRowLicense(row, sourceMetadata).osmCompatibility
@@ -108,6 +147,11 @@ export function UpdateMapInstructions({
     row.category !== 'unmatched_osm' &&
     (osmCompatibility === 'no' || osmCompatibility === 'unknown')
 
+  const correctionProperties =
+    correctionIssueForm && !dtpOverrideNotice(row.officialProperties)
+      ? row.officialProperties
+      : null
+
   return (
     <section className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 shadow-sm">
       <ProvenanceGridSectionHeader title={u.title} />
@@ -115,7 +159,7 @@ export function UpdateMapInstructions({
       <div className="border-t border-slate-700">
         {showLicenceNotice ? (
           <div
-            className="flex items-start gap-3 border-b border-slate-700/80 px-4 py-4 sm:px-6"
+            className="flex items-start gap-3 border-b border-slate-700/80 px-4 py-3 sm:px-6"
             role="status"
           >
             <ExclamationTriangleIcon
@@ -148,8 +192,7 @@ export function UpdateMapInstructions({
 
         <dl className="divide-y divide-slate-700/80">
           <ProvenanceGridRow
-            asDl
-            rightColumnClassName="mt-2"
+            {...ACTION_ROW}
             title={
               <h3 className="text-sm/6 font-medium text-slate-200">
                 <SourceTerm kind={sourceKind} term="geojsonHeading" />
@@ -187,8 +230,7 @@ export function UpdateMapInstructions({
           </ProvenanceGridRow>
 
           <ProvenanceGridRow
-            asDl
-            rightColumnClassName="mt-2"
+            {...ACTION_ROW}
             title={<h3 className="text-sm/6 font-medium text-slate-200">{u.osmBrowseHeading}</h3>}
           >
             <div className="flex flex-col gap-2">
@@ -218,8 +260,7 @@ export function UpdateMapInstructions({
           </ProvenanceGridRow>
 
           <ProvenanceGridRow
-            asDl
-            rightColumnClassName="mt-2"
+            {...ACTION_ROW}
             title={<h3 className="text-sm/6 font-medium text-slate-200">{u.idHeading}</h3>}
           >
             <div className="flex flex-col gap-2">
@@ -238,11 +279,10 @@ export function UpdateMapInstructions({
           </ProvenanceGridRow>
 
           <ProvenanceGridRow
-            asDl
-            rightColumnClassName="mt-2"
+            {...ACTION_ROW}
             title={<h3 className="text-sm/6 font-medium text-slate-200">{u.josmHeading}</h3>}
           >
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
               {josm.importGeojson != null ? (
                 <a
                   href={josm.importGeojson}
@@ -275,6 +315,10 @@ export function UpdateMapInstructions({
               )}
             </div>
           </ProvenanceGridRow>
+
+          {correctionProperties ? (
+            <SourceCorrectionRow properties={correctionProperties} row={row} />
+          ) : null}
         </dl>
       </div>
 

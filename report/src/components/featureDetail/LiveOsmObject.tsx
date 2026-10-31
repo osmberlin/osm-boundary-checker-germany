@@ -198,6 +198,31 @@ export function NearbyOsmObjectTags({
   )
 }
 
+/** Button next to an OSM reference: loads the object onto the map, then toggles it there. */
+export function LiveOsmMapButton({
+  context,
+  object,
+  label,
+}: {
+  context: LiveOsmContext
+  object: LiveOsmObjectRef
+  label: string
+}) {
+  const { getState } = useLiveOsmObjects(context.featureKey)
+  const state = getState(object)
+  if (state?.status === 'done' && state.tags !== null) {
+    return <LiveRowMapToggle featureKey={context.featureKey} type={object.type} id={object.id} />
+  }
+  return (
+    <LiveOsmObjectLoadButton
+      context={context}
+      object={object}
+      idleLabel={label}
+      className={sharedButtonTinyClass}
+    />
+  )
+}
+
 /** "Aktuellen Stand laden": fetches the object from Postpass; its geometry then shows on the map. */
 export function LiveOsmObjectLoadButton({
   context,

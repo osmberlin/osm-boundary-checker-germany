@@ -6,7 +6,6 @@ import { padRegional12 } from '../../../scripts/shared/regionalArs.ts'
 import { CompareDialogButton } from '../components/compare/CompareDialogButton'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
-import { DtpCorrectionSection } from '../components/featureDetail/DtpCorrectionSection'
 import { FeatureDetailHeader } from '../components/featureDetail/FeatureDetailHeader'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
 import { FeatureDetailStatsDiffMetricsSection } from '../components/featureDetail/FeatureDetailStatsDiffMetricsSection'
@@ -144,6 +143,7 @@ function FeatureDetailWithMapContext({
           row={row}
           sourceMetadata={data.sourceMetadata}
           sourceKind={data.sourceKind}
+          correctionIssueForm={data.correctionIssueForm}
         />
 
         {(() => {
@@ -171,7 +171,12 @@ function FeatureDetailWithMapContext({
           )
         })()}
 
-        <ReportDataProvenanceFooter data={data} row={row} hideFreshnessSection />
+        <ReportDataProvenanceFooter
+          data={data}
+          row={row}
+          hideFreshnessSection
+          liveFeatureKey={featureLookupKey}
+        />
 
         <FeatureDatasetProperties
           row={row}
@@ -181,8 +186,6 @@ function FeatureDetailWithMapContext({
           hints={data.attributeHints}
           wikidata={data.wikidata}
         />
-
-        <DtpCorrectionSection data={data} row={row} />
 
         {hasComparisonMap ? (
           <LiveSourceProperties

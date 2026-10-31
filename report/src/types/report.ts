@@ -210,6 +210,8 @@ export type ComparisonForReport = {
   rowFlags?: RowFlagDefinition[]
   /** From optional `compare.attributeChecks` in area config. */
   attributeChecks?: AttributeCheckConfig[]
+  /** From optional `compare.correctionIssueForm` in area config. */
+  correctionIssueForm?: 'dtp-override'
   rows: ReportRow[]
   unmatchedOsm: UnmatchedOsmReportRow[]
 }

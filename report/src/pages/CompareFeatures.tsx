@@ -30,13 +30,10 @@ import {
   findUnmatchedOsmRow,
   rowDisplayName,
 } from '../lib/compareRows'
-import { dtpCorrectionFormValues, osmObjectText } from '../lib/dtpCorrection'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
-import { githubNewDtpOverrideIssueUrl } from '../lib/githubDtpOverrideIssueUrl'
 import { absoluteUrlFromPath } from '../lib/osmEditorLinks'
 import { parseLiveOsmObjectRef } from '../lib/osmObjectRef'
 import { withSiteBasePath } from '../lib/siteBasePath'
-import { useDiscussPageLinkParts } from '../lib/useDiscussPageLinkParts'
 import type { ComparisonForReport, ReportRow } from '../types/report'
 
 const LINK_CLASS =
@@ -98,7 +95,6 @@ function CompareContent({
   // Live loads of this page are keyed by the pair, apart from the two detail pages.
   const liveKey = `compare:${officialRow.canonicalMatchKey}:${osmRow.canonicalMatchKey}`
   const liveOsm = useLiveOsmObjects(liveKey)
-  const { pageUrlAbsolute } = useDiscussPageLinkParts()
   const liveContext: LiveOsmContext = { featureKey: liveKey, row: pairRow, data: officialData }
   const liveObject = parseLiveOsmObjectRef(osmRow.osmRelationId)
   useLoadLiveOsmObjectOnOpen(liveKey, liveObject, { geometry: !officialData.hasUnmatchedPmtiles })
@@ -114,12 +110,6 @@ function CompareContent({
     absoluteUrlFromPath(withSiteBasePath(officialPath)),
     absoluteUrlFromPath(withSiteBasePath(osmPath)),
   )
-  const dtpIssueUrl = githubNewDtpOverrideIssueUrl({
-    title: compareDiscussPath(areaKey, officialRow.canonicalMatchKey, osmRow.canonicalMatchKey),
-    page: pageUrlAbsolute,
-    ...dtpCorrectionFormValues(officialRow.officialProperties),
-    osmRef: osmObjectText(osmRow.osmRelationId),
-  })
   const comparesRegionalKey =
     officialData.filterConfigSummary.osmMatchProperties?.includes('de:regionalschluessel') ?? false
 
@@ -137,16 +127,6 @@ function CompareContent({
                 body={discussBody}
                 className="inline shrink-0 align-baseline text-xs font-medium text-sky-400 underline decoration-sky-500/50 underline-offset-2 hover:text-sky-300"
               />
-              {officialData.sourceKind === 'dtp' ? (
-                <a
-                  href={dtpIssueUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline shrink-0 align-baseline text-xs font-medium text-sky-400 underline decoration-sky-500/50 underline-offset-2 hover:text-sky-300"
-                >
-                  {de.feature.dtpCorrection.linkLabel}
-                </a>
-              ) : null}
             </div>
           </div>
           <p className="max-w-4xl text-sm text-slate-400">{de.compare.lead}</p>
@@ -218,6 +198,7 @@ function CompareContent({
           row={pairRow}
           sourceMetadata={officialData.sourceMetadata}
           sourceKind={officialData.sourceKind}
+          correctionIssueForm={officialData.correctionIssueForm}
         />
       </div>
     </PageShell>

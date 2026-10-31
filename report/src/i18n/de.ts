@@ -207,6 +207,8 @@ export const de = {
     /** One sentence under Vergleichsregeln when a dataset has several match rules. */
     compareRulesOrderLead:
       'Die Regeln laufen der Reihe nach: Jede Regel betrachtet nur Zeilen, die noch keinem OSM-Objekt zugeordnet sind, und ein OSM-Objekt wird höchstens einmal verwendet.',
+    /** Pill on the rule that paired the row. */
+    matchRuleUsed: 'Verwendet',
     /** Descriptions of the match rules; `data` is the dative plural of the source wording ("amtlichen Daten", "DtP-Daten"). */
     matchRuleDescriptions: {
       key: (officialProperty: string, osmTag: string, data: string) =>
@@ -768,15 +770,22 @@ export const de = {
 
     /** Detail page of a DtP row: suggest a correction to DtP, and show a reviewed override. */
     dtpCorrection: {
-      sectionAria: 'Korrektur für Digitize the Planet vorschlagen',
       heading: 'Daten bei DtP korrigieren',
       lead: 'Manchmal liegt der Fehler nicht in OSM, sondern bei Digitize the Planet, etwa ein falscher OSM-Verweis oder eine fehlende Wikidata-ID. Dann schlage hier eine Korrektur vor.',
       linkLabel: 'Korrektur für DtP vorschlagen',
       /** Notice above the lead, when a reviewed correction of ours applies to this row. */
-      noticeTitle: 'Für dieses Gebiet gilt unsere eigene Korrektur, die wir DtP vorschlagen.',
-      noticeReportedOsm: (ref: string) => `DtP nennt als OSM-Objekt: ${ref}.`,
+      noticeHeading: 'Eigene Korrektur',
+      /** Loads an OSM object of the correction from Postpass onto the map. */
+      showOnMap: 'Auf der Karte zeigen',
+      /** `linkText` links to the README of the override file. */
+      noticeTitle: {
+        before: 'Für dieses Gebiet gilt unsere eigene Korrektur, ',
+        linkText: 'die wir DtP vorschlagen',
+        after: '.',
+      },
+      noticeReportedOsm: (ref: string) => `DtP nennt als OSM-Objekt: ${ref}`,
       noticeNoReportedOsm: 'DtP nennt kein OSM-Objekt.',
-      noticeUsedOsm: (ref: string) => `Wir nutzen: ${ref}.`,
+      noticeUsedOsm: (ref: string) => `Wir nutzen: ${ref}`,
       noticeNoUsedOsm: 'Wir nutzen kein OSM-Objekt.',
       noticeWikidataNone: (used: string) => `DtP nennt keine Wikidata-ID; wir nutzen ${used}.`,
       noticeWikidataReported: (reported: string, used: string) =>

@@ -352,6 +352,9 @@ async function main() {
       sourceKind: sourceKindFromDatasetConfig(configRaw),
       rowFlags: configRaw.rowFlags ?? [],
       attributeChecks: configRaw.compare.attributeChecks ?? [],
+      ...(configRaw.compare.correctionIssueForm
+        ? { correctionIssueForm: configRaw.compare.correctionIssueForm }
+        : {}),
       wikidataByQid,
     })
     checkpoint('after_write_outputs')
