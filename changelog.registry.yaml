@@ -480,3 +480,12 @@ entries:
       - '2e42b18'
     descriptionMd: |
       GeoJSON-Dateien zum Bearbeiten gibt es nur noch für Gebiete mit der Bewertung „Prüfung“ oder „Problem“ und für Gebiete ohne OSM-Treffer. Bei „OK“ sind „GeoJSON herunterladen“ und der JOSM-Import deaktiviert, der Bearbeiten-Bereich nennt den Grund. Das spart rund 80 % dieser Dateien und hält die Website unter dem Speicherlimit von GitHub Pages.
+  - refs:
+      - 'fd3ddba'
+    descriptionMd: |
+      Schutzgebiete: Flächen von Digitize the Planet und OSM-Objekte werden jetzt auch über dieselbe Wikidata-ID zugeordnet. In den vier DtP-Datensätzen finden so rund 1.520 weitere Gebiete ihr OSM-Gegenstück. Es gilt diese Reihenfolge: WDPA-ID, unsere geprüften Korrekturen, Wikidata, der OSM-Verweis von DtP und zuletzt das Tag `dtp_id`.
+      Falsche oder fehlende DtP-Angaben korrigieren wir mit einer geprüften Liste, jeweils mit Begründung. Sobald DtP den Wert ändert, gilt der Eintrag nicht mehr. So zeigt der Naturpark Stechlin-Ruppiner Land nicht mehr auf eine eingezäunte frühere Kaserne, sondern auf die Naturpark-Grenze in OSM.
+  - refs:
+      - '9df2b62'
+    descriptionMd: |
+      Detail- und Vergleichsseiten der Schutzgebiete haben jetzt den Link „Korrektur für DtP vorschlagen“. Er öffnet ein vorausgefülltes GitHub-Issue, in dem nur noch die Begründung fehlt, wenn der Fehler eher bei Digitize the Planet als in OSM liegt. Gilt für ein Gebiet schon eine Korrektur, nennt die Detailseite den DtP-Wert, unseren Wert und die Begründung.
