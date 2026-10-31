@@ -501,3 +501,11 @@ entries:
       - 'e89a9d9'
     descriptionMd: |
       Die aktuellen OSM-Daten kommen jetzt von Postpass statt von Overpass. Detail-, Vergleichs- und Regionalseiten zeigen die aktuellen Tags direkt nach dem Öffnen, deshalb läuft der Attributvergleich auf der Vergleichsseite ohne Klick. Die Antworten bleiben 24 Stunden im Browser, ein Button fragt neu ab. Die Umgebungssuche und die PLZ-Punktdaten starten mit einem Klick, die Abfrage lässt sich nicht mehr bearbeiten.
+  - refs:
+      - 'a88dc65'
+    descriptionMd: |
+      Neue Seite „Datenschutz“ im Footer: Sie erklärt kurz, welche Dienste die Seite automatisch oder erst per Klick anspricht und was im Browser gespeichert wird.
+  - refs:
+      - 'e13b43c'
+    descriptionMd: |
+      „Aktuell in OSM“ zeigt jetzt, wie alt die Daten sind, der Tooltip nennt das genaue Datum. „Neu laden“ steht direkt daneben.
