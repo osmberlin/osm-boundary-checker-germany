@@ -9,6 +9,7 @@ import {
   comparisonRowToPayload,
   comparisonRowToTableRow,
   DTP_TABLE_ROW_SLIMMING,
+  needsOfficialForEditFile,
 } from './writeOutputs.ts'
 
 const sourceMetadata: ComparisonSourceMetadata = {
@@ -115,6 +116,31 @@ describe('datasets with per-geometry licences', () => {
     const base = payloadBase(outputs)
     expect(base.sourceMetadata.official.osmCompatibility).toBe('yes_licence')
     expect(base.sourceMetadata.licenseBreakdown).toHaveLength(1)
+  })
+})
+
+describe('official-for-edit files', () => {
+  const geometry: CompareRow['officialGeometryWgs84'] = { type: 'Point', coordinates: [13, 52] }
+  const metricsWithLevel = (level: 'ok' | 'review' | 'issue'): CompareRow['metrics'] => ({
+    iou: 1,
+    areaDiffPct: 0,
+    symmetricDiffPct: 0,
+    hausdorffM: 0,
+    officialAreaM2: 1,
+    osmAreaM2: 1,
+    issueIndicator: { level, reasons: [] },
+  })
+
+  test('skip rows rated ok and rows without official geometry', () => {
+    const matched: CompareRow = { ...row, category: 'matched', officialGeometryWgs84: geometry }
+    expect(needsOfficialForEditFile({ ...matched, metrics: metricsWithLevel('ok') })).toBe(false)
+    expect(needsOfficialForEditFile({ ...matched, metrics: metricsWithLevel('review') })).toBe(true)
+    expect(needsOfficialForEditFile({ ...matched, metrics: metricsWithLevel('issue') })).toBe(true)
+    expect(needsOfficialForEditFile(row)).toBe(false)
+  })
+
+  test('official-only rows keep their file: they have no metrics', () => {
+    expect(needsOfficialForEditFile({ ...row, officialGeometryWgs84: geometry })).toBe(true)
   })
 })
 

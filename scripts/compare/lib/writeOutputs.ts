@@ -137,6 +137,11 @@ function flattenRowLicenseForProperties(
   return out
 }
 
+/** Rows rated ok rarely get edited, and their files were 80 % of all edit GeoJSON on the site. */
+export function needsOfficialForEditFile(row: CompareRow): boolean {
+  return row.officialGeometryWgs84 != null && row.metrics?.issueIndicator?.level !== 'ok'
+}
+
 function writeOfficialForEditGeojson(
   outDir: string,
   rows: CompareRow[],
@@ -674,7 +679,7 @@ export function writeOutputs({
 
   const withOfficialRows = rows.filter(
     (r) =>
-      r.officialGeometryWgs84 != null &&
+      needsOfficialForEditFile(r) &&
       (officialForEdit === 'all' ||
         isOsmCompatible(
           officialLicenses?.byKey.get(r.canonicalMatchKey)?.osmCompatibility ??

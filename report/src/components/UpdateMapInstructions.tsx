@@ -94,11 +94,13 @@ export function UpdateMapInstructions({
   const osmBrowseUrl = buildOpenStreetMapBrowseRelationUrl(row)
   const josm = buildJosmEditorLinks(row, officialAbsolute)
   const canDownloadOfficial = officialHref != null
-  // Rows with an official geometry lack the file only when the licence rules out OSM.
+  // Rows with an official geometry lack the file when the licence rules out OSM or they are rated ok.
   const downloadDisabledHint =
     row.category !== 'unmatched_osm' && !isOsmCompatible(osmCompatibility)
       ? u.downloadOfficialLicenceHint
-      : u.downloadOfficialDisabledHint
+      : row.metrics?.issueIndicator?.level === 'ok'
+        ? u.downloadOfficialOkHint
+        : u.downloadOfficialDisabledHint
   const idLinkTerm = officialAbsolute != null ? 'openIdWithGeojson' : 'openIdWithoutGeojson'
   const idLinkLabel = sourceText(sourceKind, idLinkTerm)
   // OSM-only rows have no official geometry, so its licence is irrelevant for them.

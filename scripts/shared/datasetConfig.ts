@@ -84,7 +84,7 @@ const compareSchema = z
     /**
      * Which rows get a prebuilt `official_for_edit/<key>.geojson` (the editor import file).
      * `all` (default) or `osm_compatible`: only rows whose licence allows OSM (`yes_licence` /
-     * `yes_waiver`), so the site does not carry files nobody may import.
+     * `yes_waiver`), so the site does not carry files nobody may import. Rows rated ok never get one.
      */
     officialForEdit: z.enum(['all', 'osm_compatible']).optional(),
     /**

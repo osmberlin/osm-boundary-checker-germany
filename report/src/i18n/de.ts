@@ -827,6 +827,9 @@ export const de = {
       /** No edit GeoJSON was built because the licence rules out OSM (`compare.officialForEdit`). */
       downloadOfficialLicenceHint:
         'Keine Datei: Die Lizenz dieses Gebiets erlaubt keine Übernahme in OSM.',
+      /** No edit GeoJSON for rows rated ok (`needsOfficialForEditFile`). */
+      downloadOfficialOkHint:
+        'Keine Datei: Die Abweichung ist gering (Bewertung „OK“). GeoJSON gibt es nur für Gebiete mit „Prüfung“ oder „Problem“ und für Gebiete ohne OSM-Treffer.',
       downloadOfficialHint:
         'Datei enthält u. a. Namen, Schlüssel und Felder wie `officialSource.provider`, `officialSource.dataset`, `officialSource.sourcePublicUrl` usw., sofern beim Vergleich hinterlegt.',
       downloadOfficialPipelineHint:
