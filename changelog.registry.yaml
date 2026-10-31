@@ -472,3 +472,11 @@ entries:
     descriptionMd: |
       Der Schlüssel-Explorer erklärt jetzt Pseudo-Verbände: Für Gemeinden ohne Verwaltungsgemeinschaft vergeben Destatis und BKG einen Platzhalter-Verband (z.B. `160720015` für die Stadt Schalkau). Er beschreibt kein eigenes Gebiet und sollte in OSM an keiner Grenzrelation stehen. Der Hinweis nennt die zugehörige Gemeinde und verlinkt eine Overpass-Suche nach Relationen mit diesem Schlüssel. Veraltete Schlüssel bekommen einen ähnlichen Hinweis mit der letzten Destatis-Ausgabe und was in OSM zu tun ist.
       Behoben: Ein 9-stelliger Verbandsschlüssel zeigte als Gemeindeschlüssel die ersten 8 Ziffern an, also eine fremde Gemeinde (z.B. Bachfeld bei `160720015`).
+  - refs:
+      - '469daeb'
+    descriptionMd: |
+      Die Kartenkacheln für Landkreise und Verwaltungsgemeinschaften reichen jetzt bis Zoomstufe 13 statt 14. Darüber vergrößert die Karte sie, die Grenzen bleiben scharf. So bleibt die Website unter dem Speicherlimit von GitHub Pages.
+  - refs:
+      - '2e42b18'
+    descriptionMd: |
+      GeoJSON-Dateien zum Bearbeiten gibt es nur noch für Gebiete mit der Bewertung „Prüfung“ oder „Problem“ und für Gebiete ohne OSM-Treffer. Bei „OK“ sind „GeoJSON herunterladen“ und der JOSM-Import deaktiviert, der Bearbeiten-Bereich nennt den Grund. Das spart rund 80 % dieser Dateien und hält die Website unter dem Speicherlimit von GitHub Pages.
