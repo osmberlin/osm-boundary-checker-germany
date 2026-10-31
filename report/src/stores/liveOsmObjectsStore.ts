@@ -100,7 +100,8 @@ const useLiveOsmObjectsStore = create<LiveOsmObjectsState>((set, get) => {
         const key = liveOsmObjectKey(ref.type, ref.id)
         if (stateOf(featureKey, key)) return
         const stored = await readLiveOsmCache<LiveOsmObjectResult>(cacheKey(ref))
-        if (stored && !stateOf(featureKey, key)) {
+        // A tags-only answer stays hidden: this object's load button still has to fetch the geometry.
+        if (stored && stored.value.features !== null && !stateOf(featureKey, key)) {
           setObject(featureKey, key, doneState(stored, true))
         }
       },

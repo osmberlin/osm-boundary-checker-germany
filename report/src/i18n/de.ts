@@ -587,7 +587,8 @@ export const de = {
     liveOsmObjectLoad: 'Aktuellen Stand laden',
     liveOsmObjectLoading: 'Wird geladen …',
     liveOsmObjectReload: 'Neu laden',
-    liveOsmObjectGone: 'Dieses Objekt gibt es in OSM nicht mehr (gelöscht?).',
+    liveOsmObjectGone:
+      'Postpass kennt dieses Objekt nicht: Es wurde gelöscht, oder es ist eine kaputte oder andere Art von Relation.',
     liveOsmObjectTagsHeading: 'Aktuell in OSM',
     liveOsmAgeTooltip: (dataState: string, loadedAt: string) =>
       `Datenstand OSM: ${dataState}, abgefragt: ${loadedAt}`,
@@ -637,7 +638,7 @@ export const de = {
     liveOsmInvalidJson: 'Unerwartete Postpass-Antwort.',
     liveOsmHttp: 'Postpass-Anfrage fehlgeschlagen:',
     liveOsmTimeout:
-      'Postpass hat nicht innerhalb von 20 Sekunden geantwortet. Bitte später erneut versuchen.',
+      'Postpass hat nicht innerhalb von 20 Sekunden geantwortet. Bitte weiter hineinzoomen oder später erneut versuchen.',
     liveOsmTooMuchData: 'Zu viele Daten in diesem Kartenausschnitt. Bitte weiter hineinzoomen.',
     liveOsmHitTitle: (osmType: string, id: number) => `${osmType} ${id}`,
     liveRowShowOnMap: 'Auf der Karte einblenden',

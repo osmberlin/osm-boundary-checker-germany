@@ -127,7 +127,7 @@ export function RegionalHubDetail() {
   const liveState = liveRef ? live.getState(liveRef) : undefined
   const osm = overlayLiveOsmTags(
     osmExtract,
-    liveState?.status === 'done' ? (liveState.tags ?? {}) : undefined,
+    liveState?.status === 'done' ? liveState.tags : undefined,
   )
   const compare = bundle ? hubCompareInputForArs({ bundle, ars12: ars, osm, wikidata: wd }) : null
   const issues = compare ? regionalHubIssues(compare) : []
