@@ -20,7 +20,7 @@ const t = de.feature.wikidata
 const LINK_CLASS =
   'text-sky-400 underline decoration-slate-600 underline-offset-2 hover:decoration-sky-400'
 const CODE_CLASS =
-  'inline-block rounded bg-slate-800/80 px-1 py-0.5 font-mono text-[11px] text-slate-100'
+  'inline-block rounded bg-slate-800/80 px-1 py-0.5 font-mono text-xs text-slate-100'
 
 const wikidataUrl = (qid: string) => `https://www.wikidata.org/wiki/${qid}`
 
@@ -100,7 +100,7 @@ function ItemFields({
             <dd className="min-w-0 break-words text-slate-100">
               {empty ? (
                 row.suggestion ? (
-                  <span className="flex items-start gap-1.5 text-xs text-slate-300">
+                  <span className="flex items-start gap-1.5 text-slate-300">
                     <QuestionMarkCircleIcon
                       aria-hidden="true"
                       className="mt-0.5 size-4 shrink-0 text-orange-400"
@@ -149,10 +149,10 @@ function WikidataItem({
 }) {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        {caption ? <span className="text-xs text-slate-400">{caption}</span> : null}
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs">
+        {caption ? <span className="text-slate-400">{caption}</span> : null}
         <ExternalLink href={wikidataUrl(item.qid)}>
-          <span className="font-mono text-xs">{item.qid}</span>
+          <span className="font-mono">{item.qid}</span>
         </ExternalLink>
         <ExternalLink href={wikidataUrl(item.qid)}>{t.edit}</ExternalLink>
       </div>

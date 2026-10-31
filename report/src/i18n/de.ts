@@ -658,7 +658,7 @@ export const de = {
 
     datasetPropertiesSectionAria: 'Attribute aus dem Vergleich (amtlich und OSM)',
     datasetPropertiesSectionTitle: 'Attribute zum Zeitpunkt des Vergleichs',
-    datasetOsmCardTitle: 'OSM-Daten (Auszug)',
+    datasetOsmCardTitle: 'OSM-Daten',
     /** `official.sourceUpdatedAt` / `sourcePublishedAt` (vendor reference date). */
     datasetExtractSourceDateLabel: 'Referenzdatum (Anbieter)',
     /** `official.sourceUpdatedAtVerifiedAt` (upstream metadata re-confirmed). */
