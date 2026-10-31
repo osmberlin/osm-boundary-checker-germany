@@ -6,6 +6,6 @@ Quelle: DtP-API v2 (Digitize the Planet e.V.), verwaltete und unverwaltete Gebie
 
 Extraktion: `bun run extract:official -- --area de-grossschutzgebiete` (liest den Cache `.cache/dtp/`, den `bun run --filter ./scripts download:dtp` füllt).
 
-Auswahl: `official.dtp.categoryIds` in `config.jsonc`. Abgleich mit OSM über `ref:WDPA` (`osmProfile` `protected_area_wdpa`).
+Auswahl: `official.dtp.categoryIds` in `config.jsonc`. Abgleich mit OSM über `ref:WDPA` (`osmProfile` `protected_area_wdpa`), danach über den OSM-Verweis und die Wikidata-ID bei DtP sowie geprüfte Korrekturen aus [`data/dtp-overrides/`](../../data/dtp-overrides/README.md).
 
 Plan und Aufteilung: [`docs/protected-areas-dtp-plan.md`](../../docs/protected-areas-dtp-plan.md).

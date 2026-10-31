@@ -42,6 +42,19 @@ export type DtpOfficialProperties = {
   dtp_managed: boolean
   /** Responsible organization names joined with "; ". Omitted when there are none (unmanaged areas). */
   dtp_organizations?: string
+  /**
+   * Reviewed correction (`data/dtp-overrides/overrides.json`): the OSM object DtP should name. Written
+   * only for an applied `osmRef` override; `dtp_osm_ref` is then null.
+   */
+  override_osm_ref?: string
+  /** DtP's own `osm` reference before an applied `osmRef` override (null when DtP named none). */
+  dtp_reported_osm_ref?: string | null
+  /** DtP's own Wikidata id before an applied `wikidata` override (null when DtP named none). */
+  dtp_reported_wikidata?: string | null
+  /** The Wikidata item an applied override set; marks that `wikidata` is not DtP's own value. */
+  override_wikidata?: string
+  /** German reason of the applied override, shown in the report. Only on rows with an applied override. */
+  override_comment?: string
   geometry_source_name: string | null
   geometry_source_url: string | null
   geometry_license_name: string | null

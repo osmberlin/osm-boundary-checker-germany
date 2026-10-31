@@ -11,6 +11,8 @@ dist/
 !/data/processing-log.jsonl
 # Reviewed licence compatibility tables (per-geometry licences, e.g. DtP).
 !/data/license-compatibility/
+# Reviewed DtP corrections (see data/dtp-overrides/README.md).
+!/data/dtp-overrides/
 !report/src/data/
 !report/src/data/**
 report/src/data/relationResolverIndex.gen.ts

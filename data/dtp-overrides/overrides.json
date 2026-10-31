@@ -1,0 +1,20 @@
+{
+  "overrides": [
+    {
+      "dtpUuid": "a6ca9152-f47f-4139-b02d-21eee9196c63",
+      "name": "Stechlin-Ruppiner Land",
+      "reportedOsmRef": "way/137159334",
+      "osmRef": "relation/18068246",
+      "comment": "DtP verweist auf way/137159334, eine umzäunte ehemalige GSSD-Kaserne von rund 0,03 km² im Naturpark. Die Naturpark-Grenze ist in OSM relation/18068246 und deckt die DtP-Fläche fast vollständig (IoU 0,999).",
+      "decidedAt": "2026-10-31"
+    },
+    {
+      "dtpUuid": "6bc7b12c-ef9d-450f-b789-c67ef619714b",
+      "name": "Am Stettiner Haff",
+      "reportedWikidata": null,
+      "wikidata": "Q1970418",
+      "comment": "DtP nennt keine Wikidata-ID. Q1970418 ist der Naturpark Am Stettiner Haff; OSM relation/4538320 trägt sie bereits.",
+      "decidedAt": "2026-10-31"
+    }
+  ]
+}

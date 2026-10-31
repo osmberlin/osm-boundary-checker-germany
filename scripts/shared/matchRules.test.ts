@@ -130,7 +130,14 @@ describe('rules derived for configs without compare.matchRules', () => {
     expect(rules('de-staat')).toEqual([{ kind: 'relation_id', relationIds: ['51477'] }])
   })
 
-  test('the four DtP datasets declare the same three rules', () => {
+  test('the four DtP datasets declare the same five rules, the reviewed override before DtP references', () => {
+    const dtpRules: MatchRule[] = [
+      { kind: 'key', officialProperty: 'match_key', osmTag: 'ref:WDPA' },
+      { kind: 'osm_reference', officialProperty: 'override_osm_ref' },
+      { kind: 'osm_tag', officialProperty: 'wikidata', osmTag: 'wikidata' },
+      { kind: 'osm_reference', officialProperty: 'dtp_osm_ref' },
+      { kind: 'osm_tag', officialProperty: 'dtp_uuid', osmTag: 'dtp_id' },
+    ]
     for (const name of [
       'de-schutzgebiete-nsg',
       'de-schutzgebiete-lsg',
@@ -138,7 +145,7 @@ describe('rules derived for configs without compare.matchRules', () => {
       'de-grossschutzgebiete',
     ]) {
       const config = loadAreaConfig(workspaceRoot, name)
-      expect(config.compare.matchRules).toEqual(threeRules)
+      expect(config.compare.matchRules).toEqual(dtpRules)
       expect(loadBoundaryConfig(config, name).official.matchProperty).toBe('match_key')
     }
   })

@@ -31,6 +31,12 @@ function row(key: string, properties: Record<string, unknown> | null = {}): Matc
 const KEY_RULE: MatchRule = { kind: 'key', officialProperty: 'match_key', osmTag: 'ref:WDPA' }
 const REF_RULE: MatchRule = { kind: 'osm_reference', officialProperty: 'dtp_osm_ref' }
 const TAG_RULE: MatchRule = { kind: 'osm_tag', officialProperty: 'dtp_uuid', osmTag: 'dtp_id' }
+const OVERRIDE_RULE: MatchRule = { kind: 'osm_reference', officialProperty: 'override_osm_ref' }
+const WIKIDATA_RULE: MatchRule = {
+  kind: 'osm_tag',
+  officialProperty: 'wikidata',
+  osmTag: 'wikidata',
+}
 
 /** `ref:WDPA` is the join key of the fixture features. */
 function run(
@@ -143,6 +149,24 @@ describe('runMatchRules', () => {
     ]
     const { matches } = run([KEY_RULE, TAG_RULE], rows, features)
     expect([...matches.keys()]).toEqual(['dtp-a'])
+  })
+
+  test('an osm_reference rule on a column that no row has (no override in the dataset) matches nothing', () => {
+    const features = [osm('relation/10')]
+    const rows = [row('dtp-a', { dtp_osm_ref: 'relation/10' })]
+    const { matches } = run([KEY_RULE, OVERRIDE_RULE, REF_RULE], rows, features)
+    expect(matches.get('dtp-a')?.by).toEqual({ rule: 2, kind: 'osm_reference' })
+  })
+
+  test('wikidata rule: the OSM object with the same item is matched and its key is consumed (DtP WDPA id differs, e.g. Südharz)', () => {
+    // DtP files the area under WDPA 777, OSM has the same Wikidata item under ref:WDPA 555.
+    const features = [osm('relation/55', { 'ref:WDPA': '555', wikidata: 'Q1234' })]
+    const rows = [row('777', { match_key: '777', wikidata: 'Q1234' })]
+    const { matches, consumedOsmKeys, usedObjects } = run([KEY_RULE, WIKIDATA_RULE], rows, features)
+    expect(matches.get('777')?.by).toEqual({ rule: 1, kind: 'osm_tag' })
+    expect(matches.get('777')?.osm.osmKey).toBe('555')
+    expect([...consumedOsmKeys]).toEqual(['555'])
+    expect(usedObjects.has('relation/55')).toBe(true)
   })
 
   test('without any object rule only the key join runs', () => {

@@ -24,11 +24,15 @@
     "wikidata": true,
     // Rules run in order; each only handles rows the earlier ones left unmatched, and an OSM object is used once.
     "matchRules": [
-      // 1. The WDPA id (DtP areas without one carry a dtp-<uuid> key and can only match by 2 or 3).
+      // 1. The WDPA id (DtP areas without one carry a dtp-<uuid> key and can only match by 2 to 5).
       { "kind": "key", "officialProperty": "match_key", "osmTag": "ref:WDPA" },
-      // 2. The OSM object DtP itself names (dtp_osm_ref, e.g. relation/123).
+      // 2. Reviewed correction from data/dtp-overrides/overrides.json: the OSM object DtP should name.
+      { "kind": "osm_reference", "officialProperty": "override_osm_ref" },
+      // 3. The same Wikidata item on both sides (DtP wikidata, OSM wikidata tag).
+      { "kind": "osm_tag", "officialProperty": "wikidata", "osmTag": "wikidata" },
+      // 4. The OSM object DtP itself names (dtp_osm_ref, e.g. relation/123).
       { "kind": "osm_reference", "officialProperty": "dtp_osm_ref" },
-      // 3. The OSM object tagged dtp_id=<DtP uuid>.
+      // 5. Last choice: the OSM object tagged dtp_id=<DtP uuid>.
       { "kind": "osm_tag", "officialProperty": "dtp_uuid", "osmTag": "dtp_id" },
     ],
     // Attribute markers on the feature detail page (official property against OSM keys).

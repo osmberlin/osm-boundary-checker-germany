@@ -28,6 +28,7 @@ import {
   datasetFolderPath,
 } from '../shared/datasetPaths.ts'
 import { DTP_OFFICIAL_SOURCE, type DtpSelection } from '../shared/dtpOfficial.ts'
+import { DTP_OVERRIDES_FILE, type DtpOverride, loadDtpOverrides } from '../shared/dtpOverrides.ts'
 import { runtimeRootFromWorkspace } from '../shared/runtimeRoot.ts'
 import {
   type AreaSourceMetadataFile,
@@ -54,6 +55,7 @@ import {
   selectInventoryItems,
   type DtpOfficialNames,
 } from './lib/officialRows.ts'
+import { applyDtpOverrides, type DtpOverrideHit } from './lib/overrides.ts'
 import {
   dtpDownloadMetadataSchema,
   dtpInventorySchema,
@@ -66,6 +68,9 @@ import {
 const categoriesFileSchema = z.array(z.object({ id: z.number().int(), name_de: z.string() }))
 
 const GEOJSONSEQ_TMP = 'official.tmp.geojsonl'
+
+/** Override hits of all datasets in one run (see `applyDtpOverrides`). */
+type OverrideTally = { applied: DtpOverrideHit[]; outdated: DtpOverrideHit[] }
 
 function parseArgs(argv: string[]) {
   let area: string | null = null
@@ -178,6 +183,8 @@ function extractArea(
     downloadMeta: DtpDownloadMetadata
     names: DtpOfficialNames
     areasPath: string
+    overrides: readonly DtpOverride[]
+    overrideTally: OverrideTally
   },
 ): 'written' | 'incomplete' {
   const { area, selection } = spec
@@ -227,8 +234,12 @@ function extractArea(
     )
   }
 
+  const overridden = applyDtpOverrides(features, ctx.overrides)
+  ctx.overrideTally.applied.push(...overridden.applied)
+  ctx.overrideTally.outdated.push(...overridden.outdated)
+
   try {
-    writeGeoJsonSeq(tmp, features)
+    writeGeoJsonSeq(tmp, overridden.features)
     runOgr2ogr(tmp, outFgb)
   } finally {
     rmSync(tmp, { force: true })
@@ -269,6 +280,26 @@ function extractArea(
   return 'written'
 }
 
+/** Once per run, after all datasets: how many areas got a reviewed correction, and which ones are outdated. */
+function logOverrideTally(tally: OverrideTally): void {
+  if (tally.applied.length > 0) {
+    const areas = new Set(tally.applied.map((hit) => hit.dtpUuid))
+    console.log(
+      `DtP overrides applied: ${tally.applied.length} row(s) in the selected datasets, ${areas.size} distinct area(s) (${DTP_OVERRIDES_FILE}).`,
+    )
+  }
+  const outdated = new Map<string, DtpOverrideHit>()
+  for (const hit of tally.outdated) if (!outdated.has(hit.dtpUuid)) outdated.set(hit.dtpUuid, hit)
+  if (outdated.size > 0) {
+    const lines = [...outdated.values()].map(
+      (hit) => `  ${hit.dtpUuid} ${hit.name} (${hit.parts.join(', ')})`,
+    )
+    console.warn(
+      `DtP overrides outdated: DtP changed the reviewed value, so that change was not applied. Remove or update these entries in ${DTP_OVERRIDES_FILE}:\n${lines.join('\n')}`,
+    )
+  }
+}
+
 function main() {
   const workspaceRoot = workspaceRootFromHere(import.meta.url)
   const runtimeRoot = runtimeRootFromWorkspace(workspaceRoot)
@@ -304,6 +335,8 @@ function main() {
     organizations: new Map(organizations.organizations.map((o) => [o.id, o.name])),
   }
   const areasPath = join(cacheDir, DTP_AREAS_FILE)
+  const overrides = loadDtpOverrides(workspaceRoot)
+  const overrideTally: OverrideTally = { applied: [], outdated: [] }
 
   console.log(
     `DtP download-metadata.json: ${downloadMeta.cachedCount} of ${downloadMeta.inventoryCount} areas with detail` +
@@ -313,9 +346,18 @@ function main() {
   )
   const incomplete: string[] = []
   for (const spec of selected) {
-    const result = extractArea(spec, { runtimeRoot, inventory, downloadMeta, names, areasPath })
+    const result = extractArea(spec, {
+      runtimeRoot,
+      inventory,
+      downloadMeta,
+      names,
+      areasPath,
+      overrides,
+      overrideTally,
+    })
     if (result === 'incomplete') incomplete.push(spec.area)
   }
+  logOverrideTally(overrideTally)
   // Exit 0 either way: a cache that is still filling is expected, compare then skips these datasets.
   console.log(
     incomplete.length > 0 ? `Done; left out (cache incomplete): ${incomplete.join(', ')}` : 'Done.',
