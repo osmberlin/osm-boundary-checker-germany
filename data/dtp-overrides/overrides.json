@@ -15,7 +15,7 @@
       "reportedWikidata": null,
       "wikidata": "Q1970418",
       "impact": "matching",
-      "comment": "DtP nennt keine Wikidata-ID. Q1970418 ist der Naturpark Am Stettiner Haff; OSM relation/4538320 trägt sie bereits.",
+      "comment": "In den DtP-Daten fehlt eine Wikidata-ID, und sie enthalten auch keinen anderen Bezug zu OSM: keine WDPA-ID und keinen OSM-Verweis. Deshalb findet der Abgleich ohne diese Korrektur kein OSM-Objekt. Der Wikidata-Eintrag Q1970418 ist der Naturpark Am Stettiner Haff. In OSM trägt die Relation relation/4538320 diese Wikidata-ID bereits, dort ist also nichts zu ändern. DtP sollte Q1970418 übernehmen.",
       "decidedAt": "2026-10-31"
     }
   ]

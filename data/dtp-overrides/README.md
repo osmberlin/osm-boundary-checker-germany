@@ -74,6 +74,8 @@ The form headings are German, so read the body by meaning, not by exact heading 
 - `wikidata`: the Wikidata item that is right (optional).
 - `reason`: the reasoning, with sources.
 
+Write `comment` so that it stands on its own. Name the side for every fact ("in den DtP-Daten", "in OSM"), say what is missing or wrong there, why this affects the match, and what DtP should change. Prefer a longer text to a short one that leaves open which data set a sentence refers to.
+
 Set `impact` yourself: compare the row in `datasets/<area>/output/comparison_table.json`. If the area is already matched to the right OSM object, for example by its WDPA id, a missing Wikidata id is `informational`. If the entry is what makes the match right, it is `matching`.
 
 To take over an issue:
