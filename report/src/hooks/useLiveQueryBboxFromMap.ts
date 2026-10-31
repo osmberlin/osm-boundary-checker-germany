@@ -18,7 +18,7 @@ function boundsToPaddedBbox(bounds: {
 }
 
 /**
- * Live WFS/Overpass bbox from the comparison map viewport only (padded like row bbox was).
+ * Live WFS/Postpass bbox from the comparison map viewport only (padded like row bbox was).
  * `viewportEpoch` is bumped from Map `onLoad` / `onMoveEnd` so LiveSourceProperties re-renders.
  */
 export function useLiveQueryBboxFromMap(viewportEpoch: number) {

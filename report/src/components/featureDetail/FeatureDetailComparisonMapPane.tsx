@@ -11,8 +11,8 @@ import { de } from '../../i18n/de'
 import { cn } from '../../lib/cn'
 import { handleComparisonMapFeatureClick } from '../../lib/comparisonMapFeatureClick'
 import type { MapViewQueryValue } from '../../lib/mapViewQueryParam'
-import type { AddrPostcodeGeoJsonFeatureCollection } from '../../lib/overpassAddrPostcode'
-import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
+import type { AddrPostcodeFeatureCollection } from '../../lib/postpass'
+import type { LiveOsmFeatureCollection } from '../../lib/postpass'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { COMPARISON_MAP_ID } from '../map/comparisonMapConstants'
 import { ComparisonMapZoomHintOverlay } from '../map/ComparisonMapZoomHintOverlay'
@@ -29,8 +29,8 @@ type Props = {
     mapView: MapViewQueryValue | null
     commitMapViewFromMap: (viewState: ViewState) => void
   }
-  overpassGeojson: OverpassGeoJsonFeatureCollection | null
-  addrPostcodeGeojson: AddrPostcodeGeoJsonFeatureCollection | null
+  liveOsmGeojson: LiveOsmFeatureCollection | null
+  addrPostcodeGeojson: AddrPostcodeFeatureCollection | null
   wfsGeojson: GeoJSON.FeatureCollection | null
   showOnlySelected: boolean
   detailMaxBounds: [[number, number], [number, number]] | undefined
@@ -45,7 +45,7 @@ export function FeatureDetailComparisonMapPane({
   interactionData,
   row,
   mapView,
-  overpassGeojson,
+  liveOsmGeojson,
   addrPostcodeGeojson,
   wfsGeojson,
   showOnlySelected,
@@ -128,7 +128,7 @@ export function FeatureDetailComparisonMapPane({
                   showDiff: hidePrimaryVectorLayers ? false : showDiff,
                 }}
                 overlays={{
-                  overpassGeojson,
+                  liveOsmGeojson,
                   addrPostcodeGeojson,
                   wfsGeojson,
                 }}

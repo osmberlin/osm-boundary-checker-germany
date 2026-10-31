@@ -4,26 +4,22 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline'
+import type { useAddrPostcodeSearch } from '../hooks/useLiveAreaSearches'
 import { de } from '../i18n/de'
+import { addrPostcodeColorIndex, isPlzDatasetForReport } from '../lib/addrPostcode'
 import { cn } from '../lib/cn'
-import { formatOverpassRunError } from '../lib/formatOverpassRunError'
 import {
   germanKeyExplorerLinkValueOrNull,
   isGermanKeyExplorerDisplayKey,
 } from '../lib/germanKeyExplorer'
+import { formatLiveOsmError } from '../lib/liveOsmError'
 import {
   type LiveRowKey,
   addrPostcodeLiveRowKey,
   wfsFeatureIdPart,
   wfsLiveRowKey,
 } from '../lib/liveRowKey'
-import {
-  addrPostcodeColorIndex,
-  buildOverpassAddrPostcodeQuery,
-  isPlzDatasetForReport,
-  type AddrPostcodeHit,
-} from '../lib/overpassAddrPostcode'
-import { DEFAULT_OVERPASS_INTERPRETER_URL } from '../lib/overpassServers'
+import { MAX_ADDR_POSTCODE_OBJECTS } from '../lib/postpass'
 import type { WfsFeature } from '../lib/wfsGetFeature'
 import {
   useHiddenLiveRowKeys,
@@ -111,10 +107,10 @@ function PropertyCard({
   variant: 'official' | 'addrPostcode'
   /** For `addrPostcode`: palette bucket from postcode label. */
   addrPostcodeColorIndex?: number
-  /** When set (Overpass hit), an icon link to osm.org is rendered on the right of the summary row. */
+  /** When set (Postpass hit), an icon link to osm.org is rendered on the right of the summary row. */
   osmBrowseLink?: { type: string; id: number }
   germanKeyContext?: { data: ComparisonForReport }
-  /** Serialized values from VG250/OSM snapshot cards; matching live rows use Overpass magenta. */
+  /** Serialized values from VG250/OSM snapshot cards; matching live rows use Postpass magenta. */
   datasetSnapshotValueMatches?: ReadonlySet<string>
   disclosure: PropertyCardDisclosure
 }) {
@@ -310,7 +306,7 @@ export function LiveSectionVisibilityToggle({
   )
 }
 
-/** Drop `name:de`, `name:en`, … from Overpass tag listings (noise for matching keys). */
+/** Drop `name:de`, `name:en`, … from Postpass tag listings (noise for matching keys). */
 function withoutNameStarTags(tags: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {}
   for (const [k, v] of Object.entries(tags)) {
@@ -320,15 +316,13 @@ function withoutNameStarTags(tags: Record<string, string>): Record<string, strin
   return out
 }
 
-type AddrPostcodeLiveController = {
-  hasCachedData: boolean
-  hits: AddrPostcodeHit[]
-  isRunPending: boolean
-  runError: unknown
-  runLiveOverpass: (query: string, interpreterUrl: string) => Promise<void>
-  resetLiveOverpass: () => void
-  resetRunMutation: () => void
-}
+/** Cards are rendered for the first hits only; the map shows all of them. */
+const MAX_ADDR_POSTCODE_CARDS = 200
+
+type AddrPostcodeLiveController = Pick<
+  ReturnType<typeof useAddrPostcodeSearch>,
+  'hasCachedData' | 'hits' | 'isRunPending' | 'runError' | 'truncated' | 'run'
+>
 
 type WfsLiveController = {
   load: (source: OgcWfsInspectSource, bbox: [number, number, number, number]) => Promise<void>
@@ -443,7 +437,7 @@ function OfficialLiveSourcesSection({
   )
 }
 
-function OverpassPlzAddrLiveRow({
+function PlzAddrLiveRow({
   featureKey,
   data,
   getLiveQueryBbox,
@@ -460,18 +454,9 @@ function OverpassPlzAddrLiveRow({
   const addrRowKeys = addrHits.map((hit) => addrPostcodeLiveRowKey(hit.type, hit.id))
   const viewportBbox = getLiveQueryBbox()
 
-  async function loadAddrPostcodeLive() {
+  function loadAddrPostcodeLive() {
     const bbox = getLiveQueryBbox()
-    if (!bbox) return
-    addrPostcode.resetRunMutation()
-    try {
-      await addrPostcode.runLiveOverpass(
-        buildOverpassAddrPostcodeQuery(bbox),
-        DEFAULT_OVERPASS_INTERPRETER_URL,
-      )
-    } catch {
-      /* Error surfaced via addrPostcode.runError */
-    }
+    if (bbox) addrPostcode.run(bbox)
   }
 
   return (
@@ -496,10 +481,12 @@ function OverpassPlzAddrLiveRow({
       <button
         type="button"
         disabled={!viewportBbox || addrPostcode.isRunPending}
-        onClick={() => void loadAddrPostcodeLive()}
+        onClick={() => loadAddrPostcodeLive()}
         className={sharedButtonClass}
       >
-        {de.feature.livePlzAddrPostcodeButton}
+        {addrPostcode.hasCachedData
+          ? de.feature.livePlzAddrAgain
+          : de.feature.livePlzAddrPostcodeButton}
       </button>
       {addrPostcode.runError != null && !addrPostcode.isRunPending && (
         <div
@@ -508,7 +495,7 @@ function OverpassPlzAddrLiveRow({
         >
           <p className="font-medium">{de.feature.livePlzAddrLastErrorTitle}</p>
           <p className="mt-1 break-words whitespace-pre-wrap">
-            {formatOverpassRunError(addrPostcode.runError)}
+            {formatLiveOsmError(addrPostcode.runError)}
           </p>
           <p className="mt-2 text-xs text-red-200/85">{de.feature.livePlzAddrLastErrorHint}</p>
         </div>
@@ -518,7 +505,7 @@ function OverpassPlzAddrLiveRow({
       )}
       {addrPostcode.hasCachedData && addrHits.length > 0 && (
         <div className="space-y-3">
-          {addrHits.map((hit) => {
+          {addrHits.slice(0, MAX_ADDR_POSTCODE_CARDS).map((hit) => {
             const postcode = hit.tags['addr:postcode'] ?? ''
             return (
               <LiveResultCard
@@ -535,19 +522,20 @@ function OverpassPlzAddrLiveRow({
               />
             )
           })}
+          {addrHits.length > MAX_ADDR_POSTCODE_CARDS && (
+            <p className="text-sm text-slate-400">
+              {de.feature.livePlzAddrCardsCapped(MAX_ADDR_POSTCODE_CARDS, addrHits.length)}
+            </p>
+          )}
         </div>
+      )}
+      {addrPostcode.hasCachedData && addrPostcode.truncated && (
+        <p className="text-sm text-amber-300/90">
+          {de.feature.livePlzAddrTruncated(MAX_ADDR_POSTCODE_OBJECTS)}
+        </p>
       )}
       {addrPostcode.hasCachedData && addrHits.length === 0 && !addrPostcode.isRunPending && (
         <p className="text-sm text-slate-400">{de.feature.livePlzAddrEmpty}</p>
-      )}
-      {addrPostcode.hasCachedData && (
-        <button
-          type="button"
-          onClick={() => addrPostcode.resetLiveOverpass()}
-          className="text-sm text-slate-300/90 underline decoration-slate-400/30 underline-offset-2 hover:text-slate-100"
-        >
-          {de.feature.livePlzAddrAgain}
-        </button>
       )}
     </ProvenanceGridRow>
   )
@@ -610,7 +598,7 @@ export function LiveSourceProperties({
           )}
 
           {showPlzAddr && (
-            <OverpassPlzAddrLiveRow
+            <PlzAddrLiveRow
               featureKey={featureKey}
               data={data}
               getLiveQueryBbox={getLiveQueryBbox}

@@ -6,6 +6,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { APP_QUERY_STALE_MS } from './lib/appQueryStaleMs'
+import { pruneLiveOsmCache } from './lib/liveOsmCache'
 import { createAppRouter } from './router'
 
 const queryClient = new QueryClient({
@@ -17,6 +18,7 @@ const queryClient = new QueryClient({
   },
 })
 const router = createAppRouter(queryClient)
+void pruneLiveOsmCache()
 
 const rootEl = document.getElementById('root')
 if (!rootEl) {

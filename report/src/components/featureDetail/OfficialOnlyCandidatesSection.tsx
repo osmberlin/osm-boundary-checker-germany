@@ -6,7 +6,7 @@ import {
   protectedAreaCategoryRule,
 } from '../../../../scripts/shared/protectedAreaCategories.ts'
 import { areasIndex } from '../../data/areasIndex'
-import { useOverpassMapRowKeys } from '../../hooks/useOverpassMapRowKeys'
+import { useLiveOsmMapRowKeys } from '../../hooks/useLiveOsmMapRowKeys'
 import { de } from '../../i18n/de'
 import { unmatchedOsmKeyForObject } from '../../lib/compareRows'
 import { isGermanKeyExplorerDisplayKey } from '../../lib/germanKeyExplorer'
@@ -307,9 +307,9 @@ function CandidateRow({
   )
 }
 
-/** "Alle ausblenden / einblenden" for the Overpass objects of the candidate lists on the map. */
+/** "Alle ausblenden / einblenden" for the Postpass objects of the candidate lists on the map. */
 function CandidatesMapVisibilityToggle({ featureKey }: { featureKey: string }) {
-  const rowKeys = useOverpassMapRowKeys(featureKey)
+  const rowKeys = useLiveOsmMapRowKeys(featureKey)
   if (rowKeys.length < 2) return null
   return <LiveSectionVisibilityToggle featureKey={featureKey} rowKeys={rowKeys} />
 }
@@ -327,7 +327,7 @@ export type CandidatesLiveSources = {
  * comparison table stays slim. A row without candidates (`candidates` undefined or empty) still
  * shows the expected OSM tags in the empty state.
  *
- * Each candidate can load its current OSM state (Overpass by id); the last entry searches the
+ * Each candidate can load its current OSM state (Postpass by id); the last entry searches the
  * map viewport for further OSM objects, which then appear as additional entries.
  */
 export function OfficialOnlyCandidatesSection({

@@ -1,6 +1,9 @@
-import { useMemo } from 'react'
-import type { OverpassGeoJsonFeatureCollection } from '../lib/overpassBbox'
-import { liveOsmObjectKey, type LiveOsmObjectRef } from '../lib/overpassOsmObject'
+import { useEffect, useMemo } from 'react'
+import {
+  liveOsmObjectKey,
+  type LiveOsmFeatureCollection,
+  type LiveOsmObjectRef,
+} from '../lib/postpass'
 import {
   useLiveOsmObjectActions,
   useLiveOsmObjectStates,
@@ -8,20 +11,21 @@ import {
 } from '../stores/liveOsmObjectsStore'
 
 /**
- * Current OSM state of single objects of a feature detail page, fetched by type and id from Overpass.
+ * Current OSM state of single objects of a page, fetched by type and id from Postpass.
  * Every component that calls this with the same `featureKey` sees the same loads.
  *
  * - `objects`: state per `type/id` (absent = not requested yet).
  * - `getState(ref)`: state of one object.
- * - `geojson`: geometry of all loaded objects, for the Overpass map overlay (hide rows via
- *   `useLiveOverlayActions` with `overpassLiveRowKey(type, id)`).
- * - `load(ref)`: fetch the object (no-op while it is loading); `reset(ref)` forgets it.
+ * - `geojson`: geometry of all loaded objects, for the live map overlay (hide rows via
+ *   `useLiveOverlayActions` with `liveOsmRowKey(type, id)`).
+ * - `load(ref, { geometry })`: stored answer or a request (no-op while it is loading).
+ * - `refresh(ref, { geometry })`: a new request, whatever is stored.
  */
 export function useLiveOsmObjects(featureKey: string) {
   const objects = useLiveOsmObjectStates(featureKey)
-  const { load, reset } = useLiveOsmObjectActions()
+  const { load } = useLiveOsmObjectActions()
 
-  const geojson = useMemo((): OverpassGeoJsonFeatureCollection | null => {
+  const geojson = useMemo((): LiveOsmFeatureCollection | null => {
     const features = Object.values(objects).flatMap((state) =>
       state.status === 'done' ? state.features : [],
     )
@@ -33,7 +37,42 @@ export function useLiveOsmObjects(featureKey: string) {
     getState: (ref: LiveOsmObjectRef): LiveOsmObjectState | undefined =>
       objects[liveOsmObjectKey(ref.type, ref.id)],
     geojson,
-    load: (ref: LiveOsmObjectRef, interpreterUrl?: string) => load(featureKey, ref, interpreterUrl),
-    reset: (ref: LiveOsmObjectRef) => reset(featureKey, ref),
+    load: (ref: LiveOsmObjectRef, { geometry }: { geometry: boolean }) =>
+      load(featureKey, ref, { geometry }),
+    refresh: (ref: LiveOsmObjectRef, { geometry }: { geometry: boolean }) =>
+      load(featureKey, ref, { geometry, refresh: true }),
   }
+}
+
+/** Loads the object of a page once it opens: from the store, or else from Postpass. */
+export function useLoadLiveOsmObjectOnOpen(
+  featureKey: string,
+  ref: LiveOsmObjectRef | null,
+  { geometry }: { geometry: boolean },
+) {
+  const { load } = useLiveOsmObjectActions()
+  const type = ref?.type
+  const id = ref?.id
+
+  useEffect(
+    function loadOnOpen() {
+      if (type !== undefined && id !== undefined) {
+        void load(featureKey, { type, id }, { geometry })
+      }
+    },
+    [featureKey, type, id, geometry, load],
+  )
+}
+
+/** Shows a stored answer of this object again, without a request: candidates load by click. */
+export function useRestoreLiveOsmObject(featureKey: string, ref: LiveOsmObjectRef) {
+  const { restore } = useLiveOsmObjectActions()
+  const { type, id } = ref
+
+  useEffect(
+    function restoreStoredAnswer() {
+      void restore(featureKey, { type, id })
+    },
+    [featureKey, type, id, restore],
+  )
 }

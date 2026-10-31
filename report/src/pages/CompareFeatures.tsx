@@ -21,7 +21,7 @@ import {
   featureQueryOptions,
   type FeatureDetailComparison,
 } from '../data/load'
-import { useLiveOsmObjects } from '../hooks/useLiveOsmObjects'
+import { useLiveOsmObjects, useLoadLiveOsmObjectOnOpen } from '../hooks/useLiveOsmObjects'
 import { useMapViewParam } from '../hooks/useMapViewParam'
 import { de } from '../i18n/de'
 import {
@@ -34,7 +34,7 @@ import { dtpCorrectionFormValues, osmObjectText } from '../lib/dtpCorrection'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
 import { githubNewDtpOverrideIssueUrl } from '../lib/githubDtpOverrideIssueUrl'
 import { absoluteUrlFromPath } from '../lib/osmEditorLinks'
-import { parseReportRowOsmRef } from '../lib/osmObjectRef'
+import { parseLiveOsmObjectRef } from '../lib/osmObjectRef'
 import { withSiteBasePath } from '../lib/siteBasePath'
 import { useDiscussPageLinkParts } from '../lib/useDiscussPageLinkParts'
 import type { ComparisonForReport, ReportRow } from '../types/report'
@@ -100,7 +100,8 @@ function CompareContent({
   const liveOsm = useLiveOsmObjects(liveKey)
   const { pageUrlAbsolute } = useDiscussPageLinkParts()
   const liveContext: LiveOsmContext = { featureKey: liveKey, row: pairRow, data: officialData }
-  const osmRef = parseReportRowOsmRef(osmRow.osmRelationId)
+  const liveObject = parseLiveOsmObjectRef(osmRow.osmRelationId)
+  useLoadLiveOsmObjectOnOpen(liveKey, liveObject, { geometry: !officialData.hasUnmatchedPmtiles })
   const officialPath = featureDiscussPath(areaKey, officialRow.canonicalMatchKey)
   const osmPath = featureDiscussPath(areaKey, osmRow.canonicalMatchKey)
   const compareUrl = absoluteUrlFromPath(
@@ -162,23 +163,22 @@ function CompareContent({
               data={officialData}
               surfaceClassName="border-orange-800/60 bg-orange-950/25"
             >
-              {osmRef ? (
+              {liveObject ? (
                 <>
                   <a
-                    href={`https://www.openstreetmap.org/relation/${osmRef.numericId}`}
+                    href={`https://www.openstreetmap.org/${liveObject.type}/${liveObject.id}`}
                     target="_blank"
                     rel="noreferrer"
                     className={LINK_CLASS}
                   >
-                    {`relation/${osmRef.numericId}`}
+                    {`${liveObject.type}/${liveObject.id}`}
                   </a>
-                  {officialData.hasUnmatchedPmtiles ? null : (
-                    <LiveOsmObjectLoadButton
-                      context={liveContext}
-                      object={{ type: 'relation', id: osmRef.numericId }}
-                      className={sharedButtonTinyClass}
-                    />
-                  )}
+                  <LiveOsmObjectLoadButton
+                    context={liveContext}
+                    object={liveObject}
+                    geometry={!officialData.hasUnmatchedPmtiles}
+                    className={sharedButtonTinyClass}
+                  />
                 </>
               ) : null}
             </SideCard>
@@ -194,7 +194,7 @@ function CompareContent({
           osmRow={osmRow}
           mapBbox={pairRow.mapBbox}
           mapView={mapView}
-          overpassGeojson={liveOsm.geojson}
+          liveOsmGeojson={liveOsm.geojson}
         />
 
         {comparesRegionalKey ? (

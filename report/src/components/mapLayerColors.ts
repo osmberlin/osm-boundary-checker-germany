@@ -23,7 +23,7 @@ export const mapLayerColors = {
     fillOpacity: 0.15,
     line: '#c2410c',
   },
-  overpass: {
+  liveOsm: {
     fill: '#701a75',
     fillOpacity: 0.2,
     line: '#86198f',

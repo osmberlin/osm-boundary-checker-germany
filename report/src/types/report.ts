@@ -176,7 +176,7 @@ export type ComparisonForReport = {
   metricsCrs: string
   /** Wording of the official side (`sourceVocabulary`); absent means `official`. */
   sourceKind?: SourceKind
-  /** Overpass `boundary=*` value for live OSM lookup; defaults to `administrative` when absent. */
+  /** Postpass `boundary=*` value for live OSM lookup; defaults to `administrative` when absent. */
   overpassBoundaryTag?: OverpassBoundaryTag
   /** Overlay + split diff archives (`comparison.pmtiles` / `comparison-diff.pmtiles`) when true. */
   hasPmtiles: boolean

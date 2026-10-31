@@ -15,7 +15,7 @@ import {
   germanKeyExplorerLinkValueOrNull,
   isSchluesselExplorerPreset,
 } from '../lib/germanKeyExplorer'
-import { overpassBoundaryValues } from '../lib/overpassBbox'
+import { boundaryTagValues } from '../lib/postpass'
 import { optionalSourceStatLines, sourceStatLines } from '../lib/reportFreshnessLines'
 import {
   matchedRuleOfRow,
@@ -268,7 +268,7 @@ function compareFilterItems(
   const summary = areasIndex.summaries.find((x) => x.area === data.area)
   const adminLevels = filter?.adminLevels?.length ? filter.adminLevels : summary?.osmAdminLevels
   const boundaryValue = data.overpassBoundaryTag ?? 'administrative'
-  const boundaryValues = overpassBoundaryValues(boundaryValue)
+  const boundaryValues = boundaryTagValues(boundaryValue)
   const osmItems: ReactElement[] = []
   const officialItems: ReactElement[] = []
 

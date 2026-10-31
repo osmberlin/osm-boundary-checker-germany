@@ -550,40 +550,37 @@ export const de = {
       `weicht von ${source} ab (${officialKey}: ${officialValue})`,
     liveOsmNearbySearch: 'Weitere OSM-Objekte in der Umgebung suchen',
     liveOsmNearbyBadge: 'aus der Umgebung',
-    liveOsmNearbyAgain: 'Umgebungssuche zurücksetzen',
+    liveOsmNearbyAgain: 'Umgebungssuche erneut starten',
+    liveOsmNearbyTruncated: (count: number) =>
+      `Es werden nur die ersten ${count} Objekte gezeigt. Bitte weiter hineinzoomen.`,
     liveOsmNearbyEmpty: 'Keine weiteren OSM-Objekte im Kartenausschnitt gefunden.',
     liveOsmNearbyTags: (count: number) => `Tags (${count})`,
-    liveOsmOverpassWarnTitle: 'Overpass-Anfrage',
-    liveOsmOverpassWarnLead:
-      'Es wird eine echte Anfrage an die öffentliche Overpass-API gesendet (Last für die Server, Timeout möglich).',
-    liveOsmOverpassWarnScope:
-      'Nur für kleine Kartenausschnitte nutzen — nicht für Bundesland- oder Deutschland-Ebene.',
-    liveOsmServerLabel: 'Overpass-Server',
-    liveOsmOverpassWarnQuery: 'Overpass-Abfrage (bearbeitbar):',
-    liveOsmQueryReset: 'Standardabfrage wiederherstellen',
-    liveOsmConfirmNo: 'Abbrechen',
-    liveOsmConfirmYes: 'Ja, Overpass-Anfrage senden',
-    liveOsmLastErrorTitle: 'Overpass-Fehler',
+    liveOsmLastErrorTitle: 'Postpass-Fehler',
     liveOsmLastErrorHint:
-      'Server oder Abfrage anpassen und erneut senden — oder „Abbrechen“ und den Dialog schließen.',
+      'Kartenausschnitt verkleinern und erneut laden, oder später noch einmal versuchen.',
     livePlzAddrPostcodeButton: 'PLZ-Punktdaten im Gebiet anzeigen',
     livePlzAddrPostcodeLead:
       'Zum Vergleich der Flächen-Daten kannst du dir die `addr:postcode`-Daten an Punkt- und Flächen-Daten im Kartenausschnitt anzeigen lassen.',
     livePlzAddrColorHint: 'Farbe nach letzter PLZ-Ziffer (0–9).',
-    livePlzAddrLoading: 'Overpass lädt `addr:postcode` …',
+    livePlzAddrLoading: 'Postpass lädt `addr:postcode` …',
     livePlzAddrEmpty: 'Keine Treffer mit `addr:postcode` in diesem Kartenausschnitt.',
-    livePlzAddrLastErrorTitle: 'Overpass-Fehler',
+    livePlzAddrLastErrorTitle: 'Postpass-Fehler',
     livePlzAddrLastErrorHint:
       'Kartenausschnitt verkleinern und erneut laden, oder später noch einmal versuchen.',
-    livePlzAddrAgain: 'PLZ-Punktdaten zurücksetzen',
+    livePlzAddrAgain: 'PLZ-Punktdaten erneut laden',
+    livePlzAddrTruncated: (count: number) =>
+      `Es werden nur die ersten ${count} Adressen gezeigt. Bitte weiter hineinzoomen.`,
+    livePlzAddrCardsCapped: (shown: number, total: number) =>
+      `Liste zeigt ${shown} von ${total} Adressen, die Karte alle.`,
     livePlzAddrHitTitle: (osmType: string, id: number, postcode: string) =>
       `${postcode} · ${osmType} ${id}`,
-    liveOsmLoading: 'Overpass antwortet …',
+    liveOsmLoading: 'Postpass antwortet …',
     liveOsmHitNoTags: '(keine Tags)',
-    liveOsmInvalidJson: 'Unerwartete Overpass-Antwort.',
-    liveOsmHttp: 'Overpass-Anfrage fehlgeschlagen:',
+    liveOsmInvalidJson: 'Unerwartete Postpass-Antwort.',
+    liveOsmHttp: 'Postpass-Anfrage fehlgeschlagen:',
     liveOsmTimeout:
-      'Overpass hat nicht innerhalb von 60 Sekunden geantwortet. Bitte später erneut versuchen.',
+      'Postpass hat nicht innerhalb von 20 Sekunden geantwortet. Bitte später erneut versuchen.',
+    liveOsmTooMuchData: 'Zu viele Daten in diesem Kartenausschnitt. Bitte weiter hineinzoomen.',
     liveOsmHitTitle: (osmType: string, id: number) => `${osmType} ${id}`,
     liveRowShowOnMap: 'Auf der Karte einblenden',
     liveRowHideOnMap: 'Auf der Karte ausblenden',
@@ -685,17 +682,13 @@ export const de = {
 
     /** Live-Abruf row inside "Attribute zum Zeitpunkt des Vergleichs". */
     datasetOsmLiveCardTitle: 'OSM-Daten (Live-Abruf)',
-    datasetOsmLiveButton: 'Von Overpass abfragen',
-    datasetOsmLiveButtonHint: (id: number) => `Aktuelle Attribute für Relation ${id}`,
-    /** Hint shown below the "Von Overpass abfragen" button to clarify the comparison purpose. */
+    /** Hint shown above the live OSM tags to clarify the comparison purpose. */
     datasetOsmLiveCompareHint: (officialDataHeading: string) =>
       `Nutze diese Funktion um weitere Werte aus den „${officialDataHeading}“ oben mit OSM Daten abzugleichen.`,
-    datasetOsmLiveOverpassQueryLabel: 'Overpass-Abfrage',
-    datasetOsmLiveLoading: 'Overpass antwortet …',
+    datasetOsmLiveQueryLabel: 'Datenstand OSM',
+    datasetOsmLiveLoading: 'Postpass antwortet …',
     datasetOsmLiveEmpty: 'OSM-Objekt nicht gefunden oder ohne Tags.',
     datasetOsmLiveAgain: 'Erneut abfragen',
-    datasetOsmLiveErrorPrefix: 'Overpass-Anfrage fehlgeschlagen:',
-    datasetOsmLiveInvalidJson: 'Unerwartete Overpass-Antwort.',
     /** 3rd column status: OSM live tag matches the value in the filtered official record. */
     datasetOsmLiveCompareMatchTooltip: 'Stimmt mit amtlichen Daten überein',
     /** 3rd column status: key from filtered official is missing in OSM live. Renders <code>{wert}</code> between prefix and suffix. */
@@ -965,10 +958,10 @@ export const de = {
     idEdit: 'In iD öffnen',
     josmEdit: 'In JOSM öffnen',
     wdEdit: 'Auf Wikidata öffnen',
-    liveTagsTitle: 'Aktuelle OSM-Tags (Overpass)',
+    liveTagsTitle: 'Aktuelle OSM-Tags (Postpass)',
     liveTagsButton: 'Tags erneut laden',
-    liveTagsLoading: 'Overpass lädt …',
-    liveTagsError: 'Overpass-Anfrage fehlgeschlagen.',
+    liveTagsLoading: 'Postpass lädt …',
+    liveTagsError: 'Postpass-Anfrage fehlgeschlagen.',
     successorCta: 'Nachfolger öffnen',
     sourcesTitle: 'Regionalhub — Quellen',
     sourcesLead:

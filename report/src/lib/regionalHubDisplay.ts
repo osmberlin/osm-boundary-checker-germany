@@ -16,7 +16,7 @@ export function displayNameForArs(bundle: GermanKeyLookupBundle, ars12: string) 
   return verband ?? kreis ?? land ?? null
 }
 
-/** Live Overpass tags win when the query succeeded; extract is the fallback. */
+/** Live Postpass tags win when the lookup succeeded; extract is the fallback. */
 export function overlayLiveOsmTags(
   extract: RegionalHubOsmTag | undefined,
   liveTags: Record<string, string> | null | undefined,

@@ -1,20 +1,19 @@
 import { create } from 'zustand'
-import { fetchOverpassQuery } from '../lib/overpassBbox'
+import { readLiveOsmCache, writeLiveOsmCache, type LiveOsmCacheEntry } from '../lib/liveOsmCache'
 import {
-  buildOverpassObjectQuery,
+  fetchLiveOsmObject,
   liveOsmObjectKey,
-  parseOverpassObjectData,
+  type LiveOsmFeature,
   type LiveOsmObjectKey,
   type LiveOsmObjectRef,
-  type ParsedOverpassObject,
-} from '../lib/overpassOsmObject'
-import { DEFAULT_OVERPASS_INTERPRETER_URL } from '../lib/overpassServers'
+  type LiveOsmObjectResult,
+} from '../lib/postpass'
 
 /**
- * Current OSM state of single objects (loaded by type and id from Overpass), per feature detail page.
+ * Current OSM state of single objects (by type and id from Postpass), per page.
  *
- * Keyed by `featureKey` (= ReportRow.canonicalMatchKey) so several components of one page share the
- * result of a load and navigating between pages does not leak objects. Memory only.
+ * Keyed by `featureKey` so the components of one page share a load and navigating between pages does
+ * not leak objects onto the next map. The answers themselves live in `liveOsmCache`, by object.
  */
 
 type FeatureKey = string
@@ -22,34 +21,47 @@ type FeatureKey = string
 export type LiveOsmObjectState =
   | { status: 'loading' }
   | { status: 'error'; error: unknown }
-  | ({ status: 'done' } & ParsedOverpassObject)
+  | {
+      status: 'done'
+      tags: Record<string, string> | null
+      /** Geometry for the map overlay; empty for a page that only needs the tags. */
+      features: LiveOsmFeature[]
+      /** State of the OSM data, from Postpass. */
+      timestamp: string
+      /** When this browser asked Postpass. */
+      loadedAt: number
+    }
+
+type LoadOptions = {
+  /** Also fetch the geometry. Tags alone are a few KB, a Bundesland is 200 KB. */
+  geometry: boolean
+  /** Ask Postpass even when a stored answer is fresh. */
+  refresh?: boolean
+}
 
 type LiveOsmObjectsState = {
   byFeature: Record<FeatureKey, Readonly<Record<LiveOsmObjectKey, LiveOsmObjectState>>>
   actions: {
-    load: (featureKey: FeatureKey, ref: LiveOsmObjectRef, interpreterUrl?: string) => Promise<void>
-    reset: (featureKey: FeatureKey, ref: LiveOsmObjectRef) => void
+    load: (featureKey: FeatureKey, ref: LiveOsmObjectRef, options: LoadOptions) => Promise<void>
+    restore: (featureKey: FeatureKey, ref: LiveOsmObjectRef) => Promise<void>
   }
 }
 
-/** Client-side limit for the by-id request, so the load button cannot wait forever. */
-const LIVE_OSM_OBJECT_TIMEOUT_MS = 60_000
+function cacheKey(ref: LiveOsmObjectRef) {
+  return `object:${liveOsmObjectKey(ref.type, ref.id)}`
+}
 
-async function fetchLiveOsmObject(
-  ref: LiveOsmObjectRef,
-  interpreterUrl: string,
-): Promise<ParsedOverpassObject> {
-  try {
-    const signal = AbortSignal.timeout(LIVE_OSM_OBJECT_TIMEOUT_MS)
-    const res = await fetchOverpassQuery(buildOverpassObjectQuery(ref), interpreterUrl, signal)
-    const text = await res.text()
-    if (!res.ok) throw new Error(`Overpass request failed: ${res.status}`)
-    return parseOverpassObjectData(text, ref)
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'TimeoutError') {
-      throw new Error('OVERPASS_TIMEOUT')
-    }
-    throw error
+function doneState(
+  entry: LiveOsmCacheEntry<LiveOsmObjectResult>,
+  geometry: boolean,
+): LiveOsmObjectState {
+  const { tags, features, timestamp } = entry.value
+  return {
+    status: 'done',
+    tags,
+    features: geometry ? (features ?? []) : [],
+    timestamp,
+    loadedAt: entry.loadedAt,
   }
 }
 
@@ -63,29 +75,35 @@ const useLiveOsmObjectsStore = create<LiveOsmObjectsState>((set, get) => {
     }))
   }
 
+  function stateOf(featureKey: FeatureKey, key: LiveOsmObjectKey) {
+    return get().byFeature[featureKey]?.[key]
+  }
+
   return {
     byFeature: {},
     actions: {
-      load: async (featureKey, ref, interpreterUrl = DEFAULT_OVERPASS_INTERPRETER_URL) => {
+      load: async (featureKey, ref, { geometry, refresh = false }) => {
         const key = liveOsmObjectKey(ref.type, ref.id)
-        if (get().byFeature[featureKey]?.[key]?.status === 'loading') return
+        if (stateOf(featureKey, key)?.status === 'loading') return
         setObject(featureKey, key, { status: 'loading' })
         try {
-          const parsed = await fetchLiveOsmObject(ref, interpreterUrl)
-          setObject(featureKey, key, { status: 'done', ...parsed })
+          const stored = refresh ? null : await readLiveOsmCache<LiveOsmObjectResult>(cacheKey(ref))
+          const usable = stored && (!geometry || stored.value.features !== null) ? stored : null
+          const entry =
+            usable ?? writeLiveOsmCache(cacheKey(ref), await fetchLiveOsmObject(ref, { geometry }))
+          setObject(featureKey, key, doneState(entry, geometry))
         } catch (error) {
           setObject(featureKey, key, { status: 'error', error })
         }
       },
-      reset: (featureKey, ref) =>
-        set((state) => {
-          const current = state.byFeature[featureKey]
-          const key = liveOsmObjectKey(ref.type, ref.id)
-          if (!current || !(key in current)) return state
-          const rest = { ...current }
-          delete rest[key]
-          return { byFeature: { ...state.byFeature, [featureKey]: rest } }
-        }),
+      restore: async (featureKey, ref) => {
+        const key = liveOsmObjectKey(ref.type, ref.id)
+        if (stateOf(featureKey, key)) return
+        const stored = await readLiveOsmCache<LiveOsmObjectResult>(cacheKey(ref))
+        if (stored && !stateOf(featureKey, key)) {
+          setObject(featureKey, key, doneState(stored, true))
+        }
+      },
     },
   }
 })

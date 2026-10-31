@@ -24,22 +24,6 @@ import {
   regionalHubWikidataFileSchema,
 } from '../../../scripts/shared/regionalHubPayload.ts'
 import type { WikidataShard } from '../../../scripts/shared/wikidataProtectedAreasPayload.ts'
-import {
-  type AddrPostcodeGeoJsonFeatureCollection,
-  type AddrPostcodeHit,
-  parseOverpassAddrPostcodeData,
-} from '../lib/overpassAddrPostcode'
-import {
-  fetchOverpassQuery,
-  fetchOverpassQuery as fetchOverpassQueryBoundary,
-  type OverpassBoundaryHit,
-  type OverpassGeoJsonFeatureCollection,
-  parseOverpassBoundaryData,
-} from '../lib/overpassBbox'
-import {
-  buildOverpassRelationTagsQuery,
-  parseOverpassRelationTagsResponse,
-} from '../lib/overpassRelationTags'
 import { textPreview } from '../lib/textPreview'
 import {
   extractWfsErrorMessage,
@@ -346,113 +330,6 @@ export function discussionsRegistrySyncMetaQueryOptions() {
   return queryOptions({
     queryKey: ['discussions-registry-sync-meta'],
     queryFn: loadDiscussionsRegistrySyncMeta,
-  })
-}
-
-export type OverpassLiveQueryInput = {
-  featureKey: string
-  query: string
-  interpreterUrl: string
-}
-
-export type OverpassLiveQueryData = {
-  featureKey: string
-  hits: OverpassBoundaryHit[]
-  geojson: OverpassGeoJsonFeatureCollection
-}
-
-function sortOverpassHits(a: OverpassBoundaryHit, b: OverpassBoundaryHit): number {
-  const o = (t: string) => (t === 'relation' ? 0 : t === 'way' ? 1 : 2)
-  const c = o(a.type) - o(b.type)
-  if (c !== 0) return c
-  return a.id - b.id
-}
-
-export function overpassLiveQueryOptions(input: OverpassLiveQueryInput) {
-  return queryOptions({
-    queryKey: ['overpass-live', input.featureKey],
-    queryFn: async (): Promise<OverpassLiveQueryData> => {
-      const res = await fetchOverpassQueryBoundary(input.query, input.interpreterUrl)
-      const text = await res.text()
-      if (!res.ok) {
-        throw new Error(`Overpass request failed: ${res.status}`)
-      }
-      const parsed = parseOverpassBoundaryData(text)
-      return {
-        featureKey: input.featureKey,
-        hits: [...parsed.hits].sort(sortOverpassHits),
-        geojson: parsed.geojson,
-      }
-    },
-  })
-}
-
-export type OverpassAddrPostcodeLiveQueryInput = {
-  featureKey: string
-  query: string
-  interpreterUrl: string
-}
-
-export type OverpassAddrPostcodeLiveQueryData = {
-  featureKey: string
-  hits: AddrPostcodeHit[]
-  geojson: AddrPostcodeGeoJsonFeatureCollection
-}
-
-function sortAddrPostcodeHits(a: AddrPostcodeHit, b: AddrPostcodeHit): number {
-  const o = (t: string) => (t === 'node' ? 0 : 1)
-  const c = o(a.type) - o(b.type)
-  if (c !== 0) return c
-  return a.id - b.id
-}
-
-export function overpassAddrPostcodeLiveQueryOptions(input: OverpassAddrPostcodeLiveQueryInput) {
-  return queryOptions({
-    queryKey: ['overpass-live-addr-postcode', input.featureKey],
-    queryFn: async (): Promise<OverpassAddrPostcodeLiveQueryData> => {
-      const res = await fetchOverpassQuery(input.query, input.interpreterUrl)
-      const text = await res.text()
-      if (!res.ok) {
-        throw new Error(`Overpass request failed: ${res.status}`)
-      }
-      const parsed = parseOverpassAddrPostcodeData(text)
-      return {
-        featureKey: input.featureKey,
-        hits: [...parsed.hits].sort(sortAddrPostcodeHits),
-        geojson: parsed.geojson,
-      }
-    },
-  })
-}
-
-export type OverpassOsmTagsQueryInput = {
-  id: number
-  interpreterUrl: string
-}
-
-export type OverpassOsmTagsQueryData = {
-  id: number
-  tags: Record<string, string> | null
-  replicationDate: string | null
-}
-
-export function overpassOsmTagsQueryOptions(input: OverpassOsmTagsQueryInput) {
-  return queryOptions({
-    queryKey: ['overpass-live-osm-tags', input.id, input.interpreterUrl],
-    queryFn: async (): Promise<OverpassOsmTagsQueryData> => {
-      const query = buildOverpassRelationTagsQuery(input.id)
-      const res = await fetchOverpassQuery(query, input.interpreterUrl)
-      const text = await res.text()
-      if (!res.ok) {
-        throw new Error(`Overpass request failed: ${res.status}`)
-      }
-      const parsed = parseOverpassRelationTagsResponse(text, input.id)
-      return {
-        id: input.id,
-        tags: parsed.tags,
-        replicationDate: parsed.replicationDate,
-      }
-    },
   })
 }
 

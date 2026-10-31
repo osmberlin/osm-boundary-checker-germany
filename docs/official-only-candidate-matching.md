@@ -91,17 +91,17 @@ Candidate data is **only** written into `output/features/<canonicalMatchKey>.jso
 The main `output/comparison_table.json` is untouched — the AreaReport always loads it and
 should stay slim. Per `CandidateMatch`:
 
-| Field                        | Required         | Why                                                                                |
-| ---------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
-| `osmType`                    | ✅               | osm.org / iD URL building.                                                         |
-| `osmId`                      | ✅               | osm.org / iD URL building.                                                         |
-| `name`                       | ✅ (nullable)    | Avoid forcing an Overpass round-trip on every detail open; cost < 25 % of payload. |
-| `adminLevel`                 | admin only       | Show whether the candidate sits at the expected tier.                              |
-| `deRegionalRaw` / `deAgsRaw` | admin only       | Surfaces "OSM lacks the expected `de:*` tag" or "has a different value".           |
-| `postalCodeRaw`              | postal_code only | Same purpose as `de:*Raw`.                                                         |
+| Field                        | Required         | Why                                                                            |
+| ---------------------------- | ---------------- | ------------------------------------------------------------------------------ |
+| `osmType`                    | ✅               | osm.org / iD URL building.                                                     |
+| `osmId`                      | ✅               | osm.org / iD URL building.                                                     |
+| `name`                       | ✅ (nullable)    | Avoid forcing a Postpass request on every detail open; cost < 25 % of payload. |
+| `adminLevel`                 | admin only       | Show whether the candidate sits at the expected tier.                          |
+| `deRegionalRaw` / `deAgsRaw` | admin only       | Surfaces "OSM lacks the expected `de:*` tag" or "has a different value".       |
+| `postalCodeRaw`              | postal_code only | Same purpose as `de:*Raw`.                                                     |
 
 Dropped: `lon`, `lat`, `bbox`, `@id` — none used by the v1 UI; if v2 wants the geometry,
-it can call Overpass-by-id (already wired up via `useFeatureDetailOverpass`).
+it can fetch the geometry by id from Postpass (already wired up, see `docs/live-osm-data.md`).
 
 Estimated size impact (de-gemeinden, 482 official_only × ~0.9 candidates avg):
 ~50 KB across 10,981 shards (currently 43 MB total → +0.1 %). Worst case
@@ -125,6 +125,6 @@ Negligible against the existing minute-scale phases. PLZ areas are smaller still
 ## v2 scope
 
 - Render candidate polygons on the FeatureDetail map (currently iD/osm.org links only).
-  Reuse `useFeatureDetailOverpass` + Overpass-by-id to fetch geometry on demand.
+  Reuse `useNearbyOsmSearch` and the by-id load (`useLiveOsmObjects`) to fetch geometry on demand.
 - Aggregate counts on the AreaReport row (e.g. "3 candidates").
 - Optional area-level CLI report listing rows with high-confidence single-candidate hits.

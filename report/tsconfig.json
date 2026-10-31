@@ -12,7 +12,7 @@
     "lib": ["ES2025", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "module": "ESNext",
-    "types": ["vite/client", "bun"],
+    "types": ["vite/client", "bun", "geojson"],
 
     "moduleResolution": "bundler",
     "moduleDetection": "force",

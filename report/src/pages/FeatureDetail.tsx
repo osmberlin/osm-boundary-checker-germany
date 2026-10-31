@@ -24,10 +24,9 @@ import {
   runStatusQueryOptions,
   type FeatureDetailComparison,
 } from '../data/load'
-import { useFeatureDetailOverpass } from '../hooks/useFeatureDetailOverpass'
-import { useFeatureDetailOverpassAddrPostcode } from '../hooks/useFeatureDetailOverpassAddrPostcode'
 import { useFeatureDetailWfs } from '../hooks/useFeatureDetailWfs'
 import { useFilteredLiveOverlays } from '../hooks/useFilteredLiveOverlays'
+import { useAddrPostcodeSearch, useNearbyOsmSearch } from '../hooks/useLiveAreaSearches'
 import { useLiveOsmObjects } from '../hooks/useLiveOsmObjects'
 import { useLiveQueryBboxFromMap } from '../hooks/useLiveQueryBboxFromMap'
 import { useMapViewParam } from '../hooks/useMapViewParam'
@@ -35,8 +34,8 @@ import { useRecordRecentFeatureVisit } from '../hooks/useRecentFeatureVisits'
 import { de } from '../i18n/de'
 import { featureDetailHasComparisonMap } from '../lib/featureDetailHasComparisonMap'
 import { findFeatureDetailRow } from '../lib/findFeatureDetailRow'
-import { mergeOverpassGeojson } from '../lib/overpassOsmObject'
 import { FEATURE_DETAIL_ROUTE_FROM } from '../lib/parseFeatureDetailRouteParams'
+import { mergeLiveOsmGeojson } from '../lib/postpass'
 import { safeDecodeURIComponent } from '../lib/safeDecodeURIComponent'
 import type { ComparisonForReport, OgcWfsInspectSource, ReportRow } from '../types/report'
 
@@ -66,22 +65,22 @@ function FeatureDetailWithMapContext({
 }) {
   const [viewportEpoch, setViewportEpoch] = useState(0)
   const { getLiveQueryBbox } = useLiveQueryBboxFromMap(viewportEpoch)
-  const nearbySearch = useFeatureDetailOverpass(featureLookupKey)
+  const nearbySearch = useNearbyOsmSearch(featureLookupKey)
   const liveOsmObjects = useLiveOsmObjects(featureLookupKey)
-  const addrPostcode = useFeatureDetailOverpassAddrPostcode(featureLookupKey)
+  const addrPostcode = useAddrPostcodeSearch(featureLookupKey)
   const wfs = useFeatureDetailWfs({
     featureKey: featureLookupKey,
     sources: data.ogcInspectSources ?? EMPTY_OGC_SOURCES,
   })
-  // Objects loaded by id and the nearby search share the Overpass overlay of the detail map.
-  const overpassGeojson = useMemo(
-    () => mergeOverpassGeojson([liveOsmObjects.geojson, nearbySearch.geojson]),
+  // Objects loaded by id and the nearby search share the OSM overlay of the detail map.
+  const liveOsmGeojson = useMemo(
+    () => mergeLiveOsmGeojson([liveOsmObjects.geojson, nearbySearch.geojson]),
     [liveOsmObjects.geojson, nearbySearch.geojson],
   )
   const filteredLiveOverlays = useFilteredLiveOverlays({
     featureKey: featureLookupKey,
     wfsGeojson: wfs.geojson,
-    overpassGeojson,
+    liveOsmGeojson,
     addrPostcodeGeojson: addrPostcode.geojson,
   })
   const hasComparisonMap = featureDetailHasComparisonMap(row, data)
@@ -125,7 +124,7 @@ function FeatureDetailWithMapContext({
           row={row}
           interactionData={comparisonOverlayData}
           mapView={mapViewParam}
-          overpassGeojson={filteredLiveOverlays.overpassGeojson}
+          liveOsmGeojson={filteredLiveOverlays.liveOsmGeojson}
           addrPostcodeGeojson={filteredLiveOverlays.addrPostcodeGeojson}
           wfsGeojson={filteredLiveOverlays.wfsGeojson}
           onViewportSettled={() => setViewportEpoch((n) => n + 1)}
@@ -200,9 +199,8 @@ function FeatureDetailWithMapContext({
               hits: addrPostcode.hits,
               isRunPending: addrPostcode.isRunPending,
               runError: addrPostcode.runError,
-              runLiveOverpass: addrPostcode.runLiveOverpass,
-              resetLiveOverpass: addrPostcode.resetLiveOverpass,
-              resetRunMutation: addrPostcode.resetRunMutation,
+              truncated: addrPostcode.truncated,
+              run: addrPostcode.run,
             }}
           />
         ) : null}

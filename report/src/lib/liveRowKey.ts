@@ -1,17 +1,16 @@
-import type { AddrPostcodeGeoJsonFeature } from './overpassAddrPostcode'
-import type { OverpassGeoJsonFeature } from './overpassBbox'
+import type { AddrPostcodeFeature, LiveOsmFeature } from './postpass'
 
 /**
- * Stable identifier for a single live result row (WFS feature card or Overpass hit card).
+ * Stable identifier for a single live result row (WFS feature card or OSM hit card).
  * Used to mirror disclosure open/closed state into map overlay visibility.
  *
  * Prefix encodes the source so a single store action can target only one source
- * (e.g. "Hide all Overpass results") without tracking source membership separately.
+ * (e.g. "Hide all OSM results") without tracking source membership separately.
  */
 export type LiveRowKey = string
 
-export function overpassLiveRowKey(type: string, id: number): LiveRowKey {
-  return `overpass:${type}:${id}`
+export function liveOsmRowKey(type: string, id: number): LiveRowKey {
+  return `live-osm:${type}:${id}`
 }
 
 export function addrPostcodeLiveRowKey(type: string, id: number): LiveRowKey {
@@ -36,17 +35,17 @@ export function wfsFeatureIdPart(
 /** Property key stamped onto live overlay GeoJSON features so the map can filter by row visibility. */
 export const LIVE_ROW_KEY_PROPERTY = '__liveRowKey'
 
-/** Read the row key from an Overpass GeoJSON feature, deriving it from `type` + best-available id. */
-export function overpassFeatureRowKey(feature: OverpassGeoJsonFeature): LiveRowKey | null {
+/** Read the row key from an OSM live GeoJSON feature, deriving it from `type` + best-available id. */
+export function liveOsmFeatureRowKey(feature: LiveOsmFeature): LiveRowKey | null {
   const props = feature.properties
   if (!props) return null
   const id = props.relation_id ?? props.way_id ?? props.id
   if (id == null || !props.type) return null
-  return overpassLiveRowKey(props.type, id)
+  return liveOsmRowKey(props.type, id)
 }
 
 /** Read stamped `__liveRowKey` or derive from addr:postcode live feature properties. */
-export function addrPostcodeFeatureRowKey(feature: AddrPostcodeGeoJsonFeature): LiveRowKey | null {
+export function addrPostcodeFeatureRowKey(feature: AddrPostcodeFeature): LiveRowKey | null {
   const props = feature.properties
   if (!props) return null
   const stamped = props[LIVE_ROW_KEY_PROPERTY]

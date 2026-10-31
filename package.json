@@ -61,9 +61,6 @@
     "@typescript/typescript-darwin-arm64": "7.0.2",
     "@typescript/typescript-linux-x64": "7.0.2"
   },
-  "patchedDependencies": {
-    "osm2geojson-ultra@4.0.1": "patches/osm2geojson-ultra@4.0.1.patch"
-  },
   "trustedDependencies": [
     "eslint-plugin-compat"
   ]

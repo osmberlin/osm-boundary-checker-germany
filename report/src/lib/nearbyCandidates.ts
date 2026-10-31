@@ -1,13 +1,13 @@
 import type { CandidateMatch } from '../types/report'
-import type { OverpassBoundaryHit } from './overpassBbox'
-import { liveOsmObjectKey } from './overpassOsmObject'
+import type { LiveOsmHit } from './postpass'
+import { liveOsmObjectKey } from './postpass'
 
 /**
  * Objects of the nearby search that are not yet listed as candidates, in candidate form
- * (no signals; `tags` are the live tags from Overpass).
+ * (no signals; `tags` are the live tags from Postpass).
  */
 export function nearbyCandidates(
-  hits: readonly OverpassBoundaryHit[],
+  hits: readonly LiveOsmHit[],
   candidates: readonly CandidateMatch[],
 ): CandidateMatch[] {
   const listed = new Set(candidates.map((c) => liveOsmObjectKey(c.osmType, c.osmId)))

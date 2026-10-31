@@ -16,17 +16,16 @@ import { AlertNotice } from '../components/AlertNotice'
 import {
   arsSuccessorsQueryOptions,
   germanKeyLookupQueryOptions,
-  overpassOsmTagsQueryOptions,
   regionalHubOsmTagsQueryOptions,
   regionalHubWikidataQueryOptions,
 } from '../data/load'
+import { useLiveOsmObjects, useLoadLiveOsmObjectOnOpen } from '../hooks/useLiveOsmObjects'
 import { de } from '../i18n/de'
 import { cn } from '../lib/cn'
 import { formatDeInteger } from '../lib/formatDe'
 import { formatSnapshotDateLabelDe } from '../lib/formatSourceDownloadedAt'
 import { ags8FromArs12Digits, statistikportalGemeindeUrl } from '../lib/germanKeyExplorer'
 import { resolveGemeindeNameByArs } from '../lib/germanKeyLookupBundle'
-import { DEFAULT_OVERPASS_INTERPRETER_URL } from '../lib/overpassServers'
 import { RegionalHubEditActions } from '../lib/regionalHubActions'
 import {
   displayNameForArs,
@@ -121,16 +120,14 @@ export function RegionalHubDetail() {
   const wd = wdQuery.data?.byArs[ars]
   const destatis = bundle ? destatisAttributesForArs(bundle, ars) : null
   const relationId = numericOsmRelationId(osmExtract?.osmId)
-  const liveQuery = useQuery({
-    ...overpassOsmTagsQueryOptions({
-      id: Number(relationId ?? 0),
-      interpreterUrl: DEFAULT_OVERPASS_INTERPRETER_URL,
-    }),
-    enabled: relationId != null,
-  })
+  const liveKey = `regional:${ars}`
+  const liveRef = relationId != null ? { type: 'relation' as const, id: Number(relationId) } : null
+  useLoadLiveOsmObjectOnOpen(liveKey, liveRef, { geometry: false })
+  const live = useLiveOsmObjects(liveKey)
+  const liveState = liveRef ? live.getState(liveRef) : undefined
   const osm = overlayLiveOsmTags(
     osmExtract,
-    liveQuery.isSuccess ? (liveQuery.data?.tags ?? {}) : undefined,
+    liveState?.status === 'done' ? (liveState.tags ?? {}) : undefined,
   )
   const compare = bundle ? hubCompareInputForArs({ bundle, ars12: ars, osm, wikidata: wd }) : null
   const issues = compare ? regionalHubIssues(compare) : []
@@ -389,16 +386,20 @@ export function RegionalHubDetail() {
               type="button"
               className={`mt-2 ${linkClass}`}
               onClick={() => {
-                void liveQuery.refetch()
+                if (liveRef) void live.refresh(liveRef, { geometry: false })
               }}
             >
               {t.liveTagsButton}
             </button>
-            {liveQuery.isFetching ? <p className="mt-2">{t.liveTagsLoading}</p> : null}
-            {liveQuery.isError ? <p className="mt-2 text-amber-200">{t.liveTagsError}</p> : null}
-            {liveQuery.data?.tags ? (
+            {liveState === undefined || liveState.status === 'loading' ? (
+              <p className="mt-2">{t.liveTagsLoading}</p>
+            ) : null}
+            {liveState?.status === 'error' ? (
+              <p className="mt-2 text-amber-200">{t.liveTagsError}</p>
+            ) : null}
+            {liveState?.status === 'done' && liveState.tags ? (
               <pre className="mt-2 overflow-auto text-xs text-slate-300">
-                {JSON.stringify(liveQuery.data.tags, null, 2)}
+                {JSON.stringify(liveState.tags, null, 2)}
               </pre>
             ) : null}
           </details>

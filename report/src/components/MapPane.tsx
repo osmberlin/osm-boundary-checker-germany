@@ -3,8 +3,8 @@ import { useRef, useState } from 'react'
 import type { ViewState, ViewStateChangeEvent } from 'react-map-gl/maplibre'
 import MapLibre from 'react-map-gl/maplibre'
 import { type MapViewQueryValue, serializeMapViewQueryString } from '../lib/mapViewQueryParam'
-import type { AddrPostcodeGeoJsonFeatureCollection } from '../lib/overpassAddrPostcode'
-import type { OverpassGeoJsonFeatureCollection } from '../lib/overpassBbox'
+import type { AddrPostcodeFeatureCollection } from '../lib/postpass'
+import type { LiveOsmFeatureCollection } from '../lib/postpass'
 import { AddrPostcodeOverlayLayers } from './map/AddrPostcodeOverlayLayers'
 import { ComparisonDiffVectorLayers } from './map/ComparisonDiffVectorLayers'
 import {
@@ -13,9 +13,9 @@ import {
   SOURCE_ID,
 } from './map/comparisonMapConstants'
 import { ensureComparisonMapSprites } from './map/comparisonMapSprites'
+import { LiveOsmOverlayLayers } from './map/LiveOsmOverlayLayers'
 import { MapPanePrimaryPmtilesSource } from './map/MapPanePrimaryPmtilesSource'
 import { MapPaneUnmatchedPmtilesSource } from './map/MapPaneUnmatchedPmtilesSource'
-import { OverpassOverlayLayers } from './map/OverpassOverlayLayers'
 import { WfsOverlayLayers } from './map/WfsOverlayLayers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -61,8 +61,8 @@ type MapPaneInteraction = {
 }
 
 type MapPaneOverlays = {
-  overpassGeojson?: OverpassGeoJsonFeatureCollection | null
-  addrPostcodeGeojson?: AddrPostcodeGeoJsonFeatureCollection | null
+  liveOsmGeojson?: LiveOsmFeatureCollection | null
+  addrPostcodeGeojson?: AddrPostcodeFeatureCollection | null
   wfsGeojson?: GeoJSON.FeatureCollection | null
 }
 
@@ -110,13 +110,13 @@ export default function MapPane({
    * `--minimum-zoom` when > 0; use `0` for no floor.
    */
   mapMinZoom: number
-  /** Feature detail: bump live WFS/Overpass bbox after load and every settled move. */
+  /** Feature detail: bump live WFS/Postpass bbox after load and every settled move. */
   onViewportSettled?: () => void
 }) {
   const { primary, diff: diffSource, unmatched } = sources
   const { featureId, mapBbox, maxBounds, urlMapView, onMoveEndCommitUrl } = view
   const { showOfficial, showOsm, showDiff } = layers
-  const overpassGeojson = overlays?.overpassGeojson ?? null
+  const liveOsmGeojson = overlays?.liveOsmGeojson ?? null
   const addrPostcodeGeojson = overlays?.addrPostcodeGeojson ?? null
   const wfsGeojson = overlays?.wfsGeojson ?? null
 
@@ -288,7 +288,7 @@ export default function MapPane({
         isStripePatternReady={isStripePatternReady}
       />
       <WfsOverlayLayers geojson={wfsGeojson} />
-      <OverpassOverlayLayers geojson={overpassGeojson} />
+      <LiveOsmOverlayLayers geojson={liveOsmGeojson} />
       <AddrPostcodeOverlayLayers geojson={addrPostcodeGeojson} />
     </MapLibre>
   )

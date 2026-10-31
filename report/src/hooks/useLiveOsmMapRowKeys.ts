@@ -1,7 +1,7 @@
-import { overpassFeatureRowKey, type LiveRowKey } from '../lib/liveRowKey'
-import type { OverpassGeoJsonFeatureCollection } from '../lib/overpassBbox'
+import { liveOsmFeatureRowKey, type LiveRowKey } from '../lib/liveRowKey'
+import type { LiveOsmFeatureCollection } from '../lib/postpass'
 import { useLiveOsmObjectStates, type LiveOsmObjectState } from '../stores/liveOsmObjectsStore'
-import { useFeatureDetailOverpass } from './useFeatureDetailOverpass'
+import { useNearbyOsmSearch } from './useLiveAreaSearches'
 
 type ObjectStates = Readonly<Record<string, LiveOsmObjectState>>
 
@@ -14,9 +14,9 @@ const NO_NEARBY = {}
  */
 const rowKeysCache = new WeakMap<ObjectStates, WeakMap<object, LiveRowKey[]>>()
 
-function overpassRowKeys(
+function liveOsmRowKeys(
   objects: ObjectStates,
-  nearby: OverpassGeoJsonFeatureCollection | null,
+  nearby: LiveOsmFeatureCollection | null,
 ): LiveRowKey[] {
   const byNearby = rowKeysCache.get(objects) ?? new WeakMap<object, LiveRowKey[]>()
   rowKeysCache.set(objects, byNearby)
@@ -26,14 +26,14 @@ function overpassRowKeys(
     ...Object.values(objects).flatMap((state) => (state.status === 'done' ? state.features : [])),
     ...(nearby?.features ?? []),
   ]
-  const keys = [...new Set(features.flatMap((feature) => overpassFeatureRowKey(feature) ?? []))]
+  const keys = [...new Set(features.flatMap((feature) => liveOsmFeatureRowKey(feature) ?? []))]
   byNearby.set(nearby ?? NO_NEARBY, keys)
   return keys
 }
 
-/** Row keys of all Overpass objects on the detail map: loaded by id plus the nearby search. */
-export function useOverpassMapRowKeys(featureKey: string): LiveRowKey[] {
+/** Row keys of all OSM objects on the detail map: loaded by id plus the nearby search. */
+export function useLiveOsmMapRowKeys(featureKey: string): LiveRowKey[] {
   const objects = useLiveOsmObjectStates(featureKey)
-  const nearby = useFeatureDetailOverpass(featureKey)
-  return overpassRowKeys(objects, nearby.geojson)
+  const nearby = useNearbyOsmSearch(featureKey)
+  return liveOsmRowKeys(objects, nearby.geojson)
 }

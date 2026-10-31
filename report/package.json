@@ -35,9 +35,9 @@
     "@turf/helpers": "^7.3.5",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "idb-keyval": "^6.3.0",
     "maplibre-gl": "^6.13.0",
     "motion": "12.40.0",
-    "osm2geojson-ultra": "^4.0.1",
     "pmtiles": "^4.4.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -50,6 +50,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.1",
     "@types/bun": "latest",
+    "@types/geojson": "^7946.0.16",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.1.1",

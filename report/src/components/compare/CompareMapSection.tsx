@@ -6,7 +6,7 @@ import {
 } from '../../data/paths'
 import { de } from '../../i18n/de'
 import type { MapViewQueryValue } from '../../lib/mapViewQueryParam'
-import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
+import type { LiveOsmFeatureCollection } from '../../lib/postpass'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { InfoNotice } from '../InfoNotice'
 import { COMPARISON_MAP_ID } from '../map/comparisonMapConstants'
@@ -36,7 +36,7 @@ export function CompareMapSection({
   osmRow,
   mapBbox,
   mapView,
-  overpassGeojson,
+  liveOsmGeojson,
 }: {
   areaKey: string
   data: ComparisonForReport
@@ -47,8 +47,8 @@ export function CompareMapSection({
     mapView: MapViewQueryValue | null
     commitMapViewFromMap: (viewState: ViewState) => void
   }
-  /** Live OSM geometry (Overpass by id), for datasets without unmatched tiles. */
-  overpassGeojson: OverpassGeoJsonFeatureCollection | null
+  /** Live OSM geometry (Postpass by id), for datasets without unmatched tiles. */
+  liveOsmGeojson: LiveOsmFeatureCollection | null
 }) {
   if (!data.hasPmtiles) return <InfoNotice>{de.feature.noPmtiles}</InfoNotice>
 
@@ -91,7 +91,7 @@ export function CompareMapSection({
                   onMoveEndCommitUrl: mapView.commitMapViewFromMap,
                 }}
                 layers={{ showOfficial: true, showOsm: true, showDiff: false }}
-                overlays={{ overpassGeojson }}
+                overlays={{ liveOsmGeojson }}
               />
               <ComparisonMapZoomHintOverlay />
             </div>

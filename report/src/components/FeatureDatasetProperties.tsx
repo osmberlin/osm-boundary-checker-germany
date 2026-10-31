@@ -11,7 +11,7 @@ import {
 import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyProvenance.ts'
 import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
 import type { WikidataShard } from '../../../scripts/shared/wikidataProtectedAreasPayload.ts'
-import { useOverpassRelationTags } from '../hooks/useOverpassRelationTags'
+import { useLiveOsmObjects, useLoadLiveOsmObjectOnOpen } from '../hooks/useLiveOsmObjects'
 import { de } from '../i18n/de'
 import { renderWithAbbr, SourceTerm, sourceText } from '../i18n/sourceVocabulary'
 import { pickOsmDatasetExtractDate } from '../lib/datasetExtractDataDates'
@@ -22,6 +22,7 @@ import {
   isGermanKeyExplorerDisplayKey,
 } from '../lib/germanKeyExplorer'
 import { liveOsmTagMarkers, type LiveOsmTagMarker } from '../lib/liveOsmChecks'
+import { formatLiveOsmError } from '../lib/liveOsmError'
 import {
   parseLiveOsmObjectRef,
   parseReportRowOsmRef,
@@ -709,30 +710,26 @@ function DatasetExtractDataDateCaption({
 }
 
 function OsmLiveRelationTagsRow({
+  featureKey,
   osmRef,
   officialProperties,
   acceptedRegionalSchluessel,
   sourceKind,
 }: {
+  featureKey: string
   osmRef: ParsedReportRowOsmRef
   officialProperties: Record<string, unknown>
   acceptedRegionalSchluessel?: string | null
   sourceKind: SourceKind | undefined
 }) {
-  const live = useOverpassRelationTags(String(osmRef.numericId))
+  const live = useLiveOsmObjects(featureKey)
+  const ref = { type: 'relation' as const, id: osmRef.numericId }
+  useLoadLiveOsmObjectOnOpen(featureKey, ref, { geometry: false })
+  const state = live.getState(ref)
   const captionText =
-    live.status === 'done' && live.replicationDate
-      ? `${de.feature.datasetOsmLiveOverpassQueryLabel}: ${formatIsoTimestampToAbsoluteDe(live.replicationDate)}`
+    state?.status === 'done' && state.timestamp
+      ? `${de.feature.datasetOsmLiveQueryLabel}: ${formatIsoTimestampToAbsoluteDe(state.timestamp)}`
       : null
-
-  const errorMessage = (() => {
-    if (live.status !== 'error' || !live.error) return null
-    const raw = live.error instanceof Error ? live.error.message : String(live.error)
-    if (raw === 'INVALID_OVERPASS_JSON') return de.feature.datasetOsmLiveInvalidJson
-    if (raw.startsWith('Overpass request failed:'))
-      return `${de.feature.datasetOsmLiveErrorPrefix} ${raw.replace('Overpass request failed:', '').trim()}`
-    return raw
-  })()
 
   return (
     <ProvenanceGridRow
@@ -749,16 +746,25 @@ function OsmLiveRelationTagsRow({
         captionText ? <p className="text-xs leading-normal text-slate-400">{captionText}</p> : null
       }
     >
-      {live.status === 'idle' && (
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => void live.run()} className={sharedButtonClass}>
-              {de.feature.datasetOsmLiveButton}
-            </button>
-            <span className="text-xs text-slate-400">
-              {de.feature.datasetOsmLiveButtonHint(osmRef.numericId)}
-            </span>
-          </div>
+      {(state === undefined || state.status === 'loading') && (
+        <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveLoading}</p>
+      )}
+
+      {state?.status === 'error' && (
+        <div className="space-y-2">
+          <p className="text-sm text-red-400">{formatLiveOsmError(state.error)}</p>
+          <button
+            type="button"
+            onClick={() => void live.refresh(ref, { geometry: false })}
+            className={sharedButtonClass}
+          >
+            {de.feature.datasetOsmLiveAgain}
+          </button>
+        </div>
+      )}
+
+      {state?.status === 'done' && (
+        <div className="space-y-3">
           <p className="flex items-center gap-1.5 text-xs text-slate-400">
             <InformationCircleIcon aria-hidden="true" className="size-4 shrink-0 text-sky-300" />
             <span>
@@ -767,27 +773,9 @@ function OsmLiveRelationTagsRow({
               )}
             </span>
           </p>
-        </div>
-      )}
-
-      {live.status === 'loading' && (
-        <p className="text-sm text-slate-400">{de.feature.datasetOsmLiveLoading}</p>
-      )}
-
-      {live.status === 'error' && errorMessage && (
-        <div className="space-y-2">
-          <p className="text-sm text-red-400">{errorMessage}</p>
-          <button type="button" onClick={() => void live.run()} className={sharedButtonClass}>
-            {de.feature.datasetOsmLiveAgain}
-          </button>
-        </div>
-      )}
-
-      {live.status === 'done' && (
-        <div className="space-y-3">
-          {live.tags ? (
+          {state.tags ? (
             <DatasetLiveComparedPropertyCard
-              properties={live.tags}
+              properties={state.tags}
               officialProperties={officialProperties}
               acceptedRegionalSchluessel={acceptedRegionalSchluessel}
               sourceKind={sourceKind}
@@ -797,7 +785,7 @@ function OsmLiveRelationTagsRow({
           )}
           <button
             type="button"
-            onClick={() => void live.run()}
+            onClick={() => void live.refresh(ref, { geometry: false })}
             className="text-sm text-violet-300/90 underline decoration-violet-400/30 underline-offset-2 hover:text-violet-200"
           >
             {de.feature.datasetOsmLiveAgain}
@@ -862,6 +850,7 @@ export function FeatureDatasetProperties({
     (row.category === 'matched' || osmTagsLiveOnly) && (data.attributeChecks?.length ?? 0) > 0
       ? parseLiveOsmObjectRef(row.osmRelationId)
       : null
+  useLoadLiveOsmObjectOnOpen(featureKey, osmTagsLiveOnly ? null : liveObject, { geometry: false })
   const liveContext: LiveOsmContext = { featureKey, row, data }
   const officialAreaM2 =
     row.metrics && row.metrics.officialAreaM2 > 0
@@ -935,11 +924,12 @@ export function FeatureDatasetProperties({
                     {de.feature.datasetOsmOpenHistory}
                   </a>
                 ) : null}
-                {liveObject ? (
+                {liveObject && !osmTagsLiveOnly ? (
                   <LiveOsmObjectLoadButton
                     context={liveContext}
                     object={liveObject}
                     idleLabel={de.feature.liveOsmMatchedLoad}
+                    geometry={false}
                     className={`${compactButtonClass} self-start disabled:pointer-events-none disabled:opacity-50`}
                   />
                 ) : null}
@@ -999,6 +989,7 @@ export function FeatureDatasetProperties({
           ) : null}
           {osmRef != null && liveObject == null && (
             <OsmLiveRelationTagsRow
+              featureKey={featureKey}
               osmRef={osmRef}
               officialProperties={official}
               acceptedRegionalSchluessel={row.staleOfficialKey?.toArs}

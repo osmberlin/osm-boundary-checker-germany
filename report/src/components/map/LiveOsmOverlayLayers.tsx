@@ -1,31 +1,27 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
-import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
+import type { LiveOsmFeatureCollection } from '../../lib/postpass'
 import { mapLayerColors } from '../mapLayerColors'
 
-const OVERPASS_SOURCE_ID = 'overpass-live-results'
+const LIVE_OSM_SOURCE_ID = 'live-osm-results'
 
-export function OverpassOverlayLayers({
-  geojson,
-}: {
-  geojson: OverpassGeoJsonFeatureCollection | null
-}) {
+export function LiveOsmOverlayLayers({ geojson }: { geojson: LiveOsmFeatureCollection | null }) {
   if (!geojson || geojson.features.length === 0) return null
-  const c = mapLayerColors.overpass
+  const c = mapLayerColors.liveOsm
   return (
-    <Source id={OVERPASS_SOURCE_ID} type="geojson" data={geojson as GeoJSON.FeatureCollection}>
+    <Source id={LIVE_OSM_SOURCE_ID} type="geojson" data={geojson as GeoJSON.FeatureCollection}>
       <Layer
-        id={`${OVERPASS_SOURCE_ID}-fill`}
+        id={`${LIVE_OSM_SOURCE_ID}-fill`}
         type="fill"
-        source={OVERPASS_SOURCE_ID}
+        source={LIVE_OSM_SOURCE_ID}
         paint={{
           'fill-color': c.fill,
           'fill-opacity': c.fillOpacity,
         }}
       />
       <Layer
-        id={`${OVERPASS_SOURCE_ID}-line`}
+        id={`${LIVE_OSM_SOURCE_ID}-line`}
         type="line"
-        source={OVERPASS_SOURCE_ID}
+        source={LIVE_OSM_SOURCE_ID}
         paint={{
           'line-color': c.line,
           'line-opacity': c.lineOpacity,
@@ -33,9 +29,9 @@ export function OverpassOverlayLayers({
         }}
       />
       <Layer
-        id={`${OVERPASS_SOURCE_ID}-label`}
+        id={`${LIVE_OSM_SOURCE_ID}-label`}
         type="symbol"
-        source={OVERPASS_SOURCE_ID}
+        source={LIVE_OSM_SOURCE_ID}
         layout={{
           'text-field': ['get', 'label'],
           'text-size': 12,

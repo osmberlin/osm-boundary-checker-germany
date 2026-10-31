@@ -5,8 +5,8 @@ import { useFeatureDetailMapBoundaryScope } from '../../hooks/useFeatureDetailMa
 import { de } from '../../i18n/de'
 import { featureDetailHasComparisonMap } from '../../lib/featureDetailHasComparisonMap'
 import type { MapViewQueryValue } from '../../lib/mapViewQueryParam'
-import type { AddrPostcodeGeoJsonFeatureCollection } from '../../lib/overpassAddrPostcode'
-import type { OverpassGeoJsonFeatureCollection } from '../../lib/overpassBbox'
+import type { AddrPostcodeFeatureCollection } from '../../lib/postpass'
+import type { LiveOsmFeatureCollection } from '../../lib/postpass'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { InfoNotice } from '../InfoNotice'
 import { MapOverlapPickDialog } from '../map/MapOverlapPickDialog'
@@ -21,7 +21,7 @@ export function FeatureDetailMapSection({
   interactionData,
   row,
   mapView,
-  overpassGeojson,
+  liveOsmGeojson,
   addrPostcodeGeojson,
   wfsGeojson,
   onViewportSettled,
@@ -34,8 +34,8 @@ export function FeatureDetailMapSection({
     mapView: MapViewQueryValue | null
     commitMapViewFromMap: (viewState: ViewState) => void
   }
-  overpassGeojson: OverpassGeoJsonFeatureCollection | null
-  addrPostcodeGeojson: AddrPostcodeGeoJsonFeatureCollection | null
+  liveOsmGeojson: LiveOsmFeatureCollection | null
+  addrPostcodeGeojson: AddrPostcodeFeatureCollection | null
   wfsGeojson: GeoJSON.FeatureCollection | null
   onViewportSettled?: () => void
 }) {
@@ -67,7 +67,7 @@ export function FeatureDetailMapSection({
           interactionData={interactionData}
           row={row}
           mapView={mapView}
-          overpassGeojson={overpassGeojson}
+          liveOsmGeojson={liveOsmGeojson}
           addrPostcodeGeojson={addrPostcodeGeojson}
           wfsGeojson={wfsGeojson}
           showOnlySelected={showOnlySelected}

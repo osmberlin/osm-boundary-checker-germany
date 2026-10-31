@@ -2,11 +2,10 @@ import { useMemo } from 'react'
 import {
   addrPostcodeFeatureRowKey,
   LIVE_ROW_KEY_PROPERTY,
-  overpassFeatureRowKey,
+  liveOsmFeatureRowKey,
   type LiveRowKey,
 } from '../lib/liveRowKey'
-import type { AddrPostcodeGeoJsonFeatureCollection } from '../lib/overpassAddrPostcode'
-import type { OverpassGeoJsonFeatureCollection } from '../lib/overpassBbox'
+import type { AddrPostcodeFeatureCollection, LiveOsmFeatureCollection } from '../lib/postpass'
 import { useHiddenLiveRowKeys } from '../stores/liveOverlayVisibilityStore'
 
 function filterCollection<TCollection extends { features: TFeature[] }, TFeature>(
@@ -33,13 +32,13 @@ function filterCollection<TCollection extends { features: TFeature[] }, TFeature
 export function useFilteredLiveOverlays({
   featureKey,
   wfsGeojson,
-  overpassGeojson,
+  liveOsmGeojson,
   addrPostcodeGeojson,
 }: {
   featureKey: string
   wfsGeojson: GeoJSON.FeatureCollection | null
-  overpassGeojson: OverpassGeoJsonFeatureCollection | null
-  addrPostcodeGeojson: AddrPostcodeGeoJsonFeatureCollection | null
+  liveOsmGeojson: LiveOsmFeatureCollection | null
+  addrPostcodeGeojson: AddrPostcodeFeatureCollection | null
 }) {
   const hidden = useHiddenLiveRowKeys(featureKey)
 
@@ -56,9 +55,9 @@ export function useFilteredLiveOverlays({
     [wfsGeojson, hidden],
   )
 
-  const filteredOverpass = useMemo(
-    () => filterCollection(overpassGeojson, hidden, overpassFeatureRowKey),
-    [overpassGeojson, hidden],
+  const filteredLiveOsm = useMemo(
+    () => filterCollection(liveOsmGeojson, hidden, liveOsmFeatureRowKey),
+    [liveOsmGeojson, hidden],
   )
 
   const filteredAddrPostcode = useMemo(
@@ -68,7 +67,7 @@ export function useFilteredLiveOverlays({
 
   return {
     wfsGeojson: filteredWfs,
-    overpassGeojson: filteredOverpass,
+    liveOsmGeojson: filteredLiveOsm,
     addrPostcodeGeojson: filteredAddrPostcode,
   }
 }

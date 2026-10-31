@@ -1,6 +1,6 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
 import { addrPostcodeColorMatchExpression } from '../../lib/addrPostcodeMapExpressions'
-import type { AddrPostcodeGeoJsonFeatureCollection } from '../../lib/overpassAddrPostcode'
+import type { AddrPostcodeFeatureCollection } from '../../lib/postpass'
 import { mapLayerColors } from '../mapLayerColors'
 
 const ADDR_POSTCODE_SOURCE_ID = 'addr-postcode-live-results'
@@ -8,7 +8,7 @@ const ADDR_POSTCODE_SOURCE_ID = 'addr-postcode-live-results'
 export function AddrPostcodeOverlayLayers({
   geojson,
 }: {
-  geojson: AddrPostcodeGeoJsonFeatureCollection | null
+  geojson: AddrPostcodeFeatureCollection | null
 }) {
   if (!geojson || geojson.features.length === 0) return null
   const c = mapLayerColors.addrPostcode

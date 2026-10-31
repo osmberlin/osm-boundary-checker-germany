@@ -1,8 +1,7 @@
 import { EyeIcon, EyeSlashIcon, FunnelIcon } from '@heroicons/react/24/outline'
-import { useLiveOsmObjects } from '../../hooks/useLiveOsmObjects'
-import { useOverpassMapRowKeys } from '../../hooks/useOverpassMapRowKeys'
+import { useLiveOsmMapRowKeys } from '../../hooks/useLiveOsmMapRowKeys'
+import { useLiveOsmObjects, useRestoreLiveOsmObject } from '../../hooks/useLiveOsmObjects'
 import { de } from '../../i18n/de'
-import { formatOverpassRunError } from '../../lib/formatOverpassRunError'
 import {
   describeLiveOsmTagChange,
   liveOsmCheckResults,
@@ -10,8 +9,9 @@ import {
   liveOsmTagChanges,
   liveOsmTagMarkers,
 } from '../../lib/liveOsmChecks'
-import { overpassLiveRowKey } from '../../lib/liveRowKey'
-import type { LiveOsmObjectRef } from '../../lib/overpassOsmObject'
+import { formatLiveOsmError } from '../../lib/liveOsmError'
+import { liveOsmRowKey } from '../../lib/liveRowKey'
+import type { LiveOsmObjectRef } from '../../lib/postpass'
 import { useIsLiveRowHidden, useLiveOverlayActions } from '../../stores/liveOverlayVisibilityStore'
 import type { ComparisonForReport, ReportRow } from '../../types/report'
 import { sharedButtonClass } from '../sharedButtonStyles'
@@ -38,10 +38,10 @@ function listedTags(tags: Record<string, string>): Array<[string, string]> {
 
 /** Hides or shows one object's geometry on the detail map; "Nur diesen zeigen" hides all others. */
 function LiveRowMapToggle({ featureKey, type, id }: { featureKey: string } & LiveOsmObjectRef) {
-  const rowKey = overpassLiveRowKey(type, id)
+  const rowKey = liveOsmRowKey(type, id)
   const isHidden = useIsLiveRowHidden(featureKey, rowKey)
   const { show, hide, hideMany } = useLiveOverlayActions()
-  const otherRowKeys = useOverpassMapRowKeys(featureKey).filter((key) => key !== rowKey)
+  const otherRowKeys = useLiveOsmMapRowKeys(featureKey).filter((key) => key !== rowKey)
   const label = isHidden ? de.feature.liveRowShowOnMap : de.feature.liveRowHideOnMap
   return (
     <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -194,26 +194,32 @@ export function NearbyOsmObjectTags({
   )
 }
 
-/** "Aktuellen Stand laden": fetches the object from Overpass; its geometry then shows on the map. */
+/** "Aktuellen Stand laden": fetches the object from Postpass; its geometry then shows on the map. */
 export function LiveOsmObjectLoadButton({
   context,
   object,
   className = sharedButtonClass,
   idleLabel = de.feature.liveOsmObjectLoad,
+  geometry = true,
 }: {
   context: LiveOsmContext
   object: LiveOsmObjectRef
   className?: string
   /** Button text before the first load. */
   idleLabel?: string
+  /** Also load the geometry for the map; tags alone otherwise. */
+  geometry?: boolean
 }) {
-  const { getState, load } = useLiveOsmObjects(context.featureKey)
+  const { getState, load, refresh } = useLiveOsmObjects(context.featureKey)
+  useRestoreLiveOsmObject(context.featureKey, object)
   const status = getState(object)?.status
   return (
     <button
       type="button"
       disabled={status === 'loading'}
-      onClick={() => void load(object)}
+      onClick={() =>
+        void (status === 'done' ? refresh(object, { geometry }) : load(object, { geometry }))
+      }
       className={className}
     >
       {status === 'loading'
@@ -252,9 +258,7 @@ export function LiveOsmObjectResult({
         role="alert"
       >
         <p className="font-medium">{de.feature.liveOsmLastErrorTitle}</p>
-        <p className="mt-1 break-words whitespace-pre-wrap">
-          {formatOverpassRunError(state.error)}
-        </p>
+        <p className="mt-1 break-words whitespace-pre-wrap">{formatLiveOsmError(state.error)}</p>
       </div>
     )
   }
