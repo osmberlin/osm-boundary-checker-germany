@@ -46,6 +46,7 @@ import { CompareFeatures } from './pages/CompareFeatures'
 import { FeatureDetail } from './pages/FeatureDetail'
 import { GermanKeyExplorer } from './pages/GermanKeyExplorer'
 import { Home } from './pages/Home'
+import { Privacy } from './pages/Privacy'
 import { ProcessingStatus } from './pages/ProcessingStatus'
 import { RegionalHubDetail } from './pages/RegionalHubDetail'
 import { RegionalHubIndex } from './pages/RegionalHubIndex'
@@ -146,6 +147,18 @@ const changelogRoute = createRoute({
     meta: [{ title: `${de.changelog.heading} | ${de.appTitle}` }],
   }),
   component: Changelog,
+})
+
+const privacyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/datenschutz',
+  head: () => ({
+    meta: [
+      { title: `${de.privacy.title} | ${de.appTitle}` },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
+  component: Privacy,
 })
 
 const germanKeyExplorerRoute = createRoute({
@@ -362,6 +375,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   statusRoute,
   changelogRoute,
+  privacyRoute,
   germanKeyExplorerRoute,
   regionalHubIndexRoute,
   regionalHubDetailRoute,

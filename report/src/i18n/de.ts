@@ -37,6 +37,62 @@ export const de = {
     home: 'Startseite',
   },
 
+  privacy: {
+    title: 'Datenschutz',
+    lead: 'Wir setzen keine Cookies und kein Webtracking ein und speichern selbst keine personenbezogenen Daten. Damit die Seite funktioniert, lädt dein Browser aber Daten von den unten genannten Diensten. Dabei erfahren diese deine IP-Adresse und Angaben zu deinem Browser.',
+    automaticLabel: 'Automatisch',
+    onClickLabel: 'Nur per Klick',
+    sections: [
+      {
+        heading: 'Hosting: GitHub Pages',
+        trigger: 'automatic',
+        text: 'Die Seite, die Abgleichsdaten und die Kartenebenen liegen auf GitHub Pages (github.io). Dein Browser lädt sie bei jedem Aufruf von dort.',
+        link: {
+          label: 'Datenschutzerklärung von GitHub',
+          href: 'https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement',
+        },
+      },
+      {
+        heading: 'Hintergrundkarte: OpenFreeMap',
+        trigger: 'automatic',
+        text: 'Karten laden ihren Hintergrund von tiles.openfreemap.org. Daran erkennt der Dienst, welcher Kartenausschnitt angezeigt wird.',
+        link: {
+          label: 'Datenschutzerklärung von OpenFreeMap',
+          href: 'https://openfreemap.org/privacy/',
+        },
+      },
+      {
+        heading: 'Aktuelle OSM-Daten: Postpass',
+        trigger: 'automatic',
+        text: 'Unsere Abgleichsdaten sind eine Momentaufnahme. Damit du den aktuellen Stand siehst, fragen Detail-, Vergleichs- und Regionalseiten beim Öffnen die Tags des zugeordneten OSM-Objekts bei Postpass ab, einem Dienst der Geofabrik (postpass.geofabrik.de). Die Anfrage enthält die ID dieses Objekts. Die Antwort bleibt 24 Stunden in deinem Browser, in dieser Zeit geht keine neue Anfrage raus. Die Umgebungssuche, die PLZ-Punktdaten und „Neu laden“ fragen erst per Klick an, die beiden Suchen senden dabei den Kartenausschnitt.',
+        link: {
+          label: 'Impressum und Datenschutz der Geofabrik',
+          href: 'https://www.geofabrik.de/geofabrik/imprint.html',
+        },
+      },
+      {
+        heading: 'Amtliche Geodienste',
+        trigger: 'onClick',
+        text: 'Auf Detailseiten kannst du aktuelle amtliche Daten direkt beim jeweiligen WFS-Dienst abfragen. Die Anfrage enthält den Kartenausschnitt und geht erst per Klick raus.',
+        link: null,
+      },
+      {
+        heading: 'Im Browser gespeichert',
+        trigger: null,
+        text: 'Die Antworten von Postpass liegen 24 Stunden im IndexedDB-Speicher deines Browsers. Zuletzt geöffnete Detailseiten liegen 3 Stunden im localStorage, damit du sie vergleichen kannst. Beides bleibt auf deinem Gerät und wird nicht an uns gesendet.',
+        link: null,
+      },
+      {
+        heading: 'Links zu anderen Diensten',
+        trigger: 'onClick',
+        text: 'Links etwa zu OpenStreetMap, Wikidata, Overpass Turbo oder GitHub führen zu den Seiten dieser Anbieter. Daten gehen dorthin erst, wenn du sie öffnest.',
+        link: null,
+      },
+    ],
+    questionsLead: 'Fragen dazu? ',
+    questionsLink: 'Schreib uns auf GitHub',
+  },
+
   footer: {
     /** Same topic as `germanKeyExplorer.title` (amtlicher ARS / amtlicher AGS). */
     germanKeyExplorerLink: 'Regional- und Gemeindeschlüssel-Explorer',

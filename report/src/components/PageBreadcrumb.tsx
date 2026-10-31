@@ -17,10 +17,15 @@ export function PageBreadcrumb() {
   const crumbs: { homeCurrent: boolean; items: AppBreadcrumbCrumb[] } =
     segs.length === 0
       ? { homeCurrent: true, items: [] }
-      : segs[0] === 'status'
+      : segs[0] === 'status' || segs[0] === 'datenschutz'
         ? {
             homeCurrent: false,
-            items: [{ name: de.status.breadcrumb, current: true }],
+            items: [
+              {
+                name: segs[0] === 'status' ? de.status.breadcrumb : de.privacy.title,
+                current: true,
+              },
+            ],
           }
         : segs[0] === 'tools' && segs[1] === 'german-key'
           ? {
