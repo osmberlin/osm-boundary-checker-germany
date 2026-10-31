@@ -53,6 +53,24 @@
       "impact": "matching",
       "comment": "In den DtP-Daten verweist der OSM-Verweis auf way/855558900. Dieses OSM-Objekt ist das Naturdenkmal Schlatt in der Kohlenkämpe mit rund 0,01 km² und überlappt die DtP-Fläche von rund 5 km² nicht. In den OSM-Daten vom 25.10.2026 haben wir kein passendes Objekt für das Naturschutzgebiet gefunden. Deshalb entfernt diese Korrektur den Verweis, das Gebiet erscheint als nur amtlich. DtP sollte den Verweis löschen.",
       "decidedAt": "2026-10-31"
+    },
+    {
+      "dtpUuid": "a95fc936-d3c4-44e0-8da4-f75f6ae9a7cf",
+      "name": "Wellsee und Wellsau-Niederung",
+      "reportedWikidata": "Q61708572",
+      "wikidata": "Q61708419",
+      "impact": "matching",
+      "comment": "In den DtP-Daten trägt das Gebiet Wellsee und Wellsau-Niederung die Wikidata-ID Q61708572. Dieser Wikidata-Eintrag ist aber das Gebiet Zwischen Heischer Tal und Schilkseer Steilküste: Die IDs der beiden Gebiete sind bei DtP vertauscht. Richtig ist Q61708419, deren Wikidata-Eintrag auch die WDPA-ID 326011 aus den DtP-Daten nennt. In OSM steht an way/90156614 derzeit eine dritte, falsche ID; die Korrektur dort steht in Issue 50. Sobald sie umgesetzt ist, findet der Abgleich das Gebiet nur mit dieser Korrektur. DtP sollte die ID ersetzen.",
+      "decidedAt": "2026-10-31"
+    },
+    {
+      "dtpUuid": "d1b11c66-ece1-4f22-92e6-280c4371a97e",
+      "name": "Zwischen Heischer Tal und Schilkseer Steilküste",
+      "reportedWikidata": "Q61708419",
+      "wikidata": "Q61708572",
+      "impact": "matching",
+      "comment": "In den DtP-Daten trägt das Gebiet Zwischen Heischer Tal und Schilkseer Steilküste die Wikidata-ID Q61708419. Dieser Wikidata-Eintrag ist aber das Gebiet Wellsee und Wellsau-Niederung: Die IDs der beiden Gebiete sind bei DtP vertauscht. Richtig ist Q61708572, deren Wikidata-Eintrag auch die WDPA-ID 322520 aus den DtP-Daten nennt. In den OSM-Daten haben wir für dieses Gebiet kein Objekt gefunden. Ohne diese Korrektur würde der Abgleich das Gebiet dem Wellsee in OSM zuordnen, sobald way/90156614 die richtige ID trägt. DtP sollte die ID ersetzen.",
+      "decidedAt": "2026-10-31"
     }
   ]
 }
