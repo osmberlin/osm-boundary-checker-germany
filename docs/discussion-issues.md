@@ -18,6 +18,7 @@ detail pages.
   `sync-runtime-assets`. A new issue shows after the next report build.
 - Matching: [`scripts/shared/discussMatch.ts`](../scripts/shared/discussMatch.ts) and
   [`scripts/shared/discussionsRegistry.ts`](../scripts/shared/discussionsRegistry.ts).
+- For Digitize the Planet rows, the detail page and the compare page also link "Korrektur für DtP vorschlagen", which opens the `dtp-override` issue form ([`.github/ISSUE_TEMPLATE/dtp-override.yml`](../.github/ISSUE_TEMPLATE/dtp-override.yml)) with the page path as title, so the issue links to the page like a discussion; how a proposal is taken over is described in [`data/dtp-overrides/README.md`](../data/dtp-overrides/README.md).
 
 ## Compare page
 

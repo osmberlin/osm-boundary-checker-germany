@@ -5,6 +5,7 @@ import { buildResolvedOsmSourceSide } from '../../../scripts/shared/osmGermanyPr
 import { areasIndex } from '../data/areasIndex'
 import { de } from '../i18n/de'
 import { renderWithAbbr, SourceTerm, sourceText } from '../i18n/sourceVocabulary'
+import { DTP_OVERRIDE_OSM_REF_PROPERTY } from '../lib/dtpCorrection'
 import { EM_DASH } from '../lib/formatDe'
 import {
   formatFreshnessDisplayDe,
@@ -161,7 +162,11 @@ function matchRuleItem(
     case 'osm_reference':
       return {
         code: `${number}. osm_reference: ${rule.officialProperty}`,
-        description: d.osm_reference(rule.officialProperty, sourceData),
+        // Our reviewed correction; DtP does not name this object, so the generic text would be wrong.
+        description:
+          rule.officialProperty === DTP_OVERRIDE_OSM_REF_PROPERTY
+            ? d.osm_reference_override
+            : d.osm_reference(rule.officialProperty, sourceData),
       }
     case 'osm_tag':
       return {
@@ -187,10 +192,12 @@ function matchedRuleText(
       : rule.kind === 'relation_id'
         ? how.relation_id
         : rule.kind === 'osm_reference'
-          ? how.osm_reference(
-              sourceData,
-              osmObjectRefFromReference(officialValue(rule.officialProperty)),
-            )
+          ? rule.officialProperty === DTP_OVERRIDE_OSM_REF_PROPERTY
+            ? how.osm_override(osmObjectRefFromReference(officialValue(rule.officialProperty)))
+            : how.osm_reference(
+                sourceData,
+                osmObjectRefFromReference(officialValue(rule.officialProperty)),
+              )
           : how.osm_tag(rule.osmTag, String(officialValue(rule.officialProperty) ?? '').trim())
   return de.provenance.matchedByRule(position + 1, detail)
 }

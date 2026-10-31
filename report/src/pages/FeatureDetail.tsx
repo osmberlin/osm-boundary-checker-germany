@@ -6,6 +6,7 @@ import { padRegional12 } from '../../../scripts/shared/regionalArs.ts'
 import { CompareDialogButton } from '../components/compare/CompareDialogButton'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
 import { FeatureDatasetProperties } from '../components/FeatureDatasetProperties'
+import { DtpCorrectionSection } from '../components/featureDetail/DtpCorrectionSection'
 import { FeatureDetailHeader } from '../components/featureDetail/FeatureDetailHeader'
 import { FeatureDetailMapSection } from '../components/featureDetail/FeatureDetailMapSection'
 import { FeatureDetailStatsDiffMetricsSection } from '../components/featureDetail/FeatureDetailStatsDiffMetricsSection'
@@ -181,6 +182,8 @@ function FeatureDetailWithMapContext({
           hints={data.attributeHints}
           wikidata={data.wikidata}
         />
+
+        <DtpCorrectionSection data={data} row={row} />
 
         {hasComparisonMap ? (
           <LiveSourceProperties

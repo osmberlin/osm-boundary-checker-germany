@@ -159,6 +159,9 @@ export const de = {
         `Zuordnung nur für die OSM-Relation-ID(s) ${relationIds}; der Schlüssel kommt aus dem Feld \`${officialProperty}\`.`,
       osm_reference: (officialProperty: string, data: string) =>
         `Das Feld \`${officialProperty}\` aus den ${data} nennt ein OSM-Objekt (zum Beispiel relation/123); dieses Objekt wird zugeordnet.`,
+      /** Rule on `override_osm_ref`: our reviewed correction, which DtP does not name. */
+      osm_reference_override:
+        'Unsere geprüfte Korrektur verweist auf dieses OSM-Objekt (DtP nennt es nicht).',
       osm_tag: (officialProperty: string, osmTag: string, data: string) =>
         `Das OSM-Objekt, dessen Tag \`${osmTag}\` dem Wert von \`${officialProperty}\` aus den ${data} entspricht, wird zugeordnet.`,
     },
@@ -168,6 +171,8 @@ export const de = {
       key: 'Schlüssel',
       relation_id: 'Relation-ID',
       osm_reference: (data: string, ref: string) => `OSM-Verweis der ${data}: ${ref}`,
+      /** Rule on `override_osm_ref`: the reviewed correction, not a reference DtP made. */
+      osm_override: (ref: string) => `geprüfte Korrektur: ${ref}`,
       osm_tag: (osmTag: string, value: string) => `OSM-Tag ${osmTag} = ${value}`,
     },
     /** Second paragraph under Vergleichsregeln when `osmMatchProperties` lists both German admin keys. */
@@ -705,6 +710,24 @@ export const de = {
       'Sondergebiets-Kennzeichnung (z. B. Bodensee/Hoheitsgebiet) für Ausnahmefälle.',
     datasetIndicatorDescNBD:
       'Kennzeichnet, ob die Bezeichnung Bestandteil des amtlichen Namens ist (Namensprüfung).',
+
+    /** Detail page of a DtP row: suggest a correction to DtP, and show a reviewed override. */
+    dtpCorrection: {
+      sectionAria: 'Korrektur für Digitize the Planet vorschlagen',
+      heading: 'Daten bei DtP korrigieren',
+      lead: 'Manchmal liegt der Fehler nicht in OSM, sondern bei Digitize the Planet, etwa ein falscher OSM-Verweis oder eine fehlende Wikidata-ID. Dann schlage hier eine Korrektur vor.',
+      linkLabel: 'Korrektur für DtP vorschlagen',
+      /** Notice above the lead, when a reviewed correction of ours applies to this row. */
+      noticeTitle: 'Für dieses Gebiet gilt unsere eigene Korrektur, die wir DtP vorschlagen.',
+      noticeReportedOsm: (ref: string) => `DtP nennt als OSM-Objekt: ${ref}.`,
+      noticeNoReportedOsm: 'DtP nennt kein OSM-Objekt.',
+      noticeUsedOsm: (ref: string) => `Wir nutzen: ${ref}.`,
+      noticeNoUsedOsm: 'Wir nutzen kein OSM-Objekt.',
+      noticeWikidataNone: (used: string) => `DtP nennt keine Wikidata-ID; wir nutzen ${used}.`,
+      noticeWikidataReported: (reported: string, used: string) =>
+        `DtP nennt ${reported}; wir nutzen ${used}.`,
+      noticeComment: (comment: string) => `Begründung: ${comment}`,
+    },
 
     staleOfficialKeySectionAria: 'Amtlicher Schlüssel ist veraltet',
     staleOfficialKeyTitle: 'Amtlicher Schlüssel veraltet',

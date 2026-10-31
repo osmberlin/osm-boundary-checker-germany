@@ -1,0 +1,87 @@
+name: Korrektur für DtP vorschlagen
+description: Schlägt eine Korrektur der OSM-Zuordnung oder der Wikidata-ID für Digitize the Planet vor.
+labels:
+  - discussion
+  - dtp-override
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Mit diesem Formular schlagen Sie Digitize the Planet (DtP) eine Korrektur für ein Gebiet vor, dessen OSM-Verweis oder Wikidata-ID dort falsch oder fehlt. Die Felder mit den Werten bei DtP sind schon ausgefüllt, wenn Sie das Formular über die Schaltfläche auf der Seite öffnen.
+
+        Die Begründung hilft, die Korrektur zu prüfen. Quellen (Wikidata-Eintrag, OSM-Objekt, amtliche Veröffentlichung) sind sehr willkommen.
+
+  - type: input
+    id: page
+    attributes:
+      label: Seite im Grenzabgleich
+      description: Adresse der Seite (Detailseite oder Vergleich), auf der Sie den Fehler gesehen haben.
+      placeholder: 'https://example.org/de-natura2000/feature/...'
+    validations:
+      required: true
+
+  - type: input
+    id: dtp_uuid
+    attributes:
+      label: DtP-Gebiet (UUID)
+      description: Die UUID des Gebiets bei Digitize the Planet.
+      placeholder: 'Example: 3f2c1a9e-0000-4000-8000-000000000000'
+    validations:
+      required: true
+
+  - type: input
+    id: dtp_name
+    attributes:
+      label: Name bei DtP
+      description: Name des Gebiets, so wie DtP ihn führt.
+      placeholder: 'Example: Naturschutzgebiet Beispiel'
+    validations:
+      required: false
+
+  - type: input
+    id: dtp_osm_ref
+    attributes:
+      label: OSM-Verweis bei DtP
+      description: Das OSM-Objekt, das DtP für dieses Gebiet nennt (relation/123 oder way/123).
+      placeholder: 'relation/123'
+    validations:
+      required: false
+
+  - type: input
+    id: dtp_wikidata
+    attributes:
+      label: Wikidata-ID bei DtP
+      description: Die Wikidata-ID, die DtP für dieses Gebiet nennt. Leer lassen, wenn DtP keine nennt.
+      placeholder: 'Q123'
+    validations:
+      required: false
+
+  - type: input
+    id: osm_ref
+    attributes:
+      label: Richtiges OSM-Objekt
+      description: relation/123 oder way/123. Leer lassen, wenn es in OSM kein passendes Objekt gibt.
+      placeholder: 'relation/123'
+    validations:
+      required: false
+
+  - type: input
+    id: wikidata
+    attributes:
+      label: Richtige Wikidata-ID
+      description: Q123, falls bekannt.
+      placeholder: 'Q123'
+    validations:
+      required: false
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Begründung
+      description: Warum sollte DtP das ändern? Quellen helfen.
+      placeholder: |
+        - Was ist falsch?
+        - Was ist richtig?
+        - Quellen (Links)
+    validations:
+      required: true

@@ -98,11 +98,18 @@ function administrativeExpectedTags(
 ): ExpectedTag[] {
   const summary = areasIndex.summaries.find((s) => s.area === areaKey)
   const adminLevels = summary?.osmAdminLevels ?? data.filterConfigSummary.adminLevels
-  // DtP areas without a WDPA id have no ref:WDPA to expect; the tag of the osm_tag rule links them.
-  const identityTags = (data.matchRules ?? []).flatMap((rule) =>
-    rule.kind === 'osm_tag' ? [rule.osmTag] : [],
-  )
   const keylessDtpId = keylessDtpIdOf(row)
+  // DtP areas without a WDPA id have no ref:WDPA to expect; the tag of the osm_tag rule whose official
+  // value is the DtP UUID links them. Other osm_tag rules (such as wikidata) do not name that key.
+  const identityTags = (data.matchRules ?? []).flatMap((rule) =>
+    rule.kind === 'osm_tag' &&
+    keylessDtpId !== null &&
+    String(row.officialProperties?.[rule.officialProperty] ?? '')
+      .trim()
+      .toLowerCase() === keylessDtpId
+      ? [rule.osmTag]
+      : [],
+  )
   const matchProperties =
     keylessDtpId && identityTags.length > 0
       ? identityTags
