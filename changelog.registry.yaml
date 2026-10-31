@@ -513,3 +513,12 @@ entries:
       - 'e5232b7'
     descriptionMd: |
       Behoben: Kennt Postpass ein OSM-Objekt nicht, behalten Regionalseiten die Werte aus dem Extrakt, und der Hinweis nennt das Objekt nicht mehr pauschal gelöscht.
+  - refs:
+      - '6539f3c'
+    descriptionMd: |
+      Behoben: Bei Schutzgebieten, die in OSM ein Way sind, waren „OSM-Objekt auf osm.org öffnen“ und „OSM-Objekt in JOSM laden“ deaktiviert, und iD öffnete ohne das Objekt. Alle drei Links funktionieren jetzt auch für Ways, ebenso der Link zur Versionsgeschichte.
+  - refs:
+      - 'b755abf'
+    descriptionMd: |
+      Detailseiten: Eine geprüfte DtP-Korrektur steht jetzt als erste Zeile über den Vergleichsregeln und nennt den DtP-Wert, unseren Wert und die Begründung. Objekte lassen sich mit „Auf der Karte zeigen“ direkt einblenden. In den Vergleichsregeln ist die Regel markiert, die das Gebiet zugeordnet hat.
+      „Korrektur für DtP vorschlagen“ steht jetzt als letzte Zeile unter „Daten in OSM bearbeiten“, der Bereich ist außerdem kompakter.
