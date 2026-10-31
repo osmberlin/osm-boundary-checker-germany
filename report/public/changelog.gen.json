@@ -1,9 +1,107 @@
 {
-  "generatedAt": "2026-10-27T05:59:51.389Z",
+  "generatedAt": "2026-10-31T09:54:37.018Z",
   "months": [
     {
       "month": "2026-10",
       "entries": [
+        {
+          "refs": ["e5232b7"],
+          "descriptionMd": "Behoben: Kennt Postpass ein OSM-Objekt nicht, behalten Regionalseiten die Werte aus dem Extrakt, und der Hinweis nennt das Objekt nicht mehr pauschal gelöscht.",
+          "committedAtIso": "2026-10-31T10:54:14+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["e5232b7"]
+        },
+        {
+          "refs": ["e13b43c"],
+          "descriptionMd": "„Aktuell in OSM“ zeigt jetzt, wie alt die Daten sind, der Tooltip nennt das genaue Datum. „Neu laden“ steht direkt daneben.",
+          "committedAtIso": "2026-10-31T10:46:21+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["e13b43c"]
+        },
+        {
+          "refs": ["a88dc65"],
+          "descriptionMd": "Neue Seite „Datenschutz“ im Footer: Sie erklärt kurz, welche Dienste die Seite automatisch oder erst per Klick anspricht und was im Browser gespeichert wird.",
+          "committedAtIso": "2026-10-31T10:46:19+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["a88dc65"]
+        },
+        {
+          "refs": ["e89a9d9"],
+          "descriptionMd": "Die aktuellen OSM-Daten kommen jetzt von Postpass statt von Overpass. Detail-, Vergleichs- und Regionalseiten zeigen die aktuellen Tags direkt nach dem Öffnen, deshalb läuft der Attributvergleich auf der Vergleichsseite ohne Klick. Die Antworten bleiben 24 Stunden im Browser, ein Button fragt neu ab. Die Umgebungssuche und die PLZ-Punktdaten starten mit einem Klick, die Abfrage lässt sich nicht mehr bearbeiten.",
+          "committedAtIso": "2026-10-31T10:26:55+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["e89a9d9"]
+        },
+        {
+          "refs": ["a90b895"],
+          "descriptionMd": "Behoben: Die Vergleichsseite meldete Wikidata, WDPA-ID und Schutzkategorie als „fehlt in OSM“, obwohl die OSM-Relation sie hatte, weil ihr für diese Relationen nur Name und ID vorlagen. Attribute werden dort jetzt erst nach „Aktuellen OSM-Stand laden“ verglichen, dann mit den aktuellen OSM-Daten.",
+          "committedAtIso": "2026-10-31T10:08:14+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["a90b895"]
+        },
+        {
+          "refs": ["0b1c152"],
+          "descriptionMd": "DtP-Korrekturen sagen jetzt, ob sie für den Abgleich nötig sind oder nur informieren, etwa wenn DtP eine Wikidata-ID fehlt, das Gebiet aber trotzdem richtig zugeordnet ist. Die Detailseite zeigt das über der Begründung.",
+          "committedAtIso": "2026-10-31T10:08:13+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["0b1c152"]
+        },
+        {
+          "refs": ["fd3ddba"],
+          "descriptionMd": "Schutzgebiete: Flächen von Digitize the Planet und OSM-Objekte werden jetzt auch über dieselbe Wikidata-ID zugeordnet. In den vier DtP-Datensätzen finden so rund 1.520 weitere Gebiete ihr OSM-Gegenstück. Es gilt diese Reihenfolge: WDPA-ID, unsere geprüften Korrekturen, Wikidata, der OSM-Verweis von DtP und zuletzt das Tag `dtp_id`.\nFalsche oder fehlende DtP-Angaben korrigieren wir mit einer geprüften Liste, jeweils mit Begründung. Sobald DtP den Wert ändert, gilt der Eintrag nicht mehr. So zeigt der Naturpark Stechlin-Ruppiner Land nicht mehr auf eine eingezäunte frühere Kaserne, sondern auf die Naturpark-Grenze in OSM.",
+          "committedAtIso": "2026-10-31T09:57:11+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["fd3ddba"]
+        },
+        {
+          "refs": ["9df2b62"],
+          "descriptionMd": "Detail- und Vergleichsseiten der Schutzgebiete haben jetzt den Link „Korrektur für DtP vorschlagen“. Er öffnet ein vorausgefülltes GitHub-Issue, in dem nur noch die Begründung fehlt, wenn der Fehler eher bei Digitize the Planet als in OSM liegt. Gilt für ein Gebiet schon eine Korrektur, nennt die Detailseite den DtP-Wert, unseren Wert und die Begründung.",
+          "committedAtIso": "2026-10-31T09:57:11+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["9df2b62"]
+        },
+        {
+          "refs": ["2e42b18"],
+          "descriptionMd": "GeoJSON-Dateien zum Bearbeiten gibt es nur noch für Gebiete mit der Bewertung „Prüfung“ oder „Problem“ und für Gebiete ohne OSM-Treffer. Bei „OK“ sind „GeoJSON herunterladen“ und der JOSM-Import deaktiviert, der Bearbeiten-Bereich nennt den Grund. Das spart rund 80 % dieser Dateien und hält die Website unter dem Speicherlimit von GitHub Pages.",
+          "committedAtIso": "2026-10-31T09:43:16+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["2e42b18"]
+        },
+        {
+          "refs": ["469daeb"],
+          "descriptionMd": "Die Kartenkacheln für Landkreise und Verwaltungsgemeinschaften reichen jetzt bis Zoomstufe 13 statt 14. Darüber vergrößert die Karte sie, die Grenzen bleiben scharf. So bleibt die Website unter dem Speicherlimit von GitHub Pages.",
+          "committedAtIso": "2026-10-31T09:42:58+01:00",
+          "committedAtShort": "2026-10-31",
+          "refsDisplay": ["469daeb"]
+        },
+        {
+          "refs": ["6819c04"],
+          "descriptionMd": "Der Schlüssel-Explorer erklärt jetzt Pseudo-Verbände: Für Gemeinden ohne Verwaltungsgemeinschaft vergeben Destatis und BKG einen Platzhalter-Verband (z.B. `160720015` für die Stadt Schalkau). Er beschreibt kein eigenes Gebiet und sollte in OSM an keiner Grenzrelation stehen. Der Hinweis nennt die zugehörige Gemeinde und verlinkt eine Overpass-Suche nach Relationen mit diesem Schlüssel. Veraltete Schlüssel bekommen einen ähnlichen Hinweis mit der letzten Destatis-Ausgabe und was in OSM zu tun ist.\nBehoben: Ein 9-stelliger Verbandsschlüssel zeigte als Gemeindeschlüssel die ersten 8 Ziffern an, also eine fremde Gemeinde (z.B. Bachfeld bei `160720015`).",
+          "committedAtIso": "2026-10-27T21:11:10+01:00",
+          "committedAtShort": "2026-10-27",
+          "refsDisplay": ["6819c04"]
+        },
+        {
+          "refs": ["7194abf"],
+          "descriptionMd": "Liegen auf der Übersichtskarte genau eine Fläche „nur amtlich“ und eine Fläche „nur OSM“ übereinander, öffnet ein Klick darauf jetzt direkt die Vergleichsseite der beiden statt des Auswahldialogs. Von dort geht es weiter zu den beiden Detailseiten. Den Auswahldialog gibt es nur noch, wenn mehr als zwei Flächen übereinanderliegen.",
+          "committedAtIso": "2026-10-27T09:25:30+01:00",
+          "committedAtShort": "2026-10-27",
+          "refsDisplay": ["7194abf"]
+        },
+        {
+          "refs": ["ded4929"],
+          "descriptionMd": "Behoben: Im Regional-Hub führte der Geometrie-Link einer Verwaltungsgemeinschaft auf eine Seite, die es nicht gibt. Er zeigt jetzt auf die Verwaltungsgemeinschaft oder, bei Gemeinden ohne Verwaltungsgemeinschaft, auf die Gemeinde.",
+          "committedAtIso": "2026-10-27T07:18:16+01:00",
+          "committedAtShort": "2026-10-27",
+          "refsDisplay": ["ded4929"]
+        },
+        {
+          "refs": ["5fa1bf8", "3b3b0c7"],
+          "descriptionMd": "Verwaltungsgemeinschaften: Gemeinden, die keiner Verwaltungsgemeinschaft angehören, führt das BKG zusätzlich als eigene „gemeinschaftsfreie“ Verwaltungsgemeinschaft, und auch die kreisfreien Städte stehen dort noch einmal. Diese Einträge sind jetzt nicht mehr im Datensatz, weil dieselben Flächen schon in den Gemeinde- und Landkreis-Datensätzen abgeglichen werden. Die Zahl der Einträge ohne OSM-Treffer sinkt dadurch von 3285 auf 6.",
+          "committedAtIso": "2026-10-27T07:03:09+01:00",
+          "committedAtShort": "2026-10-27",
+          "refsDisplay": ["5fa1bf8", "3b3b0c7"]
+        },
         {
           "refs": ["075170b"],
           "descriptionMd": "Auf der Detailseite blendet „Nur diesen zeigen“ bei live geladenen OSM-Objekten alle anderen auf der Karte aus. „Alle ausblenden / Alle einblenden“ über der Umgebungssuche schaltet alle auf einmal.",
@@ -12,11 +110,11 @@
           "refsDisplay": ["075170b"]
         },
         {
-          "refs": ["93cd68d"],
+          "refs": ["93cd68d", "c12e633"],
           "descriptionMd": "Wikidata-IDs in Tags und Eigenschaften (OSM-Auszug, Kandidaten, live geladene OSM-Objekte, erwartete Tags) sind jetzt Links auf das Wikidata-Objekt.",
           "committedAtIso": "2026-10-27T06:50:24+01:00",
           "committedAtShort": "2026-10-27",
-          "refsDisplay": ["93cd68d"]
+          "refsDisplay": ["93cd68d", "c12e633"]
         },
         {
           "refs": ["31fcdb7", "9d92e2e"],
