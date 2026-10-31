@@ -817,6 +817,7 @@ export function FeatureDatasetProperties({
   candidates,
   hints,
   wikidata,
+  osmTagsLiveOnly = false,
 }: {
   row: ReportRow
   data: ComparisonForReport
@@ -828,6 +829,8 @@ export function FeatureDatasetProperties({
   hints?: AttributeHint[]
   /** Wikidata items of the record (shard); the "Wikidata" block shows only when present. */
   wikidata?: WikidataShard
+  /** Compare page: the row has no OSM tags of the extract, so checks run on live tags only. */
+  osmTagsLiveOnly?: boolean
 }) {
   const [candidateKey, setCandidateKey] = useState('')
   const taggedCandidates = (candidates ?? []).filter((candidate) => candidate.tags !== undefined)
@@ -839,7 +842,7 @@ export function FeatureDatasetProperties({
   // Checks need an OSM side: none for OSM-only rows, and official-only rows get one by selecting a
   // candidate (`evaluateAttributeChecks` returns nothing without OSM tags).
   const attributeCheckResults =
-    row.category === 'unmatched_osm'
+    row.category === 'unmatched_osm' || osmTagsLiveOnly
       ? []
       : evaluateAttributeChecks(data.attributeChecks, official, shownOsmTags)
 
@@ -856,7 +859,7 @@ export function FeatureDatasetProperties({
   // Protected-area datasets (with attribute checks) load the matched object by id; admin datasets
   // keep the relation tag lookup below.
   const liveObject =
-    row.category === 'matched' && (data.attributeChecks?.length ?? 0) > 0
+    (row.category === 'matched' || osmTagsLiveOnly) && (data.attributeChecks?.length ?? 0) > 0
       ? parseLiveOsmObjectRef(row.osmRelationId)
       : null
   const liveContext: LiveOsmContext = { featureKey, row, data }
@@ -974,7 +977,13 @@ export function FeatureDatasetProperties({
             />
             {liveObject ? (
               <div className="mt-4 border-t border-slate-700/80 pt-3 empty:hidden">
-                <LiveOsmObjectResult context={liveContext} object={liveObject} snapshotTags={osm} />
+                <LiveOsmObjectResult
+                  context={liveContext}
+                  object={liveObject}
+                  {...(osmTagsLiveOnly
+                    ? { notLoadedHint: de.compare.osmTagsNotLoadedHint }
+                    : { snapshotTags: osm })}
+                />
               </div>
             ) : null}
           </ProvenanceGridRow>

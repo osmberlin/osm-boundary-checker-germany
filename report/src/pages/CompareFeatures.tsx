@@ -206,7 +206,12 @@ function CompareContent({
           />
         ) : null}
 
-        <FeatureDatasetProperties row={pairRow} data={officialData} featureKey={liveKey} />
+        <FeatureDatasetProperties
+          row={pairRow}
+          data={officialData}
+          featureKey={liveKey}
+          osmTagsLiveOnly
+        />
 
         <UpdateMapInstructions
           areaId={areaKey}

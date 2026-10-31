@@ -230,15 +230,20 @@ export function LiveOsmObjectResult({
   context,
   object,
   snapshotTags,
+  notLoadedHint,
 }: {
   context: LiveOsmContext
   object: LiveOsmObjectRef
   /** Tags of the extract row: when given, a note says whether the live tags changed since. */
   snapshotTags?: Record<string, unknown> | null
+  /** Shown until the first load starts. */
+  notLoadedHint?: string
 }) {
   const { getState } = useLiveOsmObjects(context.featureKey)
   const state = getState(object)
-  if (!state || state.status === 'loading') return null
+  if (!state)
+    return notLoadedHint ? <p className="text-xs text-slate-400">{notLoadedHint}</p> : null
+  if (state.status === 'loading') return null
 
   if (state.status === 'error') {
     return (

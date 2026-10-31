@@ -399,6 +399,9 @@ export const de = {
     keysDiffer: 'abweichend',
     keysOpenExplorer: 'Im Explorer öffnen',
     discussButton: 'Vergleich diskutieren',
+    /** The table stores no tags for OSM-only rows, so the attribute checks wait for the live load. */
+    osmTagsNotLoadedHint:
+      'Für diese OSM-Relation liegen hier nur Name und ID vor. Lade die aktuellen OSM-Daten, um die Attribute zu vergleichen.',
     discussBody: (compareUrl: string, officialUrl: string, osmUrl: string) =>
       [`Vergleich: ${compareUrl}`, '', `- ${officialUrl}`, `- ${osmUrl}`, ''].join('\n'),
     dialogTitle: 'Vergleichen mit …',
