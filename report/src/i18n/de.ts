@@ -727,6 +727,12 @@ export const de = {
       noticeWikidataReported: (reported: string, used: string) =>
         `DtP nennt ${reported}; wir nutzen ${used}.`,
       noticeComment: (comment: string) => `Begründung: ${comment}`,
+      /** `override_impact` of the override file. */
+      noticeImpact: {
+        matching:
+          'Wichtig für den Abgleich: Ohne diese Korrektur landet das Gebiet beim falschen oder bei keinem OSM-Objekt.',
+        informational: 'Zur Information: Der Abgleich stimmt auch ohne diese Korrektur.',
+      },
     },
 
     staleOfficialKeySectionAria: 'Amtlicher Schlüssel ist veraltet',

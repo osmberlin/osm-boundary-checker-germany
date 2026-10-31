@@ -25,6 +25,8 @@ export const dtpOverrideSchema = z
     dtpUuid: z.uuid().transform((uuid) => uuid.toLowerCase()),
     /** DtP name of the area, for the log and the README. */
     name: trimmed,
+    /** `matching`: the row pairs wrongly or not at all without this entry. `informational`: it does not. */
+    impact: z.enum(['matching', 'informational']),
     /** German, shown in the report. */
     comment: trimmed,
     decidedAt: z.iso.date(),

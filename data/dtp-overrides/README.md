@@ -10,17 +10,18 @@ The file is tracked in git and is the only source of these corrections. It is re
 
 Each entry in `overrides` has these fields. Unknown fields are an error.
 
-| Field              | Required        | Meaning                                                                                                                                                                      |
-| ------------------ | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dtpUuid`          | yes             | The DtP area uuid. Stored in lower case; uniqueness is checked per file.                                                                                                     |
-| `name`             | yes             | The DtP name of the area, for the log and for reviewers.                                                                                                                     |
-| `comment`          | yes             | The reason, in German. Shown in the report on the rows that got the override.                                                                                                |
-| `decidedAt`        | yes             | The decision date (`YYYY-MM-DD`).                                                                                                                                            |
-| `issueUrl`         | no              | The GitHub issue (label `dtp-override`) the entry came from.                                                                                                                 |
-| `osmRef`           | one of          | The OSM object DtP should name: `way/<id>` or `relation/<id>`. `null` means: DtP's reference is wrong and there is no OSM object to replace it, so the reference is removed. |
-| `reportedOsmRef`   | with `osmRef`   | DtP's `osm` reference as it was when we reviewed it (a string, or `null` when DtP named none). Guards the `osmRef` change.                                                   |
-| `wikidata`         | one of          | The Wikidata item that DtP should carry, `Q<id>`.                                                                                                                            |
-| `reportedWikidata` | with `wikidata` | DtP's Wikidata id as it was when we reviewed it (`null` when DtP named none). Guards the `wikidata` change.                                                                  |
+| Field              | Required        | Meaning                                                                                                                                                                               |
+| ------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dtpUuid`          | yes             | The DtP area uuid. Stored in lower case; uniqueness is checked per file.                                                                                                              |
+| `name`             | yes             | The DtP name of the area, for the log and for reviewers.                                                                                                                              |
+| `impact`           | yes             | `matching`: without the entry the row pairs with a wrong OSM object or with none. `informational`: the row pairs correctly anyway; the entry only records what DtP should add or fix. |
+| `comment`          | yes             | The reason, in German. Shown in the report on the rows that got the override.                                                                                                         |
+| `decidedAt`        | yes             | The decision date (`YYYY-MM-DD`).                                                                                                                                                     |
+| `issueUrl`         | no              | The GitHub issue (label `dtp-override`) the entry came from.                                                                                                                          |
+| `osmRef`           | one of          | The OSM object DtP should name: `way/<id>` or `relation/<id>`. `null` means: DtP's reference is wrong and there is no OSM object to replace it, so the reference is removed.          |
+| `reportedOsmRef`   | with `osmRef`   | DtP's `osm` reference as it was when we reviewed it (a string, or `null` when DtP named none). Guards the `osmRef` change.                                                            |
+| `wikidata`         | one of          | The Wikidata item that DtP should carry, `Q<id>`.                                                                                                                                     |
+| `reportedWikidata` | with `wikidata` | DtP's Wikidata id as it was when we reviewed it (`null` when DtP named none). Guards the `wikidata` change.                                                                           |
 
 Rules: an entry has `osmRef`, `wikidata`, or both. A `reported…` field is required with its change and not allowed without it. `dtpUuid` appears only once in the file.
 
@@ -30,7 +31,7 @@ Rules: an entry has `osmRef`, `wikidata`, or both. A `reported…` field is requ
 
 - `osmRef` change: `dtp_reported_osm_ref` (DtP's value), `dtp_osm_ref` = `null`, and `override_osm_ref` = the new reference. For `osmRef: null`, `override_osm_ref` is omitted.
 - `wikidata` change: `dtp_reported_wikidata` (DtP's value, `null` if none), `override_wikidata` and `wikidata` = the new item.
-- Both: `override_comment` = `comment`. Rows without an applied override have none of these properties.
+- Both: `override_comment` = `comment`, `override_impact` = `impact`. Rows without an applied override have none of these properties.
 
 The compare then pairs the row through the rule `osm_reference` `override_osm_ref` (second in the rule list of the four DtP datasets) and, for the Wikidata change, through the rule `osm_tag` `wikidata` (third). The report shows `override_comment` on the feature.
 
@@ -72,6 +73,8 @@ The form headings are German, so read the body by meaning, not by exact heading 
 - `osm_ref`: the OSM object that is right. Empty means there is no matching object, so `osmRef` is `null`.
 - `wikidata`: the Wikidata item that is right (optional).
 - `reason`: the reasoning, with sources.
+
+Set `impact` yourself: compare the row in `datasets/<area>/output/comparison_table.json`. If the area is already matched to the right OSM object, for example by its WDPA id, a missing Wikidata id is `informational`. If the entry is what makes the match right, it is `matching`.
 
 To take over an issue:
 

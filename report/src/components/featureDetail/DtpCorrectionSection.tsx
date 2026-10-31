@@ -15,6 +15,7 @@ import { ProvenanceGridSectionHeader } from '../ProvenanceGridSectionHeader'
 function overrideNoticeLines(notice: DtpOverrideNotice): string[] {
   const c = de.feature.dtpCorrection
   const lines: string[] = []
+  if (notice.impact) lines.push(c.noticeImpact[notice.impact])
   if (notice.osmRef) {
     const { reported, used } = notice.osmRef
     lines.push(reported ? c.noticeReportedOsm(reported) : c.noticeNoReportedOsm)

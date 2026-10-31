@@ -37,6 +37,7 @@ function entry(props: Record<string, unknown>): DtpOverride {
   return dtpOverrideSchema.parse({
     dtpUuid: UUID,
     name: 'Stechlin-Ruppiner Land',
+    impact: 'matching',
     comment: 'Begründung',
     decidedAt: '2026-10-31',
     ...props,
@@ -55,6 +56,7 @@ describe('applyDtpOverrides', () => {
       dtp_reported_osm_ref: 'way/137159334',
       override_osm_ref: 'relation/18068246',
       override_comment: 'Begründung',
+      override_impact: 'matching',
     })
     expect(features[0]?.properties).not.toHaveProperty('dtp_reported_wikidata')
     expect(applied).toEqual([{ dtpUuid: UUID, name: 'Stechlin-Ruppiner Land', parts: ['osmRef'] }])

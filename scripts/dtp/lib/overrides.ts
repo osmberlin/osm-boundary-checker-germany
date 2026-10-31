@@ -67,6 +67,7 @@ export function applyDtpOverrides(
     if (outdatedParts.length > 0) outdated.push({ ...hit, parts: outdatedParts })
     if (appliedParts.length === 0) return feature
     properties.override_comment = entry.comment
+    properties.override_impact = entry.impact
     applied.push({ ...hit, parts: appliedParts })
     return { ...feature, properties }
   })

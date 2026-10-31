@@ -7,6 +7,7 @@ const workspaceRoot = workspaceRootFromHere(import.meta.url)
 const base = {
   dtpUuid: 'A6CA9152-F47F-4139-B02D-21EEE9196C63',
   name: 'Stechlin-Ruppiner Land',
+  impact: 'matching',
   comment: 'Begründung',
   decidedAt: '2026-10-31',
 }
@@ -85,6 +86,7 @@ describe('dtpOverridesFileSchema', () => {
     ).toBe(false)
     expect(parseEntries([{ ...osmEntry, extra: 1 }]).success).toBe(false)
     expect(parseEntries([{ ...osmEntry, comment: '  ' }]).success).toBe(false)
+    expect(parseEntries([{ ...osmEntry, impact: 'wichtig' }]).success).toBe(false)
     expect(parseEntries([{ ...osmEntry, decidedAt: '31.10.2026' }]).success).toBe(false)
     expect(parseEntries([{ ...osmEntry, dtpUuid: 'nope' }]).success).toBe(false)
     expect(parseEntries([{ ...osmEntry, issueUrl: 'not a url' }]).success).toBe(false)

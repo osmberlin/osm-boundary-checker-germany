@@ -17,6 +17,7 @@ describe('dtpOverrideNotice', () => {
       }),
     ).toEqual({
       comment: 'Falsche Relation',
+      impact: null,
       osmRef: { reported: 'relation/1', used: 'relation/2' },
       wikidata: null,
     })
@@ -27,6 +28,7 @@ describe('dtpOverrideNotice', () => {
       dtpOverrideNotice({ override_comment: 'Kein Objekt in OSM', dtp_reported_osm_ref: 'way/9' }),
     ).toEqual({
       comment: 'Kein Objekt in OSM',
+      impact: null,
       osmRef: { reported: 'way/9', used: null },
       wikidata: null,
     })
@@ -42,6 +44,7 @@ describe('dtpOverrideNotice', () => {
       }),
     ).toEqual({
       comment: 'Wikidata',
+      impact: null,
       osmRef: null,
       wikidata: { reported: 'Q1', used: 'Q2' },
     })
@@ -56,6 +59,7 @@ describe('dtpOverrideNotice', () => {
       }),
     ).toEqual({
       comment: 'Wikidata fehlt',
+      impact: null,
       osmRef: null,
       wikidata: { reported: null, used: 'Q2' },
     })
@@ -70,6 +74,15 @@ describe('dtpOverrideNotice', () => {
         override_osm_ref: 'relation/2',
       })?.wikidata,
     ).toBeNull()
+  })
+})
+
+describe('dtpOverrideNotice impact', () => {
+  it('reads the impact of the override', () => {
+    expect(
+      dtpOverrideNotice({ override_comment: 'Grund', override_impact: 'informational' })?.impact,
+    ).toBe('informational')
+    expect(dtpOverrideNotice({ override_comment: 'Grund' })?.impact).toBeNull()
   })
 })
 

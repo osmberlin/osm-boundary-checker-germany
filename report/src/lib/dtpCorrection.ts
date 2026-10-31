@@ -15,6 +15,8 @@ function nonEmpty(value: unknown): string | null {
  */
 export type DtpOverrideNotice = {
   comment: string
+  /** Null for rows extracted before `override_impact` existed. */
+  impact: 'matching' | 'informational' | null
   osmRef: { reported: string | null; used: string | null } | null
   wikidata: { reported: string | null; used: string } | null
 }
@@ -37,7 +39,12 @@ export function dtpOverrideNotice(
       ? null
       : { reported: nonEmpty(props.dtp_reported_wikidata), used: usedWikidata }
 
-  return { comment, osmRef, wikidata }
+  const impact =
+    props.override_impact === 'matching' || props.override_impact === 'informational'
+      ? props.override_impact
+      : null
+
+  return { comment, impact, osmRef, wikidata }
 }
 
 /** Values of the DtP correction form for a row: DtP's own data, the reported values first. */

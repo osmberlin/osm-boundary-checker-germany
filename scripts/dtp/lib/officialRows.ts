@@ -55,6 +55,8 @@ export type DtpOfficialProperties = {
   override_wikidata?: string
   /** German reason of the applied override, shown in the report. Only on rows with an applied override. */
   override_comment?: string
+  /** Whether the row needs the override to match (`matching`) or not (`informational`). */
+  override_impact?: 'matching' | 'informational'
   geometry_source_name: string | null
   geometry_source_url: string | null
   geometry_license_name: string | null
