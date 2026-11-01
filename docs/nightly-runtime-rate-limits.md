@@ -52,7 +52,7 @@ These external endpoints can be slower or stricter than GitHub itself, so respec
 Current behavior already helps:
 
 - Workflow has `concurrency` to avoid overlap (`cancel-in-progress: true`).
-- Scheduled refresh runs happen four times per week (Sun/Wed/Fri/Sat at 04:00 `Europe/Berlin`, matching `.github/workflows/data-refresh.yml`), reducing unnecessary daily load while keeping weekend freshness. Local wall-clock time is stable; the equivalent UTC instant shifts with DST.
+- Scheduled refresh runs happen four times per week (Sun/Wed/Fri/Sat at 01:17 `Europe/Berlin`, matching `.github/workflows/data-refresh.yml`), reducing unnecessary daily load while keeping weekend freshness. Local wall-clock time is stable; the equivalent UTC instant shifts with DST. GitHub treats this time as a lower bound: runs planned for 04:00 started up to about six hours late.
 - Download/compare steps include retry wrappers in `.github/workflows/data-refresh.yml`.
 
 Current behavior that still drives long runtime:
@@ -73,7 +73,7 @@ Start with these, in order:
 
 ### Suggested operating model
 
-- Scheduled (Sun/Wed/Fri/Sat, 04:00 Europe/Berlin): full refresh + full compare.
+- Scheduled (Sun/Wed/Fri/Sat, 01:17 Europe/Berlin): full refresh + full compare.
 - Manual dispatch: full rebuild for verification or release snapshots.
 
 This preserves data freshness while reducing nightly runtime and operational risk.

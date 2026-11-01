@@ -17,9 +17,9 @@ describe('isScheduledRefreshDay', () => {
 })
 
 describe('scheduledRefreshAtIso', () => {
-  it('returns 04:00 Berlin as ISO', () => {
+  it('returns 01:17 Berlin as ISO', () => {
     const iso = scheduledRefreshAtIso('2026-06-07')
-    expect(iso).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
+    expect(new Date(iso).toISOString()).toBe('2026-06-06T23:17:00.000Z')
     expect(berlinCalendarDateKey(iso)).toBe('2026-06-07')
   })
 })

@@ -3,12 +3,13 @@ import { berlinDateKeyRange, berlinDateKeyToTZDate, berlinWeekdayFromDateKey } f
 /** Weekdays for data-refresh.yml cron: Sun, Wed, Fri, Sat (0=Sun … 6=Sat). */
 export const REFRESH_WEEKDAYS = new Set([0, 3, 5, 6])
 
-/** Scheduled local hour in Europe/Berlin (matches workflow cron). */
-export const REFRESH_HOUR_BERLIN = 4
+/** Scheduled local time in Europe/Berlin (matches workflow cron). */
+export const REFRESH_HOUR_BERLIN = 1
+export const REFRESH_MINUTE_BERLIN = 17
 
 export type ScheduledRefreshSlot = {
   dateKey: string
-  /** ISO instant for 04:00 Europe/Berlin on that calendar day. */
+  /** ISO instant for 01:17 Europe/Berlin on that calendar day. */
   scheduledAtIso: string
 }
 
@@ -17,9 +18,9 @@ export function isScheduledRefreshDay(dateKey: string): boolean {
   return wd != null && REFRESH_WEEKDAYS.has(wd)
 }
 
-/** 04:00 Europe/Berlin on `dateKey` as ISO string. */
+/** 01:17 Europe/Berlin on `dateKey` as ISO string. */
 export function scheduledRefreshAtIso(dateKey: string): string {
-  const berlin = berlinDateKeyToTZDate(dateKey, REFRESH_HOUR_BERLIN, 0, 0)
+  const berlin = berlinDateKeyToTZDate(dateKey, REFRESH_HOUR_BERLIN, REFRESH_MINUTE_BERLIN, 0)
   return berlin?.toISOString() ?? ''
 }
 

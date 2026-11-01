@@ -326,7 +326,7 @@ export const de = {
     title: 'Verarbeitungsstatus',
     /** Keep in sync with .github/workflows/data-refresh.yml schedule (cron + timezone). */
     dataRefreshCadence:
-      'Vergleich und veröffentlichte Auswertungen werden automatisch viermal pro Woche neu erstellt (sonntags, mittwochs, freitags und samstags jeweils um 04:00 Uhr Europe/Berlin). Diese Seite zeigt den aktuellen Stand der Verarbeitung.',
+      'Vergleich und veröffentlichte Auswertungen werden automatisch viermal pro Woche neu erstellt (sonntags, mittwochs, freitags und samstags, geplant jeweils um 01:17 Uhr Europe/Berlin). GitHub startet geplante Läufe oft einige Stunden später. Diese Seite zeigt den aktuellen Stand der Verarbeitung.',
     backHome: '← Zurück zur Startseite',
     githubActionsLink: 'GitHub Actions',
     inProgressLabel: 'Lauf aktiv',
@@ -358,7 +358,7 @@ export const de = {
     timelineLegendDownload: 'Download',
     timelineLegendExtract: 'Extraktion',
     timelineLegendCompare: 'Vergleich',
-    timelineLegendScheduled: 'Geplanter Lauf (04:00)',
+    timelineLegendScheduled: 'Geplanter Lauf (01:17)',
     phaseDownload: 'Download',
     phaseExtract: 'Extraktion',
     phaseCompare: 'Vergleich',
