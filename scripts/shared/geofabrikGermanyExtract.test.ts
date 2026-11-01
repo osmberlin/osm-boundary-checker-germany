@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  type GeofabrikGermanyFetchFn,
   germanyPbfBasenameFromReplicationTimestamp,
   germanyPbfUrlFromBasename,
   parseGermanyUpdatesState,
@@ -40,6 +41,52 @@ describe('resolveGeofabrikGermanyPbfUrl', () => {
     expect(r.resolvedVia).toBe('dated_from_state')
     expect(r.basename).toBe('germany-260602.osm.pbf')
     expect(r.url).toBe(germanyPbfUrlFromBasename('germany-260602.osm.pbf'))
+  })
+
+  const stateText = 'timestamp=2026-10-31T21\\:23\\:06Z\nsequenceNumber=1\n'
+  const fetchWithLatest =
+    (latest: () => Response): GeofabrikGermanyFetchFn =>
+    async (_input, init) =>
+      init?.method === 'HEAD' ? latest() : new Response(stateText, { status: 200 })
+
+  test('keeps the dated file when germany-latest is older than the state', async () => {
+    const r = await resolveGeofabrikGermanyPbfUrl({
+      fetchFn: fetchWithLatest(
+        () =>
+          new Response(null, {
+            status: 200,
+            headers: { 'last-modified': 'Sat, 31 Oct 2026 04:12:09 GMT' },
+          }),
+      ),
+    })
+    expect(r.resolvedVia).toBe('dated_from_state')
+    expect(r.basename).toBe('germany-261031.osm.pbf')
+    expect(r.latestModifiedAt).toBe('2026-10-31T04:12:09.000Z')
+  })
+
+  test('uses germany-latest when it is newer than the state', async () => {
+    const r = await resolveGeofabrikGermanyPbfUrl({
+      fetchFn: fetchWithLatest(
+        () =>
+          new Response(null, {
+            status: 200,
+            headers: { 'last-modified': 'Sun, 01 Nov 2026 04:12:09 GMT' },
+          }),
+      ),
+    })
+    expect(r.resolvedVia).toBe('latest_newer_than_state')
+    expect(r.basename).toBe('germany-latest.osm.pbf')
+    expect(r.replicationTimestamp).toBe('2026-10-31T21:23:06Z')
+  })
+
+  test('keeps the dated file when germany-latest cannot be checked', async () => {
+    const r = await resolveGeofabrikGermanyPbfUrl({
+      fetchFn: fetchWithLatest(() => {
+        throw new Error('mirror down')
+      }),
+    })
+    expect(r.resolvedVia).toBe('dated_from_state')
+    expect(r.latestModifiedAt).toBeNull()
   })
 
   test('falls back to germany-latest when state fetch fails', async () => {

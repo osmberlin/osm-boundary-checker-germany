@@ -6,12 +6,18 @@ export const GEOFABRIK_GERMANY_UPDATES_STATE_URL =
 
 export const GEOFABRIK_GERMANY_EXTRACT_BASE_URL = 'https://download.geofabrik.de/europe/'
 
-export type GeofabrikGermanyResolveVia = 'explicit' | 'dated_from_state' | 'latest_fallback'
+export type GeofabrikGermanyResolveVia =
+  | 'explicit'
+  | 'dated_from_state'
+  | 'latest_newer_than_state'
+  | 'latest_fallback'
 
 export type GeofabrikGermanyResolvedUrl = {
   url: string
   basename: string
   replicationTimestamp: string
+  /** `Last-Modified` of `germany-latest`; null when not read or not available. */
+  latestModifiedAt: string | null
   resolvedVia: GeofabrikGermanyResolveVia
 }
 
@@ -43,14 +49,34 @@ export function germanyPbfUrlFromBasename(basename: string): string {
   return `${GEOFABRIK_GERMANY_EXTRACT_BASE_URL}${basename}`
 }
 
+export type GeofabrikGermanyFetchFn = (input: string, init?: RequestInit) => Promise<Response>
+
+/** `Last-Modified` of `germany-latest` as ISO string; null when it cannot be read. */
+async function fetchGermanyLatestModifiedAt(
+  fetchFn: GeofabrikGermanyFetchFn,
+): Promise<string | null> {
+  try {
+    const res = await fetchFn(GERMANY_OSM_PBF_URL, {
+      method: 'HEAD',
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15_000),
+    })
+    const modifiedAt = new Date(res.headers.get('last-modified') ?? '')
+    return res.ok && !Number.isNaN(modifiedAt.getTime()) ? modifiedAt.toISOString() : null
+  } catch {
+    return null
+  }
+}
+
 /**
  * Resolve the public Germany PBF download URL.
  *
- * Geofabrik's public `germany-latest.osm.pbf` symlink can lag behind the daily
- * dated files; replication `state.txt` points at the current extract.
+ * `germany-latest.osm.pbf` redirects to a mirror that can lag behind the daily dated
+ * files, and replication `state.txt` can lag behind that mirror. Use the dated file
+ * from `state.txt`, unless `germany-latest` was modified after the state's data time.
+ * The file for the same day is always modified later, so that case only swaps the
+ * download source for identical data.
  */
-export type GeofabrikGermanyFetchFn = (input: string, init?: RequestInit) => Promise<Response>
-
 export async function resolveGeofabrikGermanyPbfUrl(options?: {
   explicitUrl?: string | null
   fetchFn?: GeofabrikGermanyFetchFn
@@ -62,6 +88,7 @@ export async function resolveGeofabrikGermanyPbfUrl(options?: {
       url: explicit,
       basename,
       replicationTimestamp: '',
+      latestModifiedAt: null,
       resolvedVia: 'explicit',
     }
   }
@@ -74,10 +101,24 @@ export async function resolveGeofabrikGermanyPbfUrl(options?: {
       const replicationTimestamp = parseGermanyUpdatesState(text)
       if (replicationTimestamp) {
         const basename = germanyPbfBasenameFromReplicationTimestamp(replicationTimestamp)
+        const latestModifiedAt = await fetchGermanyLatestModifiedAt(fetchFn)
+        if (
+          latestModifiedAt &&
+          new Date(latestModifiedAt).getTime() > new Date(replicationTimestamp).getTime()
+        ) {
+          return {
+            url: GERMANY_OSM_PBF_URL,
+            basename: GERMANY_OSM_PBF_BASENAME,
+            replicationTimestamp,
+            latestModifiedAt,
+            resolvedVia: 'latest_newer_than_state',
+          }
+        }
         return {
           url: germanyPbfUrlFromBasename(basename),
           basename,
           replicationTimestamp,
+          latestModifiedAt,
           resolvedVia: 'dated_from_state',
         }
       }
@@ -90,6 +131,7 @@ export async function resolveGeofabrikGermanyPbfUrl(options?: {
     url: GERMANY_OSM_PBF_URL,
     basename: GERMANY_OSM_PBF_BASENAME,
     replicationTimestamp: '',
+    latestModifiedAt: null,
     resolvedVia: 'latest_fallback',
   }
 }

@@ -2,7 +2,7 @@
 import { spawnSync } from 'node:child_process'
 /**
  * Download Geofabrik Germany PBF into `.cache/osm/germany-latest.osm.pbf` (gitignored).
- * Resolves the dated daily file from `germany-updates/state.txt` (public `germany-latest` can lag).
+ * Resolves the dated daily file from `germany-updates/state.txt`, or `germany-latest` when that is newer.
  * Uses `curl -fL` on PATH. Override with `--url` or a custom `GERMANY_OSM_PBF_URL` (not the default latest URL).
  *
  * Re-download is gated by the daily refresh window (`decideDailyRefresh`): at most one
@@ -114,7 +114,12 @@ async function main() {
   switch (resolved.resolvedVia) {
     case 'dated_from_state':
       console.log(
-        `Geofabrik extract resolved from replication state: ${resolved.basename} (OSM data up to ${resolved.replicationTimestamp})`,
+        `Geofabrik extract resolved from replication state: ${resolved.basename} (OSM data up to ${resolved.replicationTimestamp}; germany-latest modified ${resolved.latestModifiedAt ?? 'unknown'})`,
+      )
+      break
+    case 'latest_newer_than_state':
+      console.log(
+        `Geofabrik germany-latest is newer than replication state: using germany-latest.osm.pbf (modified ${resolved.latestModifiedAt}; state OSM data up to ${resolved.replicationTimestamp})`,
       )
       break
     case 'latest_fallback':
