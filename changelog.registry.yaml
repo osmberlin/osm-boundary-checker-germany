@@ -522,3 +522,7 @@ entries:
     descriptionMd: |
       Detailseiten: Eine geprüfte DtP-Korrektur steht jetzt als erste Zeile über den Vergleichsregeln und nennt den DtP-Wert, unseren Wert und die Begründung. Objekte lassen sich mit „Auf der Karte zeigen“ direkt einblenden. In den Vergleichsregeln ist die Regel markiert, die das Gebiet zugeordnet hat.
       „Korrektur für DtP vorschlagen“ steht jetzt als letzte Zeile unter „Daten in OSM bearbeiten“, der Bereich ist außerdem kompakter.
+  - refs:
+      - '6274447'
+    descriptionMd: |
+      Die Daten werden jetzt für 01:17 Uhr statt 04:00 Uhr eingeplant, weil GitHub Läufe zur vollen Stunde stark verspätet gestartet hat. Die Statusseite nennt die neue Zeit und weist darauf hin, dass geplante Läufe weiterhin später starten können.
