@@ -528,5 +528,4 @@ entries:
       Die Daten werden jetzt für 01:17 Uhr statt 04:00 Uhr eingeplant, weil GitHub Läufe zur vollen Stunde stark verspätet gestartet hat. Die Statusseite nennt die neue Zeit und weist darauf hin, dass geplante Läufe weiterhin später starten können.
   - refs:
       - '963c6e3'
-    descriptionMd: |
-      Die OSM-Daten kommen jetzt aus der jeweils neueren Quelle: Der Lauf vergleicht `germany-latest` mit dem Stand aus `state.txt` von Geofabrik. So fällt seltener ein Tag OSM-Änderungen weg.
+    hide: true
