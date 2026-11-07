@@ -51,10 +51,10 @@
     "@types/bun": "latest",
     "eslint-plugin-compat": "^7.0.2",
     "husky": "^9.1.7",
-    "knip": "^6.38.0",
-    "oxfmt": "^0.70.0",
-    "oxlint": "^1.85.0",
-    "oxlint-tsgolint": "7.0.2003",
+    "knip": "^6.44.1",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "7.0.2005",
     "typescript": "^7.0.2"
   },
   "optionalDependencies": {
