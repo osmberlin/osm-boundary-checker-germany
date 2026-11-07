@@ -2,7 +2,22 @@
 
 Automatisch aus `changelog.registry.yaml` erzeugt.
 
+## 2026-11
+
+### `6274447`
+
+Die Daten werden jetzt für 01:17 Uhr statt 04:00 Uhr eingeplant, weil GitHub Läufe zur vollen Stunde stark verspätet gestartet hat. Die Statusseite nennt die neue Zeit und weist darauf hin, dass geplante Läufe weiterhin später starten können.
+
 ## 2026-10
+
+### `b755abf`
+
+Detailseiten: Eine geprüfte DtP-Korrektur steht jetzt als erste Zeile über den Vergleichsregeln und nennt den DtP-Wert, unseren Wert und die Begründung. Objekte lassen sich mit „Auf der Karte zeigen“ direkt einblenden. In den Vergleichsregeln ist die Regel markiert, die das Gebiet zugeordnet hat.
+„Korrektur für DtP vorschlagen“ steht jetzt als letzte Zeile unter „Daten in OSM bearbeiten“, der Bereich ist außerdem kompakter.
+
+### `6539f3c`
+
+Behoben: Bei Schutzgebieten, die in OSM ein Way sind, waren „OSM-Objekt auf osm.org öffnen“ und „OSM-Objekt in JOSM laden“ deaktiviert, und iD öffnete ohne das Objekt. Alle drei Links funktionieren jetzt auch für Ways, ebenso der Link zur Versionsgeschichte.
 
 ### `e5232b7`
 
