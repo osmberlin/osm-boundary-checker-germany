@@ -84,6 +84,8 @@ export function AreaReportTable({
     }
   }, [])
 
+  // TanStack Virtual returns unmemoizable functions; React Compiler skips this component, which is fine here.
+  // oxlint-disable-next-line react/incompatible-library
   const virtualizer = useWindowVirtualizer({
     count: rows.length,
     estimateSize: () => ESTIMATED_ROW_HEIGHT_PX,
