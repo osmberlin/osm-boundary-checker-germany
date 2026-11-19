@@ -44,17 +44,17 @@
     "update:app": "bun install && bun run check && bun run changelog"
   },
   "dependencies": {
-    "@clack/prompts": "^1.8.1",
+    "@clack/prompts": "^1.9.0",
     "@tordans/changelog-kit": "github:tordans/changelog-kit"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "eslint-plugin-compat": "^7.0.2",
     "husky": "^9.1.7",
-    "knip": "^6.38.0",
-    "oxfmt": "^0.70.0",
-    "oxlint": "^1.85.0",
-    "oxlint-tsgolint": "7.0.2003",
+    "knip": "^6.45.1",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0",
+    "oxlint-tsgolint": "7.0.2007",
     "typescript": "^7.0.2"
   },
   "optionalDependencies": {
