@@ -23,7 +23,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@clack/prompts": "^1.8.1",
+    "@clack/prompts": "^1.9.0",
     "@turf/turf": "^7.3.5",
     "flatgeobuf": "^4.4.0",
     "jsts": "^2.12.1",
