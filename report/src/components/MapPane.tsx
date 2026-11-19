@@ -260,7 +260,7 @@ export default function MapPane({
       style={{ width: '100%', height: '100%' }}
       cursor={cursor}
       mapStyle={COMPARISON_BASEMAP_STYLE}
-      maxBounds={maxBounds}
+      maxBounds={maxBounds?.flat() as [number, number, number, number] | undefined}
       minZoom={mapMinZoom}
       onLoad={onLoad}
       onMoveEnd={onMoveEnd}
