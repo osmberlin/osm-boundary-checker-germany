@@ -44,6 +44,11 @@ export function regionalHubMismatchFlagsUrl() {
   return withSiteBasePath('/data/regional-hub/mismatch-flags.json')
 }
 
+/** Simplified outline of one Land (`bun run --filter ./scripts states:boundaries`). */
+export function stateOutlineUrl(code: string) {
+  return withSiteBasePath(`/data/states/${code}.geojson`)
+}
+
 export function arsSuccessorsUrl() {
   return withSiteBasePath('/data/ars-successors.json')
 }

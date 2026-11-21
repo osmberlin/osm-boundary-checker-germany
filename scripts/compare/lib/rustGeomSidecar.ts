@@ -303,3 +303,32 @@ export function filterByOfficialCoverageWithRust(input: {
   )
   return new Set(output.keep_row_indexes)
 }
+
+const rustStateOverlapOutputSchema = z.object({
+  rows: z.array(
+    z.object({
+      total_m2: z.number(),
+      overlaps: z.array(z.object({ code: z.string(), area_m2: z.number() })),
+    }),
+  ),
+})
+
+/**
+ * Area of each row inside each state (WGS84 in, geodesic m² out). Rust cuts the state polygons
+ * into small pieces once, so every row only intersects the pieces near it.
+ */
+export function stateOverlapWithRust(input: {
+  states: { code: string; geometry: Geometry }[]
+  rows: (Geometry | null)[]
+}): { totalM2: number; overlaps: { code: string; areaM2: number }[] }[] {
+  if (input.rows.length === 0) return []
+  const startedAt = Date.now()
+  const output = runRustCommand('state-overlap', input, rustStateOverlapOutputSchema)
+  console.log(
+    `[rust-geom] state-overlap rows=${input.rows.length} elapsedMs=${Date.now() - startedAt}`,
+  )
+  return output.rows.map((row) => ({
+    totalM2: row.total_m2,
+    overlaps: row.overlaps.map((o) => ({ code: o.code, areaM2: o.area_m2 })),
+  }))
+}

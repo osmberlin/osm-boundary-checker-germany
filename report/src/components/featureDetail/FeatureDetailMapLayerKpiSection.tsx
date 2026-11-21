@@ -3,7 +3,7 @@ import { de } from '../../i18n/de'
 import { SourceTerm } from '../../i18n/sourceVocabulary'
 import { formatDeSquareKilometersFromM2 } from '../../lib/formatDe'
 import type { ReportRow } from '../../types/report'
-import { KpiSectionRow, KpiToggleCell } from '../FeatureStatBlocks'
+import { KPI_FILTER_ROW_LAYOUT, KpiSectionRow, KpiToggleCell } from '../FeatureStatBlocks'
 import { mapLayerColors } from '../mapLayerColors'
 import { hexToRgba } from '../MapLegend'
 import { LegendRectSwatch } from '../reportCategoryStyles'
@@ -33,7 +33,8 @@ export function FeatureDetailMapLayerKpiSection({
   return (
     <KpiSectionRow
       className="mb-0 rounded-t-md rounded-b-none border-x border-t border-b-0 border-slate-500 !bg-[#F2F3F1] text-slate-900 hover:!bg-[#eaede7]"
-      rowClassName="mt-0 [&>*]:!border-l [&>*]:!border-slate-500 [&>*]:pl-3 [&>*]:first:!border-l-0 [&>*]:first:pl-0 [&>*]:lg:pl-6"
+      rowClassName={KPI_FILTER_ROW_LAYOUT}
+      narrowLayout="none"
       aria-label={featureStats.layersRowAria}
     >
       <KpiToggleCell

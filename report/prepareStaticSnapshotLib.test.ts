@@ -11,6 +11,8 @@ function makePublicDataRoot(): string {
   const root = mkdtempSync(join(tmpdir(), 'public-data-'))
   writeFileSync(join(root, 'german-key-lookup.json'), '{"lookup":true}')
   writeFileSync(join(root, 'ars-successors.json'), '{"successors":[]}')
+  mkdirSync(join(root, 'states'), { recursive: true })
+  writeFileSync(join(root, 'states', 'BB.geojson'), '{}')
   writeFileSync(join(root, 'processing-state.json'), '{"phase":"compare"}')
   mkdirSync(join(root, 'regional-hub'), { recursive: true })
   writeFileSync(join(root, 'regional-hub', 'manifest.json'), '{}')
@@ -18,14 +20,16 @@ function makePublicDataRoot(): string {
 }
 
 describe('removeGeneratedPublicData', () => {
-  test('keeps german-key-lookup.json and ars-successors.json', async () => {
+  test('keeps german-key-lookup.json, ars-successors.json and states/', async () => {
     const root = makePublicDataRoot()
     try {
       await removeGeneratedPublicData(root)
       expect(COMMITTED_PUBLIC_DATA_BASENAMES).toEqual([
         'german-key-lookup.json',
         'ars-successors.json',
+        'states',
       ])
+      expect(existsSync(join(root, 'states', 'BB.geojson'))).toBe(true)
       expect(readFileSync(join(root, 'german-key-lookup.json'), 'utf8')).toBe('{"lookup":true}')
       expect(readFileSync(join(root, 'ars-successors.json'), 'utf8')).toBe('{"successors":[]}')
     } finally {

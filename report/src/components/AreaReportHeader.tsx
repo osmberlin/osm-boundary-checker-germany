@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react'
 import { de } from '../i18n/de'
 import { DiscussDatasetButton } from './discussion/DiscussDatasetButton'
+import { REPORT_PROVENANCE_SECTION_ID } from './ReportDataProvenanceFooter'
 
 function Middot() {
   return (
@@ -9,17 +11,17 @@ function Middot() {
   )
 }
 
+const metaLinkClass =
+  'text-slate-500 underline decoration-slate-500/60 underline-offset-2 transition-colors hover:text-slate-300'
+
 type Props = {
   title: string
-  sourceName: string | null
-  sourceHref: string | null
+  /** Optional control in front of the links, e.g. the state filter. */
+  filter?: ReactNode
 }
 
-/** Area title + meta (official source · discuss); spacing below from parent `gap-6`. */
-export function AreaReportHeader({ title, sourceName, sourceHref }: Props) {
-  const isHashLink = sourceHref != null && sourceHref.startsWith('#')
-  const showSource = Boolean(sourceName)
-
+/** Area title + meta (filter · licence · data source · discuss); spacing below from parent `gap-6`. */
+export function AreaReportHeader({ title, filter }: Props) {
   return (
     <header>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -27,23 +29,20 @@ export function AreaReportHeader({ title, sourceName, sourceHref }: Props) {
           {title}
         </h1>
         <div className="ml-auto flex w-fit max-w-full flex-wrap items-baseline justify-end gap-x-2 text-xs">
-          {showSource ? (
-            <span className="text-slate-500">
-              {de.footer.geoDataLine}
-              {sourceHref ? (
-                <a
-                  href={sourceHref}
-                  className="underline decoration-slate-500/60 underline-offset-2 transition-colors hover:text-slate-300"
-                  {...(isHashLink ? {} : { target: '_blank', rel: 'noreferrer' })}
-                >
-                  {sourceName}
-                </a>
-              ) : (
-                sourceName
-              )}
-            </span>
+          {filter ? (
+            <>
+              {filter}
+              <Middot />
+            </>
           ) : null}
-          {showSource ? <Middot /> : null}
+          <a href="#report-licence-section" className={metaLinkClass}>
+            {de.areaHeader.licence}
+          </a>
+          <Middot />
+          <a href={`#${REPORT_PROVENANCE_SECTION_ID}`} className={metaLinkClass}>
+            {de.areaHeader.dataSource}
+          </a>
+          <Middot />
           <DiscussDatasetButton className="inline shrink-0 align-baseline text-xs font-medium text-sky-400 underline decoration-sky-500/50 underline-offset-2 hover:text-sky-300" />
         </div>
       </div>

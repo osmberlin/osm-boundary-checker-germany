@@ -4,10 +4,17 @@ import { useNavigate, useParams } from '@tanstack/react-router'
 import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react'
 import { MapProvider } from 'react-map-gl/maplibre'
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
+import { germanStateName } from '../../../scripts/shared/germanStates.ts'
 import { AreaReportHeader } from '../components/AreaReportHeader'
 import { AreaReportTable } from '../components/AreaReportTable'
 import { DatasetDiscussionAlerts } from '../components/discussion/DatasetDiscussionAlerts'
-import { KpiRow, KpiSectionRow, KpiToggleCell } from '../components/FeatureStatBlocks'
+import {
+  KPI_FILTER_ROW_LAYOUT,
+  KpiRow,
+  KpiSectionRow,
+  KpiSelectCell,
+  KpiToggleCell,
+} from '../components/FeatureStatBlocks'
 import { COMPARISON_MAP_ID } from '../components/map/comparisonMapConstants'
 import { ComparisonMapZoomHintOverlay } from '../components/map/ComparisonMapZoomHintOverlay'
 import { MapOverlapPickDialog } from '../components/map/MapOverlapPickDialog'
@@ -18,19 +25,25 @@ import { ReportCategorySquareSwatch } from '../components/reportCategoryStyles'
 import { ReportDataProvenanceFooter } from '../components/ReportDataProvenanceFooter'
 import { ReportLicenseCompatibilitySection } from '../components/ReportLicenseCompatibilitySection'
 import { RouteLoadingPane } from '../components/RouteLoadingPane'
+import { StateFilterSelect, StateFilterStatic } from '../components/stateFilter/StateFilterSelect'
 import { SummaryStatColumn } from '../components/SummaryStatColumn'
-import { Abbr } from '../components/ui/Abbr'
-import { comparisonQueryOptions, runStatusQueryOptions, snapshotsQueryOptions } from '../data/load'
+import {
+  comparisonQueryOptions,
+  runStatusQueryOptions,
+  snapshotsQueryOptions,
+  stateOutlineQueryOptions,
+} from '../data/load'
 import { comparisonPmtilesMaplibreUrl, comparisonUnmatchedPmtilesMaplibreUrl } from '../data/paths'
 import { useAreaReportCategoryFilter } from '../hooks/useAreaReportCategoryFilter'
 import {
-  isStaleKeyRow,
-  parseStaleKeysFilter,
-  useAreaReportStaleKeysFilter,
-} from '../hooks/useAreaReportStaleKeysFilter'
+  matchesRowFlagFilters,
+  useAreaReportRowFlagFilter,
+} from '../hooks/useAreaReportRowFlagFilter'
+import { isStaleKeyRow, useAreaReportStaleKeysFilter } from '../hooks/useAreaReportStaleKeysFilter'
 import { useAreaReportTableSort } from '../hooks/useAreaReportTableSort'
 import { useComparisonMapLayers } from '../hooks/useComparisonMapLayers'
 import { useMapViewParam } from '../hooks/useMapViewParam'
+import { useStateFilter } from '../hooks/useStateFilter'
 import { categoryLabelDe, de } from '../i18n/de'
 import { SourceTerm } from '../i18n/sourceVocabulary'
 import { handleComparisonMapFeatureClick } from '../lib/comparisonMapFeatureClick'
@@ -42,6 +55,7 @@ import { officialAreaSummaryFreshness } from '../lib/officialAreaSummaryFreshnes
 import { osmAreaSummaryFreshness } from '../lib/osmAreaSummaryFreshness'
 import { kpiFreshnessLinesFromIso } from '../lib/reportFreshnessLines'
 import { areaDisplayNameForId } from '../lib/reportLookups'
+import { countRowsByState, outlineBbox, rowIsInState, stateFilterOptions } from '../lib/stateFilter'
 import type { AreaReportRow, ComparisonForReport, SnapshotsJson } from '../types/report'
 
 const MapPane = lazy(() => import('../components/MapPane'))
@@ -80,6 +94,8 @@ export function AreaReport() {
   const { staleKeys, setStaleKeys } = useAreaReportStaleKeysFilter()
   const mapLayers = useComparisonMapLayers()
   const mapViewParam = useMapViewParam()
+  const { state: stateParam, setState } = useStateFilter()
+  const { rowFlagFilters, setRowFlagFilter } = useAreaReportRowFlagFilter()
   const { ref: chartRef, size: chartSize } = useMeasuredElementSize<HTMLDivElement>()
   const comparisonQuery = useQuery({
     ...comparisonQueryOptions(areaKey),
@@ -93,24 +109,44 @@ export function AreaReport() {
   const data: ComparisonForReport | null = comparisonQuery.data ?? null
   const snapIndex: SnapshotsJson | null = snapshotsQuery.data ?? null
   const areaDisplayName = data?.displayName ?? areaDisplayNameForId(areaKey)
-  const pageSourceExternalUrl =
-    data?.sourceMetadata?.official?.sourcePublicUrl?.trim() ||
-    data?.sourceMetadata?.official?.sourceDownloadUrl?.trim() ||
-    null
-  const pageSourceHref = pageSourceExternalUrl ? '#report-licence-section' : null
-  const pageSourceName = formatHeadlineSourceLabel(
-    pageSourceExternalUrl,
-    data?.sourceMetadata?.official?.layer?.trim() || null,
-    data?.sourceMetadata?.official?.dataset?.trim() || null,
-  )
 
   /** Main table rows from comparison payload. */
-  const mainRows =
+  const allMainRows =
     data?.rows.filter((r) => r.category === 'matched' || r.category === 'official_only') ?? []
-  const unmatchedRows = data ? normalizeUnmatchedRows(data) : []
+  const allUnmatchedRows = data ? normalizeUnmatchedRows(data) : []
+  // The filter only works when the rows span at least two Länder; a single-Land dataset shows it as text.
+  const stateCounts = countRowsByState([...allMainRows, ...allUnmatchedRows])
+  const filterState = stateCounts.size >= 2 ? stateParam : null
+  const singleState = stateCounts.size === 1 ? ([...stateCounts.keys()][0] ?? null) : null
+  const stateOutlineQuery = useQuery({
+    ...stateOutlineQueryOptions(filterState ?? 'BE'),
+    enabled: filterState != null,
+  })
+  const stateOutline = filterState ? (stateOutlineQuery.data ?? null) : null
+  const stateOutlinePending = filterState != null && stateOutlineQuery.isPending
+  const mainRows = filterState
+    ? allMainRows.filter((r) => rowIsInState(r, filterState))
+    : allMainRows
+  const unmatchedRows = filterState
+    ? allUnmatchedRows.filter((r) => rowIsInState(r, filterState))
+    : allUnmatchedRows
+  const stateFilterControl =
+    stateCounts.size >= 2 ? (
+      <StateFilterSelect
+        options={stateFilterOptions(stateCounts)}
+        value={filterState}
+        onChange={setState}
+      />
+    ) : singleState ? (
+      <StateFilterStatic
+        label={de.stateFilter.only(germanStateName(singleState))}
+        hint={de.stateFilter.onlyHint(germanStateName(singleState))}
+      />
+    ) : null
   // Outdated keys come from the Destatis ARS successor check; other keys (PLZ, WDPA) never have them.
   const showStaleKeys = isSchluesselExplorerPreset(data?.idNormalizationPreset)
-  const matchesStaleKeysFilter = (row: AreaReportRow): boolean => {
+  const matchesRowFilters = (row: AreaReportRow): boolean => {
+    if (!matchesRowFlagFilters(row, rowFlagFilters)) return false
     if (!showStaleKeys) return true
     const stale = isStaleKeyRow(row)
     if (staleKeys === 'hide') return !stale
@@ -118,12 +154,27 @@ export function AreaReport() {
     return true
   }
   const visibleMainRows = mainRows.filter(
-    (r) => enabledCategories.includes(r.category) && matchesStaleKeysFilter(r),
+    (r) => enabledCategories.includes(r.category) && matchesRowFilters(r),
   )
   const visibleUnmatchedRows = unmatchedRows.filter(
-    (r) => enabledCategories.includes(r.category) && matchesStaleKeysFilter(r),
+    (r) => enabledCategories.includes(r.category) && matchesRowFilters(r),
   )
   const visibleRows = [...visibleMainRows, ...visibleUnmatchedRows]
+  // Counts behind the „alle / nur / ohne“ dropdowns: rows of the enabled categories (and Land).
+  const categoryRows = [...mainRows, ...unmatchedRows].filter((r) =>
+    enabledCategories.includes(r.category),
+  )
+  const rowFilterOptions = (
+    matches: (row: AreaReportRow) => boolean,
+    labels: { all: string; only: string; hide: string },
+  ) => {
+    const only = categoryRows.filter(matches).length
+    return [
+      { value: 'all' as const, label: labels.all, count: categoryRows.length },
+      { value: 'only' as const, label: labels.only, count: only },
+      { value: 'hide' as const, label: labels.hide, count: categoryRows.length - only },
+    ]
+  }
 
   const { sortedRows, sortBy, sortDir, setColumn } = useAreaReportTableSort(
     visibleRows,
@@ -138,16 +189,28 @@ export function AreaReport() {
     staleOfficialKey: mainRows.filter((r) => r.staleOfficialKey != null).length,
   }
 
+  // The map ignores the state filter: it keeps every boundary and dims the other Länder instead.
+  const mapMainRows = allMainRows.filter(
+    (r) => enabledCategories.includes(r.category) && matchesRowFilters(r),
+  )
+  const mapHasRows =
+    mapMainRows.length > 0 ||
+    allUnmatchedRows.some((r) => enabledCategories.includes(r.category) && matchesRowFilters(r))
   const allMainOn = enabledSet.has('matched') && enabledSet.has('official_only')
-  const mapAllowlist = !data || allMainOn ? null : visibleMainRows.map((r) => r.canonicalMatchKey)
+  const rowFiltersActive =
+    (showStaleKeys && staleKeys !== 'all') || Object.keys(rowFlagFilters).length > 0
+  const mapAllowlist =
+    !data || (allMainOn && !rowFiltersActive) ? null : mapMainRows.map((r) => r.canonicalMatchKey)
   const officialOnlyMapAllowlist =
     !data || !enabledSet.has('official_only')
       ? []
-      : mainRows.filter((r) => r.category === 'official_only').map((r) => r.canonicalMatchKey)
+      : allMainRows.filter((r) => r.category === 'official_only').map((r) => r.canonicalMatchKey)
   const unmatchedMapAllowlist = !data || enabledSet.has('unmatched_osm') ? null : []
   // All rows, not the visible ones: the bbox seeds the map key, so a filter-dependent bbox
-  // would remount the map on every category toggle.
-  const overviewMapBbox = unionMapBboxes([...mainRows, ...unmatchedRows])
+  // would remount the map on every category toggle. A state zooms to its outline.
+  const overviewMapBbox =
+    (stateOutline ? outlineBbox(stateOutline) : null) ??
+    unionMapBboxes([...allMainRows, ...allUnmatchedRows])
 
   const chartData = !data
     ? []
@@ -176,11 +239,7 @@ export function AreaReport() {
       <div className="mx-auto max-w-5xl px-4 pt-4 text-left sm:px-6 lg:px-8">
         <div className="flex flex-col gap-10">
           {areaKey ? (
-            <AreaReportHeader
-              title={areaDisplayName || areaKey}
-              sourceName={pageSourceName}
-              sourceHref={pageSourceHref}
-            />
+            <AreaReportHeader title={areaDisplayName || areaKey} filter={stateFilterControl} />
           ) : null}
           <DatasetDiscussionAlerts />
           <div className="text-red-400">
@@ -231,11 +290,7 @@ export function AreaReport() {
       <div className="flex flex-col gap-10">
         <div className="flex flex-col gap-6">
           {areaKey ? (
-            <AreaReportHeader
-              title={areaDisplayName || areaKey}
-              sourceName={pageSourceName}
-              sourceHref={pageSourceHref}
-            />
+            <AreaReportHeader title={areaDisplayName || areaKey} filter={stateFilterControl} />
           ) : null}
           <DatasetDiscussionAlerts />
           {showCompareFallbackNotice ? (
@@ -279,7 +334,8 @@ export function AreaReport() {
         <div className="flex w-full flex-col gap-0">
           <KpiSectionRow
             className="mb-0 rounded-t-md rounded-b-none border-x border-t border-b-0 border-slate-500 !bg-[#F2F3F1] text-slate-900 hover:!bg-[#eaede7]"
-            rowClassName="mt-0 [&>*]:!border-l [&>*]:!border-slate-500 [&>*]:pl-3 [&>*]:first:!border-l-0 [&>*]:first:pl-0 [&>*]:lg:pl-6"
+            rowClassName={KPI_FILTER_ROW_LAYOUT}
+            narrowLayout="none"
             aria-label={st.summaryLegendRowAria}
           >
             <KpiToggleCell
@@ -312,36 +368,33 @@ export function AreaReport() {
               swatch={<ReportCategorySquareSwatch category="unmatched_osm" />}
             />
             {showStaleKeys ? (
-              <div className="flex min-w-0 flex-col gap-y-1">
-                <dd className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums sm:text-3xl">
-                  {formatDeInteger(catCounts.staleOfficialKey)}
-                </dd>
-                <dt className="text-sm font-medium text-slate-800">{st.staleOfficialKeyLabel}</dt>
-                <label className="text-xs text-slate-600">
-                  {st.staleKeysFilterLabel}
-                  <select
-                    className="mt-1 block w-full rounded border border-slate-400 bg-white px-1.5 py-1 text-sm text-slate-900"
-                    value={staleKeys}
-                    onChange={(event) => setStaleKeys(parseStaleKeysFilter(event.target.value))}
-                  >
-                    <option value="all">{st.staleKeysAll}</option>
-                    <option value="only">{st.staleKeysOnly}</option>
-                    <option value="hide">{st.staleKeysHide}</option>
-                  </select>
-                </label>
-              </div>
+              <KpiSelectCell
+                options={rowFilterOptions(isStaleKeyRow, {
+                  all: st.rowFiltersAll,
+                  only: st.staleKeysOnly,
+                  hide: st.staleKeysHide,
+                })}
+                selected={staleKeys}
+                onChange={setStaleKeys}
+                hint={st.staleKeysHint}
+                ariaLabel={st.staleKeysFilterLabel}
+              />
             ) : (
               data.rowFlags
                 ?.filter((flag) => flag.count > 0)
                 .map((flag) => (
-                  <div key={flag.id} className="flex min-w-0 flex-col gap-y-1">
-                    <dd className="text-2xl font-semibold tracking-tight text-slate-900 tabular-nums sm:text-3xl">
-                      {formatDeInteger(flag.count)}
-                    </dd>
-                    <dt className="text-sm font-medium text-slate-800">
-                      <Abbr title={flag.hint}>{st.rowFlagStat(flag.label)}</Abbr>
-                    </dt>
-                  </div>
+                  <KpiSelectCell
+                    key={flag.id}
+                    options={rowFilterOptions((r) => r.flags?.includes(flag.id) ?? false, {
+                      all: st.rowFiltersAll,
+                      only: st.rowFlagOnly(flag.label),
+                      hide: st.rowFlagHide(flag.label),
+                    })}
+                    selected={rowFlagFilters[flag.id] ?? 'all'}
+                    onChange={(mode) => setRowFlagFilter(flag.id, mode)}
+                    hint={st.rowFlagHint(flag.hint)}
+                    ariaLabel={st.rowFlagFilterAria(flag.label)}
+                  />
                 ))
             )}
           </KpiSectionRow>
@@ -350,9 +403,14 @@ export function AreaReport() {
             <div className="h-px w-full bg-slate-500" />
             <div className="w-full overflow-hidden rounded-b-md border-x border-b border-slate-500">
               <div className="h-[420px] w-full">
-                {visibleRows.length === 0 ? (
+                {!mapHasRows ? (
                   <div className="flex h-full items-center justify-center px-4 text-center text-sm text-slate-400">
                     {st.mapNoVisibleCategories}
+                  </div>
+                ) : stateOutlinePending ? (
+                  // Wait for the outline: its bbox seeds the camera, so mounting early would mount twice.
+                  <div className="flex h-full items-center justify-center text-slate-500">
+                    {st.mapLoading}
                   </div>
                 ) : data.hasPmtiles ? (
                   <Suspense
@@ -389,6 +447,7 @@ export function AreaReport() {
                             urlMapView: mapViewParam.mapView,
                             onMoveEndCommitUrl: mapViewParam.commitMapViewFromMap,
                           }}
+                          overlays={{ stateOutline }}
                           layers={{
                             showOfficial: mapLayers.showOfficial,
                             showOsm: mapLayers.showOsm,
@@ -498,24 +557,6 @@ export function AreaReport() {
       </div>
     </div>
   )
-}
-
-function formatHeadlineSourceLabel(
-  sourceUrl: string | null,
-  layer: string | null,
-  dataset: string | null,
-): string | null {
-  const suffix = layer || dataset
-  if (sourceUrl) {
-    try {
-      const host = new URL(sourceUrl).hostname
-      if (host) return suffix ? `${host} (${suffix})` : host
-    } catch {
-      // Fallback to original URL text below.
-    }
-    return suffix ? `${sourceUrl} (${suffix})` : sourceUrl
-  }
-  return suffix
 }
 
 function useMeasuredElementSize<T extends HTMLElement>() {

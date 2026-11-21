@@ -16,6 +16,8 @@ export default defineConfig({
     'datasets/**/output/**',
     'report/public/datasets/**/output/**',
     '**/*.pmtiles',
+    // One minified line per Land (scripts/states/build-state-boundaries.ts).
+    'report/public/data/states/**',
   ],
   categories: {
     correctness: 'error',

@@ -25,6 +25,7 @@ import {
   type SnapshotsJson,
   type UnmatchedOsmReportRow as StaticUnmatchedOsmRow,
 } from '../../shared/comparisonPayload.ts'
+import type { GermanStateCode } from '../../shared/germanStates.ts'
 import {
   assignOfficialForEditStems,
   officialForEditGeojsonBasename,
@@ -459,6 +460,7 @@ export function comparisonRowToPayload(
   stemByKeyForOfficial: Map<string, string> | null,
   officialLicense?: OfficialLicense,
   flags: readonly string[] = [],
+  states: readonly GermanStateCode[] = [],
 ): StaticReportRow {
   const editStem = stemByKeyForOfficial?.get(row.canonicalMatchKey)
   const officialForEditPath =
@@ -478,6 +480,7 @@ export function comparisonRowToPayload(
     osmProperties: row.osmProperties,
     ...(row.staleOfficialKey ? { staleOfficialKey: row.staleOfficialKey } : {}),
     ...(flags.length > 0 ? { flags: [...flags] } : {}),
+    ...(states.length > 0 ? { states: [...states] } : {}),
     ...(officialLicense ? { officialLicense } : {}),
   }
 }
@@ -526,7 +529,10 @@ export function comparisonRowToTableRow(
   }
 }
 
-function unmatchedRowToPayload(row: UnmatchedOsmRow): StaticUnmatchedOsmRow {
+function unmatchedRowToPayload(
+  row: UnmatchedOsmRow,
+  states: readonly GermanStateCode[] = [],
+): StaticUnmatchedOsmRow {
   return {
     canonicalMatchKey: row.canonicalMatchKey,
     nameLabel: row.nameLabel,
@@ -536,6 +542,7 @@ function unmatchedRowToPayload(row: UnmatchedOsmRow): StaticUnmatchedOsmRow {
     ...(row.staleOfficialPredecessor
       ? { staleOfficialPredecessor: row.staleOfficialPredecessor }
       : {}),
+    ...(states.length > 0 ? { states: [...states] } : {}),
   }
 }
 
@@ -628,6 +635,8 @@ export type WriteOutputsOptions = {
   correctionIssueForm?: ComparisonForReport['correctionIssueForm']
   /** `compare.wikidata` with a dump: Wikidata items by id, embedded in the feature shards; `null` = none. */
   wikidataByQid?: Readonly<Record<string, WikidataProtectedAreaItem>> | null
+  /** Länder per row and per unmatched OSM row, in input order (`stateAssignment.ts`); `null` = none. */
+  states?: { rows: GermanStateCode[][]; unmatchedOsm: GermanStateCode[][] } | null
 }
 
 export function writeOutputs({
@@ -655,6 +664,7 @@ export function writeOutputs({
   attributeChecks = [],
   correctionIssueForm,
   wikidataByQid = null,
+  states = null,
 }: WriteOutputsOptions): { snapshotId: string } {
   const outDir = join(areaPath, 'output')
   const buildDir = join(outDir, BUILD_DIR)
@@ -876,9 +886,12 @@ export function writeOutputs({
       stemByKeyForOfficial,
       officialLicenses?.byKey.get(row.canonicalMatchKey),
       flagIdsPerRow[index],
+      states?.rows[index],
     ),
   )
-  const payloadUnmatched = unmatchedOsm.map(unmatchedRowToPayload)
+  const payloadUnmatched = unmatchedOsm.map((row, index) =>
+    unmatchedRowToPayload(row, states?.unmatchedOsm[index]),
+  )
 
   const tWritePayloads = Date.now()
   instrumentation?.setInFlightPhase?.('write_payloads')

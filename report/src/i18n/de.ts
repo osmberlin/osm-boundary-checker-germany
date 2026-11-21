@@ -479,6 +479,20 @@ export const de = {
     openCompare: 'Vergleichen',
   },
 
+  stateFilter: {
+    label: 'Nach Bundesland filtern',
+    all: 'Alle Bundesländer',
+    only: (name: string) => `Nur ${name}`,
+    onlyHint: (name: string) => `Alle Zeilen dieses Datensatzes liegen in ${name}.`,
+    option: (name: string, count: string) => `${name} (${count})`,
+    clear: 'Bundesland-Filter entfernen',
+    homeLabel: 'Zahlen für',
+    cardIn: (name: string) => `in ${name}`,
+  },
+  areaHeader: {
+    licence: 'Lizenz',
+    dataSource: 'Datenquelle',
+  },
   areaReport: {
     backAreas: '← Gebiete',
     chartTitle: meanIouChartDe.chartTitle,
@@ -511,13 +525,19 @@ export const de = {
       /** Row 2: Legende mit Kategoriezahlen und Filter für Tabelle und Karte. */
       summaryLegendRowAria:
         'Legende: Zugeordnet, nur amtlich, nur OSM, amtlicher Schlüssel veraltet — Anzahl und Sichtbarkeit',
-      staleOfficialKeyLabel: 'Schlüssel veraltet',
       staleKeysFilterLabel: 'Veraltete Schlüssel in der Tabelle',
-      staleKeysAll: 'Alle',
-      staleKeysOnly: 'Nur veraltet',
-      staleKeysHide: 'Ohne veraltet',
+      rowFiltersAll: 'Alle',
+      staleKeysOnly: 'Nur veraltete Schlüssel',
+      staleKeysHide: 'Ohne veraltete Schlüssel',
+      staleKeysHint:
+        'Veraltete Schlüssel: Der amtliche Datensatz hat noch den alten Regionalschlüssel, Destatis und OSM schon den neuen. Solche Zeilen sind über die Geometrie zugeordnet. Die Auswahl filtert die Tabelle: alle Zeilen, nur diese oder ohne diese.',
       staleKeyBadge: 'amtlicher Schlüssel veraltet',
       rowFlagStat: (label: string) => `davon ${label}`,
+      rowFlagOnly: (label: string) => `Nur „${label}“`,
+      rowFlagHide: (label: string) => `Ohne „${label}“`,
+      rowFlagFilterAria: (label: string) => `Tabelle nach „${label}“ filtern`,
+      rowFlagHint: (hint: string) =>
+        `${hint} Die Auswahl filtert die Tabelle: alle Zeilen, nur diese oder ohne diese.`,
       pairLinkToSuccessor: 'Zum aktuellen OSM-Schlüssel',
       pairLinkToPredecessor: 'Zum amtlichen Vorläufer-Schlüssel',
       categoryToggleRowAria: 'Kategorien für Tabelle und Karte',

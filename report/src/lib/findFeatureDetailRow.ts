@@ -18,6 +18,7 @@ function normalizeUnmatchedRows(data: ComparisonForReport): ReportRow[] {
     ...(row.staleOfficialPredecessor
       ? { staleOfficialPredecessor: row.staleOfficialPredecessor }
       : {}),
+    ...(row.states ? { states: row.states } : {}),
   }))
 }
 

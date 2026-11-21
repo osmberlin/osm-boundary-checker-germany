@@ -24,8 +24,14 @@ import { buildComparisonSourceMetadata } from '../shared/sourceMetadata.ts'
 import { readAreaSourceMetadataFile } from '../shared/sourceMetadataIo.ts'
 import { wikidataProtectedAreasFileSchema } from '../shared/wikidataProtectedAreasPayload.ts'
 import { workspaceRootFromHere } from '../shared/workspaceRoot.ts'
-import { type ComparePhaseLogger, runCompare } from './lib/compare.ts'
+import {
+  type ComparePhaseLogger,
+  type CompareRow,
+  runCompare,
+  type UnmatchedOsmRow,
+} from './lib/compare.ts'
 import { buildOfficialLicenseOutputs } from './lib/officialLicenses.ts'
+import { assignStates, loadStateGeometries, stateSourcePath } from './lib/stateAssignment.ts'
 import {
   DTP_TABLE_ROW_SLIMMING,
   type OverpassBoundaryTag,
@@ -114,6 +120,41 @@ function toFilterConfigSummary(configRaw: DatasetConfig): ComparisonFilterConfig
     ...(officialExtractFilter ? { officialExtractFilter } : {}),
     minZoom: configRaw.compare.minZoom,
   }
+}
+
+/** Console warning, plus a GitHub annotation in CI so a night without Länder shows on the run. */
+function warnStates(message: string) {
+  console.warn(cliWarn(`[compare] states: ${message}`))
+  if (process.env.GITHUB_ACTIONS) console.log(`::warning title=State filter::${message}`)
+}
+
+/** Länder per row from the exact VG25 polygons; `null` when the dataset opts out or `de-laender` is not extracted. */
+async function assignRowStates(
+  runtimeRoot: string,
+  stateFilter: boolean | undefined,
+  rows: CompareRow[],
+  unmatchedOsm: UnmatchedOsmRow[],
+) {
+  if (stateFilter === false) return null
+  const stateGeometries = await loadStateGeometries(runtimeRoot)
+  if (!stateGeometries) {
+    warnStates(
+      `${stateSourcePath(runtimeRoot)} missing; rows get no Länder (run extract:official for de-laender)`,
+    )
+    return null
+  }
+  let assigned: ReturnType<typeof assignStates>
+  try {
+    assigned = assignStates(stateGeometries, [
+      ...rows.map((row) => row.officialGeometryWgs84 ?? row.osmGeometryWgs84),
+      ...unmatchedOsm.map((row) => row.osmGeometryWgs84),
+    ])
+  } catch (error) {
+    // The state filter is optional: a sidecar failure must not cost the whole compare.
+    warnStates(`state assignment failed, rows get no Länder: ${String(error)}`)
+    return null
+  }
+  return { rows: assigned.slice(0, rows.length), unmatchedOsm: assigned.slice(rows.length) }
 }
 
 function loadPreviousMetricsByKey(areaPath: string): Map<string, ReportMetrics> {
@@ -319,6 +360,12 @@ async function main() {
         )
       }
     }
+    const states = await assignRowStates(
+      runtimeRoot,
+      configRaw.compare.stateFilter,
+      rows,
+      unmatchedOsm,
+    )
     writeOutputs({
       areaPath,
       areaFolder: area,
@@ -356,6 +403,7 @@ async function main() {
         ? { correctionIssueForm: configRaw.compare.correctionIssueForm }
         : {}),
       wikidataByQid,
+      states,
     })
     checkpoint('after_write_outputs')
     console.log(

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { loadAreaConfig } from '../scripts/shared/areaConfig.ts'
 import { comparisonForReportSchema } from '../scripts/shared/comparisonPayload.ts'
 import { DATASETS_DIRECTORY } from '../scripts/shared/datasetPaths.ts'
+import type { GermanStateCode } from '../scripts/shared/germanStates.ts'
 import { type OsmProfileId, resolveOsmProfile } from '../scripts/shared/osmProfiles.ts'
 import { isOsmCompatible, sourceMetadataSideSchema } from '../scripts/shared/sourceMetadata.ts'
 import {
@@ -13,6 +14,7 @@ import {
   geoDataSourceSchema,
   type AreaHomeSummary,
   type AreaLicenseSummary,
+  type AreaStateCounts,
   type GeoDataSource,
 } from './src/data/areasIndexSchema.ts'
 import {
@@ -243,18 +245,43 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
       let staleOfficialKey = 0
       let reviews = 0
       let issues = 0
+      const stateCounts: Partial<Record<GermanStateCode, AreaStateCounts>> = {}
+      const countsOf = (code: GermanStateCode) =>
+        (stateCounts[code] ??= {
+          matched: 0,
+          officialOnly: 0,
+          unmatchedOsm: 0,
+          reviews: 0,
+          issues: 0,
+        })
       for (const row of rows) {
         const c = row.category
+        const level = row.metrics?.issueIndicator?.level
         if (row.staleOfficialKey) staleOfficialKey++
         if (c === 'matched') matched++
         else if (c === 'official_only' && !row.staleOfficialKey) officialOnly++
-        const level = row.metrics?.issueIndicator?.level
         if (level === 'review') reviews++
         else if (level === 'issue') issues++
+        for (const code of row.states ?? []) {
+          const sc = countsOf(code)
+          if (row.staleOfficialKey) sc.staleOfficialKey = (sc.staleOfficialKey ?? 0) + 1
+          if (c === 'matched') sc.matched++
+          else if (c === 'official_only' && !row.staleOfficialKey) sc.officialOnly++
+          if (level === 'review') sc.reviews++
+          else if (level === 'issue') sc.issues++
+          for (const flag of row.flags ?? []) {
+            sc.rowFlags ??= {}
+            sc.rowFlags[flag] = (sc.rowFlags[flag] ?? 0) + 1
+          }
+        }
       }
-      const unmatched = (parsed.unmatchedOsm ?? []).filter(
+      const unmatchedRows = (parsed.unmatchedOsm ?? []).filter(
         (row) => row.staleOfficialPredecessor == null,
-      ).length
+      )
+      for (const row of unmatchedRows) {
+        for (const code of row.states ?? []) countsOf(code).unmatchedOsm++
+      }
+      const unmatched = unmatchedRows.length
       const fromConfig = osmMatchRulesFromAreaConfig(area)
       const summary: AreaHomeSummary = {
         area,
@@ -278,6 +305,7 @@ export function listComparisonAreaSummaries(runtimeRoot: string): AreaHomeSummar
           : {}),
         reviews,
         issues,
+        ...(Object.keys(stateCounts).length > 0 ? { stateCounts } : {}),
         ...(fromConfig.osmProfile ? { osmProfile: fromConfig.osmProfile } : {}),
         ...(fromConfig.osmMatchProperties
           ? { osmMatchProperties: fromConfig.osmMatchProperties }

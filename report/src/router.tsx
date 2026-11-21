@@ -5,6 +5,7 @@ import {
   createRouter,
   defaultParseSearch,
   redirect,
+  retainSearchParams,
   useParams,
 } from '@tanstack/react-router'
 import { padRegional12 } from '../../scripts/shared/regionalArs.ts'
@@ -40,6 +41,7 @@ import { areaDisplayNameForId, featureNameLabelFromData } from './lib/reportLook
 import { stringifySearchPretty } from './lib/routerSearchStringify'
 import { safeDecodeURIComponent } from './lib/safeDecodeURIComponent'
 import { socialSharingImageAbsoluteUrl } from './lib/siteBasePath'
+import { validateStateSearch } from './lib/stateFilter'
 import { AreaReport } from './pages/AreaReport'
 import { Changelog } from './pages/Changelog'
 import { CompareFeatures } from './pages/CompareFeatures'
@@ -104,6 +106,9 @@ const socialImageUrl = socialSharingImageAbsoluteUrl()
 
 export const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: ReportLayout,
+  // `?state=BB` (state filter) rides along on every link, breadcrumbs and the home link included.
+  validateSearch: validateStateSearch,
+  search: { middlewares: [retainSearchParams(['state'])] },
   head: () => ({
     meta: [
       { name: 'description', content: de.home.metaDescription },

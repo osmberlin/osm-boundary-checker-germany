@@ -16,6 +16,8 @@
   },
   "metricsCrs": "EPSG:25832",
   "compare": {
+    // One row per Land or for all of Germany: a filter by Land says nothing here.
+    "stateFilter": false,
     "minZoom": 4,
     "officialMatchProperty": "ARS",
     "bboxFilter": "none",

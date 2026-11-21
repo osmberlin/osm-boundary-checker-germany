@@ -7,7 +7,7 @@ export type StaleKeysFilter = (typeof STALE_KEYS_FILTERS)[number]
 
 const staleKeysSchema = z.enum(STALE_KEYS_FILTERS)
 
-export function parseStaleKeysFilter(value: unknown) {
+function parseStaleKeysFilter(value: unknown) {
   const parsed = staleKeysSchema.safeParse(value)
   return parsed.success ? parsed.data : 'all'
 }

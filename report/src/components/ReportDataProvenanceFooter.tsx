@@ -30,6 +30,9 @@ import { OfficialDatasetAgeInfoLink } from './OfficialDatasetAgeInfoModal'
 import { ProvenanceGridRow } from './ProvenanceGridRow'
 import { ProvenanceGridSectionHeader } from './ProvenanceGridSectionHeader'
 
+/** Anchor of the provenance section; the area header links here as „Datenquelle“. */
+export const REPORT_PROVENANCE_SECTION_ID = 'report-provenance-section'
+
 export type ReportDataProvenanceFooterProps = {
   data: ComparisonForReport
   row?: ReportRow
@@ -595,6 +598,7 @@ export function ReportDataProvenanceFooter({
 
   return (
     <section
+      id={REPORT_PROVENANCE_SECTION_ID}
       className={`overflow-hidden rounded-lg border border-slate-700 bg-slate-900/50 text-sm text-slate-400 shadow-sm ${className}`.trim()}
       aria-label={p.sectionAria}
     >

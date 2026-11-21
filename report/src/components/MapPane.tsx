@@ -16,6 +16,7 @@ import { ensureComparisonMapSprites } from './map/comparisonMapSprites'
 import { LiveOsmOverlayLayers } from './map/LiveOsmOverlayLayers'
 import { MapPanePrimaryPmtilesSource } from './map/MapPanePrimaryPmtilesSource'
 import { MapPaneUnmatchedPmtilesSource } from './map/MapPaneUnmatchedPmtilesSource'
+import { StateMaskLayers } from './map/StateMaskLayers'
 import { WfsOverlayLayers } from './map/WfsOverlayLayers'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -64,6 +65,8 @@ type MapPaneOverlays = {
   liveOsmGeojson?: LiveOsmFeatureCollection | null
   addrPostcodeGeojson?: AddrPostcodeFeatureCollection | null
   wfsGeojson?: GeoJSON.FeatureCollection | null
+  /** State filter: outline of the chosen Land; everything outside is dimmed. */
+  stateOutline?: GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon> | null
 }
 
 type FeatureStateTarget = {
@@ -119,6 +122,7 @@ export default function MapPane({
   const liveOsmGeojson = overlays?.liveOsmGeojson ?? null
   const addrPostcodeGeojson = overlays?.addrPostcodeGeojson ?? null
   const wfsGeojson = overlays?.wfsGeojson ?? null
+  const stateOutline = overlays?.stateOutline ?? null
 
   const overviewBoundsCamera =
     !urlMapView && mapBbox !== null && mapBbox[0] < mapBbox[2] && mapBbox[1] < mapBbox[3]
@@ -287,6 +291,7 @@ export default function MapPane({
         featureId={featureId}
         isStripePatternReady={isStripePatternReady}
       />
+      <StateMaskLayers outline={stateOutline} />
       <WfsOverlayLayers geojson={wfsGeojson} />
       <LiveOsmOverlayLayers geojson={liveOsmGeojson} />
       <AddrPostcodeOverlayLayers geojson={addrPostcodeGeojson} />

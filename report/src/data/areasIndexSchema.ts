@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { germanStateCodeSchema } from '../../../scripts/shared/germanStates.ts'
 import { osmProfileIdSchema } from '../../../scripts/shared/osmProfiles.ts'
 import { sourceKindSchema } from '../../../scripts/shared/sourceKind.ts'
 
@@ -7,6 +8,19 @@ export const geoDataSourceSchema = z.object({
   href: z.string().optional(),
 })
 export type GeoDataSource = z.infer<typeof geoDataSourceSchema>
+
+/** Home-card numbers of one Land (same meaning as the dataset totals). */
+const areaStateCountsSchema = z.object({
+  matched: z.number(),
+  officialOnly: z.number(),
+  unmatchedOsm: z.number(),
+  reviews: z.number(),
+  issues: z.number(),
+  staleOfficialKey: z.number().optional(),
+  /** Rows per `rowFlags` id in this Land; absent when none is flagged. */
+  rowFlags: z.record(z.string(), z.number()).optional(),
+})
+export type AreaStateCounts = z.infer<typeof areaStateCountsSchema>
 
 export const areaHomeSummarySchema = z.object({
   area: z.string().min(1),
@@ -27,6 +41,8 @@ export const areaHomeSummarySchema = z.object({
   rowFlags: z
     .array(z.object({ id: z.string(), label: z.string(), hint: z.string(), count: z.number() }))
     .optional(),
+  /** Numbers per Land for the state filter on the home page; absent without `states` in the rows. */
+  stateCounts: z.partialRecord(germanStateCodeSchema, areaStateCountsSchema).optional(),
 })
 export type AreaHomeSummary = z.infer<typeof areaHomeSummarySchema>
 export type AreaSummary = AreaHomeSummary

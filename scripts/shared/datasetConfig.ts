@@ -102,6 +102,11 @@ const compareSchema = z
      * into each feature shard (data from `bun run wikidata:protected-areas`; none without it).
      */
     wikidata: z.boolean().optional(),
+    /**
+     * `false` skips the Länder of each row (the state filter of the area page), for datasets where a
+     * filter by Land says nothing (`de-laender`, `de-staat`). Default: on.
+     */
+    stateFilter: z.boolean().optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

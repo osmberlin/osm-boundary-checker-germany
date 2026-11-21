@@ -5,6 +5,7 @@ import type {
   OfficialLicense,
   OsmMatchCriteriaSummary,
 } from '../../../scripts/shared/comparisonPayload.ts'
+import type { GermanStateCode } from '../../../scripts/shared/germanStates.ts'
 import type { MatchedBy, MatchRule } from '../../../scripts/shared/matchRules.ts'
 import type { RowFlagDefinition } from '../../../scripts/shared/rowFlags.ts'
 import type { SourceKind } from '../../../scripts/shared/sourceKind.ts'
@@ -141,6 +142,8 @@ export type ReportRow = {
   }
   /** Ids of the `rowFlags` (see `ComparisonForReport.rowFlags`) that apply to this row. */
   flags?: string[]
+  /** Länder the row lies in, largest share first; absent in tables without state data. */
+  states?: GermanStateCode[]
   /** Same-area unmatched OSM row that is the successor of a stale official key. */
   staleOfficialPredecessor?: {
     fromArs: string
@@ -162,6 +165,8 @@ export type UnmatchedOsmReportRow = {
   staleOfficialPredecessor?: {
     fromArs: string
   }
+  /** Länder the OSM object lies in, largest share first. */
+  states?: GermanStateCode[]
 }
 
 /** Unified table/view model on `/$areaId` (main + unmatched rows). */

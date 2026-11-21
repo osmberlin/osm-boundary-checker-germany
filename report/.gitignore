@@ -16,6 +16,8 @@ public/datasets
 public/data/*
 !public/data/german-key-lookup.json
 !public/data/ars-successors.json
+# Simplified Land outlines for the state filter (`bun run --filter ./scripts states:boundaries`).
+!public/data/states/
 
 # Sync timestamp for discussions registry (generated per successful sync; deploy/runtime only).
 public/discussions.registry.sync-meta.json

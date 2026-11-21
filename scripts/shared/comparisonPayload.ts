@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { attributeCheckConfigSchema } from './attributeChecks.ts'
+import { germanStateCodeSchema } from './germanStates.ts'
 import { matchedBySchema, matchRuleSchema } from './matchRules.ts'
 import { ogcWfsInspectSourceSchema } from './ogcInspectSources.ts'
 import { osmScopeFilterSchema } from './osmScopeFilter.ts'
@@ -143,6 +144,8 @@ const reportRowBaseShape = {
   staleOfficialKey: staleOfficialKeySchema.optional(),
   /** Ids of the `rowFlags` that apply to this official row; absent when none. */
   flags: z.array(z.string()).optional(),
+  /** Länder the row lies in, largest share first (`germanStates.ts`); absent without state data. */
+  states: z.array(germanStateCodeSchema).optional(),
 }
 
 /** Full row as stored in the feature shard (`output/features/<key>.json`), incl. the resolved licence. */
@@ -165,6 +168,8 @@ export const unmatchedOsmRowSchema = z.object({
   adminLevel: z.string().nullable(),
   mapBbox: bboxSchema.nullable(),
   staleOfficialPredecessor: staleOfficialPredecessorSchema.optional(),
+  /** Länder the OSM object lies in, largest share first; absent without state data. */
+  states: z.array(germanStateCodeSchema).optional(),
 })
 
 export const comparisonSourceMetadataEmbeddedSchema = z.object({

@@ -130,7 +130,7 @@ impl RTreeObject for OfficialEnvelope {
 fn main() -> Result<()> {
     let command = std::env::args().nth(1).ok_or_else(|| {
         anyhow!(
-            "missing command: union-by-key | metrics-batch | diff-batch | scope-filter-coverage"
+            "missing command: union-by-key | metrics-batch | diff-batch | scope-filter-coverage | state-overlap"
         )
     })?;
 
@@ -158,6 +158,12 @@ fn main() -> Result<()> {
             let payload: ScopeFilterCoverageInput =
                 serde_json::from_str(&input).context("parse scope-filter-coverage input")?;
             let output = scope_filter_coverage(payload);
+            write_stdout(&output)?;
+        }
+        "state-overlap" => {
+            let payload: StateOverlapInput =
+                serde_json::from_str(&input).context("parse state-overlap input")?;
+            let output = state_overlap(payload);
             write_stdout(&output)?;
         }
         _ => bail!("unknown command: {command}"),
@@ -433,6 +439,188 @@ fn scope_filter_coverage(input: ScopeFilterCoverageInput) -> ScopeFilterCoverage
     }
 }
 
+#[derive(Debug, Deserialize)]
+struct StateOverlapInput {
+    /// State polygons in WGS84; several entries may share one code (land and water parts).
+    states: Vec<StateInput>,
+    /// Row geometries in WGS84, in row order; `null` rows get no overlaps.
+    rows: Vec<Option<Geometry>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct StateInput {
+    code: String,
+    geometry: Geometry,
+}
+
+#[derive(Debug, Serialize)]
+struct StateOverlapOutput {
+    rows: Vec<StateOverlapRow>,
+}
+
+#[derive(Debug, Serialize)]
+struct StateOverlapRow {
+    /// Geodesic area of the row geometry in m².
+    total_m2: f64,
+    /// Geodesic area of the row inside each state it touches, in m² (codes without overlap are left out).
+    overlaps: Vec<StateOverlapArea>,
+}
+
+#[derive(Debug, Serialize)]
+struct StateOverlapArea {
+    code: String,
+    area_m2: f64,
+}
+
+/// A small piece of one state, cut from the full polygon so each intersection stays cheap.
+struct StatePiece {
+    aabb: AABB<[f64; 2]>,
+    code_index: usize,
+    geometry: MultiPolygon<f64>,
+    /// The piece fills its whole bounding box (an interior piece of the state).
+    full: bool,
+}
+
+impl RTreeObject for StatePiece {
+    type Envelope = AABB<[f64; 2]>;
+    fn envelope(&self) -> Self::Envelope {
+        self.aabb
+    }
+}
+
+/// State polygons have up to a few hundred thousand vertices; pieces above this are halved again.
+const STATE_PIECE_MAX_VERTICES: usize = 2_000;
+const STATE_PIECE_MAX_DEPTH: u32 = 24;
+
+fn split_state_into_pieces(
+    geometry: MultiPolygon<f64>,
+    code_index: usize,
+    depth: u32,
+    out: &mut Vec<StatePiece>,
+) {
+    use geo::{BoundingRect, CoordsIter, Rect};
+    let Some(rect) = geometry.bounding_rect() else {
+        return;
+    };
+    if geometry.coords_count() <= STATE_PIECE_MAX_VERTICES || depth >= STATE_PIECE_MAX_DEPTH {
+        let rect_area = rect.width() * rect.height();
+        let full = rect_area > 0.0 && (geometry.unsigned_area() - rect_area).abs() <= rect_area * 1e-9;
+        out.push(StatePiece {
+            aabb: AABB::from_corners([rect.min().x, rect.min().y], [rect.max().x, rect.max().y]),
+            code_index,
+            geometry,
+            full,
+        });
+        return;
+    }
+    let (min, max) = (rect.min(), rect.max());
+    let halves = if rect.width() >= rect.height() {
+        let mid = (min.x + max.x) / 2.0;
+        [
+            Rect::new((min.x, min.y), (mid, max.y)),
+            Rect::new((mid, min.y), (max.x, max.y)),
+        ]
+    } else {
+        let mid = (min.y + max.y) / 2.0;
+        [
+            Rect::new((min.x, min.y), (max.x, mid)),
+            Rect::new((min.x, mid), (max.x, max.y)),
+        ]
+    };
+    for half in halves {
+        let clip = MultiPolygon(vec![half.to_polygon()]);
+        let part = geometry.intersection(&clip);
+        if !part.0.is_empty() {
+            split_state_into_pieces(part, code_index, depth + 1, out);
+        }
+    }
+}
+
+/// True when full pieces (which never overlap each other) cover the whole rectangle.
+fn pieces_cover_rect(pieces: &[&StatePiece], rect: geo::Rect<f64>) -> bool {
+    let rect_area = rect.width() * rect.height();
+    if rect_area <= 0.0 || pieces.iter().any(|piece| !piece.full) {
+        return false;
+    }
+    let covered: f64 = pieces
+        .iter()
+        .map(|piece| {
+            let (lo, hi) = (piece.aabb.lower(), piece.aabb.upper());
+            let w = hi[0].min(rect.max().x) - lo[0].max(rect.min().x);
+            let h = hi[1].min(rect.max().y) - lo[1].max(rect.min().y);
+            if w > 0.0 && h > 0.0 { w * h } else { 0.0 }
+        })
+        .sum();
+    covered >= rect_area * (1.0 - 1e-9)
+}
+
+fn state_overlap(input: StateOverlapInput) -> StateOverlapOutput {
+    use geo::BoundingRect;
+    let mut codes: Vec<String> = Vec::new();
+    let mut pieces: Vec<StatePiece> = Vec::new();
+    let split_started = std::time::Instant::now();
+    for state in input.states {
+        let Some(mp) = geometry_to_multi_polygon(&state.geometry) else {
+            continue;
+        };
+        let code_index = match codes.iter().position(|c| *c == state.code) {
+            Some(i) => i,
+            None => {
+                codes.push(state.code.clone());
+                codes.len() - 1
+            }
+        };
+        split_state_into_pieces(mp, code_index, 0, &mut pieces);
+    }
+    let piece_count = pieces.len();
+    let tree = RTree::bulk_load(pieces);
+    eprintln!(
+        "[state-overlap] {piece_count} state pieces in {} ms",
+        split_started.elapsed().as_millis()
+    );
+
+    let rows = input
+        .rows
+        .iter()
+        .map(|row| {
+            let Some(row_mp) = row.as_ref().and_then(geometry_to_multi_polygon) else {
+                return StateOverlapRow { total_m2: 0.0, overlaps: Vec::new() };
+            };
+            let total_m2 = row_mp.geodesic_area_signed().abs();
+            let Some(rect) = row_mp.bounding_rect() else {
+                return StateOverlapRow { total_m2, overlaps: Vec::new() };
+            };
+            let query =
+                AABB::from_corners([rect.min().x, rect.min().y], [rect.max().x, rect.max().y]);
+            // Bbox candidates only: an exact `intersects` test costs more than the overlay below.
+            let touching: Vec<&StatePiece> = tree.locate_in_envelope_intersecting(&query).collect();
+            let mut per_code = vec![0.0_f64; codes.len()];
+            let first_code = touching.first().map(|piece| piece.code_index);
+            if let Some(code) = first_code
+                && touching.iter().all(|piece| piece.code_index == code)
+                && pieces_cover_rect(&touching, rect)
+            {
+                // The row's bbox lies inside full pieces of one state: the whole row counts there
+                // without cutting it. Rows near a state or national border always take the overlay.
+                per_code[code] = total_m2;
+            } else {
+                for piece in touching {
+                    let inter = row_mp.intersection(&piece.geometry);
+                    per_code[piece.code_index] += inter.geodesic_area_signed().abs();
+                }
+            }
+            let overlaps = per_code
+                .into_iter()
+                .enumerate()
+                .filter(|(_, area)| *area > 0.0)
+                .map(|(i, area_m2)| StateOverlapArea { code: codes[i].clone(), area_m2 })
+                .collect();
+            StateOverlapRow { total_m2, overlaps }
+        })
+        .collect();
+    StateOverlapOutput { rows }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -529,5 +717,58 @@ mod tests {
     fn returns_empty_when_official_set_is_empty() {
         let out = run(vec![], vec![row(0, 9.0, 50.0, 9.1, 50.1)]);
         assert!(out.is_empty());
+    }
+
+    fn state(code: &str, lon1: f64, lat1: f64, lon2: f64, lat2: f64) -> StateInput {
+        StateInput { code: code.to_string(), geometry: rect(lon1, lat1, lon2, lat2) }
+    }
+
+    #[test]
+    fn state_overlap_splits_area_between_states() {
+        let out = state_overlap(StateOverlapInput {
+            states: vec![state("AA", 9.0, 50.0, 9.1, 50.1), state("BB", 9.1, 50.0, 9.2, 50.1)],
+            rows: vec![Some(rect(9.05, 50.02, 9.15, 50.08)), Some(rect(9.01, 50.01, 9.02, 50.02)), None],
+        });
+        let first = &out.rows[0];
+        assert_eq!(first.overlaps.len(), 2);
+        let sum: f64 = first.overlaps.iter().map(|o| o.area_m2).sum();
+        assert!((sum - first.total_m2).abs() / first.total_m2 < 1e-6);
+        assert!((first.overlaps[0].area_m2 - first.overlaps[1].area_m2).abs() / first.total_m2 < 1e-3);
+        assert_eq!(out.rows[1].overlaps.len(), 1);
+        assert_eq!(out.rows[1].overlaps[0].code, "AA");
+        assert!(out.rows[2].overlaps.is_empty());
+    }
+
+    #[test]
+    fn state_overlap_counts_only_the_part_inside_a_lone_state() {
+        // A border site half outside the only nearby state must not get the full area.
+        let out = state_overlap(StateOverlapInput {
+            states: vec![state("AA", 9.0, 50.0, 9.1, 50.1)],
+            rows: vec![Some(rect(9.05, 50.02, 9.15, 50.08)), Some(rect(9.2, 50.02, 9.3, 50.08))],
+        });
+        let first = &out.rows[0];
+        assert_eq!(first.overlaps.len(), 1);
+        assert!((first.overlaps[0].area_m2 / first.total_m2 - 0.5).abs() < 0.01);
+        assert!(out.rows[1].overlaps.is_empty());
+    }
+
+    #[test]
+    fn state_pieces_cover_the_whole_state() {
+        // A state with many vertices gets cut into pieces whose areas add up to the original.
+        let n = 5_000;
+        let mut ring: Vec<(f64, f64)> = (0..n)
+            .map(|i| {
+                let t = i as f64 / n as f64 * std::f64::consts::TAU;
+                (9.0 + 0.5 * t.cos(), 50.0 + 0.5 * t.sin())
+            })
+            .collect();
+        ring.push(ring[0]);
+        let poly = geo::Polygon::new(geo::LineString::from(ring), vec![]);
+        let mp = MultiPolygon(vec![poly]);
+        let mut pieces = Vec::new();
+        split_state_into_pieces(mp.clone(), 0, 0, &mut pieces);
+        assert!(pieces.len() > 1);
+        let sum: f64 = pieces.iter().map(|p| p.geometry.unsigned_area()).sum();
+        assert!((sum - mp.unsigned_area()).abs() / mp.unsigned_area() < 1e-9);
     }
 }

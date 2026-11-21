@@ -3,10 +3,11 @@ import { readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-/** Basenames in `report/public/data/` that git keeps (`report/.gitignore` negations). */
+/** Files and folders in `report/public/data/` that git keeps (`report/.gitignore` negations). */
 export const COMMITTED_PUBLIC_DATA_BASENAMES = [
   'german-key-lookup.json',
   'ars-successors.json',
+  'states',
 ] as const
 
 const committedPublicDataBasenames: ReadonlySet<string> = new Set(COMMITTED_PUBLIC_DATA_BASENAMES)
@@ -28,7 +29,8 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Delete generated children of `report/public/data`, keeping committed lookup files.
+ * Delete generated children of `report/public/data`, keeping the committed lookup files and
+ * the Land outlines in `states/`.
  */
 export async function removeGeneratedPublicData(destDataRoot: string): Promise<void> {
   if (!existsSync(destDataRoot)) return

@@ -1,12 +1,22 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import {
+  GERMAN_STATES,
+  germanStateName,
+  type GermanStateCode,
+} from '../../../scripts/shared/germanStates.ts'
 import { KpiCell, KpiRow } from '../components/FeatureStatBlocks'
 import { ReportCategoryLabel } from '../components/ReportCategoryLabel'
 import { ReportCategoryPill, UnmatchedOsmStatPill } from '../components/reportCategoryStyles'
+import { StateFilterSelect } from '../components/stateFilter/StateFilterSelect'
 import { Abbr } from '../components/ui/Abbr'
 import { areasIndex, type AreaLicenseSummary } from '../data/areasIndex'
+import type { AreaSummary } from '../data/areasIndex'
+import type { AreaStateCounts } from '../data/areasIndexSchema'
+import { useStateFilter } from '../hooks/useStateFilter'
 import { categoryLabelDe, de } from '../i18n/de'
 import { sourceText } from '../i18n/sourceVocabulary'
+import { cn } from '../lib/cn'
 import { EM_DASH, formatDeInteger } from '../lib/formatDe'
 import { HOME_GROUPS, groupAreasByHomeTheme } from '../lib/homeDatasetGroups'
 import {
@@ -43,7 +53,39 @@ function HomeReviewIssueKpiPair({ review, issue }: { review: ReactNode; issue: R
   )
 }
 
+const EMPTY_STATE_COUNTS: AreaStateCounts = {
+  matched: 0,
+  officialOnly: 0,
+  unmatchedOsm: 0,
+  reviews: 0,
+  issues: 0,
+}
+
+/**
+ * Card numbers under the state filter: datasets spanning several Länder show the numbers of the
+ * chosen one; a single-Land dataset (Gemeinden BB, Berlin …) is highlighted or dimmed instead.
+ */
+function homeCardStateView(entry: AreaSummary | undefined, state: GermanStateCode | null) {
+  const codes = Object.keys(entry?.stateCounts ?? {})
+  if (!state || !entry?.stateCounts || codes.length === 0) {
+    return { counts: entry, highlight: false, dim: false, inState: false }
+  }
+  if (codes.length === 1) {
+    const match = codes[0] === state
+    return { counts: entry, highlight: match, dim: !match, inState: false }
+  }
+  const { rowFlags: flagCounts, ...counts } = entry.stateCounts[state] ?? EMPTY_STATE_COUNTS
+  const rowFlags = entry.rowFlags?.map((flag) => ({ ...flag, count: flagCounts?.[flag.id] ?? 0 }))
+  return {
+    counts: { ...entry, staleOfficialKey: 0, ...counts, ...(rowFlags ? { rowFlags } : {}) },
+    highlight: false,
+    dim: false,
+    inState: true,
+  }
+}
+
 export function Home() {
+  const { state, setState } = useStateFilter()
   const areas = areasIndex.areas
   const summariesByArea = Object.fromEntries(
     areasIndex.summaries.map((entry) => [entry.area, entry]),
@@ -108,6 +150,15 @@ export function Home() {
         <p className="text-slate-400">{de.home.noAreas}</p>
       ) : (
         <>
+          <p className="mb-6 text-sm text-slate-400">
+            {de.stateFilter.homeLabel}{' '}
+            <StateFilterSelect
+              options={GERMAN_STATES.map(({ code, name }) => ({ code, name }))}
+              value={state}
+              onChange={setState}
+              className="text-sm"
+            />
+          </p>
           <div className="space-y-10">
             {homeGroups.map((group) => (
               <section key={group.id} id={HOME_GROUPS[group.id].anchor} className="scroll-mt-4">
@@ -119,8 +170,10 @@ export function Home() {
                 ) : null}
                 <ul className="space-y-4">
                   {group.areas.map((a) => {
-                    const entry = summariesByArea[a]
-                    const displayName = entry?.displayName ?? a
+                    const summary = summariesByArea[a]
+                    const displayName = summary?.displayName ?? a
+                    const stateView = homeCardStateView(summary, state)
+                    const entry = stateView.counts
                     const matched = entry ? formatDeInteger(entry.matched) : EM_DASH
                     const officialOnly = entry ? formatDeInteger(entry.officialOnly) : EM_DASH
                     const unmatched = entry ? formatDeInteger(entry.unmatchedOsm) : EM_DASH
@@ -135,7 +188,11 @@ export function Home() {
                     return (
                       <li key={a}>
                         <Link
-                          className="group block overflow-hidden rounded-lg border border-slate-700 bg-slate-900 p-4 transition-colors hover:border-slate-500 hover:bg-slate-800/60"
+                          className={cn(
+                            'group block overflow-hidden rounded-lg border border-slate-700 bg-slate-900 p-4 transition-colors hover:border-slate-500 hover:bg-slate-800/60',
+                            stateView.highlight && 'border-sky-400/70 ring-1 ring-sky-400/50',
+                            stateView.dim && 'opacity-50 hover:opacity-100',
+                          )}
                           to="/$areaId"
                           params={{ areaId: a }}
                           title={a}
@@ -143,6 +200,11 @@ export function Home() {
                           <div className="flex items-center justify-between gap-3">
                             <span className="font-medium text-sky-400 underline group-hover:text-sky-300">
                               {displayName}
+                              {stateView.inState && state ? (
+                                <span className="ml-2 rounded-full bg-sky-500/20 px-2 py-0.5 text-xs font-medium text-sky-100 no-underline ring-1 ring-sky-400/60">
+                                  {de.stateFilter.cardIn(germanStateName(state))}
+                                </span>
+                              ) : null}
                             </span>
                             <span
                               className="text-slate-500 transition-colors group-hover:text-sky-300"

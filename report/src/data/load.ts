@@ -1,5 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { changelogFileSchema, type ChangelogFile } from '@tordans/changelog-kit/schemas'
+import type { Feature, MultiPolygon, Polygon } from 'geojson'
 import { arsSuccessorTableSchema } from '../../../scripts/shared/arsSuccessorTable.ts'
 import {
   comparisonForReportSchema,
@@ -17,6 +18,7 @@ import {
 } from '../../../scripts/shared/discussionsRegistrySyncMeta.ts'
 import { germanKeyLookupBundleSchema } from '../../../scripts/shared/germanKeyLookupPayload.ts'
 import type { GermanKeyLookupBundle } from '../../../scripts/shared/germanKeyLookupPayload.ts'
+import type { GermanStateCode } from '../../../scripts/shared/germanStates.ts'
 import {
   regionalHubManifestSchema,
   regionalHubMismatchFlagsFileSchema,
@@ -53,6 +55,7 @@ import {
   regionalHubWikidataUrl,
   runStatusUrl,
   snapshotsUrl,
+  stateOutlineUrl,
 } from './paths'
 
 async function readJsonStrict(url: string, response: Response): Promise<unknown> {
@@ -207,6 +210,19 @@ export function comparisonQueryOptions(area: string) {
   return queryOptions({
     queryKey: ['comparison', area],
     queryFn: () => loadComparison(area),
+  })
+}
+
+/** Simplified outline of one Land for the map mask; static file, never refetched. */
+export function stateOutlineQueryOptions(code: GermanStateCode) {
+  return queryOptions({
+    queryKey: ['state-outline', code],
+    queryFn: async () => {
+      const response = await fetch(stateOutlineUrl(code))
+      if (!response.ok) throw new Error(`State outline ${code}: HTTP ${response.status}`)
+      return (await response.json()) as Feature<Polygon | MultiPolygon>
+    },
+    staleTime: Infinity,
   })
 }
 
