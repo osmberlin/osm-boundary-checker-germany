@@ -547,3 +547,13 @@ entries:
   - refs:
       - 'f4b5fe7'
     hide: true
+  - refs:
+      - '17da96c4'
+    descriptionMd: |
+      Neu: Datensätze lassen sich nach Bundesland filtern. Auf der Datensatz-Seite steht die Auswahl oben neben „Lizenz“, „Datenquelle“ und „Datensatz diskutieren“. Tabelle und Zahlen zeigen dann nur dieses Land, die Karte blendet die anderen Länder ab und zoomt auf das gewählte Land. Gebiete über eine Landesgrenze zählen zu jedem Land, in dem mindestens 5 ha oder 10 % ihrer Fläche liegen; Gebiete im Ausland oder auf See zählen zu keinem.
+      Auf der Startseite gibt es dieselbe Auswahl: Die Karten zeigen dann die Zahlen für das Land, und die Gemeinde-Datensätze des Landes sind hervorgehoben. Die Wahl bleibt beim Weiterklicken in der Adresse erhalten (`?state=BB`) und lässt sich so auch teilen.
+      Die Filter in der Kennzahlenzeile sind jetzt einheitlich: „Schlüssel veraltet“ und Zeilenmerkmale wie „davon Verwaltet“ haben unter der Zahl eine Auswahl „Alle“, „Nur …“ oder „Ohne …“, jeweils mit Anzahl. „davon Verwaltet“ filtert damit jetzt auch Tabelle und Karte. Auf dem Handy stehen die Kennzahlen als Liste untereinander.
+  - refs:
+      - 'da333315'
+    descriptionMd: |
+      Handy: Die Brotkrume oben kürzt lange Namen mit „…“, statt sie abzuschneiden.
