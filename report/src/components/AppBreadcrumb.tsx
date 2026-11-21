@@ -58,7 +58,8 @@ export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
                 aria-label={`${de.breadcrumb.home} — ${appTitle}`}
               >
                 <img src={homeLogoSrc} alt="" width={20} height={20} className={homeLogoClass} />
-                <span className="text-brand-100">{appTitle}</span>
+                {/* Phones: logo only, so the dataset and page crumbs keep their room. */}
+                <span className="text-brand-100 max-sm:hidden">{appTitle}</span>
               </Link>
             )}
           </div>
@@ -66,15 +67,17 @@ export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
         {items.map((page, index) => {
           const key = `${index}-${page.name}`
           if ('current' in page && page.current) {
+            // Crumbs shrink on narrow screens, so long names end in „…“ instead of being cut off;
+            // parent crumbs give way first so the current page stays readable.
             return (
-              <li key={key} className="flex min-w-0 shrink-0 items-stretch">
+              <li key={key} className="flex min-w-0 shrink items-stretch">
                 <div className="flex h-full min-w-0 items-stretch">
                   <BreadcrumbChevron />
                   <span
                     aria-current="page"
-                    className="ml-4 flex min-w-0 items-center truncate text-sm font-medium text-slate-400"
+                    className="ml-4 flex min-w-0 items-center text-sm font-medium text-slate-400"
                   >
-                    {page.name}
+                    <span className="truncate">{page.name}</span>
                   </span>
                 </div>
               </li>
@@ -82,14 +85,14 @@ export function AppBreadcrumb({ appTitle, homeCurrent, items }: Props) {
           }
           const link = page as { name: string; to: string }
           return (
-            <li key={key} className="flex min-w-0 shrink-0 items-stretch">
+            <li key={key} className="flex min-w-0 shrink items-stretch max-sm:max-w-[40%]">
               <div className="flex h-full min-w-0 items-stretch">
                 <BreadcrumbChevron />
                 <Link
                   to={link.to as never}
-                  className="ml-4 flex min-w-0 items-center truncate text-sm font-medium text-slate-400 hover:text-slate-200"
+                  className="ml-4 flex min-w-0 items-center text-sm font-medium text-slate-400 hover:text-slate-200"
                 >
-                  {link.name}
+                  <span className="truncate">{link.name}</span>
                 </Link>
               </div>
             </li>
